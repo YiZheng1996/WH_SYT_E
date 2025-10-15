@@ -1,0 +1,9 @@
+Windows Registry Editor Version 5.00
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Excel.Sheet.8]
+@="Microsoft Office Excel 97-2003 工作表"
+"EditFlags"=dword:00010000
+"BrowserFlags"=-
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Excel.Sheet.12]
+@="Microsoft Office Excel 工作表"
+"EditFlags"=dword:00010000
+"BrowserFlags"=-

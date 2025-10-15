@@ -1,0 +1,201 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>制动阀类试验台E</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!--<Nullable>enable</Nullable>-->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RestorePackagesPath>..\packages</RestorePackagesPath>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PlatformTarget>x86</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <ApplicationIcon>bin\Debug\net8.0-windows\ico.ico</ApplicationIcon>
+    <Authors>$(湖南润伟智能机器有限公司)</Authors>
+    <Company>$(湖南润伟智能机器有限公司)</Company>
+    <FileVersion>1.0.0.1</FileVersion>
+    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;</NoWarn>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;</NoWarn>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="CurrencyHelper\Permission\**" />
+    <EmbeddedResource Remove="CurrencyHelper\Permission\**" />
+    <None Remove="CurrencyHelper\Permission\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Model\TestStep.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Procedure\b0k3pdyj.on3~" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="frmDeviceInspect.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Modules\AIGrp.cs" />
+    <Compile Update="Modules\WaterPumpGrp.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="Modules\RightTranslationGrp.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="Modules\LeftTranslationGrp.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="Modules\CurrentGrp.cs" />
+    <Compile Update="Modules\AOGrp.cs" />
+    <Compile Update="Modules\DIGrp.cs" />
+    <Compile Update="Modules\DOGrp.cs" />
+    <Compile Update="Modules\OpcStatusGrp.cs" />
+    <Compile Update="Modules\PLCCalibration.cs" />
+    <Compile Update="Procedure\Edit\frmModelEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Procedure\Edit\frmPermissionEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Procedure\Edit\frmModelTypeEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Procedure\Edit\frmTestProcess.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Procedure\Edit\frmRoleEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Procedure\Edit\frmDeviceInspectEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Procedure\Edit\frmErrStatisticsEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Procedure\Edit\frmMeteringEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Procedure\ucBaseManagerUI.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Procedure\UCCalibration.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Procedure\ucKindManage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Procedure\ucModelManage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Procedure\ucTestParams.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Procedure\User\ucPermission.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Procedure\User\ucUserManager.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Update="ucHMI.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="img\backimg.png" />
+    <Content Include="log.txt" />
+    <Content Include="readMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AntdUI" Version="2.1.10" />
+    <PackageReference Include="Costura.Fody" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
+    </PackageReference>
+    <PackageReference Include="FreeSql" Version="3.5.213" />
+    <PackageReference Include="FreeSql.Provider.MySql" Version="3.5.213" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.10" />
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="NLog" Version="6.0.5" />
+    <PackageReference Include="NLog.Database" Version="6.0.3" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="6.0.5" />
+    <PackageReference Include="SunnyUI" Version="3.8.8" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
+    <PackageReference Include="System.IO.Ports" Version="9.0.9" />
+    <PackageReference Include="System.Management" Version="9.0.9" />
+  </ItemGroup>
+
+ 
+  <ItemGroup>
+    <Using Include="Sunny.UI" />
+    <Using Include="System.Data" />
+    <Using Include="System.Diagnostics" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Antlr4.Runtime">
+      <HintPath>..\Lib\DSL_DLL\Antlr4.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Interop.OPCAutomation">
+      <HintPath>..\Lib\Interop.OPCAutomation.dll</HintPath>
+      <EmbedInteropTypes></EmbedInteropTypes>
+      <Private></Private>
+    </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel">
+      <HintPath>..\Lib\Report\Microsoft.Office.Interop.Excel.dll</HintPath>
+    </Reference>
+    <Reference Include="office">
+      <HintPath>..\Lib\Report\office.dll</HintPath>
+    </Reference>
+    <Reference Include="Report">
+      <HintPath>..\Lib\Report\Report.dll</HintPath>
+    </Reference>
+    <Reference Include="rw3">
+      <HintPath>..\Lib\DSL_DLL\rw3.dll</HintPath>
+    </Reference>
+    <Reference Include="rwdsl2">
+      <HintPath>..\Lib\DSL_DLL\rwdsl2.dll</HintPath>
+    </Reference>
+    <Reference Include="RWDSLDebugger">
+      <HintPath>..\Lib\DSL_DLL\RWDSLDebugger.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Procedure\Test\测试类型\" />
+  </ItemGroup>
+</Project>
