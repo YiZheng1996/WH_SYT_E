@@ -6,7 +6,7 @@ using MainUI.LogicalConfiguration.Services;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.Logging;
 
-namespace MainUI.Procedure.DSL.LogicalConfiguration.Methods
+namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
     /// 等待检测工具方法集合
@@ -26,9 +26,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Methods
 
         // 默认检测间隔100ms
         private const int DEFAULT_CHECK_INTERVAL_MS = 100;
-
-        #endregion
-        #region 构造函数
         #endregion
 
         #region 基类属性实现

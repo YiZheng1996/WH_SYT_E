@@ -23,27 +23,69 @@ namespace MainUI.LogicalConfiguration.Methods
             }, false); // 默认返回false
         }
 
-        /// <summary>
-        /// 系统提示方法
-        /// </summary>
-        public async Task<bool> SystemPrompt(Parameter_SystemPrompt param)
+        public Task<bool> SystemPrompt(Parameter_SystemPrompt param)
         {
-            return await ExecuteWithLogging(param, async () =>
+            try
             {
-                // 解析提示内容中的变量引用
-                string resolvedMessage = await ResolveVariablesInText(param.Message);
-
-                // 显示提示信息
-                var result = MessageHelper.MessageYes(resolvedMessage);
-
-                // 如果需要等待用户响应
-                if (param.WaitForResponse)
+                if (string.IsNullOrWhiteSpace(param.Message))
                 {
-                    return result == DialogResult.OK;
+                    //_logger.LogWarning("提示消息为空");
+                    return Task.FromResult(false);
                 }
 
-                return true;
-            }, false);
+                DialogResult result = DialogResult.None;
+
+                // 根据对话框类型显示不同的消息框
+                switch (param.DialogType)
+                {
+                    case DialogType.Message:
+                        MessageBox.Show(param.Message, param.Title ?? "提示",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        result = DialogResult.OK;
+                        break;
+
+                    case DialogType.YesNo:
+                        result = MessageBox.Show(param.Message, param.Title ?? "确认",
+                            MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                        break;
+
+                    case DialogType.YesNoCancel:
+                        result = MessageBox.Show(param.Message, param.Title ?? "确认",
+                            MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                        break;
+
+                    case DialogType.OKCancel:
+                        result = MessageBox.Show(param.Message, param.Title ?? "确认",
+                            MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+                        break;
+
+                    case DialogType.OK:
+                        MessageBox.Show(param.Message, param.Title ?? "提示",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        result = DialogResult.OK;
+                        break;
+                }
+
+                // 保存用户响应结果
+                param.UserResponse = result;
+
+                // 记录日志
+                //_logger.LogInformation($"系统提示已显示，类型: {param.DialogType}, 用户响应: {result}");
+
+                // 根据等待响应设置返回值
+                if (param.WaitForResponse)
+                {
+                    // 对于需要确认的对话框，根据用户选择返回结果
+                    return Task.FromResult(result == DialogResult.OK || result == DialogResult.Yes);
+                }
+
+                return Task.FromResult(true);
+            }
+            catch (Exception ex)
+            {
+                //_logger.LogError(ex, "显示系统提示失败");
+                return Task.FromResult(false);
+            }
         }
 
         /// <summary>

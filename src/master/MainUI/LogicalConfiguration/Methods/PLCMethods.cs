@@ -5,7 +5,7 @@ using MainUI.LogicalConfiguration.Services;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.Logging;
 
-namespace MainUI.Procedure.DSL.LogicalConfiguration.Methods
+namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
     /// PLC通信方法集合

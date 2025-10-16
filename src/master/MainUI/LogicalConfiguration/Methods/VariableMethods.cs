@@ -4,7 +4,7 @@ using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 
-namespace MainUI.Procedure.DSL.LogicalConfiguration.Methods
+namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
     /// 变量管理方法集合

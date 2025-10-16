@@ -156,7 +156,7 @@ namespace MainUI.Procedure
 
                 // 先清空数据源
                 _workflowState.ClearSteps();
-                
+
                 if (parent?.ChildSteps != null && parent.ChildSteps.Count > 0)
                 {
                     // 批量加载到数据源（会触发事件）
@@ -790,7 +790,7 @@ namespace MainUI.Procedure
                 });
 
                 _logger.LogInformation("工作流配置保存成功");
-                MessageHelper.MessageOK("保存成功！", TType.Success);
+                MessageHelper.MessageOK(this, "保存成功！", TType.Success);
             }
             catch (Exception ex)
             {

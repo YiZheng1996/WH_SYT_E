@@ -1,6 +1,5 @@
 ﻿using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
-using MainUI.Procedure.DSL.LogicalConfiguration.Methods;
 using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.LogicalManager
@@ -17,7 +16,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     VariableMethods variableMethods,
     PLCMethods plcMethods,
     DetectionMethods detectionMethods,
-    FlowControlMethods flowControlMethods,
     ReportMethods reportMethods)
     {
         #region 字段和属性
@@ -27,7 +25,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private readonly VariableMethods _variableMethods = variableMethods ?? throw new ArgumentNullException(nameof(variableMethods));
         private readonly PLCMethods _plcMethods = plcMethods ?? throw new ArgumentNullException(nameof(plcMethods));
         private readonly DetectionMethods _detectionMethods = detectionMethods ?? throw new ArgumentNullException(nameof(detectionMethods));
-        private readonly FlowControlMethods _flowControlMethods = flowControlMethods ?? throw new ArgumentNullException(nameof(flowControlMethods));
         private readonly ReportMethods _reportMethods = reportMethods ?? throw new ArgumentNullException(nameof(reportMethods));
 
         public event Action<ChildModel, int> StepStatusChanged;
@@ -163,10 +160,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "写入PLC" => await ExecuteWritePLC(step),
 
                     // 检测工具
-                    "检测工具" => await ExecuteDetection(step),
-
-                    // 流程控制
-                    "条件判断" => await ExecuteCondition(step),
+                    "条件判断" => await ExecuteDetection(step),
 
                     // 报表工具
                     //"保存报表" => await ExecuteSaveReport(step),
@@ -187,7 +181,11 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         #endregion
 
         #region 具体步骤执行方法
-
+        /// <summary>
+        /// 延时等待
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
+        /// <returns></returns>
         private async Task<ExecutionResult> ExecuteDelayTime(ChildModel step)
         {
             var param = ConvertParameter<Parameter_DelayTime>(step.StepParameter);
@@ -197,6 +195,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("延时执行失败");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteSystemPrompt(ChildModel step)
         {
             var param = ConvertParameter<Parameter_SystemPrompt>(step.StepParameter);
@@ -206,6 +208,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("提示执行失败");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteDefineVar(ChildModel step)
         {
             var param = ConvertParameter<Parameter_DefineVar>(step.StepParameter);
@@ -215,6 +221,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("变量定义失败");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteVariableAssignment(ChildModel step)
         {
             var param = ConvertParameter<Parameter_VariableAssignment>(step.StepParameter);
@@ -224,6 +234,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("变量赋值失败");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteReadPLC(ChildModel step)
         {
             var param = ConvertParameter<Parameter_ReadPLC>(step.StepParameter);
@@ -233,6 +247,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("PLC读取失败");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteWritePLC(ChildModel step)
         {
             var param = ConvertParameter<Parameter_WritePLC>(step.StepParameter);
@@ -242,31 +260,113 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("PLC写入失败");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteDetection(ChildModel step)
         {
-            var param = ConvertParameter<Parameter_Detection>(step.StepParameter);
-            if (param == null) return ExecutionResult.Failed("参数转换失败");
-
-            var result = await _detectionMethods.Detection(param);
-            return result ? ExecutionResult.Success() : ExecutionResult.Failed("检测执行失败");
-        }
-
-        private async Task<ExecutionResult> ExecuteCondition(ChildModel step)
-        {
-            var param = ConvertParameter<Parameter_Condition>(step.StepParameter);
-            if (param == null) return ExecutionResult.Failed("参数转换失败");
-
-            var result = await _flowControlMethods.EvaluateCondition(param);
-
-            // 条件判断可能返回跳转索引
-            if (result >= 0)
+            try
             {
-                return ExecutionResult.Jump(result);
+                var param = ConvertParameter<Parameter_Detection>(step.StepParameter);
+                if (param == null)
+                {
+                    NlogHelper.Default.Error("检测/条件判断参数转换失败");
+                    return ExecutionResult.Failed("参数转换失败");
+                }
+
+                // 记录数据源信息
+                string dataSourceInfo = param.DataSource.SourceType == DataSourceType.PLC
+                    ? $"PLC: {param.DataSource.PlcConfig.ModuleName}.{param.DataSource.PlcConfig.Address}"
+                    : $"变量: {param.DataSource.VariableName}";
+
+                NlogHelper.Default.Info($"执行检测: {param.DetectionName}, 数据源: {dataSourceInfo}, 类型: {step.StepName}");
+
+                // 获取当前步骤索引（用于防死循环检查）
+                int currentStepIndex = _currentStepIndex;
+
+                // 防死循环检查（针对条件判断）
+                if (param.ResultHandling.OnFailure == FailureAction.Jump)
+                {
+                    int failureStep = param.ResultHandling.FailureStepIndex;
+                    int successStep = param.ResultHandling.SuccessStepIndex;
+
+                    if (failureStep == currentStepIndex && successStep == currentStepIndex)
+                    {
+                        NlogHelper.Default.Error($"配置错误：成功和失败都跳转到当前步骤({currentStepIndex})，会导致死循环！");
+                        return ExecutionResult.Failed("配置错误：会导致死循环");
+                    }
+
+                    // 警告：如果失败跳转到当前步骤
+                    if (failureStep == currentStepIndex)
+                    {
+                        NlogHelper.Default.Warn($"警告：失败时跳转到当前步骤({currentStepIndex})，可能导致死循环");
+                    }
+                }
+
+                // 执行检测
+                var result = await _detectionMethods.Detection(param);
+
+                if (result)
+                {
+                    // 检测成功
+                    NlogHelper.Default.Info($"检测成功: {param.DetectionName}");
+
+                    // 检查是否需要跳转
+                    int successStep = param.ResultHandling.SuccessStepIndex;
+                    if (successStep >= 0)
+                    {
+                        NlogHelper.Default.Info($"成功跳转到步骤: {successStep}");
+                        return ExecutionResult.Jump(successStep);
+                    }
+
+                    return ExecutionResult.Success();
+                }
+                else
+                {
+                    // 检测失败
+                    NlogHelper.Default.Info($"检测失败: {param.DetectionName}");
+
+                    var failureAction = param.ResultHandling.OnFailure;
+
+                    switch (failureAction)
+                    {
+                        case FailureAction.Stop:
+                            NlogHelper.Default.Error("检测失败：停止流程执行");
+                            return ExecutionResult.Failed("检测失败，流程已停止");
+
+                        case FailureAction.Jump:
+                            int failureStep = param.ResultHandling.FailureStepIndex;
+                            NlogHelper.Default.Info($"失败跳转到步骤: {failureStep}");
+                            return ExecutionResult.Jump(failureStep);
+
+                        case FailureAction.Continue:
+                            NlogHelper.Default.Info("检测失败：继续执行下一步");
+                            return ExecutionResult.Success();
+
+                        case FailureAction.Confirm:
+                            NlogHelper.Default.Info("检测失败：需要用户确认");
+                            // TODO: 实现用户确认对话框
+                            return ExecutionResult.Success();
+
+                        default:
+                            NlogHelper.Default.Info("检测失败：默认继续执行");
+                            return ExecutionResult.Success();
+                    }
+                }
             }
-
-            return result == 0 ? ExecutionResult.Success() : ExecutionResult.Failed("条件判断失败");
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"检测/条件判断异常: {ex.Message}", ex);
+                return ExecutionResult.Failed($"执行异常: {ex.Message}");
+            }
         }
+        
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteSaveReport(ChildModel step)
         {
             var param = ConvertParameter<Parameter_SaveReport>(step.StepParameter);
@@ -276,6 +376,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("报表保存失败");
         }
 
+        /// <summary>
+        /// 读入取报表单元格
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteReadCells(ChildModel step)
         {
             var param = ConvertParameter<Parameter_ReadCells>(step.StepParameter);
@@ -285,6 +389,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return (bool)result ? ExecutionResult.Success() : ExecutionResult.Failed("单元格读取失败");
         }
 
+        /// <summary>
+        /// 写报表单元格
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteWriteCells(ChildModel step)
         {
             var param = ConvertParameter<Parameter_WriteCells>(step.StepParameter);

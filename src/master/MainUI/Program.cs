@@ -2,7 +2,6 @@
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Services;
-using MainUI.Procedure.DSL.LogicalConfiguration.Methods;
 using MainUI.Service;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -239,7 +238,6 @@ namespace MainUI
             services.AddSingleton<VariableMethods>();
             services.AddSingleton<PLCMethods>();
             services.AddSingleton<DetectionMethods>();
-            services.AddSingleton<FlowControlMethods>();
             services.AddSingleton<ReportMethods>();
             services.AddSingleton<VariableAssignmentMethods>();
 
