@@ -113,7 +113,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     // 步骤间延时（可选）
                     if (_isExecuting)
                     {
-                        await Task.Delay(50); // 50ms延时，可以配置
+                        await Task.Delay(50); // 50ms延时
                     }
                 }
 

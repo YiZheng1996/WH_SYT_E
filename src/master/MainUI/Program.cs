@@ -233,7 +233,7 @@ namespace MainUI
             // 全局变量管理器
             services.AddSingleton<GlobalVariableManager>();
 
-            // DSL方法类注册
+            // 工具模块方法类注册
             services.AddSingleton<SystemMethods>();
             services.AddSingleton<VariableMethods>();
             services.AddSingleton<PLCMethods>();

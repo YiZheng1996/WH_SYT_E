@@ -1,5 +1,4 @@
-﻿using MainUI.LogicalConfiguration;
-using MainUI.LogicalConfiguration.Services;
+﻿using MainUI.LogicalConfiguration.Services;
 
 namespace MainUI.LogicalConfiguration.LogicalManager
 {
