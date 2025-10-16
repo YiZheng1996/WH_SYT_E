@@ -54,7 +54,7 @@ namespace MainUI.LogicalConfiguration.Services
                 Form form = null;
 
                 // 根据窗体名称创建对应的窗体
-                switch (formName.ToLowerInvariant())
+                switch (formName.ToUpperInvariant())
                 {
                     case "变量定义":
                         form = CreateForm<Form_DefineVar>();
@@ -62,13 +62,13 @@ namespace MainUI.LogicalConfiguration.Services
                     case "变量赋值":
                         form = CreateForm<Form_VariableAssignment>();
                         break;
-                    case "plc读取":
+                    case "读取PLC":
                         form = CreateForm<Form_ReadPLC>();
                         break;
-                    case "plc写入":
+                    case "写入PLC":
                         form = CreateForm<Form_WritePLC>();
                         break;
-                    case "延时工具":
+                    case "延时等待":
                         form = CreateForm<Form_DelayTime>();
                         break;
                     case "读取单元格":
@@ -80,10 +80,10 @@ namespace MainUI.LogicalConfiguration.Services
                     case "保存报表":
                         form = CreateForm<Form_SaveReport>();
                         break;
-                    case "系统提示":
+                    case "消息通知":
                         form = CreateForm<Form_SystemPrompt>();
                         break;
-                    case "检测工具":
+                    case "条件判断":
                         form = CreateForm<Form_Detection>();
                         break;
                     default:

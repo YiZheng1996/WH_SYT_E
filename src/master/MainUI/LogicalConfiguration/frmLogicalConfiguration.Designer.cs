@@ -14,8 +14,11 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing && (components != null) && _workflowState != null)
             {
+                _workflowState.StepAdded -= OnStepAdded;
+                _workflowState.StepRemoved -= OnStepRemoved;
+                _workflowState.StepsChanged -= OnStepsChanged;
                 components.Dispose();
             }
             base.Dispose(disposing);
@@ -922,7 +925,7 @@
         private Sunny.UI.UIPanel pnlButtons;
         private Sunny.UI.UISymbolButton btnExecute;
         private ImageList imageList1;
-        private UISymbolButton btnVariableDefine; 
+        private UISymbolButton btnVariableDefine;
         private DataGridViewTextBoxColumn ColStepNumber;
         private DataGridViewTextBoxColumn ColStepName;
         private DataGridViewTextBoxColumn ColStepType;
@@ -933,5 +936,6 @@
         private UISymbolButton BtnSystemParams;
         private UISymbolButton BtnVariableMonitor;
         private UISymbolButton BtnPointDefine;
+
     }
 }

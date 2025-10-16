@@ -151,16 +151,16 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 return step.StepName switch
                 {
                     // 系统工具
-                    "延时工具" => await ExecuteDelayTime(step),
-                    "提示工具" => await ExecuteSystemPrompt(step),
+                    "延时等待" => await ExecuteDelayTime(step),
+                    "消息通知" => await ExecuteSystemPrompt(step),
 
                     // 变量管理
                     "变量定义" or "试验参数" => await ExecuteDefineVar(step),
                     "变量赋值" => await ExecuteVariableAssignment(step),
 
                     // PLC通信
-                    "PLC读取" => await ExecuteReadPLC(step),
-                    "PLC写入" => await ExecuteWritePLC(step),
+                    "读取PLC" => await ExecuteReadPLC(step),
+                    "写入PLC" => await ExecuteWritePLC(step),
 
                     // 检测工具
                     "检测工具" => await ExecuteDetection(step),
@@ -169,7 +169,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "条件判断" => await ExecuteCondition(step),
 
                     // 报表工具
-                    "保存报表" => await ExecuteSaveReport(step),
+                    //"保存报表" => await ExecuteSaveReport(step),
                     "读取单元格" => await ExecuteReadCells(step),
                     "写入单元格" => await ExecuteWriteCells(step),
 

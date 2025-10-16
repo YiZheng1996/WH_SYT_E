@@ -26,6 +26,9 @@ namespace MainUI.Procedure
         private readonly DataGridViewManager _gridManager;
         private StepExecutionManager _executionManager;
         private bool _isExecuting = false;
+
+        // 添加菜单管理器
+        private StepContextMenuManager _menuManager;
         #endregion
 
         #region 构造函数
@@ -67,17 +70,21 @@ namespace MainUI.Procedure
                 // 初始化变量
                 InitializeVariables();
 
+                // 使用服务创建DataGridView管理器
+                _gridManager = new DataGridViewManager(ProcessDataGridView);
+
+                // 使用服务创建菜单管理器
+                _menuManager = new StepContextMenuManager(
+                    ProcessDataGridView, _workflowState, _gridManager, _logger, this);
+
+                // 设置事件处理程序，先注册事件，再加载数据
+                RegisterEventHandlers();
+
                 // 加载已保存的步骤到DataGridView
                 LoadStepsToGrid();
 
                 // 加载工具箱
                 LoadTreeViewData();
-
-                // 使用服务创建DataGridView管理器
-                _gridManager = new DataGridViewManager(ProcessDataGridView, _workflowState);
-
-                // 设置事件处理程序
-                RegisterEventHandlers();
 
                 _logger.LogInformation("工作流配置窗体初始化完成");
             }
@@ -88,12 +95,6 @@ namespace MainUI.Procedure
                 throw; // 重新抛出异常，让调用方处理
             }
         }
-
-        #endregion
-
-        #region 初始化方法
-
-
         #endregion
 
         #region 初始化方法
@@ -110,6 +111,7 @@ namespace MainUI.Procedure
                 _workflowState.VariableRemoved += OnVariableRemoved;
                 _workflowState.StepAdded += OnStepAdded;
                 _workflowState.StepRemoved += OnStepRemoved;
+                _workflowState.StepsChanged += OnStepsChanged;
 
                 // 订阅ToolTreeView的事件
                 ToolTreeView.ItemDrag += ToolTreeView_ItemDrag;
@@ -145,19 +147,19 @@ namespace MainUI.Procedure
             try
             {
                 var config = await JsonManager.GetOrCreateConfigAsync();
+
                 // 找到当前项点的 Parent
                 var parent = config.Form.FirstOrDefault(p =>
                     p.ModelTypeName == _workflowState.ModelTypeName &&
                     p.ModelName == _workflowState.ModelName &&
                     p.ItemName == _workflowState.ItemName);
 
-                if (parent?.ChildSteps != null)
+                // 先清空数据源
+                _workflowState.ClearSteps();
+                
+                if (parent?.ChildSteps != null && parent.ChildSteps.Count > 0)
                 {
-                    // 清空临时数据和网格
-                    _workflowState.ClearSteps();
-                    _gridManager.Clears();
-
-                    // 加载数据到临时存储和网格
+                    // 批量加载到数据源（会触发事件）
                     foreach (var step in parent.ChildSteps)
                     {
                         _workflowState.AddStep(new ChildModel
@@ -168,6 +170,14 @@ namespace MainUI.Procedure
                             StepParameter = step.StepParameter
                         });
                     }
+
+                    _logger.LogInformation("成功加载 {Count} 个步骤", parent.ChildSteps.Count);
+                }
+                else
+                {
+                    // 如果没有数据，手动刷新UI显示空表格
+                    _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+                    _logger.LogInformation("没有找到已保存的步骤数据");
                 }
             }
             catch (Exception ex)
@@ -180,18 +190,6 @@ namespace MainUI.Procedure
         #endregion
 
         #region 工具箱初始化
-
-        /// <summary>
-        /// 加载示例数据
-        /// </summary>
-        private void LoadSampleData()
-        {
-            // 加载TreeView数据
-            LoadTreeViewData();
-
-            // 加载DataGridView数据
-            LoadDataGridViewData();
-        }
 
         /// <summary>
         /// 加载TreeView数据
@@ -281,6 +279,76 @@ namespace MainUI.Procedure
             }
         }
 
+        #endregion
+
+        #region 右键菜单功能
+
+        #region 右键菜单初始化
+
+
+        #endregion
+
+        /// <summary>
+        /// 删除选中的步骤
+        /// </summary>
+        private void DeleteSelectedStep()
+        {
+            try
+            {
+                // 获取选中的行索引
+                int selectIndex = _gridManager.GetSelectedRowIndex();
+
+                if (selectIndex < 0)
+                {
+                    MessageHelper.MessageOK("请先选择要删除的步骤！", TType.Warn);
+                    return;
+                }
+
+                // 确认删除
+                if (MessageHelper.MessageYes(this, "确定要删除选中的步骤吗？") != DialogResult.OK)
+                {
+                    return;
+                }
+
+                _logger.LogDebug("删除步骤，索引: {Index}", selectIndex);
+
+                // 只操作数据层，UI更新由事件触发
+                if (_workflowState.RemoveStepAt(selectIndex))
+                {
+                    _logger.LogInformation("步骤删除成功，索引: {Index}", selectIndex);
+                }
+                else
+                {
+                    _logger.LogWarning("步骤删除失败，索引: {Index}", selectIndex);
+                    MessageHelper.MessageOK("删除步骤失败！", TType.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "删除步骤时发生错误");
+                MessageHelper.MessageOK($"删除步骤错误：{ex.Message}", TType.Error);
+            }
+        }
+
+        private void MenuItemDelete_Click(object sender, EventArgs e)
+        {
+            DeleteSelectedStep();
+        }
+
+        private void MenuItemInsert_Click(object sender, EventArgs e)
+        {
+            // TODO: 实现插入逻辑
+        }
+
+        private void MenuItemMoveUp_Click(object sender, EventArgs e)
+        {
+            // TODO: 实现上移逻辑
+        }
+
+        private void MenuItemMoveDown_Click(object sender, EventArgs e)
+        {
+            // TODO: 实现下移逻辑
+        }
         #endregion
 
         #region 变量初始化
@@ -407,7 +475,7 @@ namespace MainUI.Procedure
                     StepParameter = 0
                 };
 
-                // 添加步骤
+                // 只操作数据层，UI更新由事件触发
                 _workflowState.AddStep(newStep);
 
                 _logger.LogInformation("步骤添加成功: {StepName}", stepName);
@@ -416,25 +484,6 @@ namespace MainUI.Procedure
             {
                 _logger.LogError(ex, "添加步骤时发生错误: {StepName}", stepName);
                 MessageHelper.MessageOK($"添加步骤错误：{ex.Message}", TType.Error);
-            }
-        }
-
-
-        // 删除步骤按钮点击事件处理
-        private void toolDeleteStep_Click(object sender, EventArgs e)
-        {
-            int selectIndex = _gridManager.SelectedRows();
-            if (selectIndex >= 0)
-            {
-                if (_workflowState.RemoveStepAt(selectIndex))
-                {
-                    // 重新排序工作流状态中的步骤号
-                    var steps = _workflowState.GetSteps();
-                    for (int i = 0; i < steps.Count; i++)
-                    {
-                        steps[i].StepNum = i + 1;
-                    }
-                }
             }
         }
 
@@ -451,33 +500,14 @@ namespace MainUI.Procedure
                     return;
                 }
 
-                if (index >= ProcessDataGridView.Rows.Count) return;
+                // 使用 DataGridViewManager 更新UI
+                _gridManager.UpdateRowStatus(index, step.Status);
 
-                var row = ProcessDataGridView.Rows[index];
-
-                // 更新状态显示（不同颜色表示不同状态）
-                switch (step.Status)
-                {
-                    case 0: // 未执行
-                        row.DefaultCellStyle.BackColor = Color.White;
-                        break;
-                    case 1: // 执行中
-                        row.DefaultCellStyle.BackColor = Color.Yellow;
-                        break;
-                    case 2: // 成功
-                        row.DefaultCellStyle.BackColor = Color.LightGreen;
-                        break;
-                    case 3: // 失败
-                        row.DefaultCellStyle.BackColor = Color.LightPink;
-                        break;
-                }
-
-                // 刷新显示
-                ProcessDataGridView.Refresh();
+                _logger.LogDebug("更新步骤状态: Index={Index}, Status={Status}", index, step.Status);
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error("更新步骤状态显示错误", ex);
+                _logger.LogError(ex, "更新步骤状态时发生错误");
             }
         }
         #endregion
@@ -556,14 +586,17 @@ namespace MainUI.Procedure
             {
                 _logger.LogDebug("步骤已添加: {StepName}", step.StepName);
 
-                // 在UI线程上更新DataGridView
+                // 确保在UI线程上执行
                 if (InvokeRequired)
                 {
                     Invoke(new Action<ChildModel>(OnStepAdded), step);
                     return;
                 }
 
-                _gridManager.AddRow(step.StepName);
+                // 从数据源刷新整个表格，确保数据一致性
+                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+
+                _logger.LogInformation("UI已更新：步骤 {StepName} 添加成功", step.StepName);
             }
             catch (Exception ex)
             {
@@ -580,18 +613,49 @@ namespace MainUI.Procedure
             {
                 _logger.LogDebug("步骤已移除: {StepName}", step.StepName);
 
-                // 在UI线程上更新DataGridView
+                // 确保在UI线程上执行
                 if (InvokeRequired)
                 {
                     Invoke(new Action<ChildModel>(OnStepRemoved), step);
                     return;
                 }
 
-                _gridManager.DeleteSelectedRow();
+                // 从数据源刷新整个表格，确保数据一致性
+                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+
+                _logger.LogInformation("UI已更新：步骤 {StepName} 移除成功", step.StepName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "处理步骤移除事件时发生错误");
+            }
+        }
+
+        /// <summary>
+        /// 批量步骤变更事件处理 - UI自动刷新
+        /// 用于处理 ClearSteps、批量插入等操作
+        /// </summary>
+        private void OnStepsChanged()
+        {
+            try
+            {
+                _logger.LogDebug("步骤集合已发生批量变更");
+
+                // 确保在UI线程上执行
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(OnStepsChanged));
+                    return;
+                }
+
+                // 从数据源刷新整个表格
+                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+
+                _logger.LogInformation("UI已更新：步骤集合刷新完成");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "处理批量步骤变更事件时发生错误");
             }
         }
 
@@ -642,7 +706,7 @@ namespace MainUI.Procedure
                 if (e.RowIndex >= 0)
                 {
                     var row = ProcessDataGridView.Rows[e.RowIndex];
-                    string stepName = row.Cells[0].Value?.ToString();
+                    string stepName = row.Cells[1].Value?.ToString();
 
                     if (!string.IsNullOrEmpty(stepName))
                     {
@@ -665,7 +729,7 @@ namespace MainUI.Procedure
 
         #endregion
 
-        #region 按钮点击事件处理
+        #region 点击事件处理
 
         /// <summary>
         /// DataGridView选择改变事件
@@ -727,7 +791,6 @@ namespace MainUI.Procedure
 
                 _logger.LogInformation("工作流配置保存成功");
                 MessageHelper.MessageOK("保存成功！", TType.Success);
-                Close();
             }
             catch (Exception ex)
             {
@@ -811,7 +874,6 @@ namespace MainUI.Procedure
             this.Close();
         }
 
-
         private void BtnGeneral_Click(object sender, EventArgs e)
         {
             // 打开窗体
@@ -820,11 +882,9 @@ namespace MainUI.Procedure
             _formService.OpenFormByName(this, button.Text, this);
         }
 
-
         #endregion
 
         #region 辅助方法
-
         /// <summary>
         /// 更新步骤显示
         /// </summary>
@@ -890,31 +950,21 @@ namespace MainUI.Procedure
         }
 
         /// <summary>
-        /// 开始执行
+        /// 处理键盘快捷键
         /// </summary>
-        private void StartExecution()
+        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
-            _isExecuting = true;
-            btnExecute.Text = "停止执行";
-            btnExecute.BackColor = ErrorRed;
+            // 如果焦点在 DataGridView 上，让菜单管理器处理快捷键
+            if (ProcessDataGridView.Focused)
+            {
+                if (_menuManager.HandleKeyDown(keyData))
+                {
+                    return true;
+                }
+            }
 
-            AppendLog($"[{DateTime.Now:HH:mm:ss}] 开始执行流程...");
-
-            // 这里添加实际的执行逻辑
+            return base.ProcessCmdKey(ref msg, keyData);
         }
-
-        /// <summary>
-        /// 停止执行
-        /// </summary>
-        private void StopExecution()
-        {
-            _isExecuting = false;
-            btnExecute.Text = "执行流程";
-            btnExecute.BackColor = PrimaryBlue;
-
-            AppendLog($"[{DateTime.Now:HH:mm:ss}] 流程执行已停止");
-        }
-
         #endregion
 
         #region 资源释放

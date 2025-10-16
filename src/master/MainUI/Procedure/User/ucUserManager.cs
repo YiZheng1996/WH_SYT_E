@@ -23,7 +23,11 @@ namespace MainUI.Procedure.User
                new Column("Username","用户名"){ Align = ColumnAlign.Center },
                new Column("RoleName","权限名称"){ Align = ColumnAlign.Center },
            ];
-            Tables.DataSource = bLL.GetUsers();
+
+            // 获取所有用户并过滤掉admin（ID=1）
+            var allUsers = bLL.GetUsers();
+            var filteredUsers = allUsers.Where(u => u.ID != 1).ToList();
+            Tables.DataSource = filteredUsers;
         }
 
 

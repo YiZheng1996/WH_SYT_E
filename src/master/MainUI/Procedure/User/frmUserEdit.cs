@@ -24,7 +24,14 @@
         void InitRadioButton()
         {
             RoleBLL roleBLL = new();
-            CboRole.DataSource = roleBLL.GetRoles();
+            var allRoles = roleBLL.GetRoles();
+
+            // 过滤系统管理员角色
+            var filteredRoles = allRoles
+                .Where(r => r.ID != 1 && r.RoleName != "系统管理员")
+                .ToList();
+
+            CboRole.DataSource = filteredRoles;
             CboRole.DisplayMember = "RoleName";
             CboRole.ValueMember = "ID";
         }

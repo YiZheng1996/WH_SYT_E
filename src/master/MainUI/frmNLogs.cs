@@ -35,8 +35,8 @@ namespace MainUI
 
                 // 绑定到下拉框
                 cboType.DataSource = logTypes;
-                cboType.DisplayMember = "Description";  // 显示中文描述
-                cboType.ValueMember = "Name";           // 值为枚举名称(英文)
+                cboType.DisplayMember = "DisplayName";  // 显示中文描述
+                cboType.ValueMember = "Value";           // 值为枚举名称(英文)
 
                 // 默认选中"全部"
                 cboType.SelectedIndex = 0;

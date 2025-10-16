@@ -55,11 +55,10 @@ namespace MainUI.LogicalConfiguration.Forms
 
         // 依赖注入构造函数（推荐在运行时使用）
         protected BaseParameterForm(IWorkflowStateService workflowState,
-            Microsoft.Extensions.Logging.ILogger logger,
-            IPLCManager plcManager = null)
+            Microsoft.Extensions.Logging.ILogger logger)
         {
             _workflowState = workflowState ?? throw new ArgumentNullException(nameof(workflowState));
-            _plcManager = plcManager ?? throw new ArgumentNullException(nameof(plcManager));
+            _plcManager = Program.ServiceProvider?.GetService<IPLCManager>();
             _globalVariable = Program.ServiceProvider?.GetService<GlobalVariableManager>();
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }

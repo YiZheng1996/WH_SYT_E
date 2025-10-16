@@ -28,15 +28,13 @@ namespace MainUI.CurrencyHelper
         /// </summary>
         public static List<EnumItem> GetEnumItems<T>() where T : System.Enum
         {
-            return System.Enum.GetValues(typeof(T))
-                .Cast<T>()
-                .Select(e => new EnumItem
-                {
-                    Value = Convert.ToInt32(e),
-                    Name = e.ToString(),
-                    Description = e.GetDescription()
-                })
-                .ToList();
+            return [.. Enum.GetValues(typeof(T))
+              .Cast<T>()
+              .Select(e => new EnumItem
+              {
+                  Value = e,
+                  DisplayName = e.GetDescription()
+              })];
         }
     }
 
@@ -45,19 +43,12 @@ namespace MainUI.CurrencyHelper
     /// </summary>
     public class EnumItem
     {
-        /// <summary>
-        /// 枚举值
-        /// </summary>
-        public int Value { get; set; }
+        public object Value { get; set; }
+        public string DisplayName { get; set; }
 
-        /// <summary>
-        /// 枚举名称(英文)
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// 枚举描述(中文)
-        /// </summary>
-        public string Description { get; set; }
+        public override string ToString()
+        {
+            return DisplayName;
+        }
     }
 }

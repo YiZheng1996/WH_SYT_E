@@ -15,7 +15,11 @@ namespace MainUI.Procedure.User
                 new Column("RoleName","角色名称"){ Align = ColumnAlign.Center  },
                 new Column("Describe","角色描述"){ Align = ColumnAlign.Center  },
            ];
-            Tables.DataSource = roleBLL.GetRoles();
+
+            // 获取所有角色并过滤系统管理员（ID=1）
+            var allRoles = roleBLL.GetRoles();
+            var filteredRoles = allRoles.Where(r => r.ID != 1).ToList();
+            Tables.DataSource = filteredRoles;
         }
 
         private void LoadData(RoleModel model)
@@ -40,6 +44,13 @@ namespace MainUI.Procedure.User
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
+            // 系统管理员角色保护
+            if (roleModel.ID == 1)
+            {
+                MessageHelper.MessageOK("系统管理员角色不能删除！", TType.Error);
+                return;
+            }
+
             var DialogResult = MessageHelper.MessageYes("是否删除选中记录？", TType.Warn);
             if (DialogResult == DialogResult.OK)
             {

@@ -276,6 +276,12 @@ namespace MainUI.LogicalConfiguration.Services
         /// </summary>
         event Action<ChildModel> StepRemoved;
 
+        /// <summary>
+        /// 当步骤集合发生批量变更时触发（用于批量操作后刷新UI）
+        /// 使用场景：ClearSteps、批量插入、批量排序等
+        /// </summary>
+        event Action StepsChanged;
+
         #endregion
 
         #region 状态管理和诊断

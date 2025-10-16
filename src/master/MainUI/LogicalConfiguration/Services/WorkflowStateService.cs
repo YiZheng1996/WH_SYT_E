@@ -304,13 +304,19 @@ namespace MainUI.LogicalConfiguration.Services
                 _stepsLock.ExitWriteLock();
             }
 
-            // 只有真正移除了才触发事件
+            // 在锁外触发事件，避免死锁
             if (removed)
             {
                 OnStepRemoved(step);
             }
 
             return removed;
+        }
+
+        // 触发批量变更事件
+        protected virtual void OnStepsChanged()
+        {
+            StepsChanged?.Invoke();
         }
 
         /// <summary>
@@ -323,26 +329,33 @@ namespace MainUI.LogicalConfiguration.Services
         /// </summary>
         public bool RemoveStepAt(int index)
         {
+            ChildModel removedStep = null;
+            bool removed = false;
+
             _stepsLock.EnterWriteLock();
             try
             {
                 // 边界检查
                 if (index >= 0 && index < _steps.Count)
                 {
-                    var step = _steps[index];  // 保存引用用于事件通知
+                    // 保存引用，用于事件通知
+                    removedStep = _steps[index];
                     _steps.RemoveAt(index);
-
-                    // 在锁内触发事件，因为我们需要 step 对象
-                    // 但要小心事件处理程序的执行时间
-                    OnStepRemoved(step);
-                    return true;
+                    removed = true;
                 }
-                return false;
             }
             finally
             {
                 _stepsLock.ExitWriteLock();
             }
+
+            // 在锁外触发事件，事件处理可以安全地调用 GetSteps()
+            if (removed && removedStep != null)
+            {
+                OnStepRemoved(removedStep);
+            }
+
+            return removed;
         }
 
         /// <summary>
@@ -363,8 +376,8 @@ namespace MainUI.LogicalConfiguration.Services
                 _stepsLock.ExitWriteLock();
             }
 
-            // 可以考虑添加一个 StepsCleared 事件
-            // OnStepsCleared();
+            // 触发批量变更事件，而不是单个移除事件
+            OnStepsChanged();
         }
 
         /// <summary>
@@ -491,6 +504,7 @@ namespace MainUI.LogicalConfiguration.Services
                 _variablesLock.ExitWriteLock();
             }
 
+            // 在锁外触发事件
             OnVariableAdded(variable);
         }
 
@@ -515,6 +529,7 @@ namespace MainUI.LogicalConfiguration.Services
                 _variablesLock.ExitWriteLock();
             }
 
+            // 在锁外触发事件
             if (removed)
             {
                 OnVariableRemoved(variable);
@@ -791,6 +806,11 @@ namespace MainUI.LogicalConfiguration.Services
         /// 当步骤被移除时触发
         /// </summary>
         public event Action<ChildModel> StepRemoved;
+
+        /// <summary>
+        /// 批量变更事件
+        /// </summary>
+        public event Action StepsChanged;
 
         /// <summary>
         /// 触发步骤序号变更事件的安全方法

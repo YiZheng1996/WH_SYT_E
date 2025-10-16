@@ -38,7 +38,14 @@ namespace MainUI.Procedure.User
             try
             {
                 RoleBLL roleBLL = new();
-                cboRole.DataSource = roleBLL.GetRoles();
+                var allRoles = roleBLL.GetRoles();
+
+                // 过滤掉系统管理员角色（ID=1或名称为"系统管理员"）
+                var filteredRoles = allRoles
+                    .Where(r => r.ID != 1 && r.RoleName != "系统管理员")
+                    .ToList();
+
+                cboRole.DataSource = filteredRoles;
                 cboRole.DisplayMember = "RoleName";
                 cboRole.ValueMember = "ID";
             }

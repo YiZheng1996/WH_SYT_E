@@ -124,7 +124,7 @@ namespace MainUI.LogicalConfiguration.Forms
             IWorkflowStateService workflowState,
             ILogger<Form_VariableAssignment> logger,
             IPLCManager pLcManager)
-            : base(workflowState, logger, pLcManager)
+            : base(workflowState, logger)
         {
             InitializeComponent();
             InitializeForm();
