@@ -7,19 +7,9 @@
     public class Parameter_WriteCells
     {
         /// <summary>
-        /// Excel文件路径
-        /// </summary>
-        public string FilePath { get; set; }
-
-        /// <summary>
         /// 工作表名称(可选,为空则使用第一个工作表)
         /// </summary>
         public string SheetName { get; set; }
-
-        /// <summary>
-        /// 写入完成后是否自动保存
-        /// </summary>
-        public bool AutoSave { get; set; } = true;
 
         /// <summary>
         /// 写入项列表

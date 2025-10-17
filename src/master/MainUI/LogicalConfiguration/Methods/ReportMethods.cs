@@ -69,22 +69,23 @@ namespace MainUI.LogicalConfiguration.Methods
             {
                 await Task.CompletedTask;
 
-                if (string.IsNullOrWhiteSpace(param.CellAddress))
-                    throw new ArgumentException("单元格地址不能为空");
-
-                // 使用 ReportService 获取报表控件
-                var value = ReportService.InvokeOnReportControl(report =>
+                foreach (var param in param.ReadItems)
                 {
-                    return report.Read(param.CellAddress);
-                });
+                    // 使用 ReportService 获取报表控件
+                    var value = ReportService.InvokeOnReportControl(report =>
+                    {
+                        return report.Read(param.CellAddress);
+                    });
 
-                NlogHelper.Default.Info($"成功读取单元格 {param.CellAddress}: {value}");
-                return value;
+                    NlogHelper.Default.Info($"成功读取单元格 {param.CellAddress}: {value}");
+                }
+                return default;
+
             }, (object)null);
         }
 
         /// <summary>
-        /// 写入单元格方法 - 方案2版本
+        /// 写入单元格方法
         /// 使用 ReportExpressionHelper 计算表达式
         /// </summary>
         public async Task<bool> WriteCells(Parameter_WriteCells param)

@@ -204,9 +204,8 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 var param = new Parameter_WriteCells
                 {
-                    FilePath = txtFilePath.Text?.Trim(),
                     SheetName = txtSheetName.Text?.Trim(),
-                    Items = new List<WriteCellItem>()
+                    Items = []
                 };
 
                 foreach (DataGridViewRow row in DataGridViewDefineVar.Rows)
@@ -261,8 +260,6 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 _isLoading = true;
                 _currentParameter = param ?? new Parameter_WriteCells();
-
-                txtFilePath.Text = _currentParameter.FilePath ?? "";
                 txtSheetName.Text = _currentParameter.SheetName ?? "Sheet1";
 
                 DataGridViewDefineVar.Rows.Clear();
