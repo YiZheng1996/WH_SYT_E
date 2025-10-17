@@ -53,7 +53,7 @@
             BtnSave.TabIndex = 7;
             BtnSave.Text = "保存";
             BtnSave.TipsFont = new Font("微软雅黑", 12F);
-            //BtnSave.Click += BtnSave_Click;
+            BtnSave.Click += BtnSave_Click;
             // 
             // txtTime
             // 
@@ -70,10 +70,10 @@
             txtTime.Font = new Font("宋体", 15F, FontStyle.Regular, GraphicsUnit.Point, 134);
             txtTime.IntValue = 200;
             txtTime.Location = new Point(110, 77);
-            txtTime.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            txtTime.Margin = new Padding(4, 5, 4, 5);
             txtTime.MinimumSize = new Size(1, 16);
             txtTime.Name = "txtTime";
-            txtTime.Padding = new System.Windows.Forms.Padding(5);
+            txtTime.Padding = new Padding(5);
             txtTime.RectColor = Color.White;
             txtTime.ScrollBarColor = Color.FromArgb(140, 140, 140);
             txtTime.ScrollBarStyleInherited = false;

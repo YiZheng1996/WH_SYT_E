@@ -1,15 +1,30 @@
 ﻿namespace MainUI.LogicalConfiguration.Parameter
 {
     /// <summary>
-    /// 写入单元格参数类 - 灵活版本
+    /// 写入单元格参数类
     /// 支持固定值、变量、表达式等多种数据源
     /// </summary>
     public class Parameter_WriteCells
     {
         /// <summary>
+        /// Excel文件路径
+        /// </summary>
+        public string FilePath { get; set; }
+
+        /// <summary>
+        /// 工作表名称(可选,为空则使用第一个工作表)
+        /// </summary>
+        public string SheetName { get; set; }
+
+        /// <summary>
+        /// 写入完成后是否自动保存
+        /// </summary>
+        public bool AutoSave { get; set; } = true;
+
+        /// <summary>
         /// 写入项列表
         /// </summary>
-        public List<WriteCellItem> Items { get; set; } = new List<WriteCellItem>();
+        public List<WriteCellItem> Items { get; set; } = [];
     }
 
     /// <summary>

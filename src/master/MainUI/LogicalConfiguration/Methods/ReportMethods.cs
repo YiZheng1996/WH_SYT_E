@@ -1,23 +1,39 @@
 ﻿using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
+using MainUI.Service;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
-    /// 报表工具方法集合 - 灵活版本
-    /// 支持固定值、变量、表达式、系统属性等多种数据源
+    /// 报表工具方法集合
+    /// 使用封装后的 ReportExpressionHelper
     /// </summary>
-    public class ReportMethods(GlobalVariableManager globalVariableManager) : DSLMethodBase
+    public class ReportMethods : DSLMethodBase
     {
         public override string Category => "报表工具";
         public override string Description => "提供Excel报表读写等功能";
 
         // 变量管理器
-        private readonly GlobalVariableManager _globalVariableManager = 
-            globalVariableManager ?? throw new ArgumentNullException(nameof(globalVariableManager));
+        private readonly GlobalVariableManager _globalVariableManager;
+
+        // 报表表达式助手
+        private readonly Lazy<ReportExpressionHelper> _expressionHelper;
+
+        #region 构造函数
+
+        public ReportMethods(GlobalVariableManager globalVariableManager)
+        {
+            _globalVariableManager = globalVariableManager ?? throw new ArgumentNullException(nameof(globalVariableManager));
+
+            // 延迟初始化表达式助手
+            _expressionHelper = new Lazy<ReportExpressionHelper>(() =>
+                new ReportExpressionHelper(_globalVariableManager));
+        }
+
+        #endregion
 
         #region 公共方法
 
@@ -30,13 +46,16 @@ namespace MainUI.LogicalConfiguration.Methods
             {
                 await Task.CompletedTask;
 
-                if (BaseTest.Report == null)
-                    throw new InvalidOperationException("报表控件未初始化");
-
                 if (string.IsNullOrWhiteSpace(param.ReportPath))
                     throw new ArgumentException("报表保存路径不能为空");
 
-                BaseTest.Report.SaveAS(param.ReportPath);
+                // 使用 ReportService 获取报表控件
+                ReportService.InvokeOnReportControl(report =>
+                {
+                    report.SaveAS(param.ReportPath);
+                });
+
+                NlogHelper.Default.Info($"报表已保存到: {param.ReportPath}");
                 return true;
             }, false);
         }
@@ -50,32 +69,40 @@ namespace MainUI.LogicalConfiguration.Methods
             {
                 await Task.CompletedTask;
 
-                if (BaseTest.Report == null)
-                    throw new InvalidOperationException("报表控件未初始化");
-
                 if (string.IsNullOrWhiteSpace(param.CellAddress))
                     throw new ArgumentException("单元格地址不能为空");
 
-                var value = BaseTest.Report.Read(param.CellAddress);
+                // 使用 ReportService 获取报表控件
+                var value = ReportService.InvokeOnReportControl(report =>
+                {
+                    return report.Read(param.CellAddress);
+                });
+
+                NlogHelper.Default.Info($"成功读取单元格 {param.CellAddress}: {value}");
                 return value;
             }, (object)null);
         }
 
         /// <summary>
-        /// 写入单元格方法 - 灵活版本
-        /// 支持多种数据源类型
+        /// 写入单元格方法 - 方案2版本
+        /// 使用 ReportExpressionHelper 计算表达式
         /// </summary>
         public async Task<bool> WriteCells(Parameter_WriteCells param)
         {
             return await ExecuteWithLogging(param, async () =>
             {
-                await Task.CompletedTask;
-
-                if (BaseTest.Report == null)
-                    throw new InvalidOperationException("报表控件未初始化,请确保已加载报表");
-
                 if (param.Items == null || param.Items.Count == 0)
                     throw new ArgumentException("写入项列表不能为空");
+
+                // 检查报表控件是否可用
+                if (!ReportService.IsReportAvailable)
+                {
+                    throw new InvalidOperationException(
+                        "报表控件未初始化,请确保:\n" +
+                        "1. 已在HMI界面加载报表\n" +
+                        "2. UcHMI.Init() 已正确执行\n" +
+                        "3. 报表文件路径正确");
+                }
 
                 // 遍历写入每个单元格
                 foreach (var item in param.Items)
@@ -94,10 +121,13 @@ namespace MainUI.LogicalConfiguration.Methods
                         // 应用格式化(如果有)
                         var formattedValue = ApplyFormatting(value, item.FormatString);
 
-                        // 使用RWReport控件写入单元格
-                        BaseTest.Report.Write(item.CellAddress, formattedValue);
+                        // 使用 ReportService 在UI线程写入单元格
+                        ReportService.InvokeOnReportControl(report =>
+                        {
+                            report.Write(item.CellAddress, formattedValue);
+                        });
 
-                        NlogHelper.Default.Info($"成功写入单元格 {item.CellAddress}: {formattedValue}");
+                        NlogHelper.Default.Info($"成功写入单元格 {item.CellAddress}: {formattedValue} (类型:{item.SourceType})");
                     }
                     catch (Exception ex)
                     {
@@ -132,7 +162,7 @@ namespace MainUI.LogicalConfiguration.Methods
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error($"获取数据源值失败: {ex.Message}", ex);
+                NlogHelper.Default.Error($"获取数据源值失败 (类型:{item.SourceType}): {ex.Message}", ex);
                 return $"[错误:{ex.Message}]";
             }
         }
@@ -150,220 +180,79 @@ namespace MainUI.LogicalConfiguration.Methods
         /// </summary>
         private object GetVariableValue(WriteCellItem item)
         {
+            if (string.IsNullOrWhiteSpace(item.VariableName))
+            {
+                NlogHelper.Default.Warn("变量名为空");
+                return string.Empty;
+            }
+
             try
             {
-                if (string.IsNullOrWhiteSpace(item.VariableName))
+                var variable = _globalVariableManager.FindVariableByName(item.VariableName);
+
+                if (variable == null)
                 {
-                    NlogHelper.Default.Warn("变量名为空");
-                    return string.Empty;
+                    NlogHelper.Default.Warn($"变量未找到: {item.VariableName}");
+                    return $"[变量未找到:{item.VariableName}]";
                 }
 
-                // 从全局变量管理器获取变量值
-                var variable = _globalVariableManager?.FindVariableByName(item.VariableName);
-
-                if (variable != null)
-                {
-                    return variable.VarValue ?? string.Empty;
-                }
-                else
-                {
-                    NlogHelper.Default.Warn($"变量 {item.VariableName} 不存在");
-                    return $"[变量{item.VariableName}不存在]";
-                }
+                NlogHelper.Default.Debug($"获取变量值成功: {item.VariableName} = {variable}");
+                return variable;
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error($"获取变量 {item.VariableName} 失败: {ex.Message}", ex);
-                return $"[获取失败:{ex.Message}]";
+                NlogHelper.Default.Error($"获取变量值失败: {item.VariableName}", ex);
+                return $"[错误:{ex.Message}]";
             }
         }
 
         /// <summary>
-        /// 计算表达式
-        /// 支持变量替换、运算符、函数调用等
+        /// 计算表达式 - 使用 ReportExpressionHelper
         /// </summary>
         private async Task<object> EvaluateExpression(WriteCellItem item)
         {
+            if (string.IsNullOrWhiteSpace(item.Expression))
+            {
+                NlogHelper.Default.Warn("表达式为空");
+                return string.Empty;
+            }
+
             try
             {
-                await Task.CompletedTask;
+                // 使用报表表达式助手计算
+                var result = await _expressionHelper.Value.EvaluateForReportAsync(item.Expression);
 
-                if (string.IsNullOrWhiteSpace(item.Expression))
-                    return string.Empty;
-
-                var expression = item.Expression;
-
-                // 1. 替换变量 {VarName} 为实际值
-                expression = ReplaceVariables(expression);
-
-                // 2. 处理DateTime等系统函数
-                expression = ProcessSystemFunctions(expression);
-
-                // 3. 计算表达式
-                var result = EvaluateSimpleExpression(expression);
-
+                NlogHelper.Default.Debug($"表达式计算成功: {item.Expression} = {result}");
                 return result;
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error($"计算表达式失败: {item.Expression}, 错误: {ex.Message}", ex);
+                NlogHelper.Default.Error($"计算表达式失败: {item.Expression}", ex);
                 return $"[表达式错误:{ex.Message}]";
             }
         }
 
         /// <summary>
-        /// 替换表达式中的变量
-        /// 例如: {Var1} + {Var2} → 10 + 20
-        /// </summary>
-        private string ReplaceVariables(string expression)
-        {
-            // 匹配 {变量名} 格式
-            var pattern = @"\{([^}]+)\}";
-            var matches = Regex.Matches(expression, pattern);
-
-            foreach (Match match in matches)
-            {
-                var varName = match.Groups[1].Value;
-                var varValue = GetVariableValueByName(varName);
-
-                // 替换变量为值
-                expression = expression.Replace(match.Value, varValue?.ToString() ?? "0");
-            }
-
-            return expression;
-        }
-
-        /// <summary>
-        /// 处理系统函数
-        /// 例如: DateTime.Now, DateTime.Now.AddDays(-1)
-        /// </summary>
-        private string ProcessSystemFunctions(string expression)
-        {
-            try
-            {
-                // 处理 DateTime.Now
-                if (expression.Contains("DateTime.Now"))
-                {
-                    // 简单替换 DateTime.Now 为实际值
-                    var now = DateTime.Now;
-
-                    // 检查是否有方法调用
-                    var dateTimePattern = @"DateTime\.Now(\.[A-Za-z]+\([^\)]*\))*";
-                    var match = Regex.Match(expression, dateTimePattern);
-
-                    if (match.Success)
-                    {
-                        var dateTimeExpr = match.Value;
-                        var result = EvaluateDateTimeExpression(dateTimeExpr);
-                        expression = expression.Replace(dateTimeExpr, $"\"{result}\"");
-                    }
-                }
-
-                return expression;
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Warn($"处理系统函数失败: {ex.Message}");
-                return expression;
-            }
-        }
-
-        /// <summary>
-        /// 计算DateTime表达式
-        /// </summary>
-        private string EvaluateDateTimeExpression(string expression)
-        {
-            try
-            {
-                // 示例: DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd")
-                var now = DateTime.Now;
-
-                // 简单的字符串匹配处理
-                if (expression.Contains("AddDays"))
-                {
-                    var daysMatch = Regex.Match(expression, @"AddDays\((-?\d+)\)");
-                    if (daysMatch.Success)
-                    {
-                        var days = int.Parse(daysMatch.Groups[1].Value);
-                        now = now.AddDays(days);
-                    }
-                }
-
-                if (expression.Contains("AddHours"))
-                {
-                    var hoursMatch = Regex.Match(expression, @"AddHours\((-?\d+)\)");
-                    if (hoursMatch.Success)
-                    {
-                        var hours = int.Parse(hoursMatch.Groups[1].Value);
-                        now = now.AddHours(hours);
-                    }
-                }
-
-                // 提取ToString格式
-                var formatMatch = Regex.Match(expression, @"ToString\(""([^""]+)""\)");
-                if (formatMatch.Success)
-                {
-                    var format = formatMatch.Groups[1].Value;
-                    return now.ToString(format);
-                }
-
-                return now.ToString("yyyy-MM-dd HH:mm:ss");
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Warn($"计算DateTime表达式失败: {ex.Message}");
-                return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            }
-        }
-
-        /// <summary>
-        /// 计算简单表达式 (四则运算)
-        /// </summary>
-        private object EvaluateSimpleExpression(string expression)
-        {
-            try
-            {
-                // 如果表达式是纯字符串(带引号),直接返回
-                if (expression.StartsWith("\"") && expression.EndsWith("\""))
-                {
-                    return expression.Trim('"');
-                }
-
-                // 如果包含运算符,尝试计算
-                if (expression.Contains("+") || expression.Contains("-") ||
-                    expression.Contains("*") || expression.Contains("/"))
-                {
-                    // 使用 DataTable.Compute 计算表达式
-                    var dataTable = new System.Data.DataTable();
-                    var result = dataTable.Compute(expression, string.Empty);
-                    return result;
-                }
-
-                // 否则直接返回
-                return expression;
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Warn($"计算表达式失败: {expression}, {ex.Message}");
-                return expression;
-            }
-        }
-
-        /// <summary>
-        /// 获取系统属性值 (通过反射)
-        /// 例如: NewUsers.NewUserInfo.Username
+        /// 获取系统属性值
         /// </summary>
         private object GetSystemPropertyValue(WriteCellItem item)
         {
+            if (string.IsNullOrWhiteSpace(item.PropertyPath))
+            {
+                NlogHelper.Default.Warn("属性路径为空");
+                return string.Empty;
+            }
+
             try
             {
-                if (string.IsNullOrWhiteSpace(item.PropertyPath))
-                    return string.Empty;
+                // 分割属性路径 (例如: NewUsers.NewUserInfo.Username)
+                var parts = item.PropertyPath.Split('.');
 
-                var propertyPath = item.PropertyPath.Trim();
-
-                // 分割属性路径
-                var parts = propertyPath.Split('.');
+                if (parts.Length < 2)
+                {
+                    NlogHelper.Default.Warn($"属性路径格式无效: {item.PropertyPath}");
+                    return $"[路径格式错误]";
+                }
 
                 object currentObject = null;
                 Type currentType = null;
@@ -396,7 +285,9 @@ namespace MainUI.LogicalConfiguration.Methods
                     // 检查是否是方法调用 (例如: ToString("yyyy-MM-dd"))
                     if (propertyName.Contains("("))
                     {
-                        return EvaluateMethodCall(currentObject ?? currentType, propertyName);
+                        var result = EvaluateMethodCall(currentObject ?? currentType, propertyName);
+                        NlogHelper.Default.Debug($"方法调用成功: {item.PropertyPath} = {result}");
+                        return result;
                     }
 
                     // 获取属性或字段
@@ -434,88 +325,56 @@ namespace MainUI.LogicalConfiguration.Methods
                         }
                     }
 
-                    if (currentObject == null)
-                    {
-                        NlogHelper.Default.Warn($"属性值为null: {propertyPath}");
-                        return string.Empty;
-                    }
+                    currentType = currentObject?.GetType();
                 }
 
+                NlogHelper.Default.Debug($"系统属性获取成功: {item.PropertyPath} = {currentObject}");
                 return currentObject ?? string.Empty;
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error($"获取系统属性 {item.PropertyPath} 失败: {ex.Message}", ex);
-                return $"[获取失败:{ex.Message}]";
+                NlogHelper.Default.Error($"获取系统属性失败: {item.PropertyPath}", ex);
+                return $"[错误:{ex.Message}]";
             }
         }
 
         /// <summary>
         /// 执行方法调用
-        /// 例如: ToString("yyyy-MM-dd"), AddDays(-1)
         /// </summary>
-        private object EvaluateMethodCall(object obj, string methodCall)
+        private object EvaluateMethodCall(object target, string methodCall)
         {
             try
             {
-                // 解析方法名和参数
+                // 解析方法名和参数 (例如: ToString("yyyy-MM-dd"))
                 var methodName = methodCall.Substring(0, methodCall.IndexOf('('));
-                var argsString = methodCall.Substring(methodCall.IndexOf('(') + 1);
-                argsString = argsString.TrimEnd(')');
+                var paramsStr = methodCall.Substring(methodCall.IndexOf('(') + 1,
+                    methodCall.LastIndexOf(')') - methodCall.IndexOf('(') - 1);
 
                 // 解析参数
-                var args = new List<object>();
-                if (!string.IsNullOrWhiteSpace(argsString))
-                {
-                    // 简单处理: 去除引号,分割逗号
-                    var argParts = argsString.Split(',');
-                    foreach (var arg in argParts)
-                    {
-                        var trimmedArg = arg.Trim().Trim('"');
-
-                        // 尝试转换为数字
-                        if (int.TryParse(trimmedArg, out int intValue))
-                            args.Add(intValue);
-                        else if (double.TryParse(trimmedArg, out double doubleValue))
-                            args.Add(doubleValue);
-                        else
-                            args.Add(trimmedArg);
-                    }
-                }
+                var parameters = string.IsNullOrWhiteSpace(paramsStr)
+                    ? Array.Empty<object>()
+                    : paramsStr.Split(',').Select(p => p.Trim(' ', '"', '\'')).ToArray();
 
                 // 获取方法
-                Type type = obj is Type t ? t : obj.GetType();
-                var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+                Type type = target is Type t ? t : target.GetType();
+                var method = type.GetMethod(methodName,
+                    (target is Type ? BindingFlags.Public | BindingFlags.Static : BindingFlags.Public | BindingFlags.Instance));
 
-                if (method != null)
+                if (method == null)
                 {
-                    var result = method.Invoke(obj is Type ? null : obj, args.ToArray());
-                    return result;
+                    NlogHelper.Default.Warn($"找不到方法: {type.Name}.{methodName}");
+                    return $"[方法未找到:{methodName}]";
                 }
 
-                NlogHelper.Default.Warn($"找不到方法: {methodName}");
-                return $"[方法不存在:{methodName}]";
+                // 调用方法
+                var result = method.Invoke(target is Type ? null : target, parameters);
+                NlogHelper.Default.Debug($"方法调用成功: {methodCall} = {result}");
+                return result;
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error($"执行方法调用失败: {methodCall}, {ex.Message}", ex);
-                return $"[方法调用失败:{ex.Message}]";
-            }
-        }
-
-        /// <summary>
-        /// 根据变量名获取变量值
-        /// </summary>
-        private object GetVariableValueByName(string varName)
-        {
-            try
-            {
-                var variable = _globalVariableManager?.FindVariableByName(varName);
-                return variable?.VarValue;
-            }
-            catch
-            {
-                return null;
+                NlogHelper.Default.Error($"方法调用失败: {methodCall}", ex);
+                return $"[方法错误:{ex.Message}]";
             }
         }
 
@@ -524,30 +383,45 @@ namespace MainUI.LogicalConfiguration.Methods
         /// </summary>
         private object ApplyFormatting(object value, string formatString)
         {
+            if (value == null || string.IsNullOrWhiteSpace(formatString))
+                return value;
+
             try
             {
-                if (string.IsNullOrWhiteSpace(formatString) || value == null)
-                    return value;
+                // 支持日期、数字等格式化
+                if (value is DateTime dt)
+                {
+                    var formatted = dt.ToString(formatString);
+                    NlogHelper.Default.Debug($"日期格式化: {dt} -> {formatted} (格式:{formatString})");
+                    return formatted;
+                }
 
-                // 数值格式化
-                if (value is double doubleVal)
-                    return doubleVal.ToString(formatString);
+                if (value is decimal dec)
+                {
+                    var formatted = dec.ToString(formatString);
+                    NlogHelper.Default.Debug($"数值格式化: {dec} -> {formatted} (格式:{formatString})");
+                    return formatted;
+                }
 
-                if (value is int intVal)
-                    return intVal.ToString(formatString);
+                if (value is double dbl)
+                {
+                    var formatted = dbl.ToString(formatString);
+                    NlogHelper.Default.Debug($"数值格式化: {dbl} -> {formatted} (格式:{formatString})");
+                    return formatted;
+                }
 
-                if (value is decimal decimalVal)
-                    return decimalVal.ToString(formatString);
-
-                // 日期格式化
-                if (value is DateTime dateVal)
-                    return dateVal.ToString(formatString);
+                if (value is int i)
+                {
+                    var formatted = i.ToString(formatString);
+                    NlogHelper.Default.Debug($"整数格式化: {i} -> {formatted} (格式:{formatString})");
+                    return formatted;
+                }
 
                 return value;
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Warn($"格式化失败: {ex.Message}");
+                NlogHelper.Default.Warn($"格式化失败 (值:{value}, 格式:{formatString}): {ex.Message}");
                 return value;
             }
         }

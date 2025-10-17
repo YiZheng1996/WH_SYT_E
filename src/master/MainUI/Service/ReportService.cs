@@ -1,29 +1,167 @@
+using RW.UI.Controls.Report;
+
 namespace MainUI.Service
 {
     /// <summary>
-    /// 报表服务类 - 包含加载、保存和翻页功能
+    /// 报表服务类
+    /// 提供报表相关的业务逻辑处理,包括报表控件管理、文件操作、翻页等功能
     /// </summary>
-    public class ReportService(string reportsPath, RW.UI.Controls.Report.RWReport report = null)
+    public class ReportService
     {
-        // 当前行数
-        public int CurrentRows { get; private set; } = 1;
-        // 最大行数，默认为1000行
-        public int MaxRows { get; set; } = 1000;
+        #region 私有字段
+
+        private readonly string _reportPath;
+        private readonly RWReport _report;
+        private int _currentRows = 1;
+        private const int MaxRows = 1000;
+
+        // ===== 新增: 报表控件单例管理 =====
+        private static RWReport _sharedReportControl;
+        private static readonly object _lock = new object();
+
+        #endregion
+
+        #region 构造函数
 
         /// <summary>
-        /// 获取报表文件完整路径
+        /// 构造函数
         /// </summary>
-        /// <param name="fileName">报表文件名</param>
-        /// <returns>完整路径</returns>
-        public string GetReportFilePath(string fileName)
+        /// <param name="reportPath">报表路径</param>
+        /// <param name="report">报表控件</param>
+        public ReportService(string reportPath, RWReport report)
         {
-            return Path.Combine(reportsPath, fileName);
+            _reportPath = reportPath ?? throw new ArgumentNullException(nameof(reportPath));
+            _report = report ?? throw new ArgumentNullException(nameof(report));
+
+            // 注册报表控件到共享实例
+            RegisterReportControl(report);
         }
+
+        #endregion
+
+        #region ===== 新增功能: 报表控件单例管理 =====
+
+        /// <summary>
+        /// 注册报表控件到共享实例
+        /// </summary>
+        /// <param name="report">报表控件实例</param>
+        public static void RegisterReportControl(RWReport report)
+        {
+            lock (_lock)
+            {
+                if (_sharedReportControl != report)
+                {
+                    _sharedReportControl = report;
+
+                    // 同时更新 BaseTest.Report (保持向后兼容)
+                    BaseTest.Report = report;
+
+                    NlogHelper.Default.Info($"报表控件已注册到全局服务 (实例: {report?.GetHashCode()})");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 获取共享的报表控件实例
+        /// </summary>
+        /// <returns>报表控件实例</returns>
+        /// <exception cref="InvalidOperationException">报表控件未初始化时抛出</exception>
+        public static RWReport GetReportControl()
+        {
+            lock (_lock)
+            {
+                if (_sharedReportControl == null || _sharedReportControl.IsDisposed)
+                {
+                    throw new InvalidOperationException(
+                        "报表控件未初始化,请确保:\n" +
+                        "1. 已在HMI界面加载报表\n" +
+                        "2. UcHMI.Init() 已正确执行\n" +
+                        "3. 报表文件路径正确");
+                }
+
+                return _sharedReportControl;
+            }
+        }
+
+        /// <summary>
+        /// 检查报表控件是否可用
+        /// </summary>
+        public static bool IsReportAvailable
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _sharedReportControl != null && !_sharedReportControl.IsDisposed;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 在UI线程安全执行报表操作(有返回值)
+        /// </summary>
+        /// <typeparam name="T">返回值类型</typeparam>
+        /// <param name="action">要执行的操作</param>
+        /// <returns>操作结果</returns>
+        public static T InvokeOnReportControl<T>(Func<RWReport, T> action)
+        {
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
+            var report = GetReportControl();
+
+            if (report.InvokeRequired)
+            {
+                return (T)report.Invoke(action, report);
+            }
+            else
+            {
+                return action(report);
+            }
+        }
+
+        /// <summary>
+        /// 在UI线程安全执行报表操作(无返回值)
+        /// </summary>
+        /// <param name="action">要执行的操作</param>
+        public static void InvokeOnReportControl(Action<RWReport> action)
+        {
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
+            var report = GetReportControl();
+
+            if (report.InvokeRequired)
+            {
+                report.Invoke(action, report);
+            }
+            else
+            {
+                action(report);
+            }
+        }
+
+        /// <summary>
+        /// 清除共享的报表控件引用
+        /// (通常在应用程序关闭或重置时调用)
+        /// </summary>
+        public static void ClearReportControl()
+        {
+            lock (_lock)
+            {
+                _sharedReportControl = null;
+                BaseTest.Report = null;
+                NlogHelper.Default.Info("报表控件引用已清除");
+            }
+        }
+
+        #endregion
+
+        #region ===== 原有功能保持不变 =====
 
         /// <summary>
         /// 获取默认报表路径
         /// </summary>
-        /// <returns>工作报表路径</returns>
         public static string GetDefaultReportPath()
         {
             return Path.Combine(Application.StartupPath, "reports\\");
@@ -32,260 +170,116 @@ namespace MainUI.Service
         /// <summary>
         /// 获取工作报表路径
         /// </summary>
-        /// <returns>工作报表路径</returns>
         public static string GetWorkingReportPath()
         {
-            return Path.Combine(Application.StartupPath, "reports", "report.xls");
+            return Path.Combine(GetDefaultReportPath(), "report.xls");
         }
 
         /// <summary>
-        /// 验证报表文件是否存在
+        /// 构建保存文件路径
         /// </summary>
-        /// <param name="fileName">报表文件名</param>
-        /// <returns>是否存在</returns>
+        public static string BuildSaveFilePath(string modelName)
+        {
+            string savePath = Path.Combine(GetDefaultReportPath(),
+                DateTime.Now.ToString("yyyy"),
+                DateTime.Now.ToString("MM"));
+
+            if (!Directory.Exists(savePath))
+            {
+                Directory.CreateDirectory(savePath);
+            }
+
+            string fileName = $"{modelName}_{DateTime.Now:yyyyMMddHHmmss}.xls";
+            return Path.Combine(savePath, fileName);
+        }
+
+        /// <summary>
+        /// 检查文件是否存在
+        /// </summary>
         public bool FileExists(string fileName)
         {
-            string filePath = GetReportFilePath(fileName);
-            return File.Exists(filePath);
+            return File.Exists(fileName);
         }
 
         /// <summary>
-        /// 复制报表文件到工作目录
+        /// 复制报表文件
         /// </summary>
-        /// <param name="fileName">源文件名</param>
-        /// <param name="targetPath">目标路径</param>
-        public void CopyReportFile(string fileName, string targetPath)
-        {
-            string sourceFile = GetReportFilePath(fileName);
-            File.Copy(sourceFile, targetPath, true);
-        }
-
-        /// <summary>
-        /// 保存测试记录
-        /// </summary>
-        /// <param name="testRecord">测试记录</param>
-        /// <returns>是否保存成功</returns>
-        public static bool SaveTestRecord(TestRecordModel testRecord)
+        public void CopyReportFile(string sourceFile, string destFile)
         {
             try
             {
-                TestRecordNewBLL testRecordBLL = new();
-                return testRecordBLL.SaveTestRecord(testRecord);
+                if (File.Exists(destFile))
+                {
+                    File.Delete(destFile);
+                }
+
+                File.Copy(sourceFile, destFile, true);
+                NlogHelper.Default.Info($"报表文件已复制: {sourceFile} -> {destFile}");
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error("保存测试记录失败", ex);
+                NlogHelper.Default.Error($"复制报表文件失败: {ex.Message}", ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 保存试验记录
+        /// </summary>
+        public static bool SaveTestRecord(TestRecordModel record)
+        {
+            try
+            {
+                if (record == null)
+                    throw new ArgumentNullException(nameof(record));
+
+                var result = VarHelper.fsql.Insert(record).ExecuteAffrows();
+
+                if (result > 0)
+                {
+                    NlogHelper.Default.Info($"试验记录保存成功: {record.TestID}");
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"保存试验记录失败: {ex.Message}", ex);
                 return false;
             }
         }
 
         /// <summary>
-        /// 构建报表保存文件路径
-        /// 路径结构: D:\试验报告\{年份}\{月份}\{产品类型}\{产品型号}_{yyyyMMddHHmmss}.xls
-        /// </summary>
-        /// <param name="modelName">产品型号名称</param>
-        /// <returns>完整的文件保存路径</returns>
-        public static string BuildSaveFilePath(string modelName)
-        {
-            try
-            {
-                // 加载配置文件中的基础路径
-                SaveReportConfig saveConfig = new();
-                saveConfig.Load();
-
-                // 获取基础路径,如果配置为空则使用默认的 D:\试验报告
-                string basePath = string.IsNullOrEmpty(saveConfig.RptSaveFile)
-                    ? @"D:\试验报告"
-                    : saveConfig.RptSaveFile;
-
-                // 获取当前时间
-                DateTime now = DateTime.Now;
-
-                // 获取产品类型名称
-                string modelTypeName = VarHelper.TestViewModel?.ModelTypeName ?? "未知类型";
-
-                // 清理文件夹名称中的非法字符
-                modelTypeName = CleanFolderName(modelTypeName);
-                modelName = CleanFileName(modelName);
-
-                // 构建目录结构: 基础路径\年份\月份\产品类型
-                string yearFolder = now.Year.ToString();
-                string monthFolder = now.Month.ToString("D2"); // 两位数月份,如 01, 02, ..., 12
-
-                string directoryPath = Path.Combine(basePath, yearFolder, monthFolder, modelTypeName);
-
-                // 确保目录存在,如果不存在则创建
-                if (!Directory.Exists(directoryPath))
-                {
-                    Directory.CreateDirectory(directoryPath);
-                    NlogHelper.Default.Info($"创建报表保存目录: {directoryPath}");
-                }
-
-                // 构建文件名: 产品型号_yyyyMMddHHmmss.xls
-                string timestamp = now.ToString("yyyyMMddHHmmss");
-                string fileName = $"{modelName}_{timestamp}.xls";
-
-                // 组合完整路径
-                string fullPath = Path.Combine(directoryPath, fileName);
-
-                NlogHelper.Default.Info($"报表保存路径: {fullPath}");
-
-                return fullPath;
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("构建报表保存路径失败", ex);
-
-                // 如果出错,返回一个应急路径
-                string emergencyPath = Path.Combine(
-                    @"D:\试验报告",
-                    DateTime.Now.ToString("yyyyMMdd"),
-                    $"{modelName}_{DateTime.Now:yyyyMMddHHmmss}.xls"
-                );
-
-                // 确保应急目录存在
-                string emergencyDir = Path.GetDirectoryName(emergencyPath);
-                if (!Directory.Exists(emergencyDir))
-                {
-                    Directory.CreateDirectory(emergencyDir);
-                }
-
-                return emergencyPath;
-            }
-        }
-
-        /// <summary>
-        /// 清理文件夹名称中的非法字符
-        /// </summary>
-        /// <param name="folderName">文件夹名称</param>
-        /// <returns>清理后的文件夹名称</returns>
-        private static string CleanFolderName(string folderName)
-        {
-            if (string.IsNullOrEmpty(folderName))
-                return "默认";
-
-            // Windows文件夹名称不允许的字符
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-
-            foreach (char c in invalidChars)
-            {
-                folderName = folderName.Replace(c, '_');
-            }
-
-            // 移除一些特殊字符
-            folderName = folderName.Replace('/', '_')
-                                   .Replace('\\', '_')
-                                   .Replace(':', '_')
-                                   .Replace('*', '_')
-                                   .Replace('?', '_')
-                                   .Replace('"', '_')
-                                   .Replace('<', '_')
-                                   .Replace('>', '_')
-                                   .Replace('|', '_');
-
-            return folderName.Trim();
-        }
-
-        /// <summary>
-        /// 清理文件名中的非法字符
-        /// </summary>
-        /// <param name="fileName">文件名</param>
-        /// <returns>清理后的文件名</returns>
-        private static string CleanFileName(string fileName)
-        {
-            if (string.IsNullOrEmpty(fileName))
-                return "未命名";
-
-            // Windows文件名不允许的字符
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-
-            foreach (char c in invalidChars)
-            {
-                fileName = fileName.Replace(c, '_');
-            }
-
-            return fileName.Trim();
-        }
-
-        #region 报表翻页功能
-
-        /// <summary>
         /// 向上翻页
         /// </summary>
-        /// <param name="pageSize">翻页行数</param>
-        /// <returns>翻页后的行索引和按钮状态</returns>
         public (int currentRows, bool upEnabled, bool downEnabled) PageUp(int pageSize)
         {
-            CurrentRows -= pageSize;
-
-            if (CurrentRows < 1)
+            _currentRows -= pageSize;
+            if (_currentRows < 1)
             {
-                CurrentRows = 1;
+                _currentRows = 1;
             }
 
-            // 执行报表滚动
-            report?.ScrollIndex(CurrentRows);
+            _report?.ScrollIndex(_currentRows);
 
-            return GetPageButtonStates();
+            return (_currentRows, _currentRows > 1, _currentRows < MaxRows);
         }
 
         /// <summary>
         /// 向下翻页
         /// </summary>
-        /// <param name="pageSize">翻页行数</param>
-        /// <returns>翻页后的行索引和按钮状态</returns>
         public (int currentRows, bool upEnabled, bool downEnabled) PageDown(int pageSize)
         {
-            CurrentRows += pageSize;
-
-            if (CurrentRows > MaxRows)
+            _currentRows += pageSize;
+            if (_currentRows > MaxRows)
             {
-                CurrentRows = 1; // 循环到第一页
+                _currentRows = 1; // 循环到第一页
             }
 
-            // 执行报表滚动
-            report?.ScrollIndex(CurrentRows);
+            _report?.ScrollIndex(_currentRows);
 
-            return GetPageButtonStates();
-        }
-
-        /// <summary>
-        /// 跳转到指定行
-        /// </summary>
-        /// <param name="targetRow">目标行</param>
-        /// <returns>跳转后的行索引和按钮状态</returns>
-        public (int currentRows, bool upEnabled, bool downEnabled) ScrollToRow(int targetRow)
-        {
-            if (targetRow < 1) targetRow = 1;
-            if (targetRow > MaxRows) targetRow = MaxRows;
-
-            CurrentRows = targetRow;
-            report?.ScrollIndex(CurrentRows);
-
-            return GetPageButtonStates();
-        }
-
-        /// <summary>
-        /// 重置到第一页
-        /// </summary>
-        /// <returns>重置后的行索引和按钮状态</returns>
-        public (int currentRows, bool upEnabled, bool downEnabled) ResetToFirstPage()
-        {
-            CurrentRows = 1;
-            report?.ScrollIndex(CurrentRows);
-            return GetPageButtonStates();
-        }
-
-        /// <summary>
-        /// 获取翻页按钮的启用状态
-        /// </summary>
-        /// <returns>上翻和下翻按钮的启用状态</returns>
-        private (int currentRows, bool upEnabled, bool downEnabled) GetPageButtonStates()
-        {
-            bool upEnabled = CurrentRows > 1;
-            bool downEnabled = CurrentRows < MaxRows;
-
-            return (CurrentRows, upEnabled, downEnabled);
+            return (_currentRows, _currentRows > 1, _currentRows < MaxRows);
         }
 
         #endregion

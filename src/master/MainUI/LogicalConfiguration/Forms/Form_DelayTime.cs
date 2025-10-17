@@ -229,6 +229,11 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             }
         }
 
+        private void BtnSave_Click(object sender, EventArgs e)
+        {
+
+        }
+
         void IParameterForm<Parameter_DelayTime>.SetDefaultValues()
         {
             SetDefaultValues();

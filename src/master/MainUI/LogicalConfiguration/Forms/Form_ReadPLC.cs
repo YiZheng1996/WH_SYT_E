@@ -18,10 +18,10 @@ namespace MainUI.LogicalConfiguration.Forms
         private readonly GlobalVariableManager _variableManager;
         private readonly ILogger<Form_ReadPLC> _logger;
         private readonly IPLCManager _pLCManager;
+        private bool _isLoading = false;
 
         // 窗体私有字段
         private Parameter_ReadPLC _currentParameter;
-        private bool _isLoading = false;
         private int _currentStepIndex = -1;
 
         #endregion
