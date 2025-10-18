@@ -79,17 +79,6 @@ namespace MainUI
             panelReport = new UIPanel();
             tabPage3 = new AntdUI.TabPage();
             grpRainy = new UIPanel();
-            grpServoGrp = new UIPanel();
-            btnSynchronous34 = new UIButton();
-            uiButton4 = new UIButton();
-            grpDO = new UIPanel();
-            uiPanel2 = new UIPanel();
-            uiSwitch = new UISwitch();
-            label19 = new Label();
-            uiPanel1 = new UIPanel();
-            label5 = new AntdUI.Label();
-            uiLabel4 = new UILabel();
-            LabAI01 = new UILabel();
             tabs1 = new Tabs();
             uiTitlePanel3.SuspendLayout();
             uiTitlePanel8.SuspendLayout();
@@ -98,10 +87,6 @@ namespace MainUI
             tabPage1.SuspendLayout();
             uiPanel6.SuspendLayout();
             tabPage3.SuspendLayout();
-            grpRainy.SuspendLayout();
-            grpServoGrp.SuspendLayout();
-            grpDO.SuspendLayout();
-            uiPanel1.SuspendLayout();
             tabs1.SuspendLayout();
             SuspendLayout();
             // 
@@ -982,9 +967,6 @@ namespace MainUI
             // grpRainy
             // 
             grpRainy.BackColor = Color.FromArgb(236, 236, 237);
-            grpRainy.Controls.Add(grpServoGrp);
-            grpRainy.Controls.Add(grpDO);
-            grpRainy.Controls.Add(uiPanel1);
             grpRainy.Dock = DockStyle.Fill;
             grpRainy.FillColor = Color.FromArgb(236, 236, 237);
             grpRainy.FillColor2 = Color.FromArgb(236, 236, 237);
@@ -1000,199 +982,6 @@ namespace MainUI
             grpRainy.TabIndex = 521;
             grpRainy.Text = null;
             grpRainy.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // grpServoGrp
-            // 
-            grpServoGrp.Controls.Add(uiPanel2);
-            grpServoGrp.Controls.Add(btnSynchronous34);
-            grpServoGrp.Controls.Add(uiButton4);
-            grpServoGrp.FillColor = Color.White;
-            grpServoGrp.FillColor2 = Color.White;
-            grpServoGrp.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            grpServoGrp.Location = new Point(0, 579);
-            grpServoGrp.Margin = new Padding(4, 5, 4, 5);
-            grpServoGrp.MinimumSize = new Size(1, 1);
-            grpServoGrp.Name = "grpServoGrp";
-            grpServoGrp.Radius = 30;
-            grpServoGrp.RectColor = Color.White;
-            grpServoGrp.RectDisableColor = Color.White;
-            grpServoGrp.Size = new Size(894, 272);
-            grpServoGrp.TabIndex = 510;
-            grpServoGrp.Text = null;
-            grpServoGrp.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // btnSynchronous34
-            // 
-            btnSynchronous34.BackColor = Color.Transparent;
-            btnSynchronous34.Cursor = Cursors.Hand;
-            btnSynchronous34.FillDisableColor = Color.FromArgb(70, 75, 85);
-            btnSynchronous34.Font = new Font("思源黑体 CN Bold", 12F, FontStyle.Bold);
-            btnSynchronous34.ForeDisableColor = Color.White;
-            btnSynchronous34.Location = new Point(24, 34);
-            btnSynchronous34.MinimumSize = new Size(1, 1);
-            btnSynchronous34.Name = "btnSynchronous34";
-            btnSynchronous34.Radius = 10;
-            btnSynchronous34.RectDisableColor = Color.FromArgb(80, 160, 255);
-            btnSynchronous34.ShowFocusLine = true;
-            btnSynchronous34.Size = new Size(109, 37);
-            btnSynchronous34.TabIndex = 76;
-            btnSynchronous34.Tag = "45";
-            btnSynchronous34.Text = "数字量";
-            btnSynchronous34.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnSynchronous34.TipsText = "1";
-            btnSynchronous34.Click += btnWaterPumpStart_Click;
-            // 
-            // uiButton4
-            // 
-            uiButton4.BackColor = Color.Transparent;
-            uiButton4.Cursor = Cursors.Hand;
-            uiButton4.FillDisableColor = Color.FromArgb(80, 160, 255);
-            uiButton4.Font = new Font("思源黑体 CN Bold", 12F, FontStyle.Bold);
-            uiButton4.ForeDisableColor = Color.White;
-            uiButton4.Location = new Point(142, 34);
-            uiButton4.MinimumSize = new Size(1, 1);
-            uiButton4.Name = "uiButton4";
-            uiButton4.Radius = 10;
-            uiButton4.RectDisableColor = Color.FromArgb(80, 160, 255);
-            uiButton4.ShowFocusLine = true;
-            uiButton4.Size = new Size(106, 37);
-            uiButton4.TabIndex = 70;
-            uiButton4.Tag = "104";
-            uiButton4.Text = "模拟量";
-            uiButton4.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiButton4.TipsText = "1";
-            uiButton4.Click += btnNozzleMotor_Click;
-            // 
-            // grpDO
-            // 
-            grpDO.Controls.Add(uiSwitch);
-            grpDO.Controls.Add(label19);
-            grpDO.FillColor = Color.White;
-            grpDO.FillColor2 = Color.White;
-            grpDO.FillDisableColor = Color.White;
-            grpDO.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            grpDO.Location = new Point(0, 186);
-            grpDO.Margin = new Padding(4, 5, 4, 5);
-            grpDO.MinimumSize = new Size(1, 1);
-            grpDO.Name = "grpDO";
-            grpDO.Radius = 30;
-            grpDO.RectColor = Color.White;
-            grpDO.RectDisableColor = Color.White;
-            grpDO.Size = new Size(894, 382);
-            grpDO.TabIndex = 504;
-            grpDO.Text = null;
-            grpDO.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // uiPanel2
-            // 
-            uiPanel2.BackColor = Color.Transparent;
-            uiPanel2.FillColor = Color.FromArgb(43, 46, 57);
-            uiPanel2.FillColor2 = Color.FromArgb(43, 46, 57);
-            uiPanel2.Font = new Font("微软雅黑", 20F);
-            uiPanel2.ForeColor = Color.White;
-            uiPanel2.Location = new Point(12, 228);
-            uiPanel2.Margin = new Padding(4, 5, 4, 5);
-            uiPanel2.MinimumSize = new Size(1, 1);
-            uiPanel2.Name = "uiPanel2";
-            uiPanel2.Radius = 11;
-            uiPanel2.RectColor = Color.FromArgb(43, 46, 57);
-            uiPanel2.RectDisableColor = Color.FromArgb(43, 46, 57);
-            uiPanel2.Size = new Size(237, 39);
-            uiPanel2.TabIndex = 499;
-            uiPanel2.Text = "试验详情案例控件";
-            uiPanel2.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // uiSwitch
-            // 
-            uiSwitch.ActiveColor = Color.LimeGreen;
-            uiSwitch.BackColor = Color.Transparent;
-            uiSwitch.Font = new Font("思源黑体 CN Bold", 14F, FontStyle.Bold);
-            uiSwitch.ForeColor = Color.FromArgb(235, 227, 221);
-            uiSwitch.InActiveColor = Color.FromArgb(231, 54, 36);
-            uiSwitch.Location = new Point(37, 32);
-            uiSwitch.MinimumSize = new Size(1, 1);
-            uiSwitch.MultiLanguageSupport = false;
-            uiSwitch.Name = "uiSwitch";
-            uiSwitch.Radius = 30;
-            uiSwitch.Size = new Size(72, 31);
-            uiSwitch.SwitchShape = UISwitch.UISwitchShape.Square;
-            uiSwitch.TabIndex = 17;
-            uiSwitch.Tag = "25";
-            uiSwitch.TagString = "";
-            uiSwitch.Text = "123";
-            uiSwitch.MouseDown += uiSwitch_MouseDown;
-            uiSwitch.MouseUp += uiSwitch_MouseUp;
-            // 
-            // label19
-            // 
-            label19.AutoSize = true;
-            label19.BackColor = Color.Transparent;
-            label19.Font = new Font("微软雅黑", 12F);
-            label19.ForeColor = Color.FromArgb(64, 64, 64);
-            label19.Location = new Point(29, 65);
-            label19.Name = "label19";
-            label19.Size = new Size(90, 21);
-            label19.TabIndex = 18;
-            label19.Text = "数字量控制";
-            // 
-            // uiPanel1
-            // 
-            uiPanel1.BackColor = Color.Transparent;
-            uiPanel1.Controls.Add(label5);
-            uiPanel1.Controls.Add(uiLabel4);
-            uiPanel1.Controls.Add(LabAI01);
-            uiPanel1.FillColor = Color.White;
-            uiPanel1.FillColor2 = Color.White;
-            uiPanel1.FillDisableColor = Color.White;
-            uiPanel1.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPanel1.ForeColor = Color.Black;
-            uiPanel1.ForeDisableColor = Color.Black;
-            uiPanel1.Location = new Point(0, 2);
-            uiPanel1.Margin = new Padding(4, 5, 4, 5);
-            uiPanel1.MinimumSize = new Size(1, 1);
-            uiPanel1.Name = "uiPanel1";
-            uiPanel1.Radius = 30;
-            uiPanel1.RectSides = ToolStripStatusLabelBorderSides.None;
-            uiPanel1.Size = new Size(136, 73);
-            uiPanel1.TabIndex = 497;
-            uiPanel1.Text = null;
-            uiPanel1.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // label5
-            // 
-            label5.BackColor = Color.FromArgb(64, 64, 64);
-            label5.Font = new Font("宋体", 11F);
-            label5.ForeColor = Color.FromArgb(141, 145, 145);
-            label5.Location = new Point(3, 44);
-            label5.Name = "label5";
-            label5.Size = new Size(130, 2);
-            label5.TabIndex = 495;
-            label5.Text = "";
-            // 
-            // uiLabel4
-            // 
-            uiLabel4.AutoSize = true;
-            uiLabel4.BackColor = Color.Transparent;
-            uiLabel4.Font = new Font("宋体", 12F);
-            uiLabel4.ForeColor = Color.FromArgb(64, 64, 64);
-            uiLabel4.Location = new Point(2, 51);
-            uiLabel4.Name = "uiLabel4";
-            uiLabel4.Size = new Size(119, 16);
-            uiLabel4.TabIndex = 496;
-            uiLabel4.Text = "模拟量检测(mm)";
-            // 
-            // LabAI01
-            // 
-            LabAI01.BackColor = Color.Transparent;
-            LabAI01.Font = new Font("宋体", 23F);
-            LabAI01.ForeColor = Color.FromArgb(64, 64, 64);
-            LabAI01.Location = new Point(2, 1);
-            LabAI01.Name = "LabAI01";
-            LabAI01.Size = new Size(121, 42);
-            LabAI01.TabIndex = 0;
-            LabAI01.Tag = "0";
-            LabAI01.Text = "1000.0";
-            LabAI01.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // tabs1
             // 
@@ -1234,12 +1023,6 @@ namespace MainUI
             tabPage1.ResumeLayout(false);
             uiPanel6.ResumeLayout(false);
             tabPage3.ResumeLayout(false);
-            grpRainy.ResumeLayout(false);
-            grpServoGrp.ResumeLayout(false);
-            grpDO.ResumeLayout(false);
-            grpDO.PerformLayout();
-            uiPanel1.ResumeLayout(false);
-            uiPanel1.PerformLayout();
             tabs1.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -1286,21 +1069,10 @@ namespace MainUI
         private UIPanel panelReport;
         private AntdUI.TabPage tabPage3;
         private UIPanel grpRainy;
-        private UIPanel grpServoGrp;
-        private UIButton btnSynchronous34;
-        private UIButton uiButton4;
-        private UIPanel grpDO;
-        private UISwitch uiSwitch;
-        private Label label19;
-        private UIPanel uiPanel1;
-        private AntdUI.Label label5;
-        private UILabel uiLabel4;
-        private UILabel LabAI01;
         private Tabs tabs1;
         private UILabel uiLabel5;
         private UITextBox uiTextBox5;
         private UILabel uiLabel1;
         private UITextBox uiTextBox6;
-        private UIPanel uiPanel2;
     }
 }

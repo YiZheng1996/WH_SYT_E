@@ -1,26 +1,25 @@
-﻿using MainUI.CurrencyHelper;
-using RW.Modules;
+﻿using RW.Modules;
 using System.ComponentModel;
 
 namespace MainUI.Modules
 {
-    public partial class CurrentGrp : BaseModule
+    public partial class WSDGrp : BaseModule
     {
-        private const int Count = 10;
-        public event ValueGroupHandler<double> CurrentvalueGrpChaned;
-        public CurrentGrp()
+        private const int Count = 2;
+        public event ValueGroupHandler<object> WSDvalueGrpChaned;
+        public WSDGrp()
         {
-            Driver = OPCHelper.opcCurrent;
+            Driver = OPCHelper.opcWSD;
             InitializeComponent();
         }
 
-        public CurrentGrp(IContainer container)
+        public WSDGrp(IContainer container)
             : base(container)
         {
-            Driver = OPCHelper.opcCurrent;
+            Driver = OPCHelper.opcWSD;
         }
-        private double[] _TestList = new double[Count];
-        public double[] TestList
+        private object[] _TestList = new object[Count];
+        public object[] TestList
         {
             get { return _TestList; }
         }
@@ -28,13 +27,13 @@ namespace MainUI.Modules
         {
             for (int i = 0; i < _TestList.Length; i++)
             {
-                CurrentvalueGrpChaned?.Invoke(this, i, _TestList[i]);
+                WSDvalueGrpChaned?.Invoke(this, i, _TestList[i]);
             }
         }
         /// <summary>
         /// 0:温度; 1:湿度;
         /// </summary>
-        public double this[int index]
+        public object this[int index]
         {
             get { return TestList[index]; }
             set { Write("CH" + index.ToString().PadLeft(2, '0'), value); }
@@ -46,10 +45,10 @@ namespace MainUI.Modules
             {
                 int idx = i; // 循环中的i需要用临时变量存储。
                 string opcTag = "CH" + i.ToString().PadLeft(2, '0');
-                AddListening(opcTag, delegate (double value)
+                AddListening(opcTag, delegate (object value)
                 {
                     _TestList[idx] = value;
-                    CurrentvalueGrpChaned?.Invoke(this, idx, value);
+                    WSDvalueGrpChaned?.Invoke(this, idx, value);
                 });
             }
             base.Init();

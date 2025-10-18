@@ -69,19 +69,64 @@ namespace MainUI.LogicalConfiguration.Methods
             {
                 await Task.CompletedTask;
 
-                foreach (var param in param.ReadItems)
+                // 如果没有读取项,返回 null
+                if (param.ReadItems == null || param.ReadItems.Count == 0)
                 {
-                    // 使用 ReportService 获取报表控件
+                    NlogHelper.Default.Warn("读取项列表为空");
+                    return null;
+                }
+
+                // 如果只有一个项,返回单个值(用于预览)
+                if (param.ReadItems.Count == 1)
+                {
+                    var item = param.ReadItems[0];
+
+                    if (string.IsNullOrWhiteSpace(item.CellAddress))
+                    {
+                        NlogHelper.Default.Warn("单元格地址为空");
+                        return null;
+                    }
+
                     var value = ReportService.InvokeOnReportControl(report =>
                     {
-                        return report.Read(param.CellAddress);
+                        return report.Read(item.CellAddress);
                     });
 
-                    NlogHelper.Default.Info($"成功读取单元格 {param.CellAddress}: {value}");
+                    NlogHelper.Default.Info($"成功读取单元格 {item.CellAddress}: {value}");
+                    return value;
                 }
-                return default;
 
-            }, (object)null);
+                //  多个项的情况,返回字典(单元格地址 -> 值)
+                var results = new Dictionary<string, object>();
+
+                foreach (var item in param.ReadItems)
+                {
+                    if (string.IsNullOrWhiteSpace(item.CellAddress))
+                    {
+                        NlogHelper.Default.Warn("跳过空单元格地址");
+                        continue;
+                    }
+
+                    try
+                    {
+                        var value = ReportService.InvokeOnReportControl(report =>
+                        {
+                            return report.Read(item.CellAddress);
+                        });
+
+                        results[item.CellAddress] = value;
+                        NlogHelper.Default.Info($"成功读取单元格 {item.CellAddress}: {value}");
+                    }
+                    catch (Exception ex)
+                    {
+                        NlogHelper.Default.Error($"读取单元格 {item.CellAddress} 失败: {ex.Message}", ex);
+                        results[item.CellAddress] = null;
+                    }
+                }
+
+                return results;
+
+            }, null);
         }
 
         /// <summary>

@@ -38,7 +38,7 @@ namespace MainUI.Modules
             for (int i = 0; i < AIcount; i++)
             {
                 int idx = i; // 循环中的i需要用临时变量存储。
-                string opcTag = "AI.MAI" + i.ToString().PadLeft(3, '0');
+                string opcTag = "AI.MAI" + i.ToString().PadLeft(2, '0');
 
                 AddListening(opcTag, delegate (double value)
                 {

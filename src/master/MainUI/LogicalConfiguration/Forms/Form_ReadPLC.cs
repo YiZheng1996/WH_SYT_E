@@ -18,7 +18,6 @@ namespace MainUI.LogicalConfiguration.Forms
         private readonly GlobalVariableManager _variableManager;
         private readonly ILogger<Form_ReadPLC> _logger;
         private readonly IPLCManager _pLCManager;
-        private bool _isLoading = false;
 
         // 窗体私有字段
         private Parameter_ReadPLC _currentParameter;
@@ -60,8 +59,6 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                _isLoading = true;
-
                 // 获取当前步骤信息
                 _currentStepIndex = _workflowState.StepNum;
 
@@ -86,7 +83,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
             finally
             {
-                _isLoading = false;
             }
         }
 

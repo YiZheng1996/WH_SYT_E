@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// 写入单元格参数配置表单 - 方案2增强版
+    /// 写入单元格参数配置表单
     /// 支持固定值、变量、表达式、系统属性等多种数据源
     /// 使用 ReportExpressionHelper 进行表达式验证和计算
     /// </summary>
@@ -177,7 +177,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnSave.Click += BtnSave_Click; ;
             btnAddRow.Click += BtnAdd_Click;
             BtnDelete.Click += BtnDelete_Click;
-            btnBrowse.Click += BtnBrowse_Click;
             DataGridViewDefineVar.CellValueChanged += DataGridViewDefineVar_CellValueChanged;
             DataGridViewDefineVar.CurrentCellDirtyStateChanged += DataGridViewDefineVar_CurrentCellDirtyStateChanged;
             DataGridViewDefineVar.CellEnter += DataGridViewDefineVar_CellEnter; // 进入单元格时显示提示
@@ -361,28 +360,6 @@ namespace MainUI.LogicalConfiguration.Forms
         private void BtnSave_Click(object sender, EventArgs e)
         {
             SaveParameters();
-        }
-
-
-        private void BtnBrowse_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                using var openFileDialog = new OpenFileDialog();
-                openFileDialog.Filter = "Excel文件|*.xlsx;*.xls|所有文件|*.*";
-                openFileDialog.Title = "选择Excel文件";
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    txtFilePath.Text = openFileDialog.FileName;
-                    _logger?.LogDebug($"选择文件: {openFileDialog.FileName}");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "选择文件时发生错误");
-                MessageHelper.MessageOK($"选择文件失败:{ex.Message}", TType.Error);
-            }
         }
 
         /// <summary>
@@ -692,13 +669,6 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(txtFilePath.Text))
-                {
-                    MessageHelper.MessageOK("请选择或输入Excel文件路径", TType.Warn);
-                    txtFilePath.Focus();
-                    return false;
-                }
-
                 var param = GetCurrentParameters();
 
                 if (param.Items == null || param.Items.Count == 0)
@@ -761,7 +731,6 @@ namespace MainUI.LogicalConfiguration.Forms
         protected override void SetDefaultValues()
         {
             _currentParameter = new Parameter_WriteCells();
-            txtFilePath.Text = "";
             txtSheetName.Text = "Sheet1";
             DataGridViewDefineVar.Rows.Clear();
         }

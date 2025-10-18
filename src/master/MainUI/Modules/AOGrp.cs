@@ -45,7 +45,7 @@ namespace MainUI.Modules
             for (int i = 0; i < AOcount; i++)
             {
                 int idx = i;
-                string opcTag = "AO.MAQ" + i.ToString().PadLeft(3, '0');
+                string opcTag = "AO.CA" + i.ToString().PadLeft(2, '0');
                 AddListening(opcTag, delegate (double value)
                 {
                     _AOList[idx] = value;

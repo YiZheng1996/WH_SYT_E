@@ -81,7 +81,7 @@ namespace MainUI.LogicalConfiguration.Methods
 
                 return Task.FromResult(true);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //_logger.LogError(ex, "显示系统提示失败");
                 return Task.FromResult(false);

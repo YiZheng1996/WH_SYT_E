@@ -52,12 +52,23 @@ namespace MainUI
                 RegisterTestEventHandlers();  //注册测试状态和提示事件处理程序
                 SetInitialState();  //设置初始状态
                 InitializePermissions(); //初始化权限
+                InitializeProcessInterface(); //加载工艺界面
                 EnsureFrmHandleCreated(); //确保主窗体句柄已创建
+
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "系统提示", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        /// <summary>
+        /// 加载工艺界面
+        /// </summary>
+        private void InitializeProcessInterface()
+        {
+            UcHMI_FLE ucHMI_PBU = new(frm);
+            grpRainy.Controls.Add(ucHMI_PBU);
         }
 
         /// <summary>
@@ -206,8 +217,6 @@ namespace MainUI
             // 在测试进行时禁用的控件组
             var controlsToDisable = new Control[]
             {
-                grpDO,           // 数字输出控制组
-                grpServoGrp,     // 伺服控制组
                 btnProductSelection, // 产品选择按钮
                 TableItemPoint,    // 测试项表格
                 panelHand         // 手动控制面板
@@ -328,6 +337,18 @@ namespace MainUI
         }
 
         public void DOgrp_DOgrpChanged(object sender, int index, bool value) { }
+
+        public void WSDCongrp_WSDConGroupChanged(object sender, int index, object value)
+        {
+            if (controls.DigitalOutputs.TryGetValue(index, out UISwitch iSwitch))
+            {
+                iSwitch.Active = value.ToBool();
+            }
+            if (controls.DigitalOutputButtons.TryGetValue(index, out UIButton btn))
+            {
+                NavigationButtonStyles.BtnColor(btn, value.ToBool());
+            }
+        }
         #endregion
 
         #region 参数
@@ -653,7 +674,7 @@ namespace MainUI
             {
                 var btn = sender as UIButton;
                 using frmSetOutValue fs = new(OPCHelper.TestCongrp[btn.Tag.ToInt32()].ToDouble(), btn.Text, 10000);
-                VarHelper.ShowDialogWithOverlay(frm, fs);
+                VarHelper.ShowDialogWithOverlay(frm, fs);   
                 if (fs.DialogResult == DialogResult.OK)
                 {
                     ControlHelper.ButtonClickAsync(sender, () =>

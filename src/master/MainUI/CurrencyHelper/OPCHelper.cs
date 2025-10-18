@@ -1,4 +1,5 @@
-﻿using RW.Driver;
+﻿using MainUI.Modules;
+using RW.Driver;
 
 namespace MainUI.CurrencyHelper
 {
@@ -11,11 +12,7 @@ namespace MainUI.CurrencyHelper
         public static OPCDriver opcDOGroup = new();
         public static OPCDriver opcStatusGroup = new();
         public static OPCDriver opcTestConGroup = new();
-
-        public static OPCDriver opcCurrent = new();
-        public static OPCDriver opcLeftTranslation = new();
-        public static OPCDriver opcRightTranslation = new();
-        public static OPCDriver opcWaterPump = new();
+        public static OPCDriver opcWSD = new();
         #endregion
 
         #region opcGroup
@@ -26,16 +23,12 @@ namespace MainUI.CurrencyHelper
         public static DOGrp DOgrp;
         public static TestConGrp TestCongrp;
         public static PLCCalibration plcc;
-
-        public static CurrentGrp Currentgrp;
-        public static LeftTranslationGrp LeftTranslationgrp;
-        public static RightTranslationGrp RightTranslationgrp;
-        public static WaterPumpGrp WaterPumpgrp;
+        public static WSDGrp WSDgrp;
         #endregion
 
         static OPCHelper()
         {
-            string kepServerName = "KEPware.KEPServerEx.V6";
+            string kepServerName = "KEPware.KEPServerEx.V4";
             opcDOGroup.ServerName = kepServerName;
             opcDOGroup.Prefix = "SMART.PLC.";
             opcDIGroup.ServerName = kepServerName;
@@ -48,15 +41,8 @@ namespace MainUI.CurrencyHelper
             opcStatusGroup.Prefix = "SMART.PLC.";
             opcTestConGroup.ServerName = kepServerName;
             opcTestConGroup.Prefix = "SMART.PLC.";
-            opcCurrent.ServerName = kepServerName;
-            opcCurrent.Prefix = "Current.Current.";
-            opcWaterPump.ServerName = kepServerName;
-            opcWaterPump.Prefix = "WaterPump.WaterPump.";
-
-            //opcLeftTranslation.ServerName = kepServerName;
-            //opcLeftTranslation.Prefix = "LeftTranslation.LeftTranslation.";
-            //opcRightTranslation.ServerName = kepServerName;
-            //opcRightTranslation.Prefix = "RightTranslation.RightTranslation.";
+            opcWSD.ServerName = kepServerName;
+            opcWSD.Prefix = "Modbus.WSD.";
         }
 
         /// <summary>
@@ -70,11 +56,7 @@ namespace MainUI.CurrencyHelper
             opcAOGroup.Connect();
             opcTestConGroup.Connect();
             opcStatusGroup.Connect();
-
-            opcCurrent.Connect();
-            opcWaterPump.Connect();
-            //opcLeftTranslation.Connect();
-            //opcRightTranslation.Connect();
+            opcWSD.Connect();
         }
 
         /// <summary>
@@ -88,10 +70,7 @@ namespace MainUI.CurrencyHelper
             opcAOGroup.Close();
             opcTestConGroup.Close();
             opcStatusGroup.Close();
-            opcCurrent.Close();
-            opcWaterPump.Close();
-            //opcLeftTranslation.Close();
-            //opcRightTranslation.Close();
+            opcWSD.Close();
         }
 
 
@@ -104,8 +83,8 @@ namespace MainUI.CurrencyHelper
             TestCongrp = new TestConGrp();
             plcc = new PLCCalibration();
             opcStatus = new OpcStatusGrp();
-            Currentgrp = new CurrentGrp();
-            WaterPumpgrp = new WaterPumpGrp();
+            WSDgrp = new WSDGrp();
+
             opcStatus.Init();
             AIgrp.Init();
             AOgrp.Init();
@@ -113,11 +92,7 @@ namespace MainUI.CurrencyHelper
             DOgrp.Init();
             TestCongrp.Init();
             plcc.Init();
-
-            Currentgrp.Init();
-            WaterPumpgrp.Init();
-            //LeftTranslationgrp.Init();
-            //RightTranslationgrp.Init();
+            WSDgrp.Init();
         }
 
     }

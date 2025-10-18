@@ -16,7 +16,7 @@ namespace MainUI.Modules
         {
             this.Driver = OPCHelper.opcDIGroup;
         }
-        private const int DIcnt = 46;
+        private const int DIcnt = 24;
         private bool[] _diList = new bool[DIcnt];
         public bool this[int index]
         {
@@ -46,7 +46,7 @@ namespace MainUI.Modules
             for (int i = 0; i < DIcnt; i++)
             {
                 int idx = i; // 循环中的i需要用临时变量存储。
-                string opcTag = "DI.MDI" + i.ToString().PadLeft(3, '0');
+                string opcTag = "DI.MDI" + i.ToString().PadLeft(2, '0');
                 AddListening(opcTag, delegate (bool value)
                 {
                     //数组赋值

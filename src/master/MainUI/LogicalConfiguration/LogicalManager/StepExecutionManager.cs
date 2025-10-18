@@ -16,7 +16,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     VariableMethods variableMethods,
     PLCMethods plcMethods,
     DetectionMethods detectionMethods,
-    ReportMethods reportMethods)
+    ReportMethods reportMethods,
+    GlobalVariableManager globalVariableManager)
     {
         #region 字段和属性
 
@@ -26,6 +27,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private readonly PLCMethods _plcMethods = plcMethods ?? throw new ArgumentNullException(nameof(plcMethods));
         private readonly DetectionMethods _detectionMethods = detectionMethods ?? throw new ArgumentNullException(nameof(detectionMethods));
         private readonly ReportMethods _reportMethods = reportMethods ?? throw new ArgumentNullException(nameof(reportMethods));
+        private readonly GlobalVariableManager _globalVariableManager = globalVariableManager
+       ?? throw new ArgumentNullException(nameof(globalVariableManager));
 
         public event Action<ChildModel, int> StepStatusChanged;
 
@@ -377,16 +380,74 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         }
 
         /// <summary>
-        /// 读入取报表单元格
+        /// 读取报表单元格
         /// </summary>
-        /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteReadCells(ChildModel step)
         {
             var param = ConvertParameter<Parameter_ReadCells>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
 
-            var result = await _reportMethods.ReadCells(param);
-            return (bool)result ? ExecutionResult.Success() : ExecutionResult.Failed("单元格读取失败");
+            try
+            {
+                var result = await _reportMethods.ReadCells(param);
+
+                // 判断结果不为 null 即为成功
+                if (result != null)
+                {
+                    // 如果有读取项且需要保存到变量
+                    if (param.ReadItems != null && param.ReadItems.Count > 0)
+                    {
+                        // 单个值的情况
+                        if (result is not Dictionary<string, object> && param.ReadItems.Count == 1)
+                        {
+                            var item = param.ReadItems[0];
+                            if (!string.IsNullOrEmpty(item.SaveToVariable))
+                            {
+                                // 使用正确的方法保存变量值
+                                var variable = _globalVariableManager?.FindVariableByName(item.SaveToVariable);
+                                if (variable != null)
+                                {
+                                    variable.UpdateValue(result, $"从单元格 {item.CellAddress} 读取");
+                                    NlogHelper.Default.Info($"单元格 {item.CellAddress} 值已保存到变量 {item.SaveToVariable}: {result}");
+                                }
+                                else
+                                {
+                                    NlogHelper.Default.Warn($"变量 {item.SaveToVariable} 不存在");
+                                }
+                            }
+                        }
+                        // 多个值的情况 (Dictionary)
+                        else if (result is Dictionary<string, object> results)
+                        {
+                            foreach (var item in param.ReadItems)
+                            {
+                                if (results.TryGetValue(item.CellAddress, out var value) &&
+                                    !string.IsNullOrEmpty(item.SaveToVariable))
+                                {
+                                    var variable = _globalVariableManager?.FindVariableByName(item.SaveToVariable);
+                                    if (variable != null)
+                                    {
+                                        variable.UpdateValue(value, $"从单元格 {item.CellAddress} 读取");
+                                        NlogHelper.Default.Info($"单元格 {item.CellAddress} 值已保存到变量 {item.SaveToVariable}: {value}");
+                                    }
+                                    else
+                                    {
+                                        NlogHelper.Default.Warn($"变量 {item.SaveToVariable} 不存在");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return ExecutionResult.Success($"成功读取 {param.ReadItems?.Count ?? 0} 个单元格");
+                }
+
+                return ExecutionResult.Failed("单元格读取失败: 返回值为空");
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"读取单元格异常: {ex.Message}", ex);
+                return ExecutionResult.Failed($"读取单元格异常: {ex.Message}");
+            }
         }
 
         /// <summary>

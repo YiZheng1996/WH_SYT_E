@@ -1,6 +1,6 @@
 ﻿namespace MainUI.Modules
 {
-    partial class WaterPumpGrp
+    partial class WSDGrp
     {
         /// <summary>
         /// 必需的设计器变量。

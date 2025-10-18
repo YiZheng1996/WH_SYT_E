@@ -50,22 +50,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Procedure\b0k3pdyj.on3~" />
+    <None Remove="UcHMI_FLE.Designer.cs~RF6dc9f21.TMP" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="frmDeviceInspect.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="Modules\AIGrp.cs" />
-    <Compile Update="Modules\WaterPumpGrp.cs">
+    <Compile Update="Modules\WSDGrp.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Update="Modules\RightTranslationGrp.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="Modules\LeftTranslationGrp.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="Modules\CurrentGrp.cs" />
     <Compile Update="Modules\AOGrp.cs" />
     <Compile Update="Modules\DIGrp.cs" />
     <Compile Update="Modules\DOGrp.cs" />

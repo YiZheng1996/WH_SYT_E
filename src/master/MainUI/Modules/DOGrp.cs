@@ -16,7 +16,7 @@ namespace MainUI.Modules
         {
             this.Driver = OPCHelper.opcDOGroup;
         }
-        public const int DOCount = 42;
+        public const int DOCount = 32;
 
         private bool[] _doList = new bool[DOCount];
         public bool[] DOlist
@@ -34,8 +34,8 @@ namespace MainUI.Modules
             {
                 try
                 {
-                    string tag = index.ToString().PadLeft(3, '0');
-                    this.Write("DO.MDO" + tag, value);
+                    string tag = index.ToString().PadLeft(2, '0');
+                    this.Write("DO.CDO" + tag, value);
                 }
                 catch (Exception ex)
                 {
@@ -56,7 +56,7 @@ namespace MainUI.Modules
             for (int i = 0; i < DOCount; i++)
             {
                 int idx = i;
-                string tag = "DO.MDO" + i.ToString().PadLeft(3, '0');
+                string tag = "DO.CDO" + i.ToString().PadLeft(2, '0');
                 AddListening(tag, delegate (bool DOvalue)
                 {
                     _doList[idx] = DOvalue;

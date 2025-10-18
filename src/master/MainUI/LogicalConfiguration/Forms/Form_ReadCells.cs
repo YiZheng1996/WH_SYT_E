@@ -1,23 +1,19 @@
 ﻿using AntdUI;
-using Google.Protobuf.WellKnownTypes;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
-using MainUI.Service;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// 读取单元格参数配置表单 - 增强版
+    /// 读取单元格参数配置表单
     /// 支持:
     /// 1. 多单元格批量读取
     /// 2. 读取结果保存到变量
     /// 3. 支持指定工作表
-    /// 4. 实时预览功能
-    /// 5. 单元格地址验证
+    /// 4. 单元格地址验证
     /// </summary>
     public partial class Form_ReadCells : BaseParameterForm, IParameterForm<Parameter_ReadCells>
     {
@@ -90,27 +86,17 @@ namespace MainUI.LogicalConfiguration.Forms
 
             try
             {
-                // 初始化数据网格
-                InitializeDataGrid();
-
                 // 初始化事件绑定
                 BindEvents();
 
                 // 设置默认值
-                _currentParameter ??= new Parameter_ReadCells
-                {
-                    SheetName = "Sheet1",
-                    ReadItems = []
-                };
+                _currentParameter ??= new Parameter_ReadCells();
 
-                // 加载已有变量到下拉框
+                // 加载全局变量
                 LoadVariables();
 
-                // 添加默认行
-                if (_currentParameter.ReadItems.Count == 0)
-                {
-                    AddNewRow();
-                }
+                // 加载参数到界面
+                LoadParametersToForm();
             }
             finally
             {
@@ -118,104 +104,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 初始化数据网格
-        /// </summary>
-        private void InitializeDataGrid()
-        {
-            // 清空现有列
-            DataGridViewDefineVar.Columns.Clear();
-
-            // 设置网格样式
-            DataGridViewDefineVar.AllowUserToAddRows = false;
-            DataGridViewDefineVar.AllowUserToDeleteRows = false;
-            DataGridViewDefineVar.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            DataGridViewDefineVar.MultiSelect = false;
-            DataGridViewDefineVar.RowHeadersVisible = false;
-            DataGridViewDefineVar.BackgroundColor = Color.White;
-            DataGridViewDefineVar.GridColor = Color.FromArgb(224, 224, 224);
-            DataGridViewDefineVar.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-
-            // 添加列
-            // 1. 单元格地址列
-            var colCellAddress = new DataGridViewTextBoxColumn
-            {
-                Name = "ColCellAddress",
-                HeaderText = "单元格地址",
-                DataPropertyName = "CellAddress",
-                Width = 120,
-                MinimumWidth = 100
-            };
-            DataGridViewDefineVar.Columns.Add(colCellAddress);
-
-            // 2. 保存到变量列（下拉框）
-            var colSaveToVar = new DataGridViewComboBoxColumn
-            {
-                Name = "ColSaveToVar",
-                HeaderText = "保存到变量",
-                DataPropertyName = "SaveToVariable",
-                Width = 150,
-                MinimumWidth = 120
-            };
-            DataGridViewDefineVar.Columns.Add(colSaveToVar);
-
-            // 3. 数据类型列（下拉框）
-            var colDataType = new DataGridViewComboBoxColumn
-            {
-                Name = "ColDataType",
-                HeaderText = "数据类型",
-                DataPropertyName = "DataType",
-                Width = 100,
-                MinimumWidth = 80
-            };
-            colDataType.Items.AddRange("字符串", "整数", "小数", "布尔", "日期时间");
-            DataGridViewDefineVar.Columns.Add(colDataType);
-
-            // 4. 默认值列
-            var colDefaultValue = new DataGridViewTextBoxColumn
-            {
-                Name = "ColDefaultValue",
-                HeaderText = "默认值(可选)",
-                DataPropertyName = "DefaultValue",
-                Width = 120,
-                MinimumWidth = 100
-            };
-            DataGridViewDefineVar.Columns.Add(colDefaultValue);
-
-            // 5. 描述列
-            var colDescription = new DataGridViewTextBoxColumn
-            {
-                Name = "ColDescription",
-                HeaderText = "说明",
-                DataPropertyName = "Description",
-                Width = 200,
-                MinimumWidth = 150
-            };
-            DataGridViewDefineVar.Columns.Add(colDescription);
-
-            // 6. 预览值列（只读）
-            var colPreview = new DataGridViewTextBoxColumn
-            {
-                Name = "ColPreview",
-                HeaderText = "预览值",
-                DataPropertyName = "PreviewValue",
-                Width = 150,
-                MinimumWidth = 120,
-                ReadOnly = true
-            };
-            colPreview.DefaultCellStyle.BackColor = Color.FromArgb(245, 245, 245);
-            colPreview.DefaultCellStyle.ForeColor = Color.Gray;
-            DataGridViewDefineVar.Columns.Add(colPreview);
-
-            // 设置列头样式
-            DataGridViewDefineVar.ColumnHeadersDefaultCellStyle.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
-            DataGridViewDefineVar.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            DataGridViewDefineVar.ColumnHeadersHeight = 40;
-
-            // 设置行样式
-            DataGridViewDefineVar.RowTemplate.Height = 35;
-            DataGridViewDefineVar.DefaultCellStyle.Font = new Font("微软雅黑", 9F);
-        }
 
         /// <summary>
         /// 绑定事件
@@ -262,8 +150,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 .ToList();
 
             // 更新保存到变量列的下拉选项
-            var colSaveToVar = DataGridViewDefineVar.Columns["ColSaveToVar"] as DataGridViewComboBoxColumn;
-            if (colSaveToVar != null)
+            if (DataGridViewDefineVar.Columns["ColSaveToVar"] is DataGridViewComboBoxColumn colSaveToVar)
             {
                 colSaveToVar.Items.Clear();
                 colSaveToVar.Items.AddRange([.. variables]);
@@ -297,8 +184,6 @@ namespace MainUI.LogicalConfiguration.Forms
                         row.Cells["ColSaveToVar"].Value = item.SaveToVariable;
                         row.Cells["ColDataType"].Value = GetDataTypeDisplayName(item.DataType);
                         row.Cells["ColDefaultValue"].Value = item.DefaultValue;
-                        row.Cells["ColDescription"].Value = item.Description;
-                        row.Cells["ColPreview"].Value = item.PreviewValue;
                     }
                 }
                 else
@@ -337,9 +222,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     CellAddress = cellAddress,
                     SaveToVariable = row.Cells["ColSaveToVar"].Value?.ToString(),
                     DataType = GetDataTypeFromDisplayName(row.Cells["ColDataType"].Value?.ToString()),
-                    DefaultValue = row.Cells["ColDefaultValue"].Value?.ToString(),
-                    Description = row.Cells["ColDescription"].Value?.ToString(),
-                    PreviewValue = row.Cells["ColPreview"].Value?.ToString()
+                    DefaultValue = row.Cells["ColDefaultValue"].Value?.ToString()
                 });
             }
 
@@ -378,11 +261,11 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             if (DataGridViewDefineVar.SelectedRows.Count == 0)
             {
-                MessageHelper.MessageOK("请选择要删除的行", TType.Warn);
+                MessageHelper.MessageOK(this, "请选择要删除的行", TType.Warn);
                 return;
             }
 
-            if (MessageHelper.MessageYes(this, "确定要删除选中的行吗?") == DialogResult.OK)
+            if (MessageHelper.MessageYes(this, "确定要删除选中的行吗?", TType.Info) == DialogResult.OK)
             {
                 foreach (DataGridViewRow row in DataGridViewDefineVar.SelectedRows)
                 {
@@ -411,7 +294,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 var param = GetCurrentParameters();
 
-                // 调用读取方法
                 var reportMethods = Program.ServiceProvider.GetService<ReportMethods>();
                 if (reportMethods == null)
                 {
@@ -419,17 +301,20 @@ namespace MainUI.LogicalConfiguration.Forms
                     return;
                 }
 
-                // 逐个读取并更新预览值
+                //  逐个读取单元格
                 foreach (var item in param.ReadItems)
                 {
+                    // 为每个单元格创建单独的参数
                     var readParam = new Parameter_ReadCells
                     {
                         SheetName = param.SheetName,
+                        ReadItems = [item]
                     };
 
+                    // 调用读取方法
                     var value = await reportMethods.ReadCells(readParam);
 
-                    // 更新对应行的预览值
+                    // 更新预览值
                     foreach (DataGridViewRow row in DataGridViewDefineVar.Rows)
                     {
                         if (row.Cells["ColCellAddress"].Value?.ToString() == item.CellAddress)
@@ -440,7 +325,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     }
                 }
 
-                MessageHelper.MessageOK("预览读取完成!", TType.Success);
+                MessageHelper.MessageOK(this, "预览读取完成!", TType.Success);
             }
             catch (Exception ex)
             {
@@ -459,10 +344,28 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void BtnSave_Click(object sender, EventArgs e)
         {
-            if (ValidateParameters())
+            try
             {
+                if (!ValidateParameters())
+                {
+                    return;
+                }
+
+                // 先更新 _currentParameter,再调用基类保存方法
+                _currentParameter = GetCurrentParameters();
+
+                // 调用基类的 SaveParameters() 方法
+                // 基类会调用 CollectParameters() 来获取要保存的参数
+                SaveParameters();
+
+                // 设置对话框结果并关闭
                 DialogResult = DialogResult.OK;
                 Close();
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("保存参数失败", ex);
+                MessageHelper.MessageOK(this, $"保存参数失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -471,40 +374,28 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void BtnCancel_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.Cancel;
-            Close();
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
         }
 
         /// <summary>
-        /// 单元格值变化时立即触发更新
+        /// 数据网格单元格值变化
+        /// </summary>
+        private void DataGridView_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (_isLoading || e.RowIndex < 0) return;
+
+            // 可以在这里添加值变化后的处理逻辑
+        }
+
+        /// <summary>
+        /// 数据网格当前单元格脏状态变化
         /// </summary>
         private void DataGridView_CurrentCellDirtyStateChanged(object sender, EventArgs e)
         {
             if (DataGridViewDefineVar.IsCurrentCellDirty)
             {
                 DataGridViewDefineVar.CommitEdit(DataGridViewDataErrorContexts.Commit);
-            }
-        }
-
-        /// <summary>
-        /// 单元格值变化处理
-        /// </summary>
-        private void DataGridView_CellValueChanged(object sender, DataGridViewCellEventArgs e)
-        {
-            if (_isLoading || e.RowIndex < 0) return;
-
-            // 如果是单元格地址列变化,验证格式
-            if (e.ColumnIndex == DataGridViewDefineVar.Columns["ColCellAddress"].Index)
-            {
-                var cellValue = DataGridViewDefineVar.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString();
-                if (!string.IsNullOrEmpty(cellValue) && !ValidateCellAddress(cellValue))
-                {
-                    DataGridViewDefineVar.Rows[e.RowIndex].Cells[e.ColumnIndex].Style.BackColor = Color.LightPink;
-                }
-                else
-                {
-                    DataGridViewDefineVar.Rows[e.RowIndex].Cells[e.ColumnIndex].Style.BackColor = Color.White;
-                }
             }
         }
 
@@ -516,58 +407,58 @@ namespace MainUI.LogicalConfiguration.Forms
             if (_isLoading) return;
 
             // 验证单元格地址格式
-            if (e.ColumnIndex == DataGridViewDefineVar.Columns["ColCellAddress"].Index)
+            if (DataGridViewDefineVar.Columns[e.ColumnIndex].Name == "ColCellAddress")
             {
                 var value = e.FormattedValue?.ToString()?.Trim();
-                if (!string.IsNullOrEmpty(value) && !ValidateCellAddress(value))
+                if (!string.IsNullOrEmpty(value) && !_cellAddressRegex.IsMatch(value))
                 {
-                    MessageHelper.MessageOK($"单元格地址格式不正确!\n正确格式: A1, B2, C3...", TType.Warn);
                     e.Cancel = true;
+                    MessageHelper.MessageOK(this, $"单元格地址格式不正确: {value}\n正确格式如: A1, B2, C3", TType.Warn);
                 }
             }
         }
 
         #endregion
 
-        #region 验证方法
+        #region 参数验证
 
         /// <summary>
         /// 验证参数
         /// </summary>
         protected override bool ValidateParameters()
         {
-            // 验证至少有一个读取项
-            if (DataGridViewDefineVar.Rows.Count == 0)
+            // 检查是否有读取项
+            if (DataGridViewDefineVar.Rows.Count == 0 ||
+                DataGridViewDefineVar.Rows.Cast<DataGridViewRow>().All(r => r.IsNewRow))
             {
-                MessageHelper.MessageOK("请至少添加一个读取配置", TType.Warn);
+                MessageHelper.MessageOK(this, "请至少添加一个读取项", TType.Warn);
                 return false;
             }
 
-            // 验证每一行
-            for (int i = 0; i < DataGridViewDefineVar.Rows.Count; i++)
+            // 验证每一行的数据
+            foreach (DataGridViewRow row in DataGridViewDefineVar.Rows)
             {
-                var row = DataGridViewDefineVar.Rows[i];
                 if (row.IsNewRow) continue;
 
-                // 验证单元格地址
-                var cellAddress = row.Cells["ColCellAddress"].Value?.ToString();
-                if (string.IsNullOrWhiteSpace(cellAddress))
+                // 检查单元格地址
+                var cellAddress = row.Cells["ColCellAddress"].Value?.ToString()?.Trim();
+                if (string.IsNullOrEmpty(cellAddress))
                 {
-                    MessageHelper.MessageOK($"第 {i + 1} 行:单元格地址不能为空", TType.Warn);
+                    MessageHelper.MessageOK(this, $"第 {row.Index + 1} 行的单元格地址不能为空", TType.Warn);
                     return false;
                 }
 
-                if (!ValidateCellAddress(cellAddress))
+                if (!_cellAddressRegex.IsMatch(cellAddress))
                 {
-                    MessageHelper.MessageOK($"第 {i + 1} 行:单元格地址格式不正确\n正确格式: A1, B2, C3...", TType.Warn);
+                    MessageHelper.MessageOK(this, $"第 {row.Index + 1} 行的单元格地址格式不正确: {cellAddress}", TType.Warn);
                     return false;
                 }
 
-                // 验证保存到变量
-                var saveToVar = row.Cells["ColSaveToVar"].Value?.ToString();
-                if (string.IsNullOrWhiteSpace(saveToVar))
+                // 检查保存到变量
+                var saveToVar = row.Cells["ColSaveToVar"].Value?.ToString()?.Trim();
+                if (string.IsNullOrEmpty(saveToVar))
                 {
-                    MessageHelper.MessageOK($"第 {i + 1} 行:请选择保存到的变量", TType.Warn);
+                    MessageHelper.MessageOK(this, $"第 {row.Index + 1} 行的目标变量不能为空", TType.Warn);
                     return false;
                 }
             }
@@ -575,23 +466,12 @@ namespace MainUI.LogicalConfiguration.Forms
             return true;
         }
 
-        /// <summary>
-        /// 验证单元格地址格式
-        /// </summary>
-        private bool ValidateCellAddress(string address)
-        {
-            if (string.IsNullOrWhiteSpace(address))
-                return false;
-
-            return _cellAddressRegex.IsMatch(address.Trim());
-        }
-
         #endregion
 
         #region 辅助方法
 
         /// <summary>
-        /// 获取数据类型显示名称
+        /// 获取数据类型的显示名称
         /// </summary>
         private string GetDataTypeDisplayName(CellDataType dataType)
         {
@@ -623,16 +503,110 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 重写基类方法 - 收集参数
+        /// ✅ 重写基类的 CollectParameters 方法
+        /// 这个方法会被基类的 SaveParameters() 调用
         /// </summary>
         protected override object CollectParameters()
+        {
+            return _currentParameter ?? GetCurrentParameters();
+        }
+
+        #endregion
+
+        #region 重写基类方法
+        /// <summary>
+        /// 重写基类方法 - 从步骤参数加载
+        /// </summary>
+        protected override void LoadParameterFromStep(object stepParameter)
+        {
+            try
+            {
+                Parameter_ReadCells loadedParameter = null;
+
+                // 尝试直接类型转换
+                if (stepParameter is Parameter_ReadCells directParam)
+                {
+                    loadedParameter = directParam;
+                }
+                // 尝试JSON反序列化
+                else if (stepParameter != null)
+                {
+                    try
+                    {
+                        string jsonString = stepParameter is string s
+                            ? s
+                            : JsonConvert.SerializeObject(stepParameter);
+                        loadedParameter = JsonConvert.DeserializeObject<Parameter_ReadCells>(jsonString);
+                    }
+                    catch (JsonException)
+                    {
+                        loadedParameter = null;
+                    }
+                }
+
+                // 加载成功则更新参数并刷新界面
+                if (loadedParameter != null)
+                {
+                    _currentParameter = loadedParameter;
+                    LoadParametersToForm();  // 刷新界面控件
+                }
+                else
+                {
+                    SetDefaultValues();
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("加载参数失败", ex);
+                SetDefaultValues();
+            }
+        }
+
+        #endregion
+
+        #region IParameterForm<Parameter_ReadCells> 接口实现
+
+        public void PopulateControls(Parameter_ReadCells parameter)
+        {
+            Parameter = parameter;
+        }
+
+        protected override void SetDefaultValues()
+        {
+            _currentParameter = new Parameter_ReadCells();
+            LoadParametersToForm();
+        }
+
+        public bool ValidateTypedParameters()
+        {
+            return ValidateParameters();
+        }
+
+        public Parameter_ReadCells CollectTypedParameters()
         {
             return GetCurrentParameters();
         }
 
-        public void PopulateControls(Parameter_ReadCells parameter)
+        public Parameter_ReadCells ConvertParameter(object stepParameter)
         {
-            throw new NotImplementedException();
+            if (stepParameter is Parameter_ReadCells param)
+            {
+                return param;
+            }
+
+            if (stepParameter is string json)
+            {
+                try
+                {
+                    return JsonConvert.DeserializeObject<Parameter_ReadCells>(json);
+                }
+                catch
+                {
+                    return new Parameter_ReadCells();
+                }
+            }
+
+            return new Parameter_ReadCells();
         }
 
         void IParameterForm<Parameter_ReadCells>.SetDefaultValues()
@@ -640,22 +614,6 @@ namespace MainUI.LogicalConfiguration.Forms
             SetDefaultValues();
         }
 
-        public bool ValidateTypedParameters()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Parameter_ReadCells CollectTypedParameters()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Parameter_ReadCells ConvertParameter(object stepParameter)
-        {
-            throw new NotImplementedException();
-        }
-
         #endregion
     }
-
 }

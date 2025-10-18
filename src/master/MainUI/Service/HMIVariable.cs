@@ -15,8 +15,8 @@
             RegisterDIGroup();
             RegisterAOGroup();
             RegisterDOGroup();
-            RegisterCurrentGroup();
             RegisterTestConGroup();
+            RegisterWSDConGroup();
         }
 
         private void RegisterAIGroup()
@@ -55,15 +55,6 @@
             }, "DO组");
         }
 
-        private void RegisterCurrentGroup()
-        {
-            SafeRegister(() =>
-            {
-                OPCHelper.Currentgrp.CurrentvalueGrpChaned += form.Currentgrp_CurrentvalueGrpChaned;
-                OPCHelper.Currentgrp.Fresh();
-            }, "Current组");
-        }
-
         private void RegisterTestConGroup()
         {
             SafeRegister(() =>
@@ -71,6 +62,15 @@
                 OPCHelper.TestCongrp.TestConGroupChanged += form.TestCongrp_TestConGroupChanged;
                 OPCHelper.TestCongrp.Fresh();
             }, "TestCon组");
+        }
+
+        private void RegisterWSDConGroup()
+        {
+            SafeRegister(() =>
+            {
+                OPCHelper.WSDgrp.WSDvalueGrpChaned += form.WSDCongrp_WSDConGroupChanged;
+                OPCHelper.WSDgrp.Fresh();
+            }, "WSD组");
         }
 
         private static void SafeRegister(Action registration, string groupName)

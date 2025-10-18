@@ -113,7 +113,7 @@
             }
             //AO 
             dicAO.Clear();
-            foreach (Control item in grpAO.Controls)
+            foreach (Control item in panel4.Controls)
             {
                 if (item is Procedure.UCCalibration)
                 {

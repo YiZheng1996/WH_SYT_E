@@ -22,11 +22,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         private readonly IPLCManager _pLCManager;
 
         /// <summary>
-        /// 标识是否正在加载中，避免在加载过程中触发事件
-        /// </summary>
-        private bool _isLoading = false;
-
-        /// <summary>
         /// 当前参数对象缓存
         /// </summary>
         private Parameter_WritePLC _currentParameter;
@@ -61,7 +56,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             {
                 try
                 {
-                    _isLoading = true;
                     LoadWritePLCParameters();
                     InitializePointLocationPLC();
                 }
@@ -72,7 +66,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 }
                 finally
                 {
-                    _isLoading = false;
                 }
             }
         }
@@ -89,7 +82,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
             try
             {
-                _isLoading = true;
                 LoadWritePLCParameters();
                 InitializePointLocationPLC();
 
@@ -102,7 +94,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             }
             finally
             {
-                _isLoading = false;
             }
         }
 
@@ -549,7 +540,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         #region 接口实现
         public void PopulateControls(Form_WritePLC parameter)
         {
-            throw new NotImplementedException();
+            Parameter = parameter;
         }
 
         void IParameterForm<Form_WritePLC>.SetDefaultValues()
@@ -559,7 +550,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
         public bool ValidateTypedParameters()
         {
-            throw new NotImplementedException();
+            return ValidateParameters();
         }
 
         public Form_WritePLC CollectTypedParameters()
