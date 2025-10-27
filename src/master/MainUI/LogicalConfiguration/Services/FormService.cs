@@ -86,6 +86,9 @@ namespace MainUI.LogicalConfiguration.Services
                     case "条件判断":
                         form = CreateForm<Form_Detection>();
                         break;
+                    case "变量监控":
+                        form = CreateForm<Form_VariableMonitor>();
+                        break;
                     default:
                         _logger.LogWarning("未知的窗体类型: {FormName}", formName);
                         MessageBox.Show($"未知的窗体类型: {formName}", "错误",
@@ -191,6 +194,11 @@ namespace MainUI.LogicalConfiguration.Services
                 // 检测工具窗体
                 nameof(Form_Detection) => (T)(object)new Form_Detection(),
 
+                // 变量监控
+                nameof(Form_VariableMonitor) => (T)(object)new Form_VariableMonitor(
+                    _workflowState,
+                    _variableManager,
+                    GetSpecificLogger<Form_VariableMonitor>()),
 
                 // 未知窗体类型
                 _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")

@@ -193,7 +193,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 if (errorMessages.Count > 0)
                 {
-                    var errorMsg = $"保存完成，但有以下错误:\n{string.Join("\n", errorMessages)}";
+                    var errorMsg = $"保存错误，以下错误:\n{string.Join("\n", errorMessages)}";
                     MessageHelper.MessageOK(errorMsg, TType.Warn);
                     _logger.LogWarning("变量保存完成但有错误: {Errors}", string.Join("; ", errorMessages));
                 }
@@ -236,6 +236,73 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         #endregion
+
+        /// <summary>
+        /// 帮助按钮点击事件 - 显示使用说明
+        /// </summary>
+        private void BtnHelp_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var helpText = @"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📖 变量定义 - 使用说明
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 功能说明
+本界面用于定义工作流中使用的全局变量，支持多种数据类型。
+
+🔹 操作步骤
+
+1️ 添加变量
+   • 在表格中直接输入变量信息
+   • 变量名称：必填，建议使用有意义的名称
+   • 数据类型：从下拉列表选择 (int/double/bool/string)
+   • 备注说明：选填，用于描述变量用途
+
+2️ 编辑变量
+   • 双击单元格即可编辑
+   • 修改完成后自动保存到单元格
+
+3️ 删除变量
+   • 选中要删除的行
+   • 点击底部【删除】按钮
+   • 确认后删除
+
+4️ 保存变量
+   • 点击底部【保存】按钮
+   • 保存所有变量到系统
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 最佳实践
+
+✅ 变量命名规范
+   • 使用有意义的名称：TestResult、MotorSpeed
+   • 使用驼峰命名法：currentValue、maxSpeed
+   • 避免使用：Var1、X、Temp
+
+✅ 类型选择建议
+   • int      → 整数值（如计数器、索引）
+   • double   → 浮点数（如测量值、比率）
+   • bool     → 布尔值（如状态标志）
+   • string   → 字符串（如描述信息）
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 提示
+   • 变量名称在工作流中必须唯一
+   • 删除变量前请确认该变量未被其他步骤使用
+   • 建议为每个变量添加清晰的备注说明
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+
+                MessageHelper.MessageOK(helpText, TType.Info);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "显示帮助信息时发生错误");
+            }
+        }
     }
 
 }
