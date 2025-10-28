@@ -511,11 +511,29 @@ namespace MainUI.LogicalConfiguration.Engine
         /// </summary>
         private object AddValues(object left, object right)
         {
+            // DateTime 特殊处理
+            if (left is DateTime leftDt)
+            {
+                if (right is TimeSpan ts)
+                    return leftDt.Add(ts);  // DateTime + TimeSpan = DateTime
+                                            // DateTime + 其他 = 字符串拼接
+                var rightStr = right is DateTime rightDt ? rightDt.ToString("yyyy-MM-dd HH:mm:ss") : right?.ToString();
+                return $"{leftDt:yyyy-MM-dd HH:mm:ss}{rightStr}";
+            }
+
+            if (right is DateTime rightDateTime)
+            {
+                var leftStr = left?.ToString();
+                return $"{leftStr}{rightDateTime:yyyy-MM-dd HH:mm:ss}";
+            }
+
+            // 字符串连接
             if (left is string || right is string)
             {
                 return $"{left}{right}";
             }
 
+            // 数值运算
             if (TryGetNumericValue(left, out var leftNum) && TryGetNumericValue(right, out var rightNum))
             {
                 if (left is int && right is int)
@@ -523,7 +541,8 @@ namespace MainUI.LogicalConfiguration.Engine
                 return leftNum + rightNum;
             }
 
-            return $"{left}{right}"; // 字符串连接
+            // 默认字符串连接
+            return $"{left}{right}";
         }
 
         /// <summary>
@@ -591,43 +610,47 @@ namespace MainUI.LogicalConfiguration.Engine
         /// <summary>
         /// 比较运算
         /// </summary>
-        private object CompareValues(object left, object right, string comparison)
+        private object CompareValues(object left, object right, string operation)
         {
-            // 相等性比较
-            if (comparison == "==")
+            // DateTime 比较
+            if (left is DateTime leftDt && right is DateTime rightDt)
             {
-                return Equals(left?.ToString(), right?.ToString());
-            }
-            if (comparison == "!=")
-            {
-                return !Equals(left?.ToString(), right?.ToString());
+                return operation switch
+                {
+                    "==" => leftDt == rightDt,
+                    "!=" => leftDt != rightDt,
+                    "<" => leftDt < rightDt,
+                    "<=" => leftDt <= rightDt,
+                    ">" => leftDt > rightDt,
+                    ">=" => leftDt >= rightDt,
+                    _ => throw new InvalidOperationException($"不支持的比较操作: {operation}")
+                };
             }
 
             // 数值比较
             if (TryGetNumericValue(left, out var leftNum) && TryGetNumericValue(right, out var rightNum))
             {
-                return comparison switch
+                return operation switch
                 {
+                    "==" => Math.Abs(leftNum - rightNum) < double.Epsilon,
+                    "!=" => Math.Abs(leftNum - rightNum) >= double.Epsilon,
                     "<" => leftNum < rightNum,
                     "<=" => leftNum <= rightNum,
                     ">" => leftNum > rightNum,
                     ">=" => leftNum >= rightNum,
-                    _ => false
+                    _ => throw new InvalidOperationException($"不支持的比较操作: {operation}")
                 };
             }
 
             // 字符串比较
             var leftStr = left?.ToString() ?? "";
             var rightStr = right?.ToString() ?? "";
-            var compareResult = string.Compare(leftStr, rightStr, StringComparison.Ordinal);
 
-            return comparison switch
+            return operation switch
             {
-                "<" => compareResult < 0,
-                "<=" => compareResult <= 0,
-                ">" => compareResult > 0,
-                ">=" => compareResult >= 0,
-                _ => false
+                "==" => leftStr == rightStr,
+                "!=" => leftStr != rightStr,
+                _ => throw new InvalidOperationException($"字符串不支持比较操作: {operation}")
             };
         }
 
@@ -702,7 +725,19 @@ namespace MainUI.LogicalConfiguration.Engine
                 numericValue = floatValue;
                 return true;
             }
+            if (value is long longValue)
+            {
+                numericValue = longValue;
+                return true;
+            }
 
+            // 修复: 排除不应该被当作数值的类型
+            if (value is DateTime || value is TimeSpan || value is DateTimeOffset)
+            {
+                return false;
+            }
+
+            // 尝试从字符串解析
             return double.TryParse(value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out numericValue);
         }
 

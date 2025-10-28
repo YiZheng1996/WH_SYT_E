@@ -144,23 +144,14 @@ namespace MainUI.LogicalConfiguration.Engine
             VarItem_Enhanced targetVariable)
         {
             // 直接使用枚举，不需要字符串转换
-            switch (parameter.AssignmentType)
+            return parameter.AssignmentType switch
             {
-                case AssignmentTypeEnum.DirectAssignment:
-                    return ExecuteDirectValueAssignment(parameter.Expression, targetVariable);
-
-                case AssignmentTypeEnum.ExpressionCalculation:
-                    return await ExecuteExpressionCalculation(parameter.Expression, targetVariable);
-
-                case AssignmentTypeEnum.VariableCopy:
-                    return ExecuteVariableCopy(parameter.Expression, targetVariable);
-
-                case AssignmentTypeEnum.PLCRead:
-                    return await ExecutePLCReadFromConfig(parameter.DataSource.PlcConfig, targetVariable);
-
-                default:
-                    return ValueCalculationResult.Error($"不支持的赋值类型: {parameter.AssignmentType}");
-            }
+                AssignmentTypeEnum.DirectAssignment => ExecuteDirectValueAssignment(parameter.Expression, targetVariable),
+                AssignmentTypeEnum.ExpressionCalculation => await ExecuteExpressionCalculation(parameter.Expression, targetVariable),
+                AssignmentTypeEnum.VariableCopy => ExecuteVariableCopy(parameter.Expression, targetVariable),
+                AssignmentTypeEnum.PLCRead => await ExecutePLCReadFromConfig(parameter.DataSource.PlcConfig, targetVariable),
+                _ => ValueCalculationResult.Error($"不支持的赋值类型: {parameter.AssignmentType}"),
+            };
         }
 
         /// <summary>
@@ -252,7 +243,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 }
 
                 // 转换为目标类型
-                var convertedValue = ConvertValueToTargetType(result.Value?.ToString(), targetVariable.VarType);
+                var convertedValue = ConvertValueToTargetType(result.Value, targetVariable.VarType);
 
                 return ValueCalculationResult.Successs(convertedValue, "表达式计算");
             }
@@ -459,61 +450,96 @@ namespace MainUI.LogicalConfiguration.Engine
         /// <summary>
         /// 将值转换为目标类型
         /// </summary>
-        private object ConvertValueToTargetType(string value, string targetType)
+        /// <summary>
+        /// 将值转换为目标类型 (支持对象输入)
+        /// </summary>
+        private object ConvertValueToTargetType(object value, string targetType)
         {
             if (value == null) return null;
 
             try
             {
-                switch (targetType?.ToUpperInvariant())
+                var targetTypeUpper = targetType?.ToUpperInvariant();
+
+                // 如果输入已经是目标类型,直接返回
+                switch (targetTypeUpper)
                 {
+                    case "DATETIME":
+                        if (value is DateTime dt)
+                            return dt;
+                        if (value is string dateStr && DateTime.TryParse(dateStr, out var parsedDate))
+                            return parsedDate;
+                        break;
+
                     case "STRING":
-                        return value;
+                        // 特殊处理 DateTime 对象
+                        if (value is DateTime dateTime)
+                            return dateTime.ToString("yyyy-MM-dd HH:mm:ss");
+                        return value.ToString();
 
                     case "INTEGER":
                     case "INT":
-                        if (int.TryParse(value, out var intValue))
+                        if (value is int intVal)
+                            return intVal;
+                        if (int.TryParse(value.ToString(), out var intValue))
                             return intValue;
                         break;
 
                     case "DOUBLE":
                     case "FLOAT":
-                        if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleValue))
+                        if (value is double dblVal)
+                            return dblVal;
+                        if (value is float fltVal)
+                            return (double)fltVal;
+                        if (double.TryParse(value.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleValue))
                             return doubleValue;
                         break;
 
                     case "DECIMAL":
-                        if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var decimalValue))
+                        if (value is decimal decVal)
+                            return decVal;
+                        if (decimal.TryParse(value.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var decimalValue))
                             return decimalValue;
                         break;
 
                     case "BOOLEAN":
                     case "BOOL":
-                        if (bool.TryParse(value, out var boolValue))
+                        if (value is bool boolVal)
+                            return boolVal;
+                        if (bool.TryParse(value.ToString(), out var boolValue))
                             return boolValue;
                         // 数值转换：0为false，非0为true
-                        if (int.TryParse(value, out var numValue))
+                        if (int.TryParse(value.ToString(), out var numValue))
                             return numValue != 0;
                         break;
 
-                    case "DATETIME":
-                        if (DateTime.TryParse(value, out var dateValue))
-                            return dateValue;
-                        break;
-
                     default:
-                        // 未知类型，返回字符串
-                        return value;
+                        // 未知类型，返回字符串表示
+                        if (value is DateTime dt2)
+                            return dt2.ToString("yyyy-MM-dd HH:mm:ss");
+                        return value.ToString();
                 }
 
-                // 如果转换失败，记录警告但仍返回原字符串值
-                _logger?.LogWarning("类型转换失败: '{Value}' -> {TargetType}, 保持为字符串类型", value, targetType);
-                return value;
+                // 如果转换失败，记录警告但仍返回原值
+                _logger?.LogWarning("类型转换失败: '{Value}' ({ValueType}) -> {TargetType}",
+                    value, value.GetType().Name, targetType);
+
+                // 转换失败时,如果是 DateTime,返回格式化字符串
+                if (value is DateTime dt3)
+                    return dt3.ToString("yyyy-MM-dd HH:mm:ss");
+
+                return value.ToString();
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "类型转换异常: '{Value}' -> {TargetType}", value, targetType);
-                return value; // 转换失败时返回原值
+                _logger?.LogError(ex, "类型转换异常: '{Value}' ({ValueType}) -> {TargetType}",
+                    value, value?.GetType().Name, targetType);
+
+                // 异常时,如果是 DateTime,返回格式化字符串
+                if (value is DateTime dt4)
+                    return dt4.ToString("yyyy-MM-dd HH:mm:ss");
+
+                return value?.ToString();
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using MainUI.LogicalConfiguration.LogicalManager;
 using Microsoft.Extensions.Logging;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace MainUI.LogicalConfiguration.Services
@@ -16,8 +17,64 @@ namespace MainUI.LogicalConfiguration.Services
         // 支持的运算符
         private readonly string[] _supportedOperators = { "+", "-", "*", "/", "%", "==", "!=", ">", "<", ">=", "<=", "&&", "||", "!" };
 
-        // 支持的函数
-        private readonly string[] _supportedFunctions = { "LEN", "SUBSTRING", "UPPER", "LOWER", "TRIM", "REPLACE", "NOW", "FORMAT" };
+        // 支持的函数 - 扩展版本
+        // 包含原有的基础函数和 ExpressionBuilderDialog 中使用的所有函数
+        private readonly string[] _supportedFunctions =
+        { 
+            // === 原有的基础字符串函数 ===
+            "LEN", "SUBSTRING", "UPPER", "LOWER", "TRIM", "REPLACE", "NOW", "FORMAT",
+            
+            // === Math 数学函数 (支持 Math.XXX 形式) ===
+            "MATH.ABS", "ABS",               // 绝对值
+            "MATH.MAX", "MAX",               // 最大值
+            "MATH.MIN", "MIN",               // 最小值
+            "MATH.ROUND", "ROUND",           // 四舍五入
+            "MATH.FLOOR", "FLOOR",           // 向下取整
+            "MATH.CEILING", "CEILING",       // 向上取整
+            "MATH.SQRT", "SQRT",             // 平方根
+            "MATH.POW", "POW",               // 幂运算
+            "MATH.SIN", "SIN",               // 正弦
+            "MATH.COS", "COS",               // 余弦
+            "MATH.TAN", "TAN",               // 正切
+            
+            // === String 字符串函数 (支持 String.XXX 形式) ===
+            "STRING.LENGTH", "LENGTH",       // 字符串长度
+            "STRING.SUBSTRING",              // 字符串截取
+            "STRING.CONTAINS", "CONTAINS",   // 包含判断
+            "STRING.REPLACE",                // 字符串替换
+            "STRING.TOUPPER", "TOUPPER",     // 转大写
+            "STRING.TOLOWER", "TOLOWER",     // 转小写
+            "STRING.TRIM",                   // 去空格
+            "STRING.STARTSWITH", "STARTSWITH", // 开始判断
+            "STRING.ENDSWITH", "ENDSWITH",   // 结束判断
+            "STRING.INDEXOF", "INDEXOF",     // 查找位置
+            "STRING.SPLIT", "SPLIT",         // 字符串分割
+            "STRING.JOIN", "JOIN",           // 字符串连接
+            "STRING.PADLEFT", "PADLEFT",     // 左补齐
+            "STRING.PADRIGHT", "PADRIGHT",   // 右补齐
+            
+            // === DateTime 日期时间函数 (支持 DateTime.XXX 形式) ===
+            "DATETIME.NOW",                  // 当前时间
+            "DATETIME.TODAY",                // 今天日期
+            "DATETIME.TOSTRING",             // 日期格式化
+            "DATETIME.PARSE",                // 日期解析
+            "DATETIME.ADDDAYS", "ADDDAYS",   // 增加天数
+            "DATETIME.ADDHOURS", "ADDHOURS", // 增加小时
+            "DATETIME.ADDMINUTES", "ADDMINUTES", // 增加分钟
+            
+            // === Convert 类型转换函数 (支持 Convert.XXX 形式) ===
+            "CONVERT.TODOUBLE", "TODOUBLE",  // 转换为 Double
+            "CONVERT.TOINT32", "TOINT32", "TOINT",  // 转换为 Int
+            "CONVERT.TOSTRING", "TOSTRING",  // 转换为 String
+            "CONVERT.TOBOOLEAN", "TOBOOLEAN", "TOBOOL", // 转换为 Boolean
+            "CONVERT.TODECIMAL", "TODECIMAL", // 转换为 Decimal
+            
+            // === 条件逻辑函数 ===
+            "IF",                            // 条件判断
+            "ISNULL",                        // 空值判断
+            "ISEMPTY",                       // 空字符串判断
+            "ISNULLOREMPTY",                 // 空值或空字符串判断
+        };
 
         // 变量引用模式 {VariableName}
         private readonly Regex _variablePattern = new(@"\{(\w+)\}", RegexOptions.Compiled);
@@ -28,8 +85,8 @@ namespace MainUI.LogicalConfiguration.Services
         // 数值字面量模式
         private readonly Regex _numberLiteralPattern = new(@"\b\d+(\.\d+)?\b", RegexOptions.Compiled);
 
-        // 函数调用模式 FUNCTION(args)
-        private readonly Regex _functionPattern = new(@"\b(\w+)\s*\(([^)]*)\)", RegexOptions.Compiled);
+        // 函数调用模式 FUNCTION(args) 或 Class.FUNCTION(args)
+        private readonly Regex _functionPattern = new(@"\b(\w+(?:\.\w+)?)\s*\(([^)]*)\)", RegexOptions.Compiled);
 
         /// <summary>
         /// 验证表达式
@@ -65,7 +122,6 @@ namespace MainUI.LogicalConfiguration.Services
                 }
                 warnings.AddRange(variableResult.Warnings);
 
-                // 预留类型检查，暂时不需要
                 // 3. 类型兼容性检查 
                 if (context?.TargetVariableType != null)
                 {
@@ -430,6 +486,7 @@ namespace MainUI.LogicalConfiguration.Services
                     var functionName = match.Groups[1].Value.ToUpperInvariant();
                     var arguments = match.Groups[2].Value;
 
+                    // 检查是否为支持的函数
                     if (!_supportedFunctions.Contains(functionName))
                     {
                         errors.Add($"不支持的函数: '{functionName}'");
@@ -459,9 +516,48 @@ namespace MainUI.LogicalConfiguration.Services
             return result;
         }
 
+        /// <summary>
+        /// 验证函数参数
+        /// </summary>
+        private ValidationResult ValidateFunctionArguments(string functionName, string arguments)
+        {
+            var result = new ValidationResult { IsValid = true };
+            // 这里可以实现具体的函数参数验证逻辑
+            return result;
+        }
+
+        /// <summary>
+        /// 生成验证结果消息
+        /// </summary>
+        private string GenerateResultMessage(ValidationResult result)
+        {
+            var messages = new List<string>();
+
+            if (result.IsValid)
+            {
+                messages.Add("✅ 表达式验证通过");
+            }
+            else
+            {
+                messages.Add("❌ 表达式验证失败");
+            }
+
+            if (result.Errors?.Any() == true)
+            {
+                messages.AddRange(result.Errors.Select(e => $"❌ {e}"));
+            }
+
+            if (result.Warnings?.Any() == true)
+            {
+                messages.AddRange(result.Warnings.Select(w => $"⚠️ {w}"));
+            }
+
+            return string.Join(Environment.NewLine, messages);
+        }
+
         #endregion
 
-        #region 私有辅助方法
+        #region 辅助方法
 
         /// <summary>
         /// 检查括号是否平衡
@@ -469,40 +565,13 @@ namespace MainUI.LogicalConfiguration.Services
         private bool IsParenthesesBalanced(string expression)
         {
             int count = 0;
-            bool inString = false;
-            char stringChar = '\0';
-
-            for (int i = 0; i < expression.Length; i++)
+            foreach (char c in expression)
             {
-                var c = expression[i];
-
-                if (!inString)
-                {
-                    if (c == '"' || c == '\'')
-                    {
-                        inString = true;
-                        stringChar = c;
-                    }
-                    else if (c == '(')
-                    {
-                        count++;
-                    }
-                    else if (c == ')')
-                    {
-                        count--;
-                        if (count < 0) return false;
-                    }
-                }
-                else
-                {
-                    if (c == stringChar && (i == 0 || expression[i - 1] != '\\'))
-                    {
-                        inString = false;
-                    }
-                }
+                if (c == '(') count++;
+                if (c == ')') count--;
+                if (count < 0) return false;
             }
-
-            return count == 0 && !inString;
+            return count == 0;
         }
 
         /// <summary>
@@ -510,48 +579,35 @@ namespace MainUI.LogicalConfiguration.Services
         /// </summary>
         private bool IsQuotesBalanced(string expression)
         {
-            int doubleQuoteCount = 0;
-            int singleQuoteCount = 0;
-
-            for (int i = 0; i < expression.Length; i++)
+            int count = 0;
+            bool escaped = false;
+            foreach (char c in expression)
             {
-                if (expression[i] == '"' && (i == 0 || expression[i - 1] != '\\'))
+                if (c == '\\' && !escaped)
                 {
-                    doubleQuoteCount++;
+                    escaped = true;
+                    continue;
                 }
-                else if (expression[i] == '\'' && (i == 0 || expression[i - 1] != '\\'))
+                if (c == '"' && !escaped)
                 {
-                    singleQuoteCount++;
+                    count++;
                 }
+                escaped = false;
             }
-
-            return doubleQuoteCount % 2 == 0 && singleQuoteCount % 2 == 0;
+            return count % 2 == 0;
         }
 
         /// <summary>
-        /// 检查是否有连续运算符
+        /// 检查是否存在连续运算符
         /// </summary>
         private bool HasConsecutiveOperators(string expression)
         {
-            var cleanExpression = RemoveStringLiterals(expression);
-            var operators = new[] { "+", "-", "*", "/", "=", "!", ">", "<", "&", "|" };
+            // 移除字符串字面量后检查
+            var withoutStrings = RemoveStringLiterals(expression);
 
-            for (int i = 0; i < cleanExpression.Length - 1; i++)
-            {
-                if (operators.Any(op => cleanExpression[i].ToString() == op) &&
-                    operators.Any(op => cleanExpression[i + 1].ToString() == op))
-                {
-                    // 允许的组合：==, !=, >=, <=, &&, ||
-                    var combo = cleanExpression.Substring(i, 2);
-                    if (combo != "==" && combo != "!=" && combo != ">=" &&
-                        combo != "<=" && combo != "&&" && combo != "||")
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+            // 检查连续的运算符（排除负号和逻辑非）
+            var operatorPattern = new Regex(@"[+\-*/%][\s]*[+*/%]|[=!<>]{3,}");
+            return operatorPattern.IsMatch(withoutStrings);
         }
 
         /// <summary>
@@ -559,161 +615,12 @@ namespace MainUI.LogicalConfiguration.Services
         /// </summary>
         private List<char> GetInvalidCharacters(string expression)
         {
-            var validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}()[]\"'+-*/%=!<>&|.,_: \t\r\n";
+            var validChars = new HashSet<char>(
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" +
+                "+-*/%=!<>&|(){}[].,;:\"' \t\n\r_"
+            );
+
             return expression.Where(c => !validChars.Contains(c)).Distinct().ToList();
-        }
-
-        /// <summary>
-        /// 处理变量引用
-        /// </summary>
-        private string ProcessVariableReferences(string expression)
-        {
-            var allVariables = _variableManager.GetAllVariables();
-
-            return _variablePattern.Replace(expression, match =>
-            {
-                var variableName = match.Groups[1].Value;
-                var variable = allVariables.FirstOrDefault(v => v.VarName.Equals(variableName, StringComparison.OrdinalIgnoreCase));
-
-                if (variable?.VarValue != null)
-                {
-                    // 如果是字符串值，需要添加引号
-                    if (variable.VarType.Equals("String", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return $"\"{variable.VarValue}\"";
-                    }
-                    return variable.VarValue.ToString();
-                }
-
-                return "null";
-            });
-        }
-
-        /// <summary>
-        /// 处理字符串连接
-        /// </summary>
-        private string ProcessStringConcatenation(string expression)
-        {
-            // 简单的字符串连接处理
-            // 实际项目中可能需要更复杂的解析
-            return expression.Replace(" + ", "");
-        }
-
-        /// <summary>
-        /// 处理函数调用
-        /// </summary>
-        private string ProcessFunctionCalls(string expression)
-        {
-            return _functionPattern.Replace(expression, match =>
-            {
-                var functionName = match.Groups[1].Value.ToUpperInvariant();
-                var arguments = match.Groups[2].Value;
-
-                try
-                {
-                    return ExecuteFunction(functionName, arguments);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning(ex, "执行函数 {FunctionName} 时发生错误", functionName);
-                    return match.Value; // 返回原始值
-                }
-            });
-        }
-
-        /// <summary>
-        /// 执行函数
-        /// </summary>
-        private string ExecuteFunction(string functionName, string arguments)
-        {
-            switch (functionName)
-            {
-                case "NOW":
-                    return $"\"{DateTime.Now}\"";
-
-                case "LEN":
-                    var lenArg = arguments.Trim().Trim('"');
-                    return lenArg.Length.ToString();
-
-                case "UPPER":
-                    var upperArg = arguments.Trim().Trim('"');
-                    return $"\"{upperArg.ToUpperInvariant()}\"";
-
-                case "LOWER":
-                    var lowerArg = arguments.Trim().Trim('"');
-                    return $"\"{lowerArg.ToLowerInvariant()}\"";
-
-                case "TRIM":
-                    var trimArg = arguments.Trim().Trim('"');
-                    return $"\"{trimArg.Trim()}\"";
-
-                // 更多函数实现...
-
-                default:
-                    return arguments; // 不支持的函数返回参数
-            }
-        }
-
-        /// <summary>
-        /// 推断表达式类型
-        /// </summary>
-        private string InferExpressionType(string expression)
-        {
-            try
-            {
-                // 如果是字符串字面量
-                if (_stringLiteralPattern.IsMatch(expression))
-                    return "String";
-
-                // 如果是数值字面量
-                if (_numberLiteralPattern.IsMatch(expression))
-                    return expression.Contains(".") ? "Double" : "Integer";
-
-                // 如果包含布尔运算符
-                if (expression.Contains("==") || expression.Contains("!=") ||
-                    expression.Contains("&&") || expression.Contains("||"))
-                    return "Boolean";
-
-                // 基于变量引用推断
-                var variables = GetReferencedVariables(expression);
-                if (variables.Count == 1)
-                {
-                    var allVars = _variableManager.GetAllVariables();
-                    var variable = allVars.FirstOrDefault(v => v.VarName == variables[0]);
-                    return variable?.VarType;
-                }
-
-                return "String"; // 默认为字符串类型
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// 检查类型兼容性
-        /// </summary>
-        private bool IsTypeCompatible(string sourceType, string targetType)
-        {
-            if (string.IsNullOrEmpty(sourceType) || string.IsNullOrEmpty(targetType))
-                return true;
-
-            // 字符串类型可以接受任何类型
-            if (targetType.Equals("String", StringComparison.OrdinalIgnoreCase))
-                return true;
-
-            // 相同类型
-            if (sourceType.Equals(targetType, StringComparison.OrdinalIgnoreCase))
-                return true;
-
-            // 数值类型兼容性
-            var numericTypes = new[] { "Integer", "Double", "Decimal", "Float" };
-            if (numericTypes.Contains(sourceType, StringComparer.OrdinalIgnoreCase) &&
-                numericTypes.Contains(targetType, StringComparer.OrdinalIgnoreCase))
-                return true;
-
-            return false;
         }
 
         /// <summary>
@@ -785,42 +692,312 @@ namespace MainUI.LogicalConfiguration.Services
         }
 
         /// <summary>
-        /// 验证函数参数
+        /// 处理变量引用
         /// </summary>
-        private ValidationResult ValidateFunctionArguments(string functionName, string arguments)
+        private string ProcessVariableReferences(string expression)
         {
-            var result = new ValidationResult { IsValid = true };
-            // 这里可以实现具体的函数参数验证逻辑
-            return result;
+            return _variablePattern.Replace(expression, match =>
+            {
+                var variableName = match.Groups[1].Value;
+                var variable = _variableManager.GetAllVariables()
+                    .FirstOrDefault(v => v.VarName.Equals(variableName, StringComparison.OrdinalIgnoreCase));
+
+                if (variable?.VarValue != null)
+                {
+                    // 根据类型格式化值
+                    if (variable.VarType == "String")
+                        return $"\"{variable.VarValue}\"";
+                    return variable.VarValue.ToString();
+                }
+
+                return "null";
+            });
         }
 
         /// <summary>
-        /// 生成验证结果消息
+        /// 处理字符串连接
         /// </summary>
-        private string GenerateResultMessage(ValidationResult result)
+        private string ProcessStringConcatenation(string expression)
         {
-            var messages = new List<string>();
+            // 简化的字符串连接处理
+            // 实际应该使用更复杂的解析逻辑
+            return expression;
+        }
 
-            if (result.IsValid)
+        /// <summary>
+        /// 处理函数调用
+        /// </summary>
+        private string ProcessFunctionCalls(string expression)
+        {
+            return _functionPattern.Replace(expression, match =>
             {
-                messages.Add("✅ 表达式验证通过");
+                var functionName = match.Groups[1].Value.ToUpperInvariant();
+                var arguments = match.Groups[2].Value;
+
+                // 执行函数（如果支持）
+                return ExecuteFunction(functionName, arguments);
+            });
+        }
+
+        /// <summary>
+        /// 执行函数
+        /// </summary>
+        private string ExecuteFunction(string functionName, string arguments)
+        {
+            var upperFunctionName = functionName.ToUpperInvariant();
+
+            switch (upperFunctionName)
+            {
+                // ===== 日期时间函数 =====
+                case "NOW":
+                case "DATETIME.NOW":
+                    return $"\"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\"";
+
+                case "TODAY":
+                case "DATETIME.TODAY":
+                    return $"\"{DateTime.Today:yyyy-MM-dd}\"";
+
+                // ===== 字符串函数 =====
+                case "LEN":
+                case "LENGTH":
+                case "STRING.LENGTH":
+                    var lenArg = arguments.Trim().Trim('"');
+                    return lenArg.Length.ToString();
+
+                case "UPPER":
+                case "TOUPPER":
+                case "STRING.TOUPPER":
+                    var upperArg = arguments.Trim().Trim('"');
+                    return $"\"{upperArg.ToUpperInvariant()}\"";
+
+                case "LOWER":
+                case "TOLOWER":
+                case "STRING.TOLOWER":
+                    var lowerArg = arguments.Trim().Trim('"');
+                    return $"\"{lowerArg.ToLowerInvariant()}\"";
+
+                case "TRIM":
+                case "STRING.TRIM":
+                    var trimArg = arguments.Trim().Trim('"');
+                    return $"\"{trimArg.Trim()}\"";
+
+                case "SUBSTRING":
+                case "STRING.SUBSTRING":
+                    // 简化处理,实际应该解析参数
+                    return $"\"{arguments}\"";
+
+                case "REPLACE":
+                case "STRING.REPLACE":
+                    // 简化处理,实际应该解析参数
+                    return $"\"{arguments}\"";
+
+                // ===== 数学函数 =====
+                case "ROUND":
+                case "MATH.ROUND":
+                    var roundArgs = ParseFunctionArguments(arguments);
+                    if (roundArgs.Count >= 1 && double.TryParse(roundArgs[0], out var roundValue))
+                    {
+                        int digits = 0;
+                        if (roundArgs.Count >= 2)
+                            int.TryParse(roundArgs[1], out digits);
+                        return Math.Round(roundValue, digits).ToString();
+                    }
+                    return arguments;
+
+                case "ABS":
+                case "MATH.ABS":
+                    if (double.TryParse(arguments.Trim(), out var absValue))
+                        return Math.Abs(absValue).ToString();
+                    return arguments;
+
+                case "MAX":
+                case "MATH.MAX":
+                    var maxArgs = ParseFunctionArguments(arguments);
+                    if (maxArgs.Count >= 2 &&
+                        double.TryParse(maxArgs[0], out var max1) &&
+                        double.TryParse(maxArgs[1], out var max2))
+                    {
+                        return Math.Max(max1, max2).ToString();
+                    }
+                    return arguments;
+
+                case "MIN":
+                case "MATH.MIN":
+                    var minArgs = ParseFunctionArguments(arguments);
+                    if (minArgs.Count >= 2 &&
+                        double.TryParse(minArgs[0], out var min1) &&
+                        double.TryParse(minArgs[1], out var min2))
+                    {
+                        return Math.Min(min1, min2).ToString();
+                    }
+                    return arguments;
+
+                case "FLOOR":
+                case "MATH.FLOOR":
+                    if (double.TryParse(arguments.Trim(), out var floorValue))
+                        return Math.Floor(floorValue).ToString();
+                    return arguments;
+
+                case "CEILING":
+                case "MATH.CEILING":
+                    if (double.TryParse(arguments.Trim(), out var ceilingValue))
+                        return Math.Ceiling(ceilingValue).ToString();
+                    return arguments;
+
+                case "SQRT":
+                case "MATH.SQRT":
+                    if (double.TryParse(arguments.Trim(), out var sqrtValue) && sqrtValue >= 0)
+                        return Math.Sqrt(sqrtValue).ToString();
+                    return arguments;
+
+                case "POW":
+                case "MATH.POW":
+                    var powArgs = ParseFunctionArguments(arguments);
+                    if (powArgs.Count >= 2 &&
+                        double.TryParse(powArgs[0], out var powBase) &&
+                        double.TryParse(powArgs[1], out var powExp))
+                    {
+                        return Math.Pow(powBase, powExp).ToString();
+                    }
+                    return arguments;
+
+                // ===== 类型转换函数 =====
+                case "TOINT":
+                case "TOINT32":
+                case "CONVERT.TOINT32":
+                    if (double.TryParse(arguments.Trim().Trim('"'), out var intValue))
+                        return ((int)intValue).ToString();
+                    return arguments;
+
+                case "TODOUBLE":
+                case "CONVERT.TODOUBLE":
+                    if (double.TryParse(arguments.Trim().Trim('"'), out var dblValue))
+                        return dblValue.ToString();
+                    return arguments;
+
+                case "TOSTRING":
+                case "CONVERT.TOSTRING":
+                    return $"\"{arguments.Trim().Trim('"')}\"";
+
+                // ===== 条件逻辑函数 =====
+                case "IF":
+                    // IF 函数需要特殊处理,这里简化返回
+                    return arguments;
+
+                case "ISNULL":
+                    var isnullArgs = ParseFunctionArguments(arguments);
+                    if (isnullArgs.Count >= 2)
+                    {
+                        var value = isnullArgs[0].Trim();
+                        var defaultValue = isnullArgs[1].Trim();
+                        return string.IsNullOrEmpty(value) || value == "null" ? defaultValue : value;
+                    }
+                    return arguments;
+
+                case "ISEMPTY":
+                    var isemptyArg = arguments.Trim().Trim('"');
+                    return string.IsNullOrEmpty(isemptyArg) ? "true" : "false";
+
+                // ===== 默认处理 =====
+                default:
+                    _logger?.LogWarning("未实现的函数执行: {FunctionName}({Arguments})", functionName, arguments);
+                    // 对于未实现的函数,返回原始函数调用字符串
+                    return $"{functionName}({arguments})";
             }
-            else
+        }
+
+        /// <summary>
+        /// 解析函数参数
+        /// </summary>
+        private List<string> ParseFunctionArguments(string arguments)
+        {
+            if (string.IsNullOrWhiteSpace(arguments))
+                return new List<string>();
+
+            // 简单的参数分割 (不处理嵌套函数和字符串中的逗号)
+            var args = new List<string>();
+            var currentArg = new StringBuilder();
+            int nestedLevel = 0;
+            bool inString = false;
+
+            foreach (char c in arguments)
             {
-                messages.Add("❌ 表达式验证失败");
+                if (c == '"')
+                {
+                    inString = !inString;
+                    currentArg.Append(c);
+                }
+                else if (c == '(' && !inString)
+                {
+                    nestedLevel++;
+                    currentArg.Append(c);
+                }
+                else if (c == ')' && !inString)
+                {
+                    nestedLevel--;
+                    currentArg.Append(c);
+                }
+                else if (c == ',' && nestedLevel == 0 && !inString)
+                {
+                    args.Add(currentArg.ToString().Trim());
+                    currentArg.Clear();
+                }
+                else
+                {
+                    currentArg.Append(c);
+                }
             }
 
-            if (result.Errors?.Any() == true)
+            if (currentArg.Length > 0)
             {
-                messages.AddRange(result.Errors.Select(e => $"❌ {e}"));
+                args.Add(currentArg.ToString().Trim());
             }
 
-            if (result.Warnings?.Any() == true)
-            {
-                messages.AddRange(result.Warnings.Select(w => $"⚠️ {w}"));
-            }
+            return args;
+        }
 
-            return string.Join(Environment.NewLine, messages);
+        /// <summary>
+        /// 推断表达式类型
+        /// </summary>
+        private string InferExpressionType(string expression)
+        {
+            try
+            {
+                // 如果是字符串字面量
+                if (_stringLiteralPattern.IsMatch(expression))
+                    return "String";
+
+                // 如果是数值字面量
+                if (_numberLiteralPattern.IsMatch(expression))
+                    return expression.Contains(".") ? "Double" : "Int";
+
+                // 如果包含逻辑运算符
+                if (expression.Contains("==") || expression.Contains("!=") ||
+                    expression.Contains("&&") || expression.Contains("||"))
+                    return "Boolean";
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 检查类型兼容性
+        /// </summary>
+        private bool IsTypeCompatible(string sourceType, string targetType)
+        {
+            if (sourceType.Equals(targetType, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // 数值类型之间可以转换
+            var numericTypes = new[] { "Int", "Double", "Float", "Decimal", "Long" };
+            if (numericTypes.Contains(sourceType) && numericTypes.Contains(targetType))
+                return true;
+
+            return false;
         }
 
         #endregion
@@ -853,17 +1030,23 @@ namespace MainUI.LogicalConfiguration.Services
         /// </summary>
         public string Message { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 创建错误结果
+        /// </summary>
         public static ValidationResult Error(string message)
         {
             return new ValidationResult
             {
                 IsValid = false,
-                Errors = new List<string> { message },
+                Errors = [message],
                 Message = message
             };
         }
 
-        public static ValidationResult Success(string message = "验证成功")
+        /// <summary>
+        /// 创建成功结果
+        /// </summary>
+        public static ValidationResult Success(string message = "验证通过")
         {
             return new ValidationResult
             {
@@ -879,19 +1062,14 @@ namespace MainUI.LogicalConfiguration.Services
     public class ValidationContext
     {
         /// <summary>
-        /// 目标变量名称
+        /// 目标变量名称（用于循环依赖检查）
         /// </summary>
         public string TargetVariableName { get; set; }
 
         /// <summary>
-        /// 目标变量类型
+        /// 目标变量类型（用于类型兼容性检查）
         /// </summary>
         public string TargetVariableType { get; set; }
-
-        /// <summary>
-        /// 附加上下文
-        /// </summary>
-        public Dictionary<string, object> AdditionalContext { get; set; } = [];
     }
 
     /// <summary>
@@ -900,17 +1078,17 @@ namespace MainUI.LogicalConfiguration.Services
     public class CalculationResult
     {
         /// <summary>
-        /// 计算结果
+        /// 是否成功
         /// </summary>
         public bool Success { get; set; }
 
         /// <summary>
-        /// 计算值
+        /// 计算结果值
         /// </summary>
         public object Value { get; set; }
 
         /// <summary>
-        /// 计算值类型
+        /// 结果类型
         /// </summary>
         public Type ValueType { get; set; }
 
@@ -918,14 +1096,6 @@ namespace MainUI.LogicalConfiguration.Services
         /// 错误消息
         /// </summary>
         public string ErrorMessage { get; set; }
-
-        public override string ToString()
-        {
-            if (!Success)
-                return $"计算失败: {ErrorMessage}";
-
-            return Value?.ToString() ?? "null";
-        }
     }
 
     #endregion

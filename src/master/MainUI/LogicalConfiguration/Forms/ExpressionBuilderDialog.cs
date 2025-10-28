@@ -206,7 +206,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 lstVariables.Items.Clear();
 
                 var variables = _variableManager.GetAllVariables();
-                if (variables == null || !variables.Any())
+                if (variables == null || variables.Count == 0)
                 {
                     lstVariables.Items.Add("💡 暂无可用变量");
                     lstVariables.Items.Add("请先在工作流中定义变量");
