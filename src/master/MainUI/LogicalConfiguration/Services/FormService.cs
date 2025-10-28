@@ -18,6 +18,7 @@ namespace MainUI.LogicalConfiguration.Services
         private readonly IPLCManager _plcManager;
         private readonly IWorkflowStateService _workflowState;
         private readonly GlobalVariableManager _variableManager;
+        private readonly IPLCConfigurationService _plcConfigService;
         private readonly IFormService _selfReference; // 用于避免循环引用
 
         public FormService(IServiceProvider serviceProvider, ILogger<FormService> logger)
@@ -31,6 +32,7 @@ namespace MainUI.LogicalConfiguration.Services
                 _logger = logger ?? throw new ArgumentNullException(nameof(logger));
                 _plcManager = _serviceProvider.GetRequiredService<IPLCManager>();
                 _workflowState = _serviceProvider.GetRequiredService<IWorkflowStateService>();
+                _plcConfigService = _serviceProvider.GetRequiredService<IPLCConfigurationService>();
                 _variableManager = _serviceProvider.GetRequiredService<GlobalVariableManager>();
                 _selfReference = this; // 自引用，避免循环依赖
             }
@@ -88,6 +90,9 @@ namespace MainUI.LogicalConfiguration.Services
                         break;
                     case "变量监控":
                         form = CreateForm<Form_VariableMonitor>();
+                        break;
+                    case "点位定义":
+                        form = CreateForm<Form_DefinePoint>();
                         break;
                     default:
                         _logger.LogWarning("未知的窗体类型: {FormName}", formName);
@@ -199,6 +204,11 @@ namespace MainUI.LogicalConfiguration.Services
                     _workflowState,
                     _variableManager,
                     GetSpecificLogger<Form_VariableMonitor>()),
+
+                // 点位定义
+                nameof(Form_DefinePoint) => (T)(object)new Form_DefinePoint(
+                    _plcConfigService,
+                    GetSpecificLogger<Form_DefinePoint>()),
 
                 // 未知窗体类型
                 _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")

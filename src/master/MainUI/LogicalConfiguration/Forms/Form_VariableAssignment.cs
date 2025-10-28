@@ -1463,7 +1463,7 @@ namespace MainUI.LogicalConfiguration.Forms
    - 点击测试按钮可以验证配置
    - 不会影响实际流程执行";
 
-                MessageHelper.MessageOK(helpText, TType.Info);
+                MessageHelper.MessageOK(this, helpText, TType.Info);
             }
             catch (Exception ex)
             {
