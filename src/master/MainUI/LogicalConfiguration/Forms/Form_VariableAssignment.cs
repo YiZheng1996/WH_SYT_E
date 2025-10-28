@@ -493,7 +493,19 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void SaveFormToParameter()
         {
-            if (_parameter == null) return;
+            // 确保 _parameter 存在
+            if (_parameter == null)
+            {
+                _parameter = new Parameter_VariableAssignment();
+                Logger?.LogWarning("SaveFormToParameter: _parameter 为 null，已创建新实例");
+            }
+
+            // 确保 DataSource 存在
+            if (_parameter.DataSource == null)
+            {
+                _parameter.DataSource = new DataSourceConfig();
+                Logger?.LogWarning("SaveFormToParameter: DataSource 为 null，已创建新实例");
+            }
 
             try
             {
@@ -503,6 +515,9 @@ namespace MainUI.LogicalConfiguration.Forms
                 _parameter.Description = txtDescription?.Text ?? "";
                 _parameter.IsAssignment = chkEnabled?.Checked ?? false;
 
+                // 添加日志以便调试
+                Logger?.LogDebug($"保存参数 - 类型: {_parameter.AssignmentType}, 目标变量: {_parameter.TargetVarName}");
+
                 // 根据赋值类型保存数据
                 switch (_parameter.AssignmentType)
                 {
@@ -511,11 +526,18 @@ namespace MainUI.LogicalConfiguration.Forms
                         _parameter.DataSource.PlcConfig.ModuleName = CboPlcModule?.Text ?? "";
                         _parameter.DataSource.PlcConfig.Address = CboPlcAddress?.Text ?? "";
                         _parameter.Expression = ""; // PLC读取时Expression为空
+                        Logger?.LogDebug($"PLC 模式 - 模块: {_parameter.DataSource.PlcConfig.ModuleName}, 地址: {_parameter.DataSource.PlcConfig.Address}");
                         break;
 
                     default:
+                        string expression = txtAssignmentContent?.Text ?? "";
                         _parameter.Expression = txtAssignmentContent?.Text ?? "";
                         _parameter.DataSource.SourceType = DataSourceType.Variable; // 默认
+                        // ✅ 验证是否真的获取到了值
+                        if (string.IsNullOrEmpty(expression) && _parameter.AssignmentType != AssignmentTypeEnum.PLCRead)
+                        {
+                            Logger?.LogWarning($"⚠️ 警告: Expression 为空! 控件值: '{txtAssignmentContent?.Text}'");
+                        }
                         break;
                 }
 
@@ -1285,7 +1307,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 确定按钮点击事件处理器
         /// 执行最终验证，保存参数，并关闭窗体
         /// </summary>
-        private void BtnOK_Click(object sender, EventArgs e)
+        private async void BtnOK_Click(object sender, EventArgs e)
         {
             try
             {
@@ -1297,7 +1319,23 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 SaveFormToParameter();
 
-                // 使用基类方法，保存参数到流程中
+                // 执行变量赋值
+                if (_assignmentEngine != null)
+                {
+                    var testResult = await _assignmentEngine.ExecuteAssignmentAsync(_parameter);
+
+                    if (!testResult.Success)
+                    {
+                        Logger?.LogWarning("变量赋值执行失败: {Error}", testResult.ErrorMessage);
+                        MessageHelper.MessageOK($"变量赋值失败：{testResult.ErrorMessage}", TType.Error);
+                        return;
+                    }
+
+                    Logger?.LogInformation("变量赋值成功: {TargetVar} = {NewValue}",
+                        testResult.TargetVariableName, testResult.NewValue);
+                }
+
+                // 保存参数配置到工作流
                 SaveParameters();
 
                 _hasUnsavedChanges = false;
@@ -1411,8 +1449,9 @@ namespace MainUI.LogicalConfiguration.Forms
                     StartPosition = FormStartPosition.CenterParent
                 };
 
+                VarHelper.ShowDialogWithOverlay(this, builder);
                 // 显示对话框
-                if (builder.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(builder.GeneratedExpression))
+                if (builder.DialogResult == DialogResult.OK && !string.IsNullOrWhiteSpace(builder.GeneratedExpression))
                 {
                     // 将生成的表达式设置到文本框
                     txtAssignmentContent.Text = builder.GeneratedExpression;

@@ -653,10 +653,13 @@ namespace MainUI.LogicalConfiguration.Forms
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "Form_VariableAssignment";
+            RectColor = Color.FromArgb(65, 100, 204);
             ShowIcon = false;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
             Text = "变量赋值工具";
+            TitleColor = Color.FromArgb(65, 100, 204);
+            TitleFont = new Font("微软雅黑", 12F, FontStyle.Bold);
             ZoomScaleRect = new Rectangle(15, 15, 865, 605);
             grpBasicConfig.ResumeLayout(false);
             pnlPlcSource.ResumeLayout(false);

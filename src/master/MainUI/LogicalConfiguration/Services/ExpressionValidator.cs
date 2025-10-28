@@ -20,16 +20,16 @@ namespace MainUI.LogicalConfiguration.Services
         private readonly string[] _supportedFunctions = { "LEN", "SUBSTRING", "UPPER", "LOWER", "TRIM", "REPLACE", "NOW", "FORMAT" };
 
         // 变量引用模式 {VariableName}
-        private readonly Regex _variablePattern = new Regex(@"\{(\w+)\}", RegexOptions.Compiled);
+        private readonly Regex _variablePattern = new(@"\{(\w+)\}", RegexOptions.Compiled);
 
         // 字符串字面量模式 "string"
-        private readonly Regex _stringLiteralPattern = new Regex(@"""([^""\\]*(\\.[^""\\]*)*)""", RegexOptions.Compiled);
+        private readonly Regex _stringLiteralPattern = new(@"""([^""\\]*(\\.[^""\\]*)*)""", RegexOptions.Compiled);
 
         // 数值字面量模式
-        private readonly Regex _numberLiteralPattern = new Regex(@"\b\d+(\.\d+)?\b", RegexOptions.Compiled);
+        private readonly Regex _numberLiteralPattern = new(@"\b\d+(\.\d+)?\b", RegexOptions.Compiled);
 
         // 函数调用模式 FUNCTION(args)
-        private readonly Regex _functionPattern = new Regex(@"\b(\w+)\s*\(([^)]*)\)", RegexOptions.Compiled);
+        private readonly Regex _functionPattern = new(@"\b(\w+)\s*\(([^)]*)\)", RegexOptions.Compiled);
 
         /// <summary>
         /// 验证表达式
@@ -249,7 +249,7 @@ namespace MainUI.LogicalConfiguration.Services
             {
                 _logger?.LogError(ex, "验证语法时发生错误");
                 result.IsValid = false;
-                result.Errors = new List<string> { "语法验证过程发生错误" };
+                result.Errors = ["语法验证过程发生错误"];
             }
 
             return result;
