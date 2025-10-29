@@ -8,6 +8,11 @@
     public class AssignmentExecutionResult
     {
         /// <summary>
+        /// 变量名称
+        /// </summary>
+        public string TargetVariableName { get; set; }
+
+        /// <summary>
         /// 是否执行成功
         /// </summary>
         public bool Success { get; set; }
@@ -101,7 +106,7 @@
     }
 
     /// <summary>
-    /// 验证结果（增强版）
+    /// 验证结果
     /// 包含错误和警告信息
     /// </summary>
     public class ValidationResult

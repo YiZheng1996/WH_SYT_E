@@ -47,11 +47,11 @@ namespace MainUI.LogicalConfiguration
             VarValue = newValue?.ToString() ?? "";
             LastUpdated = DateTime.Now;
 
-            // 记录历史（可选）
+            // 记录历史
             ValueHistory.Add(new VariableHistoryItem
             {
-                OldValue = oldValue,
-                NewValue = VarValue,
+                OldValue = oldValue.ToString(),
+                NewValue = VarValue.ToString(),
                 Timestamp = LastUpdated,
                 Source = source
             });
@@ -151,7 +151,7 @@ namespace MainUI.LogicalConfiguration
         /// <summary>
         /// 自定义变量值
         /// </summary>
-        public string VarValue { get; set; }
+        public object VarValue { get; set; }
 
         /// <summary>
         /// 自定义变量文本

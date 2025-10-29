@@ -703,7 +703,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                         preview.AppendLine("✅ 验证成功!");
                         preview.AppendLine();
                         preview.AppendLine("📊 预期结果:");
-                        preview.AppendLine($"  {calcResult.Value ?? "null"}");
+                        preview.AppendLine($"  {calcResult.Result ?? "null"}");
                         preview.AppendLine();
                         preview.AppendLine("💡 提示:");
                         preview.AppendLine("  表达式将在工作流执行时计算实际值");

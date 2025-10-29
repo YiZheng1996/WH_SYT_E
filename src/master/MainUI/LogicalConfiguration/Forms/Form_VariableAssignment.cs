@@ -1247,7 +1247,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         var calculationResult = _engine?.CalculateExpectedValue(parameter.Expression);
                         if (calculationResult?.Success == true)
                         {
-                            previewLines.Add($"预期值：{calculationResult.Value ?? "null"}");
+                            previewLines.Add($"预期值：{calculationResult.Result ?? "null"}");
                         }
                         else
                         {
@@ -1379,24 +1379,19 @@ namespace MainUI.LogicalConfiguration.Forms
                 {
                     var testResult = await _assignmentEngine.ExecuteAssignmentAsync(parameter);
 
+                    testResult.TargetVariableName = parameter.TargetVarName;
+
                     if (testResult.Success)
                     {
-                        if (testResult.Skipped)
-                        {
-                            MessageHelper.MessageOK($"测试完成（已跳过）：\n{testResult.SkipReason}", TType.Info);
-                        }
-                        else
-                        {
-                            var message = $"测试成功！\n" +
-                                        $"变量：{testResult.TargetVariableName}\n" +
-                                        $"原值：{testResult.OldValue ?? "null"}\n" +
-                                        $"新值：{testResult.NewValue ?? "null"}";
+                        var message = $"测试成功！\n" +
+                                    $"变量：{testResult.TargetVariableName}\n" +
+                                    $"原值：{testResult.OldValue ?? "null"}\n" +
+                                    $"新值：{testResult.NewValue ?? "null"}";
 
-                            MessageHelper.MessageOK(message, TType.Success);
+                        MessageHelper.MessageOK(message, TType.Success);
 
-                            // 刷新预览以显示新值
-                            RestartPreviewTimer();
-                        }
+                        // 刷新预览以显示新值
+                        RestartPreviewTimer();
                     }
                     else
                     {

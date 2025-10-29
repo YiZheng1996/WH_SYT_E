@@ -317,6 +317,48 @@ namespace MainUI.LogicalConfiguration.Engine
 
             return result;
         }
+
+        /// <summary>
+        /// 计算表达式的预期值(用于预览)
+        /// 不修改任何变量,仅返回计算结果
+        /// </summary>
+        /// <param name="expression">要计算的表达式</param>
+        /// <returns>计算结果</returns>
+        public EvaluationResult CalculateExpectedValue(string expression)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(expression))
+                {
+                    return EvaluationResult.Error("表达式为空");
+                }
+
+                _logger?.LogDebug("计算预期值: {Expression}", expression);
+
+                // 1. 先验证表达式
+                var validation = ValidateExpression(expression);
+                if (!validation.IsValid)
+                {
+                    return EvaluationResult.Error(validation.Message);
+                }
+
+                // 2. 预处理表达式(替换变量引用)
+                var processedExpression = PreprocessExpression(expression);
+
+                // 3. 执行计算(不修改任何变量)
+                var result = EvaluateProcessedExpression(processedExpression);
+
+                _logger?.LogDebug("预期值计算成功: {Expression} = {Result}", expression, result);
+
+                return EvaluationResult.Succes(result);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "计算预期值时发生错误: {Expression}", expression);
+                return EvaluationResult.Error($"计算失败: {ex.Message}");
+            }
+        }
+
         #endregion
 
         #region 类型兼容性检查私有方法
@@ -875,7 +917,7 @@ namespace MainUI.LogicalConfiguration.Engine
         #region 私有方法 - 表达式预处理
 
         /// <summary>
-        /// 预处理表达式（替换变量引用为实际值）
+        /// 预处理表达式(替换变量引用为实际值)
         /// </summary>
         private string PreprocessExpression(string expression)
         {
@@ -883,20 +925,37 @@ namespace MainUI.LogicalConfiguration.Engine
             return _variablePattern.Replace(expression, match =>
             {
                 var varName = match.Groups[1].Value;
-                if (_variableManager.TryFindVariableByName(varName) != null)
-                {
-                    var variable = _variableManager.TryFindVariableByName(varName);
-                    var value = variable.VarValue;
+                var variable = _variableManager.TryFindVariableByName(varName);
 
-                    // 根据类型格式化值
-                    return value switch
-                    {
-                        string s => $"\"{s}\"",
-                        bool b => b.ToString().ToLower(),
-                        _ => Convert.ToString(value, CultureInfo.InvariantCulture)
-                    };
+                // 如果变量不存在,保持原样 (验证阶段应该已经检查过)
+                if (variable == null)
+                {
+                    _logger?.LogWarning("预处理时发现未定义变量: {VarName}", varName);
+                    return match.Value;
                 }
-                return match.Value; // 保持原样
+
+                var value = variable.VarValue;
+
+                // 处理 null 值
+                if (value == null)
+                {
+                    return "null";
+                }
+
+                // 根据实际运行时类型格式化值
+                // 注意: 必须先检查具体类型,因为 value 是 object 类型
+                if (value is string s)
+                {
+                    return $"\"{s}\"";  // 字符串加引号
+                }
+
+                if (value is bool b)
+                {
+                    return b.ToString().ToLower();  // 布尔值转小写 (true/false)
+                }
+
+                // 其他类型 (int, double, decimal 等数值类型)
+                return Convert.ToString(value, CultureInfo.InvariantCulture) ?? "null";
             });
         }
 
