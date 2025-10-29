@@ -33,9 +33,9 @@ namespace MainUI.LogicalConfiguration.Engine
         /// </summary>
         /// <param name="parameter">赋值参数</param>
         /// <returns>执行结果</returns>
-        public async Task<AssignmentExecutionResult> ExecuteAssignmentAsync(Parameter_VariableAssignment parameter)
+        public async Task<AssignmentResult> ExecuteAssignmentAsync(Parameter_VariableAssignment parameter)
         {
-            var result = new AssignmentExecutionResult();
+            var result = new AssignmentResult();
             var startTime = DateTime.Now;
 
             try
@@ -80,7 +80,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 };
 
                 // 3. 填充执行结果
-                result.Success = assignResult.Succes;
+                result.Success = assignResult.Success;
                 result.ErrorMessage = assignResult.ErrorMessage;
                 result.NewValue = assignResult.NewValue;
                 result.OldValue = assignResult.OldValue;

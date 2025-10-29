@@ -1,14 +1,15 @@
 ﻿namespace MainUI.LogicalConfiguration.Engine
 {
-    #region 执行结果类
+    #region 赋值结果类
 
     /// <summary>
-    /// 赋值执行结果
+    /// 赋值结果
+    /// 统一的赋值操作结果类，包含执行信息和状态
     /// </summary>
-    public class AssignmentExecutionResult
+    public class AssignmentResult
     {
         /// <summary>
-        /// 变量名称
+        /// 目标变量名称
         /// </summary>
         public string TargetVariableName { get; set; }
 
@@ -23,12 +24,12 @@
         public string ErrorMessage { get; set; }
 
         /// <summary>
-        /// 新值
+        /// 新赋的值
         /// </summary>
         public object NewValue { get; set; }
 
         /// <summary>
-        /// 旧值
+        /// 赋值前的旧值
         /// </summary>
         public object OldValue { get; set; }
 
@@ -41,48 +42,28 @@
         /// 验证错误列表
         /// </summary>
         public List<string> ValidationErrors { get; set; } = new();
-    }
-
-    #endregion
-
-    #region 赋值结果类
-    /// <summary>
-    /// 赋值结果
-    /// </summary>
-    public class AssignmentResult
-    {
-        /// <summary>
-        /// 是否成功
-        /// </summary>
-        public bool Succes { get; set; }
-
-        /// <summary>
-        /// 新赋的值
-        /// </summary>
-        public object NewValue { get; set; }
-
-        /// <summary>
-        /// 赋值前的旧值
-        /// </summary>
-        public object OldValue { get; set; }
-
-        /// <summary>
-        /// 错误消息（失败时）
-        /// </summary>
-        public string ErrorMessage { get; set; }
 
         /// <summary>
         /// 创建成功结果
         /// </summary>
         public static AssignmentResult Success(object newValue, object oldValue) =>
-            new() { Succes = true, NewValue = newValue, OldValue = oldValue };
+            new() { Success = true, NewValue = newValue, OldValue = oldValue };
 
         /// <summary>
         /// 创建失败结果
         /// </summary>
         public static AssignmentResult Error(string message) =>
-            new() { Succes = false, ErrorMessage = message };
+            new() { Success = false, ErrorMessage = message };
     }
+
+    /// <summary>
+    /// 向后兼容的类型别名
+    /// </summary>
+    [Obsolete("请使用 AssignmentResult 代替，AssignmentExecutionResult 已被合并到 AssignmentResult 中")]
+    public class AssignmentExecutionResult : AssignmentResult
+    {
+    }
+
     #endregion
 
     #region 结果类定义
@@ -92,15 +73,30 @@
     /// </summary>
     public class EvaluationResult
     {
+        /// <summary>
+        /// 是否成功
+        /// </summary>
         public bool Success { get; set; }
 
+        /// <summary>
+        /// 求值结果
+        /// </summary>
         public object Result { get; set; }
 
+        /// <summary>
+        /// 错误消息
+        /// </summary>
         public string ErrorMessage { get; set; }
 
-        public static EvaluationResult Succes(object result) =>
+        /// <summary>
+        /// 创建成功结果
+        /// </summary>
+        public static EvaluationResult Success(object result) =>
             new() { Success = true, Result = result };
 
+        /// <summary>
+        /// 创建失败结果
+        /// </summary>
         public static EvaluationResult Error(string message) =>
             new() { Success = false, ErrorMessage = message };
     }
