@@ -7,11 +7,11 @@ namespace MainUI.Service
 {
     /// <summary>
     /// 报表专用表达式计算助手
-    /// 封装现有的 ExpressionEvaluator,为报表工具提供简化的API
+    /// 封装现有的 ExpressionEngine,为报表工具提供简化的API
     /// </summary>
     public class ReportExpressionHelper
     {
-        private readonly ExpressionEvaluator _evaluator;
+        private readonly ExpressionEngine _engine;
         private readonly GlobalVariableManager _variableManager;
         private readonly ILogger _logger;
 
@@ -28,7 +28,7 @@ namespace MainUI.Service
             _logger = logger;
 
             // 初始化底层的表达式计算引擎
-            _evaluator = new ExpressionEvaluator(_variableManager, _logger);
+            _engine = new ExpressionEngine(_variableManager, _logger);
         }
 
         #endregion
@@ -54,7 +54,7 @@ namespace MainUI.Service
                 _logger?.LogDebug($"开始计算报表表达式: {expression}");
 
                 // 使用底层引擎计算
-                var result = _evaluator.Evaluate(expression);
+                var result = _engine.Evaluate(expression);
 
                 if (result.Success)
                 {
@@ -100,7 +100,7 @@ namespace MainUI.Service
                     return false;
 
                 // 尝试计算表达式
-                var result = _evaluator.Evaluate(expression);
+                var result = _engine.EvaluateExpression(expression);
                 return result.Success;
             }
             catch
@@ -121,7 +121,7 @@ namespace MainUI.Service
                 if (string.IsNullOrWhiteSpace(expression))
                     return (false, "表达式不能为空");
 
-                var result = _evaluator.Evaluate(expression);
+                var result = _engine.Evaluate(expression);
 
                 if (result.Success)
                 {

@@ -8,7 +8,6 @@ using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.ComponentModel;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -23,12 +22,11 @@ namespace MainUI.LogicalConfiguration.Forms
     public partial class Form_VariableAssignment : BaseParameterForm, IParameterForm<Parameter_VariableAssignment>
     {
         #region 私有字段
-
         /// <summary>
         /// 表达式验证器 - 用于验证和计算表达式的正确性
         /// 提供表达式语法检查和预期值计算功能
         /// </summary>
-        private readonly ExpressionValidator _expressionValidator;
+        private readonly ExpressionEngine _engine;
 
         /// <summary>
         /// 变量赋值引擎 - 负责执行实际的变量赋值操作
@@ -200,17 +198,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (globalVariableManager != null)
                 {
                     // 初始化核心引擎 
-                    var expressionValidator = new ExpressionValidator(globalVariableManager);
-                    var assignmentEngine = new VariableAssignmentEngine(globalVariableManager, plcManager, expressionValidator);
-
-                    // 使用反射设置私有字段（保持兼容性）
-                    var expressionField = typeof(Form_VariableAssignment).GetField("_expressionValidator",
-                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    expressionField?.SetValue(this, expressionValidator);
-
-                    var assignmentField = typeof(Form_VariableAssignment).GetField("_assignmentEngine",
-                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    assignmentField?.SetValue(this, assignmentEngine);
+                    var ExpressionEngine = new ExpressionEngine(globalVariableManager);
+                    var assignmentEngine = new VariableAssignmentEngine(globalVariableManager, plcManager);
                 }
             }
             catch (Exception ex)
@@ -706,7 +695,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         }
 
                         // 验证表达式语法
-                        if (_expressionValidator != null)
+                        if (_engine != null)
                         {
                             var context = new ValidationContext
                             {
@@ -714,7 +703,7 @@ namespace MainUI.LogicalConfiguration.Forms
                                 //TargetVariableType = targetVar.VarType
                             };
 
-                            var expressionResult = _expressionValidator.ValidateExpression(txtAssignmentContent.Text, context);
+                            var expressionResult = _engine.ValidateExpression(txtAssignmentContent.Text, context);
                             if (!expressionResult.IsValid)
                             {
                                 var errorMsg = string.Join("\n", expressionResult.Errors);
@@ -829,7 +818,7 @@ namespace MainUI.LogicalConfiguration.Forms
                                 TargetVariableType = GetTargetVariableType()
                             };
 
-                            var expressionResult = _expressionValidator?.ValidateExpression(parameter.Expression, context);
+                            var expressionResult = _engine?.ValidateExpression(parameter.Expression, context);
                             if (expressionResult != null)
                             {
                                 if (!expressionResult.IsValid)
@@ -878,7 +867,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 条件验证（可选）
                 if (!string.IsNullOrWhiteSpace(parameter.Condition))
                 {
-                    var conditionResult = _expressionValidator?.ValidateExpression(parameter.Condition, new ValidationContext());
+                    var conditionResult = _engine?.ValidateExpression(parameter.Condition, new ValidationContext());
                     if (conditionResult != null && !conditionResult.IsValid)
                     {
                         errors.Add("执行条件表达式错误");
@@ -890,12 +879,10 @@ namespace MainUI.LogicalConfiguration.Forms
                 {
                     IsValid = errors.Count == 0,
                     Errors = errors,
-                    Warnings = warnings,
                     Message = GenerateValidationMessage(new ValidationResult
                     {
                         IsValid = errors.Count == 0,
-                        Errors = errors,
-                        Warnings = warnings
+                        Errors = errors
                     })
                 };
 
@@ -1257,7 +1244,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         previewLines.Add($"当前值：{targetVar.VarValue ?? "null"}");
 
                         // 使用表达式验证器计算预期值
-                        var calculationResult = _expressionValidator?.CalculateExpectedValue(parameter.Expression);
+                        var calculationResult = _engine?.CalculateExpectedValue(parameter.Expression);
                         if (calculationResult?.Success == true)
                         {
                             previewLines.Add($"预期值：{calculationResult.Value ?? "null"}");
@@ -1442,7 +1429,7 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 // 创建表达式构建器对话框
-                using var builder = new ExpressionBuilderDialog(GlobalVariable, _expressionValidator)
+                using var builder = new ExpressionBuilderDialog(GlobalVariable, _engine)
                 {
                     InitialExpression = txtAssignmentContent?.Text ?? "",
                     TargetVariableType = GetTargetVariableType(),
@@ -1679,38 +1666,4 @@ namespace MainUI.LogicalConfiguration.Forms
         #endregion
     }
 
-    #region 辅助枚举
-
-    /// <summary>
-    /// 赋值方式枚举
-    /// 定义变量赋值支持的各种方式
-    /// </summary>
-    public enum AssignmentTypeEnum
-    {
-        /// <summary>
-        /// 直接赋值 - 将固定值直接赋给目标变量
-        /// </summary>
-        [Description("直接赋值")]
-        DirectAssignment,
-
-        /// <summary>
-        /// 表达式计算 - 通过数学表达式计算结果后赋值
-        /// </summary>
-        [Description("表达式计算")]
-        ExpressionCalculation,
-
-        /// <summary>
-        /// 从其他变量复制 - 将其他变量的值复制到目标变量
-        /// </summary>
-        [Description("从其他变量复制")]
-        VariableCopy,
-
-        /// <summary>
-        /// 从PLC读取 - 从指定的PLC模块和地址读取值
-        /// </summary>
-        [Description("从PLC读取")]
-        PLCRead
-    }
-
-    #endregion
 }

@@ -1,4 +1,6 @@
 ﻿using MainUI.LogicalConfiguration;
+using MainUI.LogicalConfiguration.Configuration;
+using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Services;
@@ -240,6 +242,9 @@ namespace MainUI
             services.AddSingleton<DetectionMethods>();
             services.AddSingleton<ReportMethods>();
             services.AddSingleton<VariableAssignmentMethods>();
+
+            services.AddSingleton<ExpressionEngine>();
+            services.AddTransient<VariableAssignmentEngine>();
 
             services.AddTransient<frmMainMenu>();// 主窗体
             services.AddSingleton<IFormService, FormService>();// 窗体集合管理类

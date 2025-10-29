@@ -197,27 +197,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         }
 
         /// <summary>
-        /// 变量赋值类型
-        /// </summary>
-        public enum VariableAssignmentType
-        {
-            /// <summary>
-            /// 变量未被赋值
-            /// </summary>
-            None = 0,
-
-            /// <summary>
-            /// 通过PLC读取被赋值
-            /// </summary>
-            PLCRead = 1,
-
-            /// <summary>
-            /// 通过表达式计算被赋值
-            /// </summary>
-            Expression = 2
-        }
-
-        /// <summary>
         /// 当前步骤信息
         /// </summary>
         public class CurrentStepInfo

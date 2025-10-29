@@ -1,43 +1,34 @@
-﻿using MainUI.LogicalConfiguration.Forms;
+﻿using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
-using MainUI.LogicalConfiguration.Services;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
-using MainUI.LogicalConfiguration.LogicalManager;
 using Microsoft.Extensions.Logging;
-using System.Globalization;
-using System.Text.RegularExpressions;
+using Sunny.UI;
+using System.ComponentModel;
 
 namespace MainUI.LogicalConfiguration.Engine
 {
     /// <summary>
     /// 变量赋值执行引擎
-    /// 负责执行各种类型的变量赋值操作
+    /// 现在作为 ExpressionEngine 的简化包装器
+    /// 负责处理参数模型并委托给统一的表达式引擎
     /// </summary>
     public class VariableAssignmentEngine
     {
-        private readonly GlobalVariableManager _variableManager;
-        private readonly IPLCManager _plcManager;
-        private readonly ExpressionValidator _expressionValidator;
+        private readonly ExpressionEngine _expressionEngine;
         private readonly ILogger<VariableAssignmentEngine> _logger;
-
-        // 表达式计算引擎
-        private readonly ExpressionEvaluator _evaluator;
-
-        // 变量引用模式
-        private readonly Regex _variablePattern = new(@"\{(\w+)\}", RegexOptions.Compiled);
 
         public VariableAssignmentEngine(
             GlobalVariableManager variableManager,
             IPLCManager plcManager,
-            ExpressionValidator expressionValidator,
             ILogger<VariableAssignmentEngine> logger = null)
         {
-            _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
-            _plcManager = plcManager;
-            _expressionValidator = expressionValidator ?? throw new ArgumentNullException(nameof(expressionValidator));
+            ArgumentNullException.ThrowIfNull(variableManager);
+
             _logger = logger;
 
-            _evaluator = new ExpressionEvaluator(_variableManager, _logger);
+            // 创建统一的表达式引擎
+            var expressionLogger = logger?.LoggerFactory?.CreateLogger<ExpressionEngine>();
+            _expressionEngine = new ExpressionEngine(variableManager, plcManager, expressionLogger);
         }
 
         /// <summary>
@@ -55,8 +46,8 @@ namespace MainUI.LogicalConfiguration.Engine
                 _logger?.LogInformation("开始执行变量赋值: {TargetVar} = {AssignmentType}",
                     parameter.TargetVarName, parameter.AssignmentType);
 
-                // 1. 验证参数
-                var validationResult = ValidateParameterAsync(parameter);
+                // 1. 验证参数基本有效性
+                var validationResult = ValidateParameter(parameter);
                 if (!validationResult.IsValid)
                 {
                     result.Success = false;
@@ -65,581 +56,205 @@ namespace MainUI.LogicalConfiguration.Engine
                     return result;
                 }
 
-                // 2. 获取目标变量
-                var targetVariable = _variableManager.FindVariableByName(parameter.TargetVarName);
-                if (targetVariable == null)
+                // 2. 根据赋值类型执行不同的赋值操作
+                AssignmentResult assignResult = parameter.AssignmentType switch
                 {
-                    result.Success = false;
-                    result.ErrorMessage = $"目标变量 '{parameter.TargetVarName}' 不存在";
-                    return result;
-                }
+                    // 直接赋值
+                    VariableAssignmentType.DirectAssignment =>
+                        _expressionEngine.AssignDirectValue(parameter.TargetVarName, parameter.DirectValue),
 
-                // 记录原始值
-                result.OldValue = targetVariable.VarValue;
-                result.TargetVariableName = parameter.TargetVarName;
+                    // 表达式计算赋值
+                    (AssignmentResult)VariableAssignmentType.Expression =>
+                        await _expressionEngine.AssignExpressionAsync(parameter.TargetVarName, parameter.ExpressionValue),
 
-                // 3. 检查执行条件
-                if (!string.IsNullOrWhiteSpace(parameter.Condition))
-                {
-                    var conditionResult = await EvaluateConditionAsync(parameter.Condition);
-                    if (!conditionResult.Success)
-                    {
-                        result.Success = false;
-                        result.ErrorMessage = $"条件评估失败: {conditionResult.ErrorMessage}";
-                        return result;
-                    }
+                    // 从其他变量复制
+                    VariableAssignmentType.FromVariable =>
+                        _expressionEngine.AssignFromVariable(parameter.TargetVarName, parameter.SourceVariableName),
 
-                    if (!conditionResult.ConditionMet)
-                    {
-                        result.Success = true;
-                        result.Skipped = true;
-                        result.SkipReason = "执行条件不满足";
-                        result.NewValue = result.OldValue; // 值未改变
-                        _logger?.LogInformation("变量赋值跳过: 条件不满足 - {Condition}", parameter.Condition);
-                        return result;
-                    }
-                }
+                    // 从PLC读取
+                    VariableAssignmentType.FromPLC =>
+                        await _expressionEngine.AssignFromPlcAsync(
+                            parameter.TargetVarName,
+                            parameter.PlcModuleName,
+                            parameter.PlcKeyName),
 
-                // 4. 根据赋值方式执行相应的逻辑 - 使用枚举而不是字符串
-                var assignmentResult = await ExecuteAssignmentByTypeAsync(parameter, targetVariable);
-                if (!assignmentResult.Success)
-                {
-                    result.Success = false;
-                    result.ErrorMessage = assignmentResult.ErrorMessage;
-                    return result;
-                }
+                    // 智能赋值（自动识别）
+                    _ => await _expressionEngine.AssignSmartAsync(parameter.TargetVarName, parameter.ValueExpression)
+                };
 
-                // 5. 执行赋值
-                var oldValue = targetVariable.VarValue;
-                targetVariable.UpdateValue(assignmentResult.Value, $"变量赋值引擎: {parameter.AssignmentType.GetDescription()}");
-
-                result.Success = true;
-                result.NewValue = assignmentResult.Value;
-                result.AssignmentType = parameter.AssignmentType.GetDescription(); // 使用枚举描述
+                // 3. 填充执行结果
+                result.Success = assignResult.Succes;
+                result.ErrorMessage = assignResult.ErrorMessage;
+                result.NewValue = assignResult.NewValue;
+                result.OldValue = assignResult.OldValue;
                 result.ExecutionTime = DateTime.Now - startTime;
 
-                _logger?.LogInformation("变量赋值完成: {TargetVar} 从 '{OldValue}' 变为 '{NewValue}'",
-                    parameter.TargetVarName, oldValue, assignmentResult.Value);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "执行变量赋值时发生错误: {TargetVar}", parameter.TargetVarName);
-
-                result.Success = false;
-                result.ErrorMessage = $"执行过程发生异常: {ex.Message}";
-                result.Exception = ex;
-                result.ExecutionTime = DateTime.Now - startTime;
-
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// 根据赋值类型执行相应逻辑
-        /// </summary>
-        private async Task<ValueCalculationResult> ExecuteAssignmentByTypeAsync(
-            Parameter_VariableAssignment parameter,
-            VarItem_Enhanced targetVariable)
-        {
-            // 直接使用枚举，不需要字符串转换
-            return parameter.AssignmentType switch
-            {
-                AssignmentTypeEnum.DirectAssignment => ExecuteDirectValueAssignment(parameter.Expression, targetVariable),
-                AssignmentTypeEnum.ExpressionCalculation => await ExecuteExpressionCalculation(parameter.Expression, targetVariable),
-                AssignmentTypeEnum.VariableCopy => ExecuteVariableCopy(parameter.Expression, targetVariable),
-                AssignmentTypeEnum.PLCRead => await ExecutePLCReadFromConfig(parameter.DataSource.PlcConfig, targetVariable),
-                _ => ValueCalculationResult.Error($"不支持的赋值类型: {parameter.AssignmentType}"),
-            };
-        }
-
-        /// <summary>
-        /// 执行PLC读取（使用配置对象）
-        /// </summary>
-        private async Task<ValueCalculationResult> ExecutePLCReadFromConfig(PlcAddressConfig plcConfig, VarItem_Enhanced targetVariable)
-        {
-            try
-            {
-                _logger?.LogDebug("执行PLC读取: {ModuleName}.{Address}", plcConfig.ModuleName, plcConfig.Address);
-
-                if (_plcManager == null)
+                if (result.Success)
                 {
-                    return ValueCalculationResult.Error("PLC管理器未初始化");
-                }
-
-                if (string.IsNullOrEmpty(plcConfig.ModuleName))
-                {
-                    return ValueCalculationResult.Error("PLC模块名不能为空");
-                }
-
-                if (string.IsNullOrEmpty(plcConfig.Address))
-                {
-                    return ValueCalculationResult.Error("PLC地址不能为空");
-                }
-
-                // 从PLC读取值
-                var value = await _plcManager.ReadPLCValueAsync(plcConfig.ModuleName, plcConfig.Address);
-
-                // 转换为目标类型
-                var convertedValue = ConvertValueToTargetType(value?.ToString(), targetVariable.VarType);
-
-                return ValueCalculationResult.Successs(convertedValue, $"从PLC读取: {plcConfig.ModuleName}.{plcConfig.Address}");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "PLC读取失败: {ModuleName}.{Address}", plcConfig.ModuleName, plcConfig.Address);
-                return ValueCalculationResult.Error($"PLC读取失败: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 执行直接值赋值
-        /// </summary>
-        private ValueCalculationResult ExecuteDirectValueAssignment(string expression, VarItem_Enhanced targetVariable)
-        {
-            try
-            {
-                _logger?.LogDebug("执行直接值赋值: {Expression}", expression);
-
-                // 移除外层引号（如果有）
-                var value = expression?.Trim();
-                if (value?.StartsWith("\"") == true && value.EndsWith("\""))
-                {
-                    value = value.Substring(1, value.Length - 2);
-                }
-                else if (value?.StartsWith("'") == true && value.EndsWith("'"))
-                {
-                    value = value.Substring(1, value.Length - 2);
-                }
-
-                // 尝试转换为目标变量的类型
-                var convertedValue = ConvertValueToTargetType(value, targetVariable.VarType);
-
-                return ValueCalculationResult.Successs(convertedValue, "直接值赋值");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "直接值赋值失败");
-                return ValueCalculationResult.Error($"直接值赋值失败: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 执行表达式计算
-        /// </summary>
-        private async Task<ValueCalculationResult> ExecuteExpressionCalculation(string expression, VarItem_Enhanced targetVariable)
-        {
-            try
-            {
-                _logger?.LogDebug("执行表达式计算: {Expression}", expression);
-
-                // 使用表达式评估器计算结果
-                var result = await _evaluator.EvaluateAsync(expression);
-
-                if (!result.Success)
-                {
-                    return ValueCalculationResult.Error($"表达式计算失败: {result.ErrorMessage}");
-                }
-
-                // 转换为目标类型
-                var convertedValue = ConvertValueToTargetType(result.Value, targetVariable.VarType);
-
-                return ValueCalculationResult.Successs(convertedValue, "表达式计算");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "表达式计算失败");
-                return ValueCalculationResult.Error($"表达式计算失败: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 执行变量复制
-        /// </summary>
-        private ValueCalculationResult ExecuteVariableCopy(string expression, VarItem_Enhanced targetVariable)
-        {
-            try
-            {
-                _logger?.LogDebug("执行变量复制: {Expression}", expression);
-
-                // 处理变量引用格式 {VariableName} 或直接变量名
-                string sourceVariableName;
-
-                var match = _variablePattern.Match(expression);
-                if (match.Success)
-                {
-                    sourceVariableName = match.Groups[1].Value;
+                    _logger?.LogInformation("赋值执行成功: {TargetVar} = {NewValue} (耗时: {Duration}ms)",
+                        parameter.TargetVarName, result.NewValue, result.ExecutionTime.TotalMilliseconds);
                 }
                 else
                 {
-                    sourceVariableName = expression.Trim();
+                    _logger?.LogError("赋值执行失败: {TargetVar}, 错误: {Error}",
+                        parameter.TargetVarName, result.ErrorMessage);
                 }
 
-                // 查找源变量
-                var sourceVariable = _variableManager.FindVariableByName(sourceVariableName);
-                if (sourceVariable == null)
-                {
-                    return ValueCalculationResult.Error($"源变量 '{sourceVariableName}' 不存在");
-                }
-
-                // 复制值并转换类型
-                var convertedValue = ConvertValueToTargetType(sourceVariable.VarValue?.ToString(), targetVariable.VarType);
-
-                return ValueCalculationResult.Successs(convertedValue, $"从变量 '{sourceVariableName}' 复制");
+                return result;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "变量复制失败");
-                return ValueCalculationResult.Error($"变量复制失败: {ex.Message}");
+                _logger?.LogError(ex, "执行变量赋值时发生异常: {TargetVar}", parameter.TargetVarName);
+
+                result.Success = false;
+                result.ErrorMessage = $"执行失败: {ex.Message}";
+                result.ExecutionTime = DateTime.Now - startTime;
+
+                return result;
             }
         }
 
         /// <summary>
-        /// 验证赋值参数
+        /// 验证赋值参数的基本有效性
         /// </summary>
-        private ValidationResult ValidateParameterAsync(Parameter_VariableAssignment parameter)
+        private ValidationResult ValidateParameter(Parameter_VariableAssignment parameter)
         {
-            try
+            var result = new ValidationResult { IsValid = true };
+
+            // 检查目标变量名
+            if (string.IsNullOrWhiteSpace(parameter.TargetVarName))
             {
-                var errors = new List<string>();
-
-                // 基本参数检查
-                if (string.IsNullOrWhiteSpace(parameter.TargetVarName))
-                {
-                    errors.Add("目标变量名不能为空");
-                }
-
-                // 根据赋值类型验证不同字段
-                switch (parameter.AssignmentType)
-                {
-                    case AssignmentTypeEnum.PLCRead:
-                        // PLC读取验证DataSource
-                        if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.ModuleName))
-                        {
-                            errors.Add("PLC模块名不能为空");
-                        }
-                        if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.Address))
-                        {
-                            errors.Add("PLC地址不能为空");
-                        }
-                        break;
-
-                    default:
-                        // 其他类型验证Expression
-                        if (string.IsNullOrWhiteSpace(parameter.Expression))
-                        {
-                            errors.Add("赋值表达式不能为空");
-                        }
-                        break;
-                }
-
-                if (errors.Count != 0)
-                {
-                    return new ValidationResult
-                    {
-                        IsValid = false,
-                        Errors = errors,
-                        Message = string.Join("; ", errors)
-                    };
-                }
-
-                // 检查目标变量是否存在
-                var targetVariable = _variableManager.FindVariableByName(parameter.TargetVarName);
-                if (targetVariable == null)
-                {
-                    errors.Add($"目标变量 '{parameter.TargetVarName}' 不存在");
-                }
-
-                // 表达式验证（非PLC读取类型）
-                if (parameter.AssignmentType != AssignmentTypeEnum.PLCRead)
-                {
-                    var validationContext = new ValidationContext
-                    {
-                        TargetVariableName = parameter.TargetVarName,
-                        TargetVariableType = targetVariable?.VarType
-                    };
-
-                    var expressionValidation = _expressionValidator.ValidateExpression(parameter.Expression, validationContext);
-                    if (!expressionValidation.IsValid)
-                    {
-                        errors.AddRange(expressionValidation.Errors);
-                    }
-                }
-
-                // 条件表达式验证（如果有）
-                if (!string.IsNullOrWhiteSpace(parameter.Condition))
-                {
-                    var conditionValidation = _expressionValidator.ValidateExpression(parameter.Condition);
-                    if (!conditionValidation.IsValid)
-                    {
-                        errors.AddRange(conditionValidation.Errors.Select(e => $"条件表达式错误: {e}"));
-                    }
-                }
-
-                return new ValidationResult
-                {
-                    IsValid = errors.Count == 0,
-                    Errors = errors,
-                    Message = errors.Count != 0 ? string.Join("; ", errors) : "验证通过"
-                };
+                result.IsValid = false;
+                result.Message = "目标变量名不能为空";
+                result.Errors.Add("TargetVarName is required");
+                return result;
             }
-            catch (Exception ex)
+
+            // 根据赋值类型检查必要参数
+            switch (parameter.AssignmentType)
             {
-                _logger?.LogError(ex, "参数验证时发生错误");
-                return ValidationResult.Error($"参数验证失败: {ex.Message}");
+                case VariableAssignmentType.DirectAssignment:
+                    if (parameter.Expression == null)
+                    {
+                        result.IsValid = false;
+                        result.Message = "直接赋值的值不能为空";
+                        result.Errors.Add("DirectValue is required for Direct assignment");
+                    }
+                    break;
+
+                case VariableAssignmentType.ExpressionCalculation:
+                    if (string.IsNullOrWhiteSpace(parameter.Expression))
+                    {
+                        result.IsValid = false;
+                        result.Message = "表达式不能为空";
+                        result.Errors.Add("ExpressionValue is required for Expression assignment");
+                    }
+                    break;
+
+                case VariableAssignmentType.VariableCopy:
+                    if (string.IsNullOrWhiteSpace(parameter.DataSource.VariableName))
+                    {
+                        result.IsValid = false;
+                        result.Message = "源变量名不能为空";
+                        result.Errors.Add("SourceVariableName is required for FromVariable assignment");
+                    }
+                    break;
+
+                case VariableAssignmentType.PLCRead:
+                    if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.ModuleName))
+                    {
+                        result.IsValid = false;
+                        result.Message = "PLC模块名不能为空";
+                        result.Errors.Add("PlcModuleName is required for FromPLC assignment");
+                    }
+                    if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.Address))
+                    {
+                        result.IsValid = false;
+                        result.Message = "PLC地址不能为空";
+                        result.Errors.Add("PlcKeyName is required for FromPLC assignment");
+                    }
+                    break;
             }
+
+            if (result.IsValid)
+            {
+                result.Message = "参数验证通过";
+            }
+
+            return result;
         }
-
-        /// <summary>
-        /// 评估执行条件
-        /// </summary>
-        private async Task<ConditionEvaluationResult> EvaluateConditionAsync(string condition)
-        {
-            try
-            {
-                var result = await _evaluator.EvaluateAsync(condition);
-                if (!result.Success)
-                {
-                    return new ConditionEvaluationResult
-                    {
-                        Success = false,
-                        ErrorMessage = result.ErrorMessage
-                    };
-                }
-
-                // 尝试将结果转换为布尔值
-                bool conditionMet = false;
-                if (result.Value is bool boolValue)
-                {
-                    conditionMet = boolValue;
-                }
-                else if (result.Value != null)
-                {
-                    // 尝试解析字符串为布尔值
-                    var stringValue = result.Value.ToString();
-                    if (bool.TryParse(stringValue, out var parsedBool))
-                    {
-                        conditionMet = parsedBool;
-                    }
-                    else
-                    {
-                        // 非空值视为true
-                        conditionMet = !string.IsNullOrEmpty(stringValue) && stringValue != "0";
-                    }
-                }
-
-                return new ConditionEvaluationResult
-                {
-                    Success = true,
-                    ConditionMet = conditionMet,
-                    EvaluatedValue = result.Value
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "条件评估失败: {Condition}", condition);
-                return new ConditionEvaluationResult
-                {
-                    Success = false,
-                    ErrorMessage = $"条件评估异常: {ex.Message}"
-                };
-            }
-        }
-
-        /// <summary>
-        /// 将值转换为目标类型
-        /// </summary>
-        /// <summary>
-        /// 将值转换为目标类型 (支持对象输入)
-        /// </summary>
-        private object ConvertValueToTargetType(object value, string targetType)
-        {
-            if (value == null) return null;
-
-            try
-            {
-                var targetTypeUpper = targetType?.ToUpperInvariant();
-
-                // 如果输入已经是目标类型,直接返回
-                switch (targetTypeUpper)
-                {
-                    case "DATETIME":
-                        if (value is DateTime dt)
-                            return dt;
-                        if (value is string dateStr && DateTime.TryParse(dateStr, out var parsedDate))
-                            return parsedDate;
-                        break;
-
-                    case "STRING":
-                        // 特殊处理 DateTime 对象
-                        if (value is DateTime dateTime)
-                            return dateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                        return value.ToString();
-
-                    case "INTEGER":
-                    case "INT":
-                        if (value is int intVal)
-                            return intVal;
-                        if (int.TryParse(value.ToString(), out var intValue))
-                            return intValue;
-                        break;
-
-                    case "DOUBLE":
-                    case "FLOAT":
-                        if (value is double dblVal)
-                            return dblVal;
-                        if (value is float fltVal)
-                            return (double)fltVal;
-                        if (double.TryParse(value.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleValue))
-                            return doubleValue;
-                        break;
-
-                    case "DECIMAL":
-                        if (value is decimal decVal)
-                            return decVal;
-                        if (decimal.TryParse(value.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var decimalValue))
-                            return decimalValue;
-                        break;
-
-                    case "BOOLEAN":
-                    case "BOOL":
-                        if (value is bool boolVal)
-                            return boolVal;
-                        if (bool.TryParse(value.ToString(), out var boolValue))
-                            return boolValue;
-                        // 数值转换：0为false，非0为true
-                        if (int.TryParse(value.ToString(), out var numValue))
-                            return numValue != 0;
-                        break;
-
-                    default:
-                        // 未知类型，返回字符串表示
-                        if (value is DateTime dt2)
-                            return dt2.ToString("yyyy-MM-dd HH:mm:ss");
-                        return value.ToString();
-                }
-
-                // 如果转换失败，记录警告但仍返回原值
-                _logger?.LogWarning("类型转换失败: '{Value}' ({ValueType}) -> {TargetType}",
-                    value, value.GetType().Name, targetType);
-
-                // 转换失败时,如果是 DateTime,返回格式化字符串
-                if (value is DateTime dt3)
-                    return dt3.ToString("yyyy-MM-dd HH:mm:ss");
-
-                return value.ToString();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "类型转换异常: '{Value}' ({ValueType}) -> {TargetType}",
-                    value, value?.GetType().Name, targetType);
-
-                // 异常时,如果是 DateTime,返回格式化字符串
-                if (value is DateTime dt4)
-                    return dt4.ToString("yyyy-MM-dd HH:mm:ss");
-
-                return value?.ToString();
-            }
-        }
-
     }
 
-    #region 辅助类和枚举定义
+    #region 赋值类型枚举
 
-    /// <summary>
-    /// 赋值类型枚举
-    /// </summary>
-    public enum AssignmentType
-    {
-        DirectValue,            // 直接值赋值
-        ExpressionCalculation,  // 表达式计算
-        VariableCopy,          // 变量复制
-        PLCRead                // PLC读取
-    }
+    ///// <summary>
+    ///// 变量赋值类型
+    ///// </summary>
+    //public enum AssignmentTypeEnum
+    //{
+    //    /// <summary>
+    //    /// 直接赋值 - 将固定值直接赋给目标变量
+    //    /// </summary>
+    //    [Description("直接赋值")]
+    //    DirectAssignment,
+
+    //    /// <summary>
+    //    /// 表达式计算 - 通过数学表达式计算结果后赋值
+    //    /// </summary>
+    //    [Description("表达式计算")]
+    //    ExpressionCalculation,
+
+    //    /// <summary>
+    //    /// 从其他变量复制 - 将其他变量的值复制到目标变量
+    //    /// </summary>
+    //    [Description("从其他变量复制")]
+    //    VariableCopy,
+
+    //    /// <summary>
+    //    /// 从PLC读取 - 从指定的PLC模块和地址读取值
+    //    /// </summary>
+    //    [Description("从PLC读取")]
+    //    PLCRead
+    //}
+
+    #endregion
+
+    #region 执行结果类
 
     /// <summary>
     /// 赋值执行结果
     /// </summary>
     public class AssignmentExecutionResult
     {
-
+        /// <summary>
+        /// 是否执行成功
+        /// </summary>
         public bool Success { get; set; }
-        public string ErrorMessage { get; set; }
-        public List<string> ValidationErrors { get; set; } = new List<string>();
-        public Exception Exception { get; set; }
 
-        public string TargetVariableName { get; set; }
-        public object OldValue { get; set; }
+        /// <summary>
+        /// 错误信息
+        /// </summary>
+        public string ErrorMessage { get; set; }
+
+        /// <summary>
+        /// 新值
+        /// </summary>
         public object NewValue { get; set; }
-        public string AssignmentType { get; set; }
 
-        public bool Skipped { get; set; }
-        public string SkipReason { get; set; }
+        /// <summary>
+        /// 旧值
+        /// </summary>
+        public object OldValue { get; set; }
 
+        /// <summary>
+        /// 执行耗时
+        /// </summary>
         public TimeSpan ExecutionTime { get; set; }
-        public DateTime CompletedAt { get; set; } = DateTime.Now;
-    }
 
-    /// <summary>
-    /// 值计算结果
-    /// </summary>
-    public class ValueCalculationResult
-    {
-        public bool Success { get; set; }
-        public object Value { get; set; }
-        public string ErrorMessage { get; set; }
-        public string CalculationMethod { get; set; }
-
-        public static ValueCalculationResult Successs(object value, string method = "")
-        {
-            return new ValueCalculationResult
-            {
-                Success = true,
-                Value = value,
-                CalculationMethod = method
-            };
-        }
-
-        public static ValueCalculationResult Error(string errorMessage)
-        {
-            return new ValueCalculationResult
-            {
-                Success = false,
-                ErrorMessage = errorMessage
-            };
-        }
-    }
-
-    /// <summary>
-    /// 条件评估结果
-    /// </summary>
-    public class ConditionEvaluationResult
-    {
-        public bool Success { get; set; }
-        public bool ConditionMet { get; set; }
-        public object EvaluatedValue { get; set; }
-        public string ErrorMessage { get; set; }
-    }
-
-    /// <summary>
-    /// PLC地址信息
-    /// </summary>
-    public class PLCAddressInfo
-    {
-        public string ModuleName { get; set; }
-        public string Address { get; set; }
-    }
-
-    /// <summary>
-    /// PLC读取结果
-    /// </summary>
-    public class PLCReadResult
-    {
-        public bool Success { get; set; }
-        public object Value { get; set; }
-        public string ErrorMessage { get; set; }
-        public DateTime ReadTime { get; set; }
+        /// <summary>
+        /// 验证错误列表
+        /// </summary>
+        public List<string> ValidationErrors { get; set; } = new();
     }
 
     #endregion

@@ -1,4 +1,6 @@
-﻿namespace MainUI.LogicalConfiguration
+﻿using System.ComponentModel;
+
+namespace MainUI.LogicalConfiguration
 {
     /// <summary>
     /// 增强的VarItem类 - 添加赋值状态管理
@@ -91,10 +93,36 @@
     public enum VariableAssignmentType
     {
         None,           // 未赋值
-        PLCRead,        // PLC读取赋值
-        Manual,         // 手动赋值
-        Expression,     // 表达式赋值
-        Constant        // 常量赋值
+                      
+        /// <summary>
+        /// 直接赋值 - 将固定值直接赋给目标变量
+        /// </summary>
+        [Description("直接赋值")]
+        DirectAssignment,
+
+        /// <summary>
+        /// 表达式计算 - 通过数学表达式计算结果后赋值
+        /// </summary>
+        [Description("表达式计算")]
+        ExpressionCalculation,
+
+        /// <summary>
+        /// 从其他变量复制 - 将其他变量的值复制到目标变量
+        /// </summary>
+        [Description("从其他变量复制")]
+        VariableCopy,
+
+        /// <summary>
+        /// 从PLC读取 - 从指定的PLC模块和地址读取值
+        /// </summary>
+        [Description("从PLC读取")]
+        PLCRead,
+
+        //PLCRead,        // PLC读取赋值
+        //Manual,         // 手动赋值
+        //Expression,     // 表达式赋值
+        //Constant ,       // 常量赋值
+
     }
 
     /// <summary>

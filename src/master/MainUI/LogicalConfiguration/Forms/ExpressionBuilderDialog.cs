@@ -21,7 +21,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         #region 私有字段
 
         private readonly GlobalVariableManager _variableManager;
-        private readonly ExpressionValidator _validator;
+        private readonly ExpressionEngine _engine;
 
         // 表达式历史记录
         private readonly List<string> _expressionHistory = [];
@@ -154,10 +154,10 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
         #region 构造函数
 
-        public ExpressionBuilderDialog(GlobalVariableManager variableManager, ExpressionValidator validator)
+        public ExpressionBuilderDialog(GlobalVariableManager variableManager, ExpressionEngine validator)
         {
             _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
-            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _engine = validator ?? throw new ArgumentNullException(nameof(validator));
 
             InitializeComponent();
             InitializeExpressionBuilder();
@@ -601,7 +601,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             }
 
             // 验证表达式
-            var validationResult = _validator?.ValidateExpression(expression);
+            var validationResult = _engine?.ValidateExpression(expression);
 
             if (validationResult?.IsValid != true)
             {
@@ -687,7 +687,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 }
 
                 // 执行验证
-                var validationResult = _validator?.ValidateExpression(expression);
+                var validationResult = _engine?.ValidateExpression(expression);
 
                 if (validationResult?.IsValid == true)
                 {
@@ -695,7 +695,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                     lblValidationResult.ForeColor = Color.FromArgb(40, 167, 69);
 
                     // 尝试计算预期值
-                    var calcResult = _validator.CalculateExpectedValue(expression);
+                    var calcResult = _engine.CalculateExpectedValue(expression);
                     if (calcResult?.Success == true)
                     {
                         var preview = new StringBuilder();

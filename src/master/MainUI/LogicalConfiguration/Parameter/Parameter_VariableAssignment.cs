@@ -1,6 +1,4 @@
-﻿using MainUI.LogicalConfiguration.Forms;
-
-namespace MainUI.LogicalConfiguration.Parameter
+﻿namespace MainUI.LogicalConfiguration.Parameter
 {
     /// <summary>
     /// 项点变量赋值参数
@@ -15,7 +13,7 @@ namespace MainUI.LogicalConfiguration.Parameter
         /// <summary>
         /// 赋值方式
         /// </summary>
-        public AssignmentTypeEnum AssignmentType { get; set; } = AssignmentTypeEnum.DirectAssignment;
+        public VariableAssignmentType AssignmentType { get; set; } = VariableAssignmentType.DirectAssignment;
 
         /// <summary>
         /// 赋值表达式（用于直接赋值、表达式计算、变量复制）
