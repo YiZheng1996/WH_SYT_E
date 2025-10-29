@@ -122,7 +122,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 // 3. 检查变量存在性
                 var referencedVars = GetReferencedVariables(expression);
                 var missingVars = referencedVars.Where(v => _variableManager.TryFindVariableByName(v) != null).ToList();
-                if (missingVars.Count != 0)
+                if (missingVars.Count == 0)
                 {
                     result.IsValid = false;
                     result.Message = $"以下变量不存在: {string.Join(", ", missingVars)}";
@@ -350,7 +350,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 _logger?.LogDebug("预期值计算成功: {Expression} = {Result}", expression, result);
 
-                return EvaluationResult.Success(result);
+                return EvaluationResult.Succes(result);
             }
             catch (Exception ex)
             {
@@ -542,7 +542,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 var result = EvaluateProcessedExpression(processedExpression);
 
                 _logger?.LogDebug("表达式求值成功: {Expression} = {Result}", expression, result);
-                return EvaluationResult.Success(result);
+                return EvaluationResult.Succes(result);
             }
             catch (Exception ex)
             {
@@ -590,7 +590,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 _logger?.LogInformation("赋值成功: {VarName} = {NewValue} (旧值: {OldValue})",
                     targetVarName, convertedValue, oldValue);
 
-                return AssignmentResult.Success(convertedValue, oldValue);
+                return AssignmentResult.Succes(convertedValue, oldValue);
             }
             catch (Exception ex)
             {
@@ -642,7 +642,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 _logger?.LogInformation("表达式赋值成功: {VarName} = {NewValue} (表达式: {Expression})",
                     targetVarName, convertedValue, expression);
 
-                return AssignmentResult.Success(convertedValue, oldValue);
+                return AssignmentResult.Succes(convertedValue, oldValue);
             }
             catch (Exception ex)
             {
@@ -695,7 +695,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 _logger?.LogInformation("变量复制成功: {TargetVar} = {NewValue} (来自: {SourceVar})",
                     targetVarName, convertedValue, sourceVarName);
 
-                return AssignmentResult.Success(convertedValue, oldValue);
+                return AssignmentResult.Succes(convertedValue, oldValue);
             }
             catch (Exception ex)
             {
@@ -758,7 +758,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 _logger?.LogInformation("PLC赋值成功: {VarName} = {NewValue} (来自: PLC.{Module}.{Address})",
                     targetVarName, convertedValue, plcModuleName, plcAddress);
 
-                return AssignmentResult.Success(convertedValue, oldValue);
+                return AssignmentResult.Succes(convertedValue, oldValue);
             }
             catch (Exception ex)
             {
@@ -921,13 +921,11 @@ namespace MainUI.LogicalConfiguration.Engine
         /// </summary>
         private string PreprocessExpression(string expression)
         {
-            // 替换所有 {变量名} 为实际值
             return _variablePattern.Replace(expression, match =>
             {
                 var varName = match.Groups[1].Value;
                 var variable = _variableManager.TryFindVariableByName(varName);
 
-                // 如果变量不存在,保持原样 (验证阶段应该已经检查过)
                 if (variable == null)
                 {
                     _logger?.LogWarning("预处理时发现未定义变量: {VarName}", varName);
@@ -936,26 +934,13 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 var value = variable.VarValue;
 
-                // 处理 null 值
                 if (value == null)
                 {
                     return "null";
                 }
 
-                // 根据实际运行时类型格式化值
-                // 注意: 必须先检查具体类型,因为 value 是 object 类型
-                if (value is string s)
-                {
-                    return $"\"{s}\"";  // 字符串加引号
-                }
-
-                if (value is bool b)
-                {
-                    return b.ToString().ToLower();  // 布尔值转小写 (true/false)
-                }
-
-                // 其他类型 (int, double, decimal 等数值类型)
-                return Convert.ToString(value, CultureInfo.InvariantCulture) ?? "null";
+                // 调用统一的格式化方法
+                return FormatValueForExpression(value);
             });
         }
 
@@ -1095,8 +1080,10 @@ namespace MainUI.LogicalConfiguration.Engine
             expression = expression.Trim();
 
             // 1. 尝试解析为字面量
-            if (expression.StartsWith("\"") && expression.EndsWith("\""))
+            // 检查是否是完整的字符串字面量（必须准确判断）
+            if (IsStringLiteral(expression))
             {
+                // 去掉首尾引号，返回字符串内容
                 return expression.Substring(1, expression.Length - 2);
             }
 
@@ -1110,9 +1097,20 @@ namespace MainUI.LogicalConfiguration.Engine
                 return numValue;
             }
 
-            // 2. 使用简化的表达式计算
-            // 这里应该实现完整的表达式解析器（如递归下降解析或逆波兰表达式）
-            // 为了简化，这里使用 DataTable.Compute（生产环境建议使用更安全的方法）
+            // 2. 检查是否包含字符串字面量和运算符
+            if (expression.Contains("\""))
+            {
+                // 处理字符串拼接（+ 运算符）
+                if (expression.Contains("+"))
+                {
+                    return HandleStringConcatenation(expression);
+                }
+
+                // 其他包含字符串的运算暂不支持
+                throw new InvalidOperationException($"不支持该字符串运算: {expression}");
+            }
+
+            // 3. 纯数值表达式 - 使用 DataTable.Compute
             try
             {
                 var table = new System.Data.DataTable();
@@ -1123,6 +1121,183 @@ namespace MainUI.LogicalConfiguration.Engine
             {
                 // 如果 DataTable.Compute 失败，尝试逻辑表达式
                 return EvaluateLogicalExpression(expression);
+            }
+        }
+
+        /// <summary>
+        /// 检查是否是完整的字符串字面量（单个字符串，不包含运算符）
+        /// </summary>
+        /// <param name="expression">表达式</param>
+        /// <returns>如果是单个字符串字面量返回 true，否则返回 false</returns>
+        private bool IsStringLiteral(string expression)
+        {
+            if (string.IsNullOrEmpty(expression))
+                return false;
+
+            // 必须以引号开头和结尾
+            if (!expression.StartsWith("\"") || !expression.EndsWith("\""))
+                return false;
+
+            // 至少要有两个引号 (空字符串 "")
+            if (expression.Length < 2)
+                return false;
+
+            // 检查是否是单个完整的字符串字面量
+            // 策略：从第二个字符开始，找到第一个未转义的引号
+            // 如果这个引号就是最后一个字符，说明是单个字符串字面量
+
+            int i = 1; // 从第二个字符开始（跳过开头的引号）
+            while (i < expression.Length)
+            {
+                char c = expression[i];
+
+                if (c == '\\' && i + 1 < expression.Length)
+                {
+                    // 转义字符，跳过下一个字符
+                    i += 2;
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    // 找到未转义的引号
+                    // 检查这是否是最后一个字符
+                    if (i == expression.Length - 1)
+                    {
+                        // 是最后一个字符，说明是单个字符串字面量
+                        return true;
+                    }
+                    else
+                    {
+                        // 不是最后一个字符，说明后面还有内容（如 + 运算符）
+                        return false;
+                    }
+                }
+
+                i++;
+            }
+
+            // 没有找到结束引号（不应该发生）
+            return false;
+        }
+
+        /// <summary>
+        /// 处理字符串拼接
+        /// 示例: "11" + "12" → "1112"
+        /// 示例: "Hello" + " " + "World" → "Hello World"
+        /// 示例: "Value: " + 123 → "Value: 123"
+        /// </summary>
+        private object HandleStringConcatenation(string expression)
+        {
+            try
+            {
+                var parts = new List<string>();
+                var currentPart = new StringBuilder();
+                bool inString = false;
+
+                for (int i = 0; i < expression.Length; i++)
+                {
+                    char c = expression[i];
+
+                    // 处理转义字符
+                    if (c == '\\' && i + 1 < expression.Length && inString)
+                    {
+                        currentPart.Append(c);
+                        currentPart.Append(expression[i + 1]);
+                        i++; // 跳过下一个字符
+                        continue;
+                    }
+
+                    // 处理引号
+                    if (c == '"')
+                    {
+                        inString = !inString;
+                        currentPart.Append(c);
+                        continue;
+                    }
+
+                    // 在字符串外检测 + 号
+                    if (!inString && c == '+')
+                    {
+                        // 保存当前部分
+                        string part = currentPart.ToString().Trim();
+                        if (!string.IsNullOrEmpty(part))
+                        {
+                            parts.Add(part);
+                        }
+                        currentPart.Clear();
+                        continue;
+                    }
+
+                    // 其他字符直接添加
+                    currentPart.Append(c);
+                }
+
+                // 添加最后一部分
+                string lastPart = currentPart.ToString().Trim();
+                if (!string.IsNullOrEmpty(lastPart))
+                {
+                    parts.Add(lastPart);
+                }
+
+                // 如果没有有效的部分，返回空字符串
+                if (parts.Count == 0)
+                {
+                    return string.Empty;
+                }
+
+                // 拼接所有部分
+                var result = new StringBuilder();
+                foreach (var part in parts)
+                {
+                    var value = EvaluatePart(part);
+                    result.Append(value);
+                }
+
+                return result.ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "字符串拼接处理失败: {Expression}", expression);
+                throw new InvalidOperationException($"字符串拼接失败: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// 计算表达式的一部分
+        /// </summary>
+        private string EvaluatePart(string part)
+        {
+            part = part.Trim();
+
+            // 如果是字符串字面量，去掉引号
+            if (IsStringLiteral(part))
+            {
+                return part.Substring(1, part.Length - 2);
+            }
+
+            // 如果是数字
+            if (double.TryParse(part, NumberStyles.Any, CultureInfo.InvariantCulture, out var numValue))
+            {
+                return numValue.ToString(CultureInfo.InvariantCulture);
+            }
+
+            // 如果是布尔值
+            if (bool.TryParse(part, out var boolValue))
+            {
+                return boolValue.ToString();
+            }
+
+            // 否则递归计算（可能是子表达式）
+            try
+            {
+                var result = CalculateExpression(part);
+                return result?.ToString() ?? string.Empty;
+            }
+            catch
+            {
+                // 如果无法计算，返回原始值
+                return part;
             }
         }
 
@@ -1218,14 +1393,28 @@ namespace MainUI.LogicalConfiguration.Engine
 
         /// <summary>
         /// 格式化值用于表达式
+        /// 重要：数值类型不加引号，字符串类型才加引号
         /// </summary>
         private string FormatValueForExpression(object value)
         {
+            if (value == null)
+                return "null";
+
             return value switch
             {
-                string s => $"\"{s}\"",
+                // 字符串类型：需要转义并加引号
+                string s => $"\"{s.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"",
+
+                // 布尔类型：小写形式
                 bool b => b.ToString().ToLower(),
-                _ => Convert.ToString(value, CultureInfo.InvariantCulture)
+
+                // 数值类型：不加引号，直接转字符串
+                sbyte or byte or short or ushort or int or uint or long or ulong or
+                float or double or decimal
+                    => Convert.ToString(value, CultureInfo.InvariantCulture),
+
+                // 其他类型：转字符串并加引号
+                _ => $"\"{value.ToString().Replace("\\", "\\\\").Replace("\"", "\\\"")}\""
             };
         }
 

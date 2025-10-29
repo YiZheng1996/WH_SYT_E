@@ -224,6 +224,7 @@
             btnRedo.Location = new Point(370, 26);
             btnRedo.MinimumSize = new Size(1, 1);
             btnRedo.Name = "btnRedo";
+            btnRedo.RectColor = Color.FromArgb(108, 117, 125);
             btnRedo.Size = new Size(90, 38);
             btnRedo.Symbol = 61667;
             btnRedo.TabIndex = 3;

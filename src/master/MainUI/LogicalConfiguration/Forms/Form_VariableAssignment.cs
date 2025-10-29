@@ -198,8 +198,17 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (globalVariableManager != null)
                 {
                     // 初始化核心引擎 
-                    var ExpressionEngine = new ExpressionEngine(globalVariableManager);
+                    var expressionValidator = new ExpressionEngine(globalVariableManager);
                     var assignmentEngine = new VariableAssignmentEngine(globalVariableManager, plcManager);
+
+                    // 使用反射设置私有字段（保持兼容性）
+                    var expressionField = typeof(Form_VariableAssignment).GetField("_engine",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    expressionField?.SetValue(this, expressionValidator);
+
+                    var assignmentField = typeof(Form_VariableAssignment).GetField("_assignmentEngine",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    assignmentField?.SetValue(this, assignmentEngine);
                 }
             }
             catch (Exception ex)
@@ -1388,7 +1397,7 @@ namespace MainUI.LogicalConfiguration.Forms
                                     $"原值：{testResult.OldValue ?? "null"}\n" +
                                     $"新值：{testResult.NewValue ?? "null"}";
 
-                        MessageHelper.MessageOK(message, TType.Success);
+                        MessageHelper.MessageOK(this, message, TType.Success);
 
                         // 刷新预览以显示新值
                         RestartPreviewTimer();

@@ -46,7 +46,7 @@
         /// <summary>
         /// 创建成功结果
         /// </summary>
-        public static AssignmentResult Success(object newValue, object oldValue) =>
+        public static AssignmentResult Succes(object newValue, object oldValue) =>
             new() { Success = true, NewValue = newValue, OldValue = oldValue };
 
         /// <summary>
@@ -91,7 +91,7 @@
         /// <summary>
         /// 创建成功结果
         /// </summary>
-        public static EvaluationResult Success(object result) =>
+        public static EvaluationResult Succes(object result) =>
             new() { Success = true, Result = result };
 
         /// <summary>
@@ -145,7 +145,7 @@
         /// <summary>
         /// 创建成功的验证结果
         /// </summary>
-        public static ValidationResult Success(string message = "验证通过")
+        public static ValidationResult Succes(string message = "验证通过")
         {
             return new ValidationResult
             {
