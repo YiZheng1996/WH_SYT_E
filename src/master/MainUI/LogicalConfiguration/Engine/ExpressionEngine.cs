@@ -350,7 +350,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 _logger?.LogDebug("预期值计算成功: {Expression} = {Result}", expression, result);
 
-                return EvaluationResult.Succes(result);
+                return EvaluationResult.Success(result);
             }
             catch (Exception ex)
             {
@@ -542,7 +542,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 var result = EvaluateProcessedExpression(processedExpression);
 
                 _logger?.LogDebug("表达式求值成功: {Expression} = {Result}", expression, result);
-                return EvaluationResult.Succes(result);
+                return EvaluationResult.Success(result);
             }
             catch (Exception ex)
             {
