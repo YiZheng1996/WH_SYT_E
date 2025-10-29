@@ -263,17 +263,17 @@ namespace MainUI.LogicalConfiguration.Forms
 
         /// <summary>
         /// 初始化赋值类型下拉框
-        /// 将AssignmentTypeEnum枚举值绑定到下拉框
+        /// 将VariableAssignmentType枚举值绑定到下拉框
         /// 使用EnumHelper获取枚举的显示名称和值
         /// </summary>
         private void InitializeAssignmentType()
         {
             if (cmbAssignmentType != null)
             {
-                cmbAssignmentType.DataSource = EnumExtensions.GetEnumItems<AssignmentTypeEnum>();
+                cmbAssignmentType.DataSource = EnumExtensions.GetEnumItems<VariableAssignmentType>();
                 cmbAssignmentType.DisplayMember = "DisplayName";
                 cmbAssignmentType.ValueMember = "Value";
-                cmbAssignmentType.SelectedValue = AssignmentTypeEnum.DirectAssignment;
+                cmbAssignmentType.SelectedValue = VariableAssignmentType.DirectAssignment;
             }
         }
 
@@ -371,7 +371,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 Condition = "",
                 Description = $"变量赋值步骤 {_workflowState?.StepNum + 1}",
                 IsAssignment = true,
-                AssignmentType = AssignmentTypeEnum.DirectAssignment,
+                AssignmentType = VariableAssignmentType.DirectAssignment,
                 DataSource = new DataSourceConfig()
             };
 
@@ -401,7 +401,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 根据赋值类型加载相应数据
                 switch (_parameter.AssignmentType)
                 {
-                    case AssignmentTypeEnum.PLCRead:
+                    case VariableAssignmentType.PLCRead:
                         await Parameterplcs();// 先加载PLC模块列表
                         SetComboBoxValue(CboPlcModule, _parameter.DataSource.PlcConfig.ModuleName);// 设置PLC配置
 
@@ -450,7 +450,7 @@ namespace MainUI.LogicalConfiguration.Forms
             var parameter = new Parameter_VariableAssignment
             {
                 TargetVarName = cmbTargetVariable?.Text ?? "",
-                AssignmentType = (AssignmentTypeEnum)cmbAssignmentType.SelectedValue,
+                AssignmentType = (VariableAssignmentType)cmbAssignmentType.SelectedValue,
                 Condition = txtCondition?.Text ?? "",
                 Description = txtDescription?.Text ?? "",
                 IsAssignment = chkEnabled?.Checked ?? false,
@@ -460,7 +460,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 根据赋值类型设置数据
             switch (parameter.AssignmentType)
             {
-                case AssignmentTypeEnum.PLCRead:
+                case VariableAssignmentType.PLCRead:
                     parameter.DataSource.SourceType = DataSourceType.PLC;
                     parameter.DataSource.PlcConfig.ModuleName = CboPlcModule?.Text ?? "";
                     parameter.DataSource.PlcConfig.Address = CboPlcAddress?.Text ?? "";
@@ -499,7 +499,7 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 _parameter.TargetVarName = cmbTargetVariable?.Text ?? "";
-                _parameter.AssignmentType = (AssignmentTypeEnum)cmbAssignmentType.SelectedValue;
+                _parameter.AssignmentType = (VariableAssignmentType)cmbAssignmentType.SelectedValue;
                 _parameter.Condition = txtCondition?.Text ?? "";
                 _parameter.Description = txtDescription?.Text ?? "";
                 _parameter.IsAssignment = chkEnabled?.Checked ?? false;
@@ -510,7 +510,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 根据赋值类型保存数据
                 switch (_parameter.AssignmentType)
                 {
-                    case AssignmentTypeEnum.PLCRead:
+                    case VariableAssignmentType.PLCRead:
                         _parameter.DataSource.SourceType = DataSourceType.PLC;
                         _parameter.DataSource.PlcConfig.ModuleName = CboPlcModule?.Text ?? "";
                         _parameter.DataSource.PlcConfig.Address = CboPlcAddress?.Text ?? "";
@@ -523,7 +523,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         _parameter.Expression = txtAssignmentContent?.Text ?? "";
                         _parameter.DataSource.SourceType = DataSourceType.Variable; // 默认
                         // ✅ 验证是否真的获取到了值
-                        if (string.IsNullOrEmpty(expression) && _parameter.AssignmentType != AssignmentTypeEnum.PLCRead)
+                        if (string.IsNullOrEmpty(expression) && _parameter.AssignmentType != VariableAssignmentType.PLCRead)
                         {
                             Logger?.LogWarning($"⚠️ 警告: Expression 为空! 控件值: '{txtAssignmentContent?.Text}'");
                         }
@@ -682,11 +682,11 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
 
                 // 根据赋值类型进行特定验证
-                var assignmentType = (AssignmentTypeEnum)cmbAssignmentType.SelectedValue;
+                var assignmentType = (VariableAssignmentType)cmbAssignmentType.SelectedValue;
                 switch (assignmentType)
                 {
-                    case AssignmentTypeEnum.DirectAssignment:
-                    case AssignmentTypeEnum.ExpressionCalculation:
+                    case VariableAssignmentType.DirectAssignment:
+                    case VariableAssignmentType.ExpressionCalculation:
                         if (string.IsNullOrWhiteSpace(txtAssignmentContent?.Text))
                         {
                             MessageHelper.MessageOK("赋值内容不能为空", TType.Warn);
@@ -714,7 +714,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         }
                         break;
 
-                    case AssignmentTypeEnum.VariableCopy:
+                    case VariableAssignmentType.VariableCopy:
                         if (string.IsNullOrWhiteSpace(txtAssignmentContent?.Text))
                         {
                             MessageHelper.MessageOK("请输入源变量名", TType.Warn);
@@ -738,7 +738,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         }
                         break;
 
-                    case AssignmentTypeEnum.PLCRead:
+                    case VariableAssignmentType.PLCRead:
                         if (string.IsNullOrWhiteSpace(CboPlcModule?.Text))
                         {
                             MessageHelper.MessageOK("请选择PLC模块", TType.Warn);
@@ -797,14 +797,14 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 根据赋值类型进行不同的验证
                 switch (parameter.AssignmentType)
                 {
-                    case AssignmentTypeEnum.DirectAssignment:
+                    case VariableAssignmentType.DirectAssignment:
                         if (string.IsNullOrWhiteSpace(parameter.Expression))
                         {
                             errors.Add("直接赋值的值不能为空");
                         }
                         break;
 
-                    case AssignmentTypeEnum.ExpressionCalculation:
+                    case VariableAssignmentType.ExpressionCalculation:
                         if (string.IsNullOrWhiteSpace(parameter.Expression))
                         {
                             errors.Add("表达式不能为空");
@@ -828,7 +828,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         }
                         break;
 
-                    case AssignmentTypeEnum.VariableCopy:
+                    case VariableAssignmentType.VariableCopy:
                         if (string.IsNullOrWhiteSpace(parameter.Expression))
                         {
                             errors.Add("源变量名不能为空");
@@ -851,7 +851,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         }
                         break;
 
-                    case AssignmentTypeEnum.PLCRead:
+                    case VariableAssignmentType.PLCRead:
                         // PLC读取验证
                         if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.ModuleName))
                         {
@@ -925,14 +925,14 @@ namespace MainUI.LogicalConfiguration.Forms
                 var parameter = GetParameter();
                 switch (parameter.AssignmentType)
                 {
-                    case AssignmentTypeEnum.PLCRead:
+                    case VariableAssignmentType.PLCRead:
                         messages.Add($"  PLC模块: {parameter.DataSource.PlcConfig.ModuleName}");
                         messages.Add($"  PLC地址: {parameter.DataSource.PlcConfig.Address}");
                         break;
-                    case AssignmentTypeEnum.ExpressionCalculation:
+                    case VariableAssignmentType.ExpressionCalculation:
                         messages.Add("  表达式语法正确");
                         break;
-                    case AssignmentTypeEnum.VariableCopy:
+                    case VariableAssignmentType.VariableCopy:
                         messages.Add("  源变量存在且可访问");
                         break;
                 }
@@ -1097,7 +1097,7 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             if (cmbAssignmentType?.SelectedValue == null) return;
 
-            var selectedType = (AssignmentTypeEnum)cmbAssignmentType.SelectedValue;
+            var selectedType = (VariableAssignmentType)cmbAssignmentType.SelectedValue;
 
             // 显示/隐藏相应的面板
             pnlVoluationSource.Visible = true;
@@ -1105,15 +1105,15 @@ namespace MainUI.LogicalConfiguration.Forms
 
             switch (selectedType)
             {
-                case AssignmentTypeEnum.ExpressionCalculation:
+                case VariableAssignmentType.ExpressionCalculation:
                     txtAssignmentContent.Watermark = "输入计算表达式，如：{Var1} + {Var2} * 2";
                     btnExpressionBuilder.Visible = true;
                     break;
-                case AssignmentTypeEnum.VariableCopy:
+                case VariableAssignmentType.VariableCopy:
                     txtAssignmentContent.Watermark = "输入源变量名或使用 {变量名} 格式";
                     btnExpressionBuilder.Visible = false;
                     break;
-                case AssignmentTypeEnum.PLCRead:
+                case VariableAssignmentType.PLCRead:
                     txtAssignmentContent.Watermark = "输入PLC地址";
                     btnExpressionBuilder.Visible = false;
                     pnlVoluationSource.Visible = false;
@@ -1121,7 +1121,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     if (CboPlcModule.Items.Count == 0)
                         await Parameterplcs();
                     break;
-                case AssignmentTypeEnum.DirectAssignment:
+                case VariableAssignmentType.DirectAssignment:
                     txtAssignmentContent.Watermark = "输入要赋的值，字符串请用引号包围";
                     btnExpressionBuilder.Visible = false;
                     break;
@@ -1217,7 +1217,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 根据赋值类型显示内容
                 switch (parameter.AssignmentType)
                 {
-                    case AssignmentTypeEnum.PLCRead:
+                    case VariableAssignmentType.PLCRead:
                         previewLines.Add($"PLC模块：{parameter.DataSource.PlcConfig.ModuleName}");
                         previewLines.Add($"PLC地址：{parameter.DataSource.PlcConfig.Address}");
                         break;

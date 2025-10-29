@@ -707,7 +707,7 @@ namespace MainUI.LogicalConfiguration.Services
                     HasConflict = true,
                     ConflictStepIndex = variable.AssignedByStepIndex,
                     ConflictStepInfo = variable.AssignedByStepInfo,
-                    ConflictAssignmentType = (LogicalManager.GlobalVariableManager.VariableAssignmentType)variable.AssignmentType
+                    ConflictAssignmentType = variable.AssignmentType
                 };
             }
             finally

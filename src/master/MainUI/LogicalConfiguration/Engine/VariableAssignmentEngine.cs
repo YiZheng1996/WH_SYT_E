@@ -2,8 +2,6 @@
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.Logging;
-using Sunny.UI;
-using System.ComponentModel;
 
 namespace MainUI.LogicalConfiguration.Engine
 {
@@ -27,8 +25,7 @@ namespace MainUI.LogicalConfiguration.Engine
             _logger = logger;
 
             // 创建统一的表达式引擎
-            var expressionLogger = logger?.LoggerFactory?.CreateLogger<ExpressionEngine>();
-            _expressionEngine = new ExpressionEngine(variableManager, plcManager, expressionLogger);
+            _expressionEngine = new ExpressionEngine(variableManager, plcManager, null);
         }
 
         /// <summary>
@@ -61,25 +58,25 @@ namespace MainUI.LogicalConfiguration.Engine
                 {
                     // 直接赋值
                     VariableAssignmentType.DirectAssignment =>
-                        _expressionEngine.AssignDirectValue(parameter.TargetVarName, parameter.DirectValue),
+                        _expressionEngine.AssignDirectValue(parameter.TargetVarName, parameter.Expression),
 
                     // 表达式计算赋值
-                    (AssignmentResult)VariableAssignmentType.Expression =>
-                        await _expressionEngine.AssignExpressionAsync(parameter.TargetVarName, parameter.ExpressionValue),
+                    VariableAssignmentType.ExpressionCalculation =>
+                        await _expressionEngine.AssignExpressionAsync(parameter.TargetVarName, parameter.Expression),
 
                     // 从其他变量复制
-                    VariableAssignmentType.FromVariable =>
-                        _expressionEngine.AssignFromVariable(parameter.TargetVarName, parameter.SourceVariableName),
+                    VariableAssignmentType.VariableCopy =>
+                        _expressionEngine.AssignFromVariable(parameter.TargetVarName, parameter.DataSource.VariableName),
 
                     // 从PLC读取
-                    VariableAssignmentType.FromPLC =>
+                    VariableAssignmentType.PLCRead =>
                         await _expressionEngine.AssignFromPlcAsync(
                             parameter.TargetVarName,
-                            parameter.PlcModuleName,
-                            parameter.PlcKeyName),
+                            parameter.DataSource.PlcConfig.ModuleName,
+                            parameter.DataSource.PlcConfig.Address),
 
                     // 智能赋值（自动识别）
-                    _ => await _expressionEngine.AssignSmartAsync(parameter.TargetVarName, parameter.ValueExpression)
+                    _ => await _expressionEngine.AssignSmartAsync(parameter.TargetVarName, parameter.Expression)
                 };
 
                 // 3. 填充执行结果
@@ -138,7 +135,7 @@ namespace MainUI.LogicalConfiguration.Engine
                     {
                         result.IsValid = false;
                         result.Message = "直接赋值的值不能为空";
-                        result.Errors.Add("DirectValue is required for Direct assignment");
+                        result.Errors.Add("Expression is required for Direct assignment");
                     }
                     break;
 
@@ -147,7 +144,7 @@ namespace MainUI.LogicalConfiguration.Engine
                     {
                         result.IsValid = false;
                         result.Message = "表达式不能为空";
-                        result.Errors.Add("ExpressionValue is required for Expression assignment");
+                        result.Errors.Add("Expression is required for Expression calculation");
                     }
                     break;
 
@@ -156,7 +153,7 @@ namespace MainUI.LogicalConfiguration.Engine
                     {
                         result.IsValid = false;
                         result.Message = "源变量名不能为空";
-                        result.Errors.Add("SourceVariableName is required for FromVariable assignment");
+                        result.Errors.Add("DataSource.VariableName is required for Variable copy");
                     }
                     break;
 
@@ -165,13 +162,13 @@ namespace MainUI.LogicalConfiguration.Engine
                     {
                         result.IsValid = false;
                         result.Message = "PLC模块名不能为空";
-                        result.Errors.Add("PlcModuleName is required for FromPLC assignment");
+                        result.Errors.Add("DataSource.PlcConfig.ModuleName is required for PLC read");
                     }
                     if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.Address))
                     {
                         result.IsValid = false;
                         result.Message = "PLC地址不能为空";
-                        result.Errors.Add("PlcKeyName is required for FromPLC assignment");
+                        result.Errors.Add("DataSource.PlcConfig.Address is required for PLC read");
                     }
                     break;
             }
@@ -185,77 +182,8 @@ namespace MainUI.LogicalConfiguration.Engine
         }
     }
 
-    #region 赋值类型枚举
 
-    ///// <summary>
-    ///// 变量赋值类型
-    ///// </summary>
-    //public enum AssignmentTypeEnum
-    //{
-    //    /// <summary>
-    //    /// 直接赋值 - 将固定值直接赋给目标变量
-    //    /// </summary>
-    //    [Description("直接赋值")]
-    //    DirectAssignment,
 
-    //    /// <summary>
-    //    /// 表达式计算 - 通过数学表达式计算结果后赋值
-    //    /// </summary>
-    //    [Description("表达式计算")]
-    //    ExpressionCalculation,
 
-    //    /// <summary>
-    //    /// 从其他变量复制 - 将其他变量的值复制到目标变量
-    //    /// </summary>
-    //    [Description("从其他变量复制")]
-    //    VariableCopy,
 
-    //    /// <summary>
-    //    /// 从PLC读取 - 从指定的PLC模块和地址读取值
-    //    /// </summary>
-    //    [Description("从PLC读取")]
-    //    PLCRead
-    //}
-
-    #endregion
-
-    #region 执行结果类
-
-    /// <summary>
-    /// 赋值执行结果
-    /// </summary>
-    public class AssignmentExecutionResult
-    {
-        /// <summary>
-        /// 是否执行成功
-        /// </summary>
-        public bool Success { get; set; }
-
-        /// <summary>
-        /// 错误信息
-        /// </summary>
-        public string ErrorMessage { get; set; }
-
-        /// <summary>
-        /// 新值
-        /// </summary>
-        public object NewValue { get; set; }
-
-        /// <summary>
-        /// 旧值
-        /// </summary>
-        public object OldValue { get; set; }
-
-        /// <summary>
-        /// 执行耗时
-        /// </summary>
-        public TimeSpan ExecutionTime { get; set; }
-
-        /// <summary>
-        /// 验证错误列表
-        /// </summary>
-        public List<string> ValidationErrors { get; set; } = new();
-    }
-
-    #endregion
 }

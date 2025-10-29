@@ -1,9 +1,11 @@
 ﻿using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Services.ServicesPLC;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace MainUI.Service
+namespace MainUI.LogicalConfiguration.Services
 {
     /// <summary>
     /// 报表专用表达式计算助手
@@ -24,11 +26,12 @@ namespace MainUI.Service
         /// <param name="logger">日志记录器(可选)</param>
         public ReportExpressionHelper(GlobalVariableManager variableManager, ILogger logger = null)
         {
+            var _plcManager = Program.ServiceProvider?.GetService<IPLCManager>();
             _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
             _logger = logger;
 
             // 初始化底层的表达式计算引擎
-            _engine = new ExpressionEngine(_variableManager, _logger);
+            _engine = new ExpressionEngine(_variableManager, _plcManager);
         }
 
         #endregion
@@ -54,12 +57,12 @@ namespace MainUI.Service
                 _logger?.LogDebug($"开始计算报表表达式: {expression}");
 
                 // 使用底层引擎计算
-                var result = _engine.Evaluate(expression);
+                var result = _engine.EvaluateExpression(expression);
 
                 if (result.Success)
                 {
-                    _logger?.LogDebug($"表达式计算成功: {expression} = {result.Value}");
-                    return result.Value ?? string.Empty;
+                    _logger?.LogDebug($"表达式计算成功: {expression} = {result.Result}");
+                    return result.Result ?? string.Empty;
                 }
                 else
                 {
@@ -121,7 +124,7 @@ namespace MainUI.Service
                 if (string.IsNullOrWhiteSpace(expression))
                     return (false, "表达式不能为空");
 
-                var result = _engine.Evaluate(expression);
+                var result = _engine.EvaluateExpression(expression);
 
                 if (result.Success)
                 {

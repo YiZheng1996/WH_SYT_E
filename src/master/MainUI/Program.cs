@@ -1,5 +1,4 @@
 ﻿using MainUI.LogicalConfiguration;
-using MainUI.LogicalConfiguration.Configuration;
 using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods;
@@ -241,7 +240,6 @@ namespace MainUI
             services.AddSingleton<PLCMethods>();
             services.AddSingleton<DetectionMethods>();
             services.AddSingleton<ReportMethods>();
-            services.AddSingleton<VariableAssignmentMethods>();
 
             services.AddSingleton<ExpressionEngine>();
             services.AddTransient<VariableAssignmentEngine>();

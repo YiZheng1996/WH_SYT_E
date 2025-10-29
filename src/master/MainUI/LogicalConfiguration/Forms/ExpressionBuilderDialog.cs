@@ -2,6 +2,7 @@
 using MainUI.LogicalConfiguration.Services;
 using MainUI.LogicalConfiguration.LogicalManager;
 using System.Text;
+using MainUI.LogicalConfiguration.Engine;
 
 namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 {

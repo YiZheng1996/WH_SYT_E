@@ -121,8 +121,8 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 3. 检查变量存在性
                 var referencedVars = GetReferencedVariables(expression);
-                var missingVars = referencedVars.Where(v => !_variableManager.VariableExists(v)).ToList();
-                if (missingVars.Any())
+                var missingVars = referencedVars.Where(v => _variableManager.TryFindVariableByName(v) != null).ToList();
+                if (missingVars.Count != 0)
                 {
                     result.IsValid = false;
                     result.Message = $"以下变量不存在: {string.Join(", ", missingVars)}";
@@ -166,6 +166,294 @@ namespace MainUI.LogicalConfiguration.Engine
             }
 
             return result;
+        }
+
+
+        /// <summary>
+        /// 验证表达式的合法性（带验证上下文）
+        /// </summary>
+        /// <param name="expression">要验证的表达式</param>
+        /// <param name="context">验证上下文，提供目标变量信息等</param>
+        /// <returns>验证结果，包含错误和警告</returns>
+        public ValidationResult ValidateExpression(string expression, ValidationContext context)
+        {
+            // 如果没有提供上下文，调用无参数版本
+            if (context == null)
+            {
+                return ValidateExpression(expression);
+            }
+
+            var result = new ValidationResult { IsValid = true };
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(expression))
+                {
+                    result.IsValid = false;
+                    result.Message = "表达式不能为空";
+                    return result;
+                }
+
+                var label = string.IsNullOrWhiteSpace(context.ValidationLabel)
+                    ? expression
+                    : $"{context.ValidationLabel}: {expression}";
+
+                _logger?.LogDebug("开始验证表达式: {Expression}", label);
+
+                // 1. 检查无效字符
+                var invalidChars = GetInvalidCharacters(expression);
+                if (invalidChars.Any())
+                {
+                    result.IsValid = false;
+                    result.Message = $"表达式包含无效字符: {string.Join(", ", invalidChars)}";
+                    result.Errors.Add($"无效字符: {string.Join(", ", invalidChars)}");
+                    return result;
+                }
+
+                // 2. 检查括号匹配
+                if (!CheckParenthesesBalance(expression))
+                {
+                    result.IsValid = false;
+                    result.Message = "括号不匹配";
+                    result.Errors.Add("括号数量或顺序不正确");
+                    return result;
+                }
+
+                // 3. 检查变量存在性
+                var referencedVars = GetReferencedVariables(expression);
+                var missingVars = referencedVars.Where(v =>
+                {
+                    var variable = _variableManager.TryFindVariableByName(v);
+                    return variable == null;
+                }).ToList();
+
+                if (missingVars.Any())
+                {
+                    result.IsValid = false;
+                    result.Message = $"以下变量不存在: {string.Join(", ", missingVars)}";
+                    result.Errors.AddRange(missingVars.Select(v => $"变量 '{v}' 未定义"));
+                    return result;
+                }
+
+                // 4. 检查函数调用（如果启用）
+                if (context.AllowFunctionCalls)
+                {
+                    var functionMatches = _functionPattern.Matches(expression);
+                    foreach (Match match in functionMatches)
+                    {
+                        var funcName = match.Groups[1].Value.ToUpper();
+                        if (!IsFunctionSupported(funcName))
+                        {
+                            result.IsValid = false;
+                            result.Message = $"不支持的函数: {funcName}";
+                            result.Errors.Add($"函数 '{funcName}' 未定义");
+                            return result;
+                        }
+                    }
+                }
+                else
+                {
+                    // 不允许函数调用时，检查是否包含函数
+                    var functionMatches = _functionPattern.Matches(expression);
+                    if (functionMatches.Count > 0)
+                    {
+                        var funcNames = functionMatches.Cast<Match>()
+                            .Select(m => m.Groups[1].Value)
+                            .Distinct();
+                        result.IsValid = false;
+                        result.Message = "此场景不允许使用函数调用";
+                        result.Errors.Add($"检测到函数调用: {string.Join(", ", funcNames)}");
+                        return result;
+                    }
+                }
+
+                // 5. 检查PLC引用（如果启用）
+                if (!context.AllowPlcReferences)
+                {
+                    var plcMatches = _plcReadPattern.Matches(expression);
+                    if (plcMatches.Count > 0)
+                    {
+                        result.IsValid = false;
+                        result.Message = "此场景不允许使用PLC引用";
+                        result.Errors.Add("检测到PLC引用");
+                        return result;
+                    }
+                }
+
+                // 6. 检查运算符使用
+                var withoutStrings = RemoveStringLiterals(expression);
+                if (!HasValidOperatorUsage(withoutStrings))
+                {
+                    result.IsValid = false;
+                    result.Message = "运算符使用不当";
+                    result.Errors.Add("请检查运算符的位置和用法");
+                    return result;
+                }
+
+                // 7. 类型兼容性检查（如果提供了目标变量类型）
+                if (!string.IsNullOrWhiteSpace(context.TargetVariableType))
+                {
+                    CheckTypeCompatibility(expression, context.TargetVariableType, result, context.StrictMode);
+                }
+
+                // 8. 设置最终消息
+                if (result.IsValid)
+                {
+                    result.Message = result.HasWarnings
+                        ? $"表达式验证通过（有 {result.Warnings.Count} 个警告）"
+                        : "表达式验证通过";
+                }
+
+                _logger?.LogDebug("表达式验证完成: {Expression}, 有效: {IsValid}, 警告数: {WarningCount}",
+                    label, result.IsValid, result.Warnings.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "验证表达式时发生错误: {Expression}", expression);
+                result.IsValid = false;
+                result.Message = $"验证失败: {ex.Message}";
+                result.Errors.Add(ex.Message);
+            }
+
+            return result;
+        }
+        #endregion
+
+        #region 类型兼容性检查私有方法
+
+        /// <summary>
+        /// 检查表达式结果与目标类型的兼容性
+        /// </summary>
+        private void CheckTypeCompatibility(string expression, string targetType, ValidationResult result, bool strictMode)
+        {
+            try
+            {
+                // 尝试推断表达式的结果类型
+                var inferredType = InferExpressionType(expression);
+
+                if (string.IsNullOrWhiteSpace(inferredType))
+                {
+                    // 无法推断类型，添加警告
+                    result.AddWarning("无法确定表达式的结果类型，可能需要运行时类型转换");
+                    return;
+                }
+
+                // 检查类型是否兼容
+                if (!AreTypesCompatible(inferredType, targetType))
+                {
+                    var message = $"表达式结果类型 '{inferredType}' 与目标类型 '{targetType}' 可能不兼容";
+
+                    if (strictMode)
+                    {
+                        // 严格模式：类型不匹配是错误
+                        result.AddError(message);
+                    }
+                    else
+                    {
+                        // 非严格模式：类型不匹配是警告
+                        result.AddWarning(message + "，将尝试自动类型转换");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "类型兼容性检查失败: {Expression}", expression);
+                result.AddWarning("无法执行类型兼容性检查");
+            }
+        }
+
+        /// <summary>
+        /// 推断表达式的结果类型
+        /// </summary>
+        private string InferExpressionType(string expression)
+        {
+            // 简单的类型推断逻辑
+            // 更复杂的类型推断需要完整的表达式解析
+
+            // 数字字面量
+            if (_numberPattern.IsMatch(expression.Trim()))
+            {
+                return expression.Contains(".") ? "double" : "int";
+            }
+
+            // 字符串字面量
+            if (_stringLiteralPattern.IsMatch(expression.Trim()))
+            {
+                return "string";
+            }
+
+            // 布尔字面量
+            var lower = expression.Trim().ToLower();
+            if (lower == "true" || lower == "false")
+            {
+                return "bool";
+            }
+
+            // 单个变量引用
+            var varMatch = Regex.Match(expression.Trim(), @"^\{(\w+)\}$");
+            if (varMatch.Success)
+            {
+                var varName = varMatch.Groups[1].Value;
+                var variable = _variableManager.TryFindVariableByName(varName);
+                if (variable != null)
+                {
+                    return variable.VarType;
+                }
+            }
+
+            // 包含算术运算符，推断为数值类型
+            if (expression.Contains("+") || expression.Contains("-") ||
+                expression.Contains("*") || expression.Contains("/"))
+            {
+                return "double"; // 默认为 double 以支持小数
+            }
+
+            // 包含比较运算符或逻辑运算符，推断为布尔类型
+            if (expression.Contains("==") || expression.Contains("!=") ||
+                expression.Contains(">") || expression.Contains("<") ||
+                expression.Contains("&&") || expression.Contains("||"))
+            {
+                return "bool";
+            }
+
+            // 无法推断
+            return null;
+        }
+
+        /// <summary>
+        /// 检查两种类型是否兼容
+        /// </summary>
+        private bool AreTypesCompatible(string sourceType, string targetType)
+        {
+            if (string.IsNullOrWhiteSpace(sourceType) || string.IsNullOrWhiteSpace(targetType))
+            {
+                return true; // 类型未知时认为兼容
+            }
+
+            var source = sourceType.ToLower();
+            var target = targetType.ToLower();
+
+            // 完全相同
+            if (source == target)
+            {
+                return true;
+            }
+
+            // 数值类型之间可以转换
+            var numericTypes = new[] { "int", "int32", "long", "int64", "float", "single", "double", "decimal" };
+            if (numericTypes.Contains(source) && numericTypes.Contains(target))
+            {
+                return true;
+            }
+
+            // string 可以接受任何类型（通过 ToString()）
+            if (target == "string")
+            {
+                return true;
+            }
+
+            // 其他情况认为不兼容
+            return false;
         }
 
         #endregion
@@ -238,7 +526,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 _logger?.LogInformation("直接赋值: {VarName} = {Value}", targetVarName, value);
 
                 // 验证目标变量存在
-                if (!_variableManager.TryFindVariableByName(targetVarName))
+                if (_variableManager.TryFindVariableByName(targetVarName) == null)
                 {
                     return AssignmentResult.Error($"目标变量 '{targetVarName}' 不存在");
                 }
@@ -255,7 +543,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 执行赋值
                 var oldValue = variable.VarValue;
-                _variableManager.SetVariableValue(targetVarName, convertedValue);
+                variable.UpdateValue(convertedValue, "直接赋值");
 
                 _logger?.LogInformation("赋值成功: {VarName} = {NewValue} (旧值: {OldValue})",
                     targetVarName, convertedValue, oldValue);
@@ -282,7 +570,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 _logger?.LogInformation("表达式赋值: {VarName} = {Expression}", targetVarName, expression);
 
                 // 验证目标变量存在
-                if (!_variableManager.VariableExists(targetVarName))
+                if (_variableManager.TryFindVariableByName(targetVarName) == null)
                 {
                     return AssignmentResult.Error($"目标变量 '{targetVarName}' 不存在");
                 }
@@ -307,7 +595,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 执行赋值
                 var oldValue = variable.VarValue;
-                _variableManager.SetVariableValue(targetVarName, convertedValue);
+                variable.UpdateValue(convertedValue, $"表达式计算: {expression}");
 
                 _logger?.LogInformation("表达式赋值成功: {VarName} = {NewValue} (表达式: {Expression})",
                     targetVarName, convertedValue, expression);
@@ -334,21 +622,21 @@ namespace MainUI.LogicalConfiguration.Engine
                 _logger?.LogInformation("变量复制: {TargetVar} = {SourceVar}", targetVarName, sourceVarName);
 
                 // 验证变量存在
-                if (!_variableManager.FindVariableByName(targetVarName))
+                if (_variableManager.FindVariableByName(targetVarName) == null)
                 {
                     return AssignmentResult.Error($"目标变量 '{targetVarName}' 不存在");
                 }
-                if (!_variableManager.VariableExists(sourceVarName))
+                if (_variableManager.TryFindVariableByName(sourceVarName) == null)
                 {
                     return AssignmentResult.Error($"源变量 '{sourceVarName}' 不存在");
                 }
 
                 // 获取源变量值
-                var sourceVar = _variableManager.GetVariable(sourceVarName);
+                var sourceVar = _variableManager.TryFindVariableByName(sourceVarName);
                 var sourceValue = sourceVar.VarValue;
 
                 // 获取目标变量信息
-                var targetVar = _variableManager.GetVariable(targetVarName);
+                var targetVar = _variableManager.TryFindVariableByName(targetVarName);
 
                 // 类型转换
                 var convertedValue = ConvertValueToType(sourceValue, targetVar.VarType);
@@ -360,7 +648,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 执行赋值
                 var oldValue = targetVar.VarValue;
-                _variableManager.SetVariableValue(targetVarName, convertedValue);
+                targetVar.UpdateValue(convertedValue, $"从变量复制: {sourceVarName}");
 
                 _logger?.LogInformation("变量复制成功: {TargetVar} = {NewValue} (来自: {SourceVar})",
                     targetVarName, convertedValue, sourceVarName);
@@ -398,7 +686,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 }
 
                 // 验证目标变量存在
-                if (!_variableManager.VariableExists(targetVarName))
+                if (_variableManager.TryFindVariableByName(targetVarName) == null)
                 {
                     return AssignmentResult.Error($"目标变量 '{targetVarName}' 不存在");
                 }
@@ -411,7 +699,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 }
 
                 // 获取目标变量信息
-                var variable = _variableManager.GetVariable(targetVarName);
+                var variable = _variableManager.TryFindVariableByName(targetVarName);
 
                 // 类型转换
                 var convertedValue = ConvertValueToType(plcValue, variable.VarType);
@@ -423,7 +711,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 执行赋值
                 var oldValue = variable.VarValue;
-                _variableManager.SetVariableValue(targetVarName, convertedValue);
+                variable.UpdateValue(convertedValue, $"PLC读取: {plcModuleName}.{plcAddress}");
 
                 _logger?.LogInformation("PLC赋值成功: {VarName} = {NewValue} (来自: PLC.{Module}.{Address})",
                     targetVarName, convertedValue, plcModuleName, plcAddress);
@@ -595,9 +883,9 @@ namespace MainUI.LogicalConfiguration.Engine
             return _variablePattern.Replace(expression, match =>
             {
                 var varName = match.Groups[1].Value;
-                if (_variableManager.VariableExists(varName))
+                if (_variableManager.TryFindVariableByName(varName) != null)
                 {
-                    var variable = _variableManager.GetVariable(varName);
+                    var variable = _variableManager.TryFindVariableByName(varName);
                     var value = variable.VarValue;
 
                     // 根据类型格式化值
@@ -1063,50 +1351,5 @@ namespace MainUI.LogicalConfiguration.Engine
         #endregion
     }
 
-    #region 结果类定义
 
-    /// <summary>
-    /// 验证结果
-    /// </summary>
-    public class ValidationResult
-    {
-        public bool IsValid { get; set; }
-        public string Message { get; set; }
-        public List<string> Errors { get; set; } = new();
-    }
-
-    /// <summary>
-    /// 求值结果
-    /// </summary>
-    public class EvaluationResult
-    {
-        public bool Success { get; set; }
-        public object Result { get; set; }
-        public string ErrorMessage { get; set; }
-
-        public static EvaluationResult Succes(object result) =>
-            new() { Success = true, Result = result };
-
-        public static EvaluationResult Error(string message) =>
-            new() { Success = false, ErrorMessage = message };
-    }
-
-    /// <summary>
-    /// 赋值结果
-    /// </summary>
-    public class AssignmentResult
-    {
-        public bool Succes { get; set; }
-        public object NewValue { get; set; }
-        public object OldValue { get; set; }
-        public string ErrorMessage { get; set; }
-
-        public static AssignmentResult Success(object newValue, object oldValue) =>
-            new() { Succes = true, NewValue = newValue, OldValue = oldValue };
-
-        public static AssignmentResult Error(string message) =>
-            new() { Succes = false, ErrorMessage = message };
-    }
-
-    #endregion
 }

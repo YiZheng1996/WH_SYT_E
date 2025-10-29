@@ -1,7 +1,7 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
-using MainUI.Service;
+using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;

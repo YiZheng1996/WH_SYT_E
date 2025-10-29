@@ -1,6 +1,7 @@
 ﻿using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
+using MainUI.LogicalConfiguration.Services;
 using MainUI.Service;
 using System.Reflection;
 using System.Text.RegularExpressions;
