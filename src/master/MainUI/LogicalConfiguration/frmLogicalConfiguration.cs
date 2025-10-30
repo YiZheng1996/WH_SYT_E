@@ -444,7 +444,7 @@ namespace MainUI.Procedure
                          ChildSteps = []
                      }
                 ],
-                // 初始化默认变量列表（使用VarItem_Enhanced）
+                // 初始化默认变量列表
                 Variable =
                 [
                     new VarItem { VarName = "a", VarType = "int", VarText = "变量a" },

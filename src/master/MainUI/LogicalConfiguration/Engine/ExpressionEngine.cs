@@ -415,7 +415,7 @@ namespace MainUI.LogicalConfiguration.Engine
             // 数字字面量
             if (_numberPattern.IsMatch(expression.Trim()))
             {
-                return expression.Contains(".") ? "double" : "int";
+                return expression.Contains('.') ? "double" : "int";
             }
 
             // 字符串字面量
@@ -444,15 +444,15 @@ namespace MainUI.LogicalConfiguration.Engine
             }
 
             // 包含算术运算符，推断为数值类型
-            if (expression.Contains("+") || expression.Contains("-") ||
-                expression.Contains("*") || expression.Contains("/"))
+            if (expression.Contains('+') || expression.Contains('-') ||
+                expression.Contains('*') || expression.Contains('/'))
             {
                 return "double"; // 默认为 double 以支持小数
             }
 
             // 包含比较运算符或逻辑运算符，推断为布尔类型
             if (expression.Contains("==") || expression.Contains("!=") ||
-                expression.Contains(">") || expression.Contains("<") ||
+                expression.Contains('>') || expression.Contains('<') ||
                 expression.Contains("&&") || expression.Contains("||"))
             {
                 return "bool";
@@ -1097,18 +1097,19 @@ namespace MainUI.LogicalConfiguration.Engine
                 return numValue;
             }
 
-            // 2. 检查是否包含字符串字面量和运算符
-            if (expression.Contains("\""))
+            // 2. 智能判断字符串拼接 vs 数学运算
+            if (expression.Contains('"'))
             {
-                // 处理字符串拼接（+ 运算符）
-                if (expression.Contains("+"))
+                // 智能判断是否真的需要字符串拼接
+                if (expression.Contains('+') && ShouldUseStringConcatenation(expression))
                 {
                     return HandleStringConcatenation(expression);
                 }
 
-                // 其他包含字符串的运算暂不支持
-                throw new InvalidOperationException($"不支持该字符串运算: {expression}");
+                // 如果都是数字，去除引号后按数学运算处理
+                expression = RemoveNumericQuotes(expression);
             }
+            // ============================================================
 
             // 3. 纯数值表达式 - 使用 DataTable.Compute
             try
@@ -1121,6 +1122,82 @@ namespace MainUI.LogicalConfiguration.Engine
             {
                 // 如果 DataTable.Compute 失败，尝试逻辑表达式
                 return EvaluateLogicalExpression(expression);
+            }
+        }
+
+        /// <summary>
+        /// 判断表达式是否应该使用字符串拼接
+        /// 规则：如果所有带引号的部分都可以转换为数字，则不应该使用字符串拼接
+        /// </summary>
+        /// <param name="expression">要判断的表达式</param>
+        /// <returns>true=使用字符串拼接, false=使用数学运算</returns>
+        private bool ShouldUseStringConcatenation(string expression)
+        {
+            try
+            {
+                // 提取所有字符串字面量
+                var matches = _stringLiteralPattern.Matches(expression);
+
+                if (matches.Count == 0)
+                {
+                    return false; // 没有字符串字面量，不需要字符串拼接
+                }
+
+                // 检查是否存在至少一个非数值的字符串
+                foreach (Match match in matches)
+                {
+                    var content = match.Groups[1].Value; // 获取引号内的内容
+
+                    // 如果这个字符串无法转换为数字，说明是真正的字符串拼接
+                    if (!double.TryParse(content, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
+                    {
+                        _logger?.LogDebug("检测到非数值字符串: '{0}', 使用字符串拼接", content);
+                        return true; // 至少有一个非数值字符串，应该使用字符串拼接
+                    }
+                }
+
+                // 所有字符串都是数值，不应该使用字符串拼接
+                _logger?.LogDebug("所有字符串都是数值, 使用数学运算");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "判断字符串拼接类型时发生错误");
+                // 出错时保守处理：使用字符串拼接
+                return true;
+            }
+        }
+
+        private string RemoveNumericQuotes(string expression)
+        {
+            try
+            {
+                var result = _stringLiteralPattern.Replace(expression, match =>
+                {
+                    var content = match.Groups[1].Value; // 引号内的内容
+
+                    // 如果内容是数字，去掉引号
+                    if (double.TryParse(content, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
+                    {
+                        _logger?.LogDebug("移除数值引号: \"{0}\" -> {0}", content);
+                        return content; // 返回不带引号的数字
+                    }
+
+                    // 否则保持原样（带引号）
+                    return match.Value;
+                });
+
+                if (result != expression)
+                {
+                    _logger?.LogDebug("表达式引号处理: {0} -> {1}", expression, result);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "移除数值引号时发生错误");
+                return expression; // 出错时返回原始表达式
             }
         }
 
@@ -1349,7 +1426,125 @@ namespace MainUI.LogicalConfiguration.Engine
                 }
             }
 
+            // 处理数学运算符（修复关键）
+            // 在抛出异常之前，尝试处理数学表达式
+            if (TryEvaluateArithmeticExpression(expression, out var result))
+            {
+                return result;
+            }
+
             throw new InvalidOperationException($"无法计算表达式: {expression}");
+        }
+        /// <summary>
+        /// 尝试计算数学表达式
+        /// 处理加减乘除和括号
+        /// </summary>
+        /// <param name="expression">表达式</param>
+        /// <param name="result">计算结果</param>
+        /// <returns>是否成功计算</returns>
+        private bool TryEvaluateArithmeticExpression(string expression, out object result)
+        {
+            result = null;
+            expression = expression.Trim();
+
+            try
+            {
+                // 检查是否包含数学运算符
+                if (!expression.Contains('+') && !expression.Contains('-') &&
+                    !expression.Contains('*') && !expression.Contains('/') &&
+                    !expression.Contains('%'))
+                {
+                    return false; // 不包含数学运算符
+                }
+
+                // 使用递归下降解析器处理运算符优先级
+                result = EvaluateArithmeticRecursive(expression);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        /// <summary>
+        /// 递归计算数学表达式（处理运算符优先级）
+        /// </summary>
+        private double EvaluateArithmeticRecursive(string expression)
+        {
+            expression = expression.Trim();
+
+            // 处理括号
+            while (expression.Contains('('))
+            {
+                int lastOpen = expression.LastIndexOf('(');
+                int matchingClose = expression.IndexOf(')', lastOpen);
+
+                if (matchingClose == -1)
+                {
+                    throw new InvalidOperationException("括号不匹配");
+                }
+
+                string subExpr = expression.Substring(lastOpen + 1, matchingClose - lastOpen - 1);
+                double subResult = EvaluateArithmeticRecursive(subExpr);
+
+                expression = expression.Substring(0, lastOpen) + subResult.ToString(CultureInfo.InvariantCulture) +
+                            expression.Substring(matchingClose + 1);
+            }
+
+            // 处理加减法（优先级最低）
+            for (int i = expression.Length - 1; i >= 0; i--)
+            {
+                if (expression[i] == '+' || (expression[i] == '-' && i > 0 &&
+                    expression[i - 1] != '*' && expression[i - 1] != '/' &&
+                    expression[i - 1] != '%' && expression[i - 1] != '+' && expression[i - 1] != '-'))
+                {
+                    string left = expression.Substring(0, i).Trim();
+                    string right = expression.Substring(i + 1).Trim();
+
+                    if (string.IsNullOrEmpty(left) && expression[i] == '-')
+                    {
+                        // 负号
+                        continue;
+                    }
+
+                    double leftVal = EvaluateArithmeticRecursive(left);
+                    double rightVal = EvaluateArithmeticRecursive(right);
+
+                    return expression[i] == '+' ? leftVal + rightVal : leftVal - rightVal;
+                }
+            }
+
+            // 处理乘除模（优先级较高）
+            for (int i = expression.Length - 1; i >= 0; i--)
+            {
+                if (expression[i] == '*' || expression[i] == '/' || expression[i] == '%')
+                {
+                    string left = expression.Substring(0, i).Trim();
+                    string right = expression.Substring(i + 1).Trim();
+
+                    double leftVal = EvaluateArithmeticRecursive(left);
+                    double rightVal = EvaluateArithmeticRecursive(right);
+
+                    if (expression[i] == '*')
+                        return leftVal * rightVal;
+                    else if (expression[i] == '/')
+                    {
+                        if (Math.Abs(rightVal) < 0.0000001)
+                            throw new DivideByZeroException("除数不能为零");
+                        return leftVal / rightVal;
+                    }
+                    else // %
+                        return leftVal % rightVal;
+                }
+            }
+
+            // 基本情况：纯数字
+            if (double.TryParse(expression, NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
+            {
+                return value;
+            }
+
+            throw new InvalidOperationException($"无法解析表达式: {expression}");
         }
 
         /// <summary>
@@ -1393,7 +1588,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
         /// <summary>
         /// 格式化值用于表达式
-        /// 重要：数值类型不加引号，字符串类型才加引号
+        /// 重要:数值类型不加引号,字符串类型才加引号
         /// </summary>
         private string FormatValueForExpression(object value)
         {
@@ -1402,21 +1597,82 @@ namespace MainUI.LogicalConfiguration.Engine
 
             return value switch
             {
-                // 字符串类型：需要转义并加引号
-                string s => $"\"{s.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"",
+                // ========================================
+                // ✅ 数值类型: 不加引号 (关键修复点)
+                // ========================================
+                int i => i.ToString(CultureInfo.InvariantCulture),
+                long l => l.ToString(CultureInfo.InvariantCulture),
+                short sh => sh.ToString(CultureInfo.InvariantCulture),
+                byte b => b.ToString(CultureInfo.InvariantCulture),
+                uint ui => ui.ToString(CultureInfo.InvariantCulture),
+                ulong ul => ul.ToString(CultureInfo.InvariantCulture),
+                ushort us => us.ToString(CultureInfo.InvariantCulture),
+                sbyte sb => sb.ToString(CultureInfo.InvariantCulture),
 
-                // 布尔类型：小写形式
-                bool b => b.ToString().ToLower(),
+                // 浮点数类型: 使用InvariantCulture确保格式正确 (避免小数点问题)
+                double d => d.ToString(CultureInfo.InvariantCulture),
+                float f => f.ToString(CultureInfo.InvariantCulture),
+                decimal dec => dec.ToString(CultureInfo.InvariantCulture),
 
-                // 数值类型：不加引号，直接转字符串
-                sbyte or byte or short or ushort or int or uint or long or ulong or
-                float or double or decimal
-                    => Convert.ToString(value, CultureInfo.InvariantCulture),
+                // ========================================
+                //  布尔类型: 转换为小写字符串
+                // ========================================
+                bool bo => bo.ToString().ToLower(),
 
-                // 其他类型：转字符串并加引号
-                _ => $"\"{value.ToString().Replace("\\", "\\\\").Replace("\"", "\\\"")}\""
+                // ========================================
+                //  字符串类型: 必须加引号并转义 (这是正确的)
+                // ========================================
+                string s => $"\"{EscapeString(s)}\"",
+
+                // ========================================
+                //  日期时间类型: 格式化为ISO格式并加引号
+                // ========================================
+                DateTime dt => $"\"{dt:yyyy-MM-dd HH:mm:ss}\"",
+
+                // ========================================
+                // 其他类型: 尝试智能判断
+                // ========================================
+                _ => FormatUnknownType(value)
             };
         }
+
+        /// <summary>
+        /// 转义字符串中的特殊字符
+        /// </summary>
+        private string EscapeString(string s)
+        {
+            return s.Replace("\\", "\\\\")  // 反斜杠
+                    .Replace("\"", "\\\"")  // 引号
+                    .Replace("\n", "\\n")   // 换行
+                    .Replace("\r", "\\r")   // 回车
+                    .Replace("\t", "\\t");  // 制表符
+        }
+
+        /// <summary>
+        /// 格式化未知类型的值
+        /// 尝试识别是数值还是字符串
+        /// </summary>
+        private string FormatUnknownType(object value)
+        {
+            var str = value.ToString();
+
+            // 尝试解析为数值
+            if (double.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var numValue))
+            {
+                // 是数值，不加引号
+                return numValue.ToString(CultureInfo.InvariantCulture);
+            }
+
+            // 尝试解析为布尔值
+            if (bool.TryParse(str, out var boolValue))
+            {
+                return boolValue.ToString().ToLower();
+            }
+
+            // 默认当作字符串处理，加引号
+            return $"\"{EscapeString(str)}\"";
+        }
+
 
         #endregion
 

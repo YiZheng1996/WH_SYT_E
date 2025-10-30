@@ -92,6 +92,7 @@ namespace MainUI.LogicalConfiguration
     /// </summary>
     public enum VariableAssignmentType
     {
+        [Description("未赋值")]
         None,           // 未赋值
                       
         /// <summary>
@@ -117,12 +118,6 @@ namespace MainUI.LogicalConfiguration
         /// </summary>
         [Description("从PLC读取")]
         PLCRead,
-
-        //PLCRead,        // PLC读取赋值
-        //Manual,         // 手动赋值
-        //Expression,     // 表达式赋值
-        //Constant ,       // 常量赋值
-
     }
 
     /// <summary>
@@ -131,8 +126,11 @@ namespace MainUI.LogicalConfiguration
     public class VariableHistoryItem
     {
         public string OldValue { get; set; }
+
         public string NewValue { get; set; }
+
         public DateTime Timestamp { get; set; }
+
         public string Source { get; set; }
     }
 

@@ -69,6 +69,31 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         }
 
         /// <summary>
+        /// 确保变量存储时类型正确
+        /// </summary>
+        /// <param name="varName">变量名称</param>
+        /// <param name="value">当前值</param>
+        /// <param name="varType">值类型</param>
+        public void UpdateVariableValue(string varName, object value, string varType)
+        {
+            var variable = FindVariableByName(varName);
+            if (variable == null) return;
+
+            // 根据变量类型转换值
+            object convertedValue = varType.ToLower() switch
+            {
+                "int" => value is string s ? int.Parse(s) : Convert.ToInt32(value),
+                "double" => value is string s ? double.Parse(s) : Convert.ToDouble(value),
+                "bool" => value is string s ? bool.Parse(s) : Convert.ToBoolean(value),
+                "string" => value?.ToString() ?? "",
+                _ => value
+            };
+
+            variable.VarValue = convertedValue;
+            variable.LastUpdated = DateTime.Now;
+        }
+
+        /// <summary>
         /// 删除变量
         /// </summary>
         public bool RemoveVariable(string varName)
