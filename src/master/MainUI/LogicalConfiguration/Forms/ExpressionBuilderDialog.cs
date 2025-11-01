@@ -255,7 +255,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                     lstFunctions.Items.Add(""); // 空行分隔
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
                 lstFunctions.Items.Clear();
@@ -302,7 +302,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 lstOperators.Items.Add("━━━ 其他 ━━━");
                 lstOperators.Items.Add("  ( ) (括号)");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 lstOperators.Items.Clear();
                 lstOperators.Items.Add("❌ 加载运算符失败");

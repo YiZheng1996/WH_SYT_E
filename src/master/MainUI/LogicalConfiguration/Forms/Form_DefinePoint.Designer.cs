@@ -693,7 +693,6 @@
         private Sunny.UI.UISymbolButton btnAddPoint;
         private Sunny.UI.UISymbolButton btnDeletePoint;
         private Sunny.UI.UISymbolButton btnImportExcel;
-        private Sunny.UI.UISymbolButton btnImportCsv;
         private Sunny.UI.UISymbolButton btnExport;
         private Sunny.UI.UISymbolButton btnClearPoints;
 

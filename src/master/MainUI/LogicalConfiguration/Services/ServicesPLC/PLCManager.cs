@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RW.Modules;
+using static MainUI.LogicalConfiguration.Parameter.Parameter_WritePLC;
 
 namespace MainUI.LogicalConfiguration.Services.ServicesPLC
 {
@@ -280,9 +281,9 @@ namespace MainUI.LogicalConfiguration.Services.ServicesPLC
         /// <summary>
         /// 异步批量写入PLC点位值
         /// </summary>
-        public async Task<int> BatchWritePLCAsync(IEnumerable<PlcWriteItem> writeItems, CancellationToken cancellationToken = default)
+        public async Task<int> BatchWritePLCAsync(IEnumerable<PLCWriteItem> writeItems, CancellationToken cancellationToken = default)
         {
-            var items = writeItems?.ToList() ?? new List<PlcWriteItem>();
+            var items = writeItems?.ToList() ?? [];
             if (items.Count == 0)
             {
                 _logger.LogWarning("批量写入PLC：写入项列表为空");

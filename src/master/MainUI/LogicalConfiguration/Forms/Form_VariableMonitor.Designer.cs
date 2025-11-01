@@ -38,7 +38,6 @@
             txtSearch = new UITextBox();
             lblRefreshInterval = new UILabel();
             cmbRefreshInterval = new UIComboBox();
-            btnSnapshot = new UISymbolButton();
             btnHistory = new UISymbolButton();
             btnExport = new UISymbolButton();
             chkOnlyAssigned = new UICheckBox();
@@ -87,7 +86,6 @@
             pnlToolbar.Controls.Add(txtSearch);
             pnlToolbar.Controls.Add(lblRefreshInterval);
             pnlToolbar.Controls.Add(cmbRefreshInterval);
-            pnlToolbar.Controls.Add(btnSnapshot);
             pnlToolbar.Controls.Add(btnHistory);
             pnlToolbar.Controls.Add(btnExport);
             pnlToolbar.Controls.Add(chkOnlyAssigned);
@@ -165,27 +163,6 @@
             cmbRefreshInterval.TextAlignment = ContentAlignment.MiddleLeft;
             cmbRefreshInterval.Watermark = "";
             cmbRefreshInterval.SelectedIndexChanged += CmbRefreshInterval_SelectedIndexChanged;
-            // 
-            // btnSnapshot
-            // 
-            btnSnapshot.Cursor = Cursors.Hand;
-            btnSnapshot.FillColor = Color.FromArgb(65, 100, 204);
-            btnSnapshot.FillColor2 = Color.FromArgb(55, 90, 194);
-            btnSnapshot.FillColorGradient = true;
-            btnSnapshot.FillHoverColor = Color.FromArgb(75, 110, 214);
-            btnSnapshot.Font = new Font("微软雅黑", 10F);
-            btnSnapshot.Location = new Point(425, 15);
-            btnSnapshot.MinimumSize = new Size(1, 1);
-            btnSnapshot.Name = "btnSnapshot";
-            btnSnapshot.RectColor = Color.FromArgb(65, 100, 204);
-            btnSnapshot.Size = new Size(80, 30);
-            btnSnapshot.Style = UIStyle.Custom;
-            btnSnapshot.Symbol = 61627;
-            btnSnapshot.SymbolSize = 20;
-            btnSnapshot.TabIndex = 3;
-            btnSnapshot.Text = "快照";
-            btnSnapshot.TipsFont = new Font("微软雅黑", 9F);
-            btnSnapshot.Click += BtnSnapshot_Click;
             // 
             // btnHistory
             // 
@@ -804,7 +781,6 @@
         private Sunny.UI.UITextBox txtSearch;
         private Sunny.UI.UILabel lblRefreshInterval;
         private Sunny.UI.UIComboBox cmbRefreshInterval;
-        private Sunny.UI.UISymbolButton btnSnapshot;
         private Sunny.UI.UISymbolButton btnHistory;
         private Sunny.UI.UISymbolButton btnExport;
         private Sunny.UI.UICheckBox chkOnlyAssigned;

@@ -174,6 +174,8 @@ namespace MainUI.LogicalConfiguration.Services
 
                 // PLC写入窗体
                 nameof(Form_WritePLC) => (T)(object)new Form_WritePLC(
+                    _workflowState,
+                    GetSpecificLogger<Form_WritePLC>(),
                     _plcManager),
 
                 // 延时配置窗体

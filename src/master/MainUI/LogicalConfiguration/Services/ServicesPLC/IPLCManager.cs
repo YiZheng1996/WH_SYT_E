@@ -1,4 +1,5 @@
 ﻿using MainUI.LogicalConfiguration.Parameter;
+using static MainUI.LogicalConfiguration.Parameter.Parameter_WritePLC;
 
 namespace MainUI.LogicalConfiguration.Services.ServicesPLC
 {
@@ -69,7 +70,7 @@ namespace MainUI.LogicalConfiguration.Services.ServicesPLC
         /// <param name="writeItems">写入项列表</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>成功写入的数量</returns>
-        Task<int> BatchWritePLCAsync(IEnumerable<PlcWriteItem> writeItems, CancellationToken cancellationToken = default);
+        Task<int> BatchWritePLCAsync(IEnumerable<PLCWriteItem> writeItems, CancellationToken cancellationToken = default);
 
         #endregion
 

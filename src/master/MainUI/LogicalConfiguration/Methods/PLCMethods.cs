@@ -4,6 +4,7 @@ using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.Logging;
+using static MainUI.LogicalConfiguration.Parameter.Parameter_WritePLC;
 
 namespace MainUI.LogicalConfiguration.Methods
 {
@@ -187,7 +188,7 @@ namespace MainUI.LogicalConfiguration.Methods
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>成功写入的数量</returns>
         public async Task<int> BatchWritePLC(
-            IEnumerable<PlcWriteItem> writeItems,
+            IEnumerable<PLCWriteItem> writeItems,
             CancellationToken cancellationToken = default)
         {
             try

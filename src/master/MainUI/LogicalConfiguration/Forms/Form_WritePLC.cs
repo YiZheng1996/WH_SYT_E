@@ -1,43 +1,62 @@
 ﻿using AntdUI;
-using MainUI.LogicalConfiguration;
-using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
+using MainUI.LogicalConfiguration.Services;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
+namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// PLC写入参数配置表单
+    /// PLC写入参数配置表单（优化版）
     /// 用于配置和管理工作流步骤中的PLC写入操作
+    /// 参考 Form_VariableAssignment 的设计模式进行优化
     /// </summary>
-    public partial class Form_WritePLC : BaseParameterForm, IParameterForm<Form_WritePLC>
+    public partial class Form_WritePLC : BaseParameterForm, IParameterForm<Parameter_WritePLC>
     {
         #region 私有字段
-
-        /// <summary>
-        /// PLC管理器，用于PLC相关操作
-        /// </summary>
-        private readonly IPLCManager _pLCManager;
-
         /// <summary>
         /// 当前参数对象缓存
         /// </summary>
-        private Parameter_WritePLC _currentParameter;
+        private Parameter_WritePLC _parameter;
+
+        /// <summary>
+        /// 初始化状态标志 - 防止在窗体初始化过程中触发不必要的事件
+        /// </summary>
+        private bool _isInitializing = true;
+
+        /// <summary>
+        /// 未保存更改标志 - 跟踪用户是否做了未保存的修改
+        /// </summary>
+        private bool _hasUnsavedChanges = false;
+
+        /// <summary>
+        /// 验证定时器 - 延迟触发配置验证
+        /// </summary>
+        private System.Windows.Forms.Timer _validationTimer;
 
         #endregion
 
         #region 属性
 
         /// <summary>
-        /// IParameterForm接口实现 - 参数对象
-        /// TODO: 需要实现完整的get/set逻辑
+        /// 参数对象属性（IParameterForm接口实现）
         /// </summary>
-        public Form_WritePLC Parameter
+        public Parameter_WritePLC Parameter
         {
-            get => throw new NotImplementedException("需要实现Parameter属性的get逻辑");
-            set => throw new NotImplementedException("需要实现Parameter属性的set逻辑");
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_WritePLC();
+
+                // 只有在非设计模式、非基类加载状态且窗体句柄已创建时才加载到界面
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
         }
 
         #endregion
@@ -54,236 +73,964 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             // 只有在非设计时模式才进行初始化，避免设计器错误
             if (!DesignMode)
             {
-                try
-                {
-                    LoadWritePLCParameters();
-                    InitializePointLocationPLC();
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "默认构造函数初始化失败");
-                    MessageHelper.MessageOK($"初始化失败：{ex.Message}", TType.Error);
-                }
-                finally
-                {
-                }
+                InitializeForm();
             }
         }
 
         /// <summary>
         /// 依赖注入构造函数
         /// </summary>
-        /// <param name="pLCManager">PLC管理器服务</param>
-        public Form_WritePLC(IPLCManager pLCManager)
+        /// <param name="workflowState">工作流状态服务</param>
+        /// <param name="logger">日志服务</param>
+        /// <param name="plcManager">PLC管理器服务</param>
+        public Form_WritePLC(
+            IWorkflowStateService workflowState,
+            ILogger<Form_WritePLC> logger)
+            : base(workflowState, logger)
         {
-            _pLCManager = pLCManager ?? throw new ArgumentNullException(nameof(pLCManager));
-
             InitializeComponent();
+            InitializeForm();
+
+            Logger?.LogDebug("Form_WritePLC 依赖注入构造函数初始化完成");
+        }
+
+        #endregion
+
+        #region 初始化方法
+
+        /// <summary>
+        /// 初始化窗体
+        /// 按顺序执行各项初始化任务，确保窗体处于可用状态
+        /// </summary>
+        private void InitializeForm()
+        {
+            if (DesignMode) return;
 
             try
             {
-                LoadWritePLCParameters();
-                InitializePointLocationPLC();
+                _isInitializing = true;
 
-                _logger?.LogDebug("Form_WritePLC 依赖注入构造函数初始化完成");
+                // 初始化窗体样式
+                InitializeFormStyle();
+
+                // 初始化定时器
+                InitializeTimers();
+
+                // 初始化DataGridView
+                InitializeDataGridView();
+
+                // 加载PLC模块和点位
+                LoadPLCModulesAndAddresses();
+
+                // 加载可用变量（用于支持变量引用）
+                LoadAvailableVariables();
+
+                // 绑定事件
+                BindEvents();
+
+                // 从工作流状态加载参数
+                LoadParameterFromWorkflowState();
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "依赖注入构造函数初始化失败");
+                Logger?.LogError(ex, "初始化窗体失败");
                 MessageHelper.MessageOK($"初始化失败：{ex.Message}", TType.Error);
             }
             finally
             {
+                _isInitializing = false;
+            }
+        }
+
+        /// <summary>
+        /// 初始化窗体样式
+        /// </summary>
+        private void InitializeFormStyle()
+        {
+            this.Text = "PLC写入配置";
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.Width = 900;
+            this.Height = 600;
+
+            // 设置SunnyUI主题（如果使用）
+            if (this is Sunny.UI.UIForm uiForm)
+            {
+                uiForm.Style = Sunny.UI.UIStyle.Custom;
+                uiForm.StyleCustomMode = true;
+                uiForm.TitleColor = System.Drawing.Color.FromArgb(65, 100, 204);
+                uiForm.TitleFont = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Bold);
+                uiForm.RectColor = System.Drawing.Color.FromArgb(65, 100, 204);
+            }
+        }
+
+        /// <summary>
+        /// 初始化定时器
+        /// </summary>
+        private void InitializeTimers()
+        {
+            _validationTimer = new System.Windows.Forms.Timer
+            {
+                Interval = 500 // 500ms延迟
+            };
+            _validationTimer.Tick += (s, e) =>
+            {
+                _validationTimer.Stop();
+                ValidateConfigurationAsync();
+            };
+        }
+
+        /// <summary>
+        /// 初始化DataGridView
+        /// </summary>
+        private void InitializeDataGridView()
+        {
+            try
+            {
+                if (DataGridViewPLCList == null) return;
+
+                // 设置样式
+                DataGridViewPLCList.AllowUserToAddRows = true;
+                DataGridViewPLCList.AllowUserToDeleteRows = true;
+                DataGridViewPLCList.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+                DataGridViewPLCList.MultiSelect = false;
+                DataGridViewPLCList.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+                DataGridViewPLCList.RowHeadersVisible = true;
+                DataGridViewPLCList.AllowDrop = true;
+
+                // 设置列
+                DataGridViewPLCList.Columns.Clear();
+
+                // 序号列
+                DataGridViewPLCList.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "ColIndex",
+                    HeaderText = "序号",
+                    ReadOnly = true,
+                    Width = 60,
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.None
+                });
+
+                // PLC模块列（下拉框）
+                var colModule = new DataGridViewComboBoxColumn
+                {
+                    Name = "ColPLCModule",
+                    HeaderText = "PLC模块",
+                    Width = 150,
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+                    FlatStyle = FlatStyle.Flat
+                };
+                DataGridViewPLCList.Columns.Add(colModule);
+
+                // PLC地址列（下拉框）
+                var colAddress = new DataGridViewComboBoxColumn
+                {
+                    Name = "ColPLCAddress",
+                    HeaderText = "PLC地址",
+                    Width = 200,
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+                    FlatStyle = FlatStyle.Flat
+                };
+                DataGridViewPLCList.Columns.Add(colAddress);
+
+                // 写入值列（可输入变量引用）
+                DataGridViewPLCList.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "ColWriteValue",
+                    HeaderText = "写入值（支持{变量名}）",
+                    Width = 200,
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                });
+
+                // 描述列
+                DataGridViewPLCList.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "ColDescription",
+                    HeaderText = "描述",
+                    Width = 150,
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                });
+
+                // 添加 DataError 事件处理
+                DataGridViewPLCList.DataError += DataGridViewPLCList_DataError;
+
+                Logger?.LogDebug("DataGridView初始化完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "初始化DataGridView失败");
+            }
+        }
+
+        /// <summary>
+        /// 加载PLC模块和点位地址
+        /// </summary>
+        private async Task LoadPLCModulesAndAddresses()
+        {
+            try
+            {
+                if (_plcManager == null) return;
+
+                // 获取PLC模块及其点位信息
+                var moduleTagsDict = await _plcManager.GetModuleTagsAsync();
+                if (moduleTagsDict == null || moduleTagsDict.Count == 0)
+                {
+                    Logger?.LogWarning("未找到可用的PLC模块");
+                    return;
+                }
+
+                // ✅ 只设置列级别的默认 Items（用于新添加的行）
+                var moduleColumn = DataGridViewPLCList.Columns["ColPLCModule"] as DataGridViewComboBoxColumn;
+                if (moduleColumn != null)
+                {
+                    moduleColumn.Items.Clear();
+                    foreach (var moduleName in moduleTagsDict.Keys)
+                    {
+                        moduleColumn.Items.Add(moduleName);
+                    }
+                }
+
+                Logger?.LogInformation("成功加载 {Count} 个PLC模块", moduleTagsDict.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载PLC模块失败");
+            }
+        }
+
+        /// <summary>
+        /// 加载可用变量（用于值引用）
+        /// </summary>
+        private void LoadAvailableVariables()
+        {
+            try
+            {
+                var globalVariableManager = _globalVariable ?? Program.ServiceProvider?.GetService<GlobalVariableManager>();
+                if (globalVariableManager == null) return;
+
+                var variables = globalVariableManager.GetAllVariables();
+
+                // 可以在界面上添加一个提示标签，告诉用户可以使用 {变量名} 引用变量
+                Logger?.LogInformation("成功加载 {Count} 个可用变量", variables.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载可用变量失败");
+            }
+        }
+
+        /// <summary>
+        /// 绑定事件处理器
+        /// </summary>
+        private void BindEvents()
+        {
+            try
+            {
+                // DataGridView事件
+                if (DataGridViewPLCList != null)
+                {
+                    DataGridViewPLCList.CellValueChanged += DataGridViewPLCList_CellValueChanged;
+                    DataGridViewPLCList.CurrentCellDirtyStateChanged += DataGridViewPLCList_CurrentCellDirtyStateChanged;
+                    DataGridViewPLCList.RowsAdded += DataGridViewPLCList_RowsAdded;
+                    DataGridViewPLCList.UserDeletingRow += DataGridViewPLCList_UserDeletingRow;
+                    DataGridViewPLCList.DragDrop += DataGridViewPLCList_DragDrop;
+                    DataGridViewPLCList.DragEnter += DataGridViewPLCList_DragEnter;
+                }
+
+                // 按钮事件
+                if (btnAdd != null) btnAdd.Click += BtnAdd_Click;
+                if (btnDelete != null) btnDelete.Click += BtnDelete_Click;
+                if (btnMoveUp != null) btnMoveUp.Click += BtnMoveUp_Click;
+                if (btnMoveDown != null) btnMoveDown.Click += BtnMoveDown_Click;
+                if (btnSave != null) btnSave.Click += BtnSave_Click;
+                if (btnCancel != null) btnCancel.Click += BtnCancel_Click;
+                if (btnTest != null) btnTest.Click += BtnTest_Click;
+                if (btnHelp != null) btnHelp.Click += BtnHelp_Click;
+
+                // 窗体事件
+                this.FormClosing += Form_WritePLC_FormClosing;
+
+                Logger?.LogDebug("事件绑定完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "绑定事件失败");
             }
         }
 
         #endregion
 
-        #region 初始化相关
+        #region 参数加载和保存
 
         /// <summary>
-        /// 加载写入PLC参数
-        /// 从工作流状态中获取当前步骤的PLC写入参数并显示在界面上
+        /// 从工作流状态加载参数
         /// </summary>
-        private void LoadWritePLCParameters()
+        private void LoadParameterFromWorkflowState()
         {
             try
             {
-                // 检查服务可用性
                 if (!IsServiceAvailable)
                 {
-                    _logger?.LogWarning("服务不可用，无法加载PLC参数");
+                    Logger?.LogWarning("服务不可用，无法加载PLC参数");
+                    SetDefaultValues();
                     return;
                 }
 
                 var steps = _workflowState.GetSteps();
                 int idx = _workflowState.StepNum;
 
-                // 验证步骤索引有效性
                 if (steps == null || idx < 0 || idx >= steps.Count)
                 {
-                    _logger?.LogWarning("步骤索引无效: Index={Index}, Count={Count}", idx, steps?.Count ?? 0);
-                    _currentParameter = new Parameter_WritePLC();
+                    Logger?.LogWarning("步骤索引无效: Index={Index}, Count={Count}", idx, steps?.Count ?? 0);
+                    SetDefaultValues();
                     return;
                 }
 
                 var currentStep = steps[idx];
                 var paramObj = currentStep.StepParameter;
-                Parameter_WritePLC param = null;
 
-                // 尝试多种方式解析参数对象
+                // 解析参数
                 if (paramObj is Parameter_WritePLC directParam)
                 {
-                    // 直接类型匹配
-                    param = directParam;
-                    _logger?.LogDebug("直接获取Parameter_WritePLC参数");
+                    _parameter = directParam;
+                    Logger?.LogDebug("直接获取Parameter_WritePLC参数");
                 }
                 else if (paramObj != null)
                 {
-                    // 尝试JSON反序列化
                     try
                     {
                         string jsonString = paramObj is string s ? s : JsonConvert.SerializeObject(paramObj);
-                        param = JsonConvert.DeserializeObject<Parameter_WritePLC>(jsonString);
-                        _logger?.LogDebug("JSON反序列化获取Parameter_WritePLC参数");
+                        _parameter = JsonConvert.DeserializeObject<Parameter_WritePLC>(jsonString);
+                        Logger?.LogDebug("JSON反序列化获取Parameter_WritePLC参数");
                     }
                     catch (JsonException jsonEx)
                     {
-                        _logger?.LogWarning(jsonEx, "JSON反序列化失败，使用默认参数");
-                        param = new Parameter_WritePLC();
+                        Logger?.LogWarning(jsonEx, "JSON反序列化失败，使用默认参数");
+                        _parameter = new Parameter_WritePLC();
                     }
                 }
                 else
                 {
-                    // 参数为空，创建默认参数
-                    param = new Parameter_WritePLC();
-                    _logger?.LogDebug("参数为空，创建默认Parameter_WritePLC参数");
+                    _parameter = new Parameter_WritePLC();
+                    Logger?.LogDebug("参数为空，创建默认Parameter_WritePLC参数");
                 }
 
-                _currentParameter = param ?? new Parameter_WritePLC();
+                _parameter ??= new Parameter_WritePLC();
 
-                // 将参数数据绑定到界面控件
-                BindParametersToUI();
+                // 加载到界面
+                LoadParameterToForm();
 
-                _logger?.LogInformation("成功加载PLC写入参数，包含{Count}个项目", _currentParameter.Items?.Count ?? 0);
+                Logger?.LogInformation("成功加载PLC写入参数，包含{Count}个项目", _parameter.Items?.Count ?? 0);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "加载PLC写入参数时发生异常");
-                _currentParameter = new Parameter_WritePLC();
+                Logger?.LogError(ex, "加载PLC写入参数时发生异常");
+                _parameter = new Parameter_WritePLC();
                 MessageHelper.MessageOK($"加载PLC参数失败：{ex.Message}", TType.Error);
             }
         }
 
         /// <summary>
-        /// 将参数数据绑定到UI控件
+        /// 加载参数到界面（从参数对象到UI控件）
         /// </summary>
-        private void BindParametersToUI()
+        private async Task LoadParameterToForm()
         {
             try
             {
-                if (_currentParameter?.Items == null) return;
+                _parameter ??= new Parameter_WritePLC();
 
-                // 清空现有数据
+                _isInitializing = true;
+
+                // 清空DataGridView
                 DataGridViewPLCList.Rows.Clear();
 
-                // 添加参数项到DataGridView
-                foreach (var item in _currentParameter.Items)
+                // 加载描述信息
+                if (txtDescription != null)
                 {
-                    var rowIndex = DataGridViewPLCList.Rows.Add();
-                    var row = DataGridViewPLCList.Rows[rowIndex];
-
-                    row.Cells["ColPCLModelName"].Value = item.PlcModuleName ?? "";
-                    row.Cells["ColPCLKeyName"].Value = item.PlcKeyName ?? "";
-                    row.Cells["ColConstant"].Value = item.PlcValue ?? "";
+                    txtDescription.Text = _parameter.Description ?? "";
                 }
 
-                _logger?.LogDebug("UI数据绑定完成，共{Count}行", _currentParameter.Items.Count);
+                // 加载启用状态
+                if (chkEnabled != null)
+                {
+                    chkEnabled.Checked = _parameter.IsEnabled;
+                }
+
+                // 先获取所有模块的点位信息
+                Dictionary<string, List<string>> moduleTagsDict = null;
+                if (_plcManager != null)
+                {
+                    try
+                    {
+                        moduleTagsDict = await _plcManager.GetModuleTagsAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger?.LogError(ex, "获取模块点位信息失败");
+                    }
+                }
+
+                // 加载PLC项目
+                if (_parameter.Items != null && _parameter.Items.Any())
+                {
+                    int index = 1;
+                    foreach (var item in _parameter.Items)
+                    {
+                        int rowIndex = DataGridViewPLCList.Rows.Add();
+                        var row = DataGridViewPLCList.Rows[rowIndex];
+
+                        // 设置序号（TextBox，直接设置）
+                        row.Cells["ColIndex"].Value = index++;
+
+                        // 处理 PLC模块 ComboBoxCell
+                        if (row.Cells["ColPLCModule"] is DataGridViewComboBoxCell moduleCell && 
+                            moduleTagsDict != null)
+                        {
+                            // 先填充 Items
+                            moduleCell.Items.Clear();
+                            foreach (var moduleName in moduleTagsDict.Keys)
+                            {
+                                moduleCell.Items.Add(moduleName);
+                            }
+
+                            // 再设置 Value
+                            if (!string.IsNullOrEmpty(item.PlcModuleName) &&
+                                moduleCell.Items.Contains(item.PlcModuleName))
+                            {
+                                moduleCell.Value = item.PlcModuleName;
+                            }
+                        }
+
+                        //  处理 PLC地址 ComboBoxCell
+                        if (row.Cells["ColPLCAddress"] is DataGridViewComboBoxCell addressCell && moduleTagsDict != null &&
+                            !string.IsNullOrEmpty(item.PlcModuleName) &&
+                            moduleTagsDict.TryGetValue(item.PlcModuleName, out List<string> addresses))
+                        {
+                            // 先填充 Items
+                            addressCell.Items.Clear();
+                            foreach (var addr in addresses)
+                            {
+                                addressCell.Items.Add(addr);
+                            }
+
+                            // 再设置 Value
+                            if (!string.IsNullOrEmpty(item.PlcKeyName) &&
+                                addressCell.Items.Contains(item.PlcKeyName))
+                            {
+                                addressCell.Value = item.PlcKeyName;
+                            }
+                        }
+
+                        // 写入值和描述（TextBox，直接设置）
+                        row.Cells["ColWriteValue"].Value = item.PlcValue ?? "";
+                        row.Cells["ColDescription"].Value = item.Description ?? "";
+                    }
+                }
+
+                _hasUnsavedChanges = false;
+                Logger?.LogDebug("参数已加载到界面");
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "UI数据绑定失败");
+                Logger?.LogError(ex, "加载参数到界面失败");
+                MessageHelper.MessageOK($"加载参数失败：{ex.Message}", TType.Error);
+            }
+            finally
+            {
+                _isInitializing = false;
             }
         }
 
         /// <summary>
-        /// 初始化PLC点位信息
-        /// 加载可用的PLC模块和键名供用户选择
+        /// 保存界面数据到参数对象
         /// </summary>
-        private async void InitializePointLocationPLC()
+        private void SaveFormToParameter()
         {
             try
             {
-                if (_pLCManager == null)
+                if (_parameter == null)
                 {
-                    _logger?.LogWarning("PLC管理器未初始化，无法加载PLC点位信息");
-                    return;
+                    _parameter = new Parameter_WritePLC();
                 }
 
-                TreeViewPLC.Nodes.Clear();
-                var configs = await _pLCManager.GetModuleTagsAsync();
-                foreach (var kvp in configs)
-                {
-                    // 创建主节点(Key)
-                    TreeNode parentNode = new(kvp.Key);
+                // 保存基本信息
+                _parameter.Description = txtDescription?.Text ?? "";
+                _parameter.IsEnabled = chkEnabled?.Checked ?? true;
 
-                    // 添加子节点(Value)
-                    foreach (var value in kvp.Value)
+                // 收集DataGridView中的数据
+                var items = new List<Parameter_WritePLC.PLCWriteItem>();
+
+                foreach (DataGridViewRow row in DataGridViewPLCList.Rows)
+                {
+                    // 跳过空行和新增行
+                    if (row.IsNewRow) continue;
+
+                    var module = row.Cells["ColPLCModule"].Value?.ToString();
+                    var address = row.Cells["ColPLCAddress"].Value?.ToString();
+                    var value = row.Cells["ColWriteValue"].Value?.ToString();
+
+                    // 必须至少有模块和地址
+                    if (string.IsNullOrWhiteSpace(module) || string.IsNullOrWhiteSpace(address))
                     {
-                        parentNode.Nodes.Add(value);
+                        continue;
                     }
-                    TreeViewPLC.Nodes.Add(parentNode);
-                }
-                // 默认全部展开
-                TreeViewPLC.ExpandAll();
 
-                _logger?.LogDebug("PLC点位信息初始化完成");
+                    items.Add(new Parameter_WritePLC.PLCWriteItem
+                    {
+                        PlcModuleName = module,
+                        PlcKeyName = address,
+                        PlcValue = value ?? "",
+                        Description = row.Cells["ColDescription"].Value?.ToString() ?? ""
+                    });
+                }
+
+                _parameter.Items = items;
+
+                Logger?.LogDebug("界面数据已保存到参数对象，共{Count}个项目", items.Count);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "初始化PLC点位信息失败");
+                Logger?.LogError(ex, "保存界面数据到参数对象失败");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 为指定行加载PLC地址列表
+        /// </summary>
+        private async Task LoadAddressesForRow(int rowIndex, string moduleName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(moduleName) || _plcManager == null) return;
+                if (rowIndex < 0 || rowIndex >= DataGridViewPLCList.Rows.Count) return;
+
+                var addresses = await _plcManager.GetModuleTagsAsync(moduleName);
+                if (addresses == null || !addresses.Any())
+                {
+                    Logger?.LogWarning("模块 {ModuleName} 没有可用地址", moduleName);
+                    return;
+                }
+
+                if (DataGridViewPLCList.Rows[rowIndex].Cells["ColPLCAddress"] is DataGridViewComboBoxCell addressCell)
+                {
+                    // 保存当前值
+                    var currentValue = addressCell.Value;
+
+                    // 清空并填充 Items
+                    addressCell.Items.Clear();
+                    foreach (var addr in addresses)
+                    {
+                        addressCell.Items.Add(addr);
+                    }
+
+                    // 恢复或清空值
+                    if (currentValue != null && addressCell.Items.Contains(currentValue))
+                    {
+                        addressCell.Value = currentValue;
+                    }
+                    else
+                    {
+                        addressCell.Value = null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载地址列表失败");
             }
         }
 
         #endregion
 
-        #region 事件处理
-        private void TreeViewPLC_ItemDrag(object sender, ItemDragEventArgs e)
-        {
-            TreeViewPLC.DoDragDrop(e.Item, DragDropEffects.Copy);
-        }
+        #region 验证方法
 
-        private void DataGridViewPLCList_DragDrop(object sender, DragEventArgs e)
+        /// <summary>
+        /// 验证输入数据的有效性
+        /// </summary>
+        private bool ValidateInput()
         {
             try
             {
-                if (e.Data.GetDataPresent(typeof(TreeNode)))
+                // 收集当前数据
+                SaveFormToParameter();
+
+                // 检查是否有有效数据
+                if (_parameter.Items == null || _parameter.Items.Count == 0)
                 {
-                    var node = (TreeNode)e.Data.GetData(typeof(TreeNode));
-                    if (node?.Parent != null)
+                    MessageHelper.MessageOK("请至少添加一个PLC写入项！", TType.Warn);
+                    return false;
+                }
+
+                // 验证每个项目
+                int index = 1;
+                foreach (var item in _parameter.Items)
+                {
+                    // 验证模块名
+                    if (string.IsNullOrWhiteSpace(item.PlcModuleName))
                     {
-                        DataGridViewPLCList.Rows.Add($"{node?.Parent.Text}", $"{node.Text}");
+                        MessageHelper.MessageOK($"第{index}项：PLC模块名不能为空！", TType.Warn);
+                        return false;
                     }
+
+                    // 验证地址
+                    if (string.IsNullOrWhiteSpace(item.PlcKeyName))
+                    {
+                        MessageHelper.MessageOK($"第{index}项：PLC地址不能为空！", TType.Warn);
+                        return false;
+                    }
+
+                    // 写入值可以为空（表示写0或false）
+
+                    index++;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "验证输入失败");
+                MessageHelper.MessageOK($"验证失败：{ex.Message}", TType.Error);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 异步验证配置
+        /// </summary>
+        private async void ValidateConfigurationAsync()
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // 这里可以添加异步验证逻辑
+                    // 例如：检查PLC连接状态、验证地址有效性等
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogError(ex, "异步验证失败");
+                }
+            });
+        }
+
+        #endregion
+
+        #region 事件处理
+
+        /// <summary>
+        /// DataGridView单元格值改变事件
+        /// </summary>
+        private async void DataGridViewPLCList_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (_isInitializing || e.RowIndex < 0) return;
+
+            try
+            {
+                _hasUnsavedChanges = true;
+
+                // 如果是模块列改变，更新对应的地址列
+                if (e.ColumnIndex == DataGridViewPLCList.Columns["ColPLCModule"].Index)
+                {
+                    var moduleName = DataGridViewPLCList.Rows[e.RowIndex].Cells["ColPLCModule"].Value?.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(moduleName))
+                    {
+                        // 获取该模块的地址列表
+                        var addresses = await _plcManager.GetModuleTagsAsync(moduleName);
+
+                        // 更新地址单元格的 Items
+                        if (DataGridViewPLCList.Rows[e.RowIndex].Cells["ColPLCAddress"] is DataGridViewComboBoxCell addressCell)
+                        {
+                            // 保存当前值
+                            var currentValue = addressCell.Value;
+
+                            // 清空并填充新的 Items
+                            addressCell.Items.Clear();
+                            if (addresses != null && addresses.Any())
+                            {
+                                foreach (var addr in addresses)
+                                {
+                                    addressCell.Items.Add(addr);
+                                }
+                            }
+
+                            // 如果原来的值还在新列表中，恢复它；否则清空
+                            if (currentValue != null && addressCell.Items.Contains(currentValue))
+                            {
+                                addressCell.Value = currentValue;
+                            }
+                            else
+                            {
+                                addressCell.Value = null;
+                            }
+                        }
+                    }
+                }
+
+                // 更新序号
+                UpdateRowIndices();
+
+                // 重启验证定时器
+                RestartValidationTimer();
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "处理单元格值改变事件失败");
+            }
+        }
+
+        // 添加事件处理方法
+        private void DataGridViewPLCList_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            Logger?.LogWarning("DataGridView 数据错误: 行={Row}, 列={Column}, 错误={Error}",
+                e.RowIndex, e.ColumnIndex, e.Exception?.Message);
+
+            // 阻止默认的错误对话框显示
+            e.ThrowException = false;
+            e.Cancel = true;
+        }
+
+        /// <summary>
+        /// 当前单元格脏状态改变事件（用于立即提交ComboBox的改变）
+        /// </summary>
+        private void DataGridViewPLCList_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            if (_isInitializing) return;
+
+            if (DataGridViewPLCList.IsCurrentCellDirty)
+            {
+                DataGridViewPLCList.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        /// <summary>
+        /// 行添加事件
+        /// </summary>
+        private void DataGridViewPLCList_RowsAdded(object sender, DataGridViewRowsAddedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            UpdateRowIndices();
+        }
+
+        /// <summary>
+        /// 用户删除行事件
+        /// </summary>
+        private void DataGridViewPLCList_UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var result = MessageHelper.MessageYes(this, "确定要删除选中的PLC写入项吗？");
+            if (result != DialogResult.OK)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            _hasUnsavedChanges = true;
+        }
+
+        /// <summary>
+        /// 拖拽进入事件
+        /// </summary>
+        private void DataGridViewPLCList_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = DragDropEffects.Move;
+        }
+
+        /// <summary>
+        /// 拖拽放下事件
+        /// </summary>
+        private void DataGridViewPLCList_DragDrop(object sender, DragEventArgs e)
+        {
+            // 实现行拖拽排序功能
+            var clientPoint = DataGridViewPLCList.PointToClient(new System.Drawing.Point(e.X, e.Y));
+            var targetRowIndex = DataGridViewPLCList.HitTest(clientPoint.X, clientPoint.Y).RowIndex;
+
+            if (targetRowIndex >= 0 && DataGridViewPLCList.SelectedRows.Count > 0)
+            {
+                var selectedRow = DataGridViewPLCList.SelectedRows[0];
+                DataGridViewPLCList.Rows.RemoveAt(selectedRow.Index);
+                DataGridViewPLCList.Rows.Insert(targetRowIndex, selectedRow);
+                UpdateRowIndices();
+                _hasUnsavedChanges = true;
+            }
+        }
+
+        /// <summary>
+        /// 更新所有行的序号
+        /// </summary>
+        private void UpdateRowIndices()
+        {
+            int index = 1;
+            foreach (DataGridViewRow row in DataGridViewPLCList.Rows)
+            {
+                if (!row.IsNewRow)
+                {
+                    row.Cells["ColIndex"].Value = index++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 重启验证定时器
+        /// </summary>
+        private void RestartValidationTimer()
+        {
+            _validationTimer?.Stop();
+            _validationTimer?.Start();
+        }
+
+        #endregion
+
+        #region 按钮事件
+
+        /// <summary>
+        /// 添加按钮点击事件
+        /// </summary>
+        private void BtnAdd_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // 添加新行
+                int rowIndex = DataGridViewPLCList.Rows.Add();
+                var row = DataGridViewPLCList.Rows[rowIndex];
+
+                row.Cells["ColIndex"].Value = DataGridViewPLCList.Rows.Count;
+
+                // 选中新行
+                DataGridViewPLCList.ClearSelection();
+                row.Selected = true;
+                DataGridViewPLCList.CurrentCell = row.Cells["ColPLCModule"];
+
+                _hasUnsavedChanges = true;
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "添加行失败");
+                MessageHelper.MessageOK($"添加失败：{ex.Message}", TType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 删除按钮点击事件
+        /// </summary>
+        private void BtnDelete_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (DataGridViewPLCList.SelectedRows.Count == 0)
+                {
+                    MessageHelper.MessageOK("请先选择要删除的行！", TType.Warn);
+                    return;
+                }
+
+                var result = MessageHelper.MessageYes(this, "确定要删除选中的PLC写入项吗？");
+                if (result == DialogResult.OK)
+                {
+                    foreach (DataGridViewRow row in DataGridViewPLCList.SelectedRows)
+                    {
+                        if (!row.IsNewRow)
+                        {
+                            DataGridViewPLCList.Rows.Remove(row);
+                        }
+                    }
+
+                    UpdateRowIndices();
+                    _hasUnsavedChanges = true;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "拖拽步骤错误");
-                MessageHelper.MessageOK($"拖拽步骤错误：{ex.Message}", TType.Error);
+                Logger?.LogError(ex, "删除行失败");
+                MessageHelper.MessageOK($"删除失败：{ex.Message}", TType.Error);
             }
         }
 
-        private void DataGridViewPLCList_DragEnter(object sender, DragEventArgs e)
+        /// <summary>
+        /// 上移按钮点击事件
+        /// </summary>
+        private void BtnMoveUp_Click(object sender, EventArgs e)
         {
-            e.Effect = e.Data.GetDataPresent(typeof(TreeNode)) ?
-               DragDropEffects.Copy : DragDropEffects.None;
+            try
+            {
+                if (DataGridViewPLCList.SelectedRows.Count == 0)
+                {
+                    MessageHelper.MessageOK("请先选择要移动的行！", TType.Warn);
+                    return;
+                }
+
+                var selectedRow = DataGridViewPLCList.SelectedRows[0];
+                var rowIndex = selectedRow.Index;
+
+                if (rowIndex > 0)
+                {
+                    DataGridViewPLCList.Rows.RemoveAt(rowIndex);
+                    DataGridViewPLCList.Rows.Insert(rowIndex - 1, selectedRow);
+                    DataGridViewPLCList.ClearSelection();
+                    selectedRow.Selected = true;
+                    UpdateRowIndices();
+                    _hasUnsavedChanges = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "上移行失败");
+                MessageHelper.MessageOK($"上移失败：{ex.Message}", TType.Error);
+            }
         }
 
-        // 保存数据到当前步骤
+        /// <summary>
+        /// 下移按钮点击事件
+        /// </summary>
+        private void BtnMoveDown_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (DataGridViewPLCList.SelectedRows.Count == 0)
+                {
+                    MessageHelper.MessageOK("请先选择要移动的行！", TType.Warn);
+                    return;
+                }
+
+                var selectedRow = DataGridViewPLCList.SelectedRows[0];
+                var rowIndex = selectedRow.Index;
+
+                if (rowIndex < DataGridViewPLCList.Rows.Count - 2) // -2因为最后一行是新增行
+                {
+                    DataGridViewPLCList.Rows.RemoveAt(rowIndex);
+                    DataGridViewPLCList.Rows.Insert(rowIndex + 1, selectedRow);
+                    DataGridViewPLCList.ClearSelection();
+                    selectedRow.Selected = true;
+                    UpdateRowIndices();
+                    _hasUnsavedChanges = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "下移行失败");
+                MessageHelper.MessageOK($"下移失败：{ex.Message}", TType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 保存按钮点击事件
+        /// </summary>
         private void BtnSave_Click(object sender, EventArgs e)
         {
             try
             {
+                // 验证输入
+                if (!ValidateInput())
+                {
+                    return;
+                }
+
                 // 获取当前步骤
                 var currentStep = GetCurrentStepSafely();
                 if (currentStep == null)
@@ -292,279 +1039,137 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                     return;
                 }
 
-                // 从界面收集PLC项目数据
-                var plcItems = CollectPLCItemsFromUI();
-                if (plcItems == null) return; // 验证失败
+                // 保存界面数据到参数对象
+                SaveFormToParameter();
 
-                // 检查是否有有效数据
-                if (plcItems.Count == 0)
-                {
-                    MessageHelper.MessageOK("请至少添加一个有效的PLC操作。", TType.Warn);
-                    return;
-                }
+                // 序列化参数对象并保存到步骤
+                currentStep.StepParameter = JsonConvert.SerializeObject(_parameter);
 
-                // 创建参数对象并保存
-                var param = new Parameter_WritePLC { Items = plcItems };
-                currentStep.StepParameter = JsonConvert.SerializeObject(param);
+                _hasUnsavedChanges = false;
 
-                _logger?.LogInformation("PLC写入参数保存成功，共{Count}个项目", plcItems.Count);
+                Logger?.LogInformation("PLC写入参数保存成功，共{Count}个项目", _parameter.Items?.Count ?? 0);
                 MessageHelper.MessageOK("保存成功！PLC操作将在主界面保存时写入配置文件。", TType.Success);
-                Close();
+
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "保存PLC写入参数失败");
-                MessageHelper.MessageOK($"保存PLC写入错误：{ex.Message}", TType.Error);
+                Logger?.LogError(ex, "保存PLC写入参数失败");
+                MessageHelper.MessageOK($"保存失败：{ex.Message}", TType.Error);
             }
         }
 
-        // 删除选中的PLC行
-        private void BtnDelete_Click(object sender, EventArgs e)
+        /// <summary>
+        /// 取消按钮点击事件
+        /// </summary>
+        private void BtnCancel_Click(object sender, EventArgs e)
         {
-            try
+            if (_hasUnsavedChanges)
             {
-                // 获取选中的行索引
-                int rowIndex = GetSelectedRowIndex();
-                if (rowIndex < 0)
-                {
-                    MessageHelper.MessageOK("请选择要删除的PLC行！", TType.Warn);
-                    return;
-                }
-
-                // 确认删除
-                if (MessageHelper.MessageYes(this, "确定要删除选中的PLC行吗？") != DialogResult.OK)
+                var result = MessageHelper.MessageYes(this, "存在未保存的更改，确定要关闭吗？");
+                if (result != DialogResult.OK)
                 {
                     return;
                 }
+            }
 
-                // 执行删除操作
-                if (DeletePLCItem(rowIndex))
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
+        }
+
+        /// <summary>
+        /// 测试按钮点击事件
+        /// </summary>
+        private void BtnTest_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // 验证输入
+                if (!ValidateInput())
                 {
-                    MessageHelper.MessageOK("删除成功！", TType.Success);
+                    return;
                 }
+
+                // 保存当前数据
+                SaveFormToParameter();
+
+                MessageHelper.MessageOK("测试功能：\n\n" +
+                    $"将执行 {_parameter.Items.Count} 个PLC写入操作\n\n" +
+                    "注意：测试模式下不会实际写入PLC设备", TType.Info);
+
+                // TODO: 实现实际的测试逻辑
+                // 可以调用 PLC 管理器进行连接测试等
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "删除PLC项目失败");
-                MessageHelper.MessageOK($"删除失败：{ex.Message}", TType.Error);
+                Logger?.LogError(ex, "测试失败");
+                MessageHelper.MessageOK($"测试失败：{ex.Message}", TType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 帮助按钮点击事件
+        /// </summary>
+        private void BtnHelp_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string helpText = @"PLC写入配置帮助：
+
+1. 基本操作：
+   - 点击【添加】按钮添加新的写入项
+   - 点击【删除】按钮删除选中的项
+   - 点击【上移】/【下移】调整执行顺序
+   - 支持拖拽行来调整顺序
+
+2. 配置说明：
+   - PLC模块：选择要写入的PLC模块
+   - PLC地址：选择或输入目标地址
+   - 写入值：支持常量或变量引用（使用{变量名}）
+   - 描述：添加备注信息
+
+3. 变量引用：
+   - 使用 {变量名} 引用全局变量
+   - 例如：{Temperature} 表示读取Temperature变量的值
+
+4. 执行顺序：
+   - 按表格中的顺序依次执行
+   - 可通过上移/下移或拖拽调整顺序
+
+5. 注意事项：
+   - 确保PLC模块已正确配置并可连接
+   - 写入值的类型应与地址匹配
+   - 建议使用测试功能验证配置";
+
+                MessageHelper.MessageOK(this, helpText, TType.Info);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "显示帮助失败");
+            }
+        }
+
+        /// <summary>
+        /// 窗体关闭事件
+        /// </summary>
+        private void Form_WritePLC_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (this.DialogResult == DialogResult.OK) return;
+
+            if (_hasUnsavedChanges)
+            {
+                var result = MessageHelper.MessageYes(this, "存在未保存的更改，确定要关闭吗？");
+                if (result != DialogResult.OK)
+                {
+                    e.Cancel = true;
+                }
             }
         }
 
         #endregion
 
-        #region 辅助方法
-
-        /// <summary>
-        /// 从UI界面收集PLC项目数据
-        /// </summary>
-        /// <returns>收集到的PLC项目列表，如果验证失败返回null</returns>
-        private List<PlcWriteItem> CollectPLCItemsFromUI()
-        {
-            try
-            {
-                var plcItems = new List<PlcWriteItem>();
-                bool hasEmptyConstant = false;
-
-                // 遍历DataGridView中的所有行
-                foreach (DataGridViewRow row in DataGridViewPLCList.Rows)
-                {
-                    // 跳过新行（空行）
-                    if (row.IsNewRow) continue;
-
-                    // 提取单元格数据
-                    string plcModelName = row.Cells["ColPCLModelName"].Value?.ToString()?.Trim() ?? "";
-                    string plcKeyName = row.Cells["ColPCLKeyName"].Value?.ToString()?.Trim() ?? "";
-                    string plcValue = row.Cells["ColConstant"].Value?.ToString()?.Trim() ?? "";
-
-                    // 跳过空的模块名行
-                    if (string.IsNullOrEmpty(plcModelName)) continue;
-
-                    // 检查重复项
-                    string fullPlcName = $"{plcModelName}.{plcKeyName}";
-                    if (plcItems.Any(p => $"{p.PlcModuleName}.{p.PlcKeyName}".Equals(fullPlcName, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        MessageHelper.MessageOK($"PLC名称\"{fullPlcName}\"重复。", TType.Warn);
-                        return null;
-                    }
-
-                    // 检查值是否为空
-                    if (string.IsNullOrEmpty(plcValue))
-                    {
-                        hasEmptyConstant = true;
-                    }
-
-                    // 添加到列表
-                    plcItems.Add(new PlcWriteItem
-                    {
-                        PlcModuleName = plcModelName,
-                        PlcKeyName = plcKeyName,
-                        PlcValue = plcValue
-                    });
-                }
-
-                // 检查是否有空常数值
-                if (hasEmptyConstant)
-                {
-                    MessageHelper.MessageOK("存在常数未填写，请补全所有常数值后再保存。", TType.Warn);
-                    return null;
-                }
-
-                return plcItems;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "从UI收集PLC项目数据失败");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// 获取选中的行索引
-        /// </summary>
-        /// <returns>选中的行索引，如果没有选中返回-1</returns>
-        private int GetSelectedRowIndex()
-        {
-            // 优先使用整行选中
-            if (DataGridViewPLCList.SelectedRows.Count > 0)
-            {
-                return DataGridViewPLCList.SelectedRows[0].Index;
-            }
-            // 如果没有整行选中，尝试使用当前单元格
-            else if (DataGridViewPLCList.CurrentCell != null)
-            {
-                return DataGridViewPLCList.CurrentCell.RowIndex;
-            }
-
-            return -1;
-        }
-
-        /// <summary>
-        /// 删除指定行的PLC项目
-        /// </summary>
-        /// <param name="rowIndex">要删除的行索引</param>
-        /// <returns>删除是否成功</returns>
-        private bool DeletePLCItem(int rowIndex)
-        {
-            try
-            {
-                // 验证行索引有效性
-                if (rowIndex < 0 || rowIndex >= DataGridViewPLCList.Rows.Count ||
-                    DataGridViewPLCList.Rows[rowIndex].IsNewRow)
-                {
-                    MessageHelper.MessageOK("选中的行无效！", TType.Warn);
-                    return false;
-                }
-
-                // 获取当前步骤和参数
-                var currentStep = GetCurrentStepSafely();
-                if (currentStep == null)
-                {
-                    MessageHelper.MessageOK("当前步骤无效，无法删除。", TType.Warn);
-                    return false;
-                }
-
-                var param = ParseCurrentParameter(currentStep);
-                if (param?.Items == null)
-                {
-                    MessageHelper.MessageOK("参数数据异常，无法删除。", TType.Error);
-                    return false;
-                }
-
-                // 获取要删除的项目信息
-                var row = DataGridViewPLCList.Rows[rowIndex];
-                string plcModelName = row.Cells["ColPCLModelName"].Value?.ToString() ?? "";
-                string plcKeyName = row.Cells["ColPCLKeyName"].Value?.ToString() ?? "";
-                string fullPlcName = $"{plcModelName}.{plcKeyName}";
-
-                // 在集合中查找并移除对应项
-                var toRemove = param.Items.FirstOrDefault(x =>
-                    $"{x.PlcModuleName}.{x.PlcKeyName}".Equals(fullPlcName, StringComparison.OrdinalIgnoreCase));
-
-                if (toRemove != null)
-                {
-                    param.Items.Remove(toRemove);
-                    // 更新步骤参数
-                    currentStep.StepParameter = JsonConvert.SerializeObject(param);
-                    // 从DataGridView中删除行
-                    DataGridViewPLCList.Rows.RemoveAt(rowIndex);
-
-                    _logger?.LogInformation("成功删除PLC项目: {FullName}", fullPlcName);
-                    return true;
-                }
-                else
-                {
-                    MessageHelper.MessageOK("集合中未找到对应数据。", TType.Warn);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "删除PLC项目时发生异常，行索引: {RowIndex}", rowIndex);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// 解析当前步骤的参数对象
-        /// </summary>
-        /// <param name="currentStep">当前步骤</param>
-        /// <returns>解析后的参数对象</returns>
-        private Parameter_WritePLC ParseCurrentParameter(ChildModel currentStep)
-        {
-            try
-            {
-                if (currentStep.StepParameter is Parameter_WritePLC directParam)
-                {
-                    return directParam;
-                }
-                else if (currentStep.StepParameter != null)
-                {
-                    string jsonString = currentStep.StepParameter is string s
-                        ? s : JsonConvert.SerializeObject(currentStep.StepParameter);
-
-                    return JsonConvert.DeserializeObject<Parameter_WritePLC>(jsonString)
-                           ?? new Parameter_WritePLC();
-                }
-
-                return new Parameter_WritePLC();
-            }
-            catch (JsonException ex)
-            {
-                _logger?.LogWarning(ex, "解析参数JSON失败，返回默认参数");
-                return new Parameter_WritePLC();
-            }
-        }
-
-        #endregion
-
-        #region 接口实现
-        public void PopulateControls(Form_WritePLC parameter)
-        {
-            Parameter = parameter;
-        }
-
-        void IParameterForm<Form_WritePLC>.SetDefaultValues()
-        {
-            SetDefaultValues();
-        }
-
-        public bool ValidateTypedParameters()
-        {
-            return ValidateParameters();
-        }
-
-        public Form_WritePLC CollectTypedParameters()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Form_WritePLC ConvertParameter(object stepParameter)
-        {
-            throw new NotImplementedException();
-        }
-        #endregion
-
-        #region 供BaseParameterForm使用
+        #region BaseParameterForm重写和接口实现
 
         /// <summary>
         /// 设置默认值（BaseParameterForm调用）
@@ -573,16 +1178,148 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         {
             try
             {
-                // 清空现有数据
-                DataGridViewPLCList.Rows.Clear();
-                _currentParameter = new Parameter_WritePLC();
+                _parameter = new Parameter_WritePLC
+                {
+                    Description = $"PLC写入步骤 {_workflowState?.StepNum + 1}",
+                    IsEnabled = true,
+                    Items = new List<Parameter_WritePLC.PLCWriteItem>()
+                };
 
-                _logger?.LogDebug("已设置默认值");
+                LoadParameterToForm();
+
+                Logger?.LogDebug("已设置默认值");
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "设置默认值失败");
+                Logger?.LogError(ex, "设置默认值失败");
             }
+        }
+
+        /// <summary>
+        /// 从步骤参数加载（基类方法重写）
+        /// </summary>
+        protected override void LoadParameterFromStep(object stepParameter)
+        {
+            try
+            {
+                Parameter_WritePLC loadedParameter = null;
+
+                // 尝试直接类型转换
+                if (stepParameter is Parameter_WritePLC directParam)
+                {
+                    loadedParameter = directParam;
+                    Logger?.LogDebug("直接获取Parameter_WritePLC参数");
+                }
+                // 尝试JSON反序列化
+                else if (stepParameter != null)
+                {
+                    try
+                    {
+                        string jsonString = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                        loadedParameter = JsonConvert.DeserializeObject<Parameter_WritePLC>(jsonString);
+                        Logger?.LogDebug("JSON反序列化获取Parameter_WritePLC参数");
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        Logger?.LogWarning(jsonEx, "JSON反序列化失败，使用默认参数");
+                        loadedParameter = null;
+                    }
+                }
+
+                if (loadedParameter != null)
+                {
+                    _parameter = loadedParameter;
+                    Logger?.LogInformation("成功加载PLC写入参数: {Description}", _parameter.Description);
+                }
+                else
+                {
+                    Logger?.LogWarning("加载参数失败，使用默认参数");
+                    SetDefaultValues();
+                    return;
+                }
+
+                LoadParameterToForm();
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载参数时发生错误");
+                MessageHelper.MessageOK($"加载参数失败：{ex.Message}", TType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 收集参数（基类方法重写）
+        /// </summary>
+        protected override object CollectParameters()
+        {
+            SaveFormToParameter();
+            return _parameter;
+        }
+
+        /// <summary>
+        /// 验证参数（基类方法重写）
+        /// </summary>
+        protected override bool ValidateParameters()
+        {
+            return ValidateInput();
+        }
+
+        /// <summary>
+        /// 填充控件（IParameterForm接口实现）
+        /// </summary>
+        public void PopulateControls(Parameter_WritePLC parameter)
+        {
+            Parameter = parameter;
+        }
+
+        /// <summary>
+        /// 设置默认值（IParameterForm接口实现）
+        /// </summary>
+        void IParameterForm<Parameter_WritePLC>.SetDefaultValues()
+        {
+            SetDefaultValues();
+        }
+
+        /// <summary>
+        /// 验证类型化参数（IParameterForm接口实现）
+        /// </summary>
+        public bool ValidateTypedParameters()
+        {
+            return ValidateInput();
+        }
+
+        /// <summary>
+        /// 收集类型化参数（IParameterForm接口实现）
+        /// </summary>
+        public Parameter_WritePLC CollectTypedParameters()
+        {
+            SaveFormToParameter();
+            return _parameter;
+        }
+
+        /// <summary>
+        /// 转换参数对象（IParameterForm接口实现）
+        /// </summary>
+        public Parameter_WritePLC ConvertParameter(object stepParameter)
+        {
+            if (stepParameter is Parameter_WritePLC paramObj)
+                return paramObj;
+
+            if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
+            {
+                try
+                {
+                    return JsonConvert.DeserializeObject<Parameter_WritePLC>(jsonStr)
+                        ?? new Parameter_WritePLC();
+                }
+                catch (JsonException ex)
+                {
+                    Logger?.LogWarning(ex, "转换参数失败");
+                    return new Parameter_WritePLC();
+                }
+            }
+
+            return new Parameter_WritePLC();
         }
 
         #endregion
