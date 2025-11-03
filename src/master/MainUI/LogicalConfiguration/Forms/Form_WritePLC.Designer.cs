@@ -15,8 +15,6 @@
         {
             if (disposing && (components != null))
             {
-                _validationTimer?.Stop();
-                _validationTimer?.Dispose();
                 components.Dispose();
             }
             base.Dispose(disposing);
@@ -30,314 +28,395 @@
         /// </summary>
         private void InitializeComponent()
         {
-            pnlMain = new Panel();
-            pnlContent = new Panel();
-            DataGridViewPLCList = new Sunny.UI.UIDataGridView();
-            pnlToolbar = new Panel();
-            btnHelp = new Button();
-            btnTest = new Button();
-            btnMoveDown = new Button();
-            btnMoveUp = new Button();
-            btnDelete = new Button();
-            btnAdd = new Button();
-            pnlHeader = new Panel();
-            chkEnabled = new CheckBox();
-            txtDescription = new TextBox();
-            lblDescription = new Label();
-            pnlBottom = new Panel();
-            btnCancel = new Button();
-            btnSave = new Button();
-            lblInfo = new Label();
-            pnlMain.SuspendLayout();
-            pnlContent.SuspendLayout();
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            panelDescription = new Panel();
+            chkEnabled = new UICheckBox();
+            txtDescription = new UITextBox();
+            lblDescription = new UILabel();
+            panelMain = new Panel();
+            DataGridViewPLCList = new DataGridView();
+            ColIndex = new DataGridViewTextBoxColumn();
+            ColPLCModule = new DataGridViewComboBoxColumn();
+            ColPLCAddress = new DataGridViewComboBoxColumn();
+            ColWriteValue = new DataGridViewTextBoxColumn();
+            ColDescription = new DataGridViewTextBoxColumn();
+            panelButtons = new Panel();
+            btnMoveDown = new UISymbolButton();
+            btnMoveUp = new UISymbolButton();
+            btnDelete = new UISymbolButton();
+            btnAdd = new UISymbolButton();
+            panelBottom = new Panel();
+            btnHelp = new UIButton();
+            btnCancel = new UIButton();
+            btnSave = new UIButton();
+            panelDescription.SuspendLayout();
+            panelMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)DataGridViewPLCList).BeginInit();
-            pnlToolbar.SuspendLayout();
-            pnlHeader.SuspendLayout();
-            pnlBottom.SuspendLayout();
+            panelButtons.SuspendLayout();
+            panelBottom.SuspendLayout();
             SuspendLayout();
             // 
-            // pnlMain
+            // panelDescription
             // 
-            pnlMain.Controls.Add(pnlContent);
-            pnlMain.Controls.Add(pnlToolbar);
-            pnlMain.Controls.Add(pnlHeader);
-            pnlMain.Controls.Add(pnlBottom);
-            pnlMain.Dock = DockStyle.Fill;
-            pnlMain.Location = new Point(0, 35);
-            pnlMain.Name = "pnlMain";
-            pnlMain.Padding = new Padding(10);
-            pnlMain.Size = new Size(900, 565);
-            pnlMain.TabIndex = 0;
+            panelDescription.BackColor = Color.White;
+            panelDescription.Controls.Add(chkEnabled);
+            panelDescription.Controls.Add(txtDescription);
+            panelDescription.Controls.Add(lblDescription);
+            panelDescription.Dock = DockStyle.Top;
+            panelDescription.Location = new Point(0, 35);
+            panelDescription.Name = "panelDescription";
+            panelDescription.Padding = new Padding(15, 10, 15, 10);
+            panelDescription.Size = new Size(1000, 70);
+            panelDescription.TabIndex = 1;
             // 
-            // pnlContent
+            // chkEnabled
             // 
-            pnlContent.Controls.Add(DataGridViewPLCList);
-            pnlContent.Dock = DockStyle.Fill;
-            pnlContent.Location = new Point(10, 130);
-            pnlContent.Name = "pnlContent";
-            pnlContent.Padding = new Padding(0, 5, 0, 5);
-            pnlContent.Size = new Size(880, 355);
-            pnlContent.TabIndex = 2;
+            chkEnabled.CheckBoxColor = Color.FromArgb(65, 100, 204);
+            chkEnabled.CheckBoxSize = 18;
+            chkEnabled.Checked = true;
+            chkEnabled.Font = new Font("微软雅黑", 10F);
+            chkEnabled.ForeColor = Color.FromArgb(48, 48, 48);
+            chkEnabled.Location = new Point(800, 15);
+            chkEnabled.MinimumSize = new Size(1, 1);
+            chkEnabled.Name = "chkEnabled";
+            chkEnabled.Size = new Size(150, 30);
+            chkEnabled.TabIndex = 2;
+            chkEnabled.Text = "启用此步骤";
+            // 
+            // txtDescription
+            // 
+            txtDescription.Cursor = Cursors.IBeam;
+            txtDescription.Font = new Font("微软雅黑", 10F);
+            txtDescription.Location = new Point(124, 15);
+            txtDescription.Margin = new Padding(4, 5, 4, 5);
+            txtDescription.MinimumSize = new Size(1, 16);
+            txtDescription.Name = "txtDescription";
+            txtDescription.Padding = new Padding(5);
+            txtDescription.RectColor = Color.FromArgb(65, 100, 204);
+            txtDescription.ShowText = false;
+            txtDescription.Size = new Size(650, 30);
+            txtDescription.TabIndex = 1;
+            txtDescription.TextAlignment = ContentAlignment.MiddleLeft;
+            txtDescription.Watermark = "请输入步骤描述信息";
+            // 
+            // lblDescription
+            // 
+            lblDescription.Font = new Font("微软雅黑", 10F);
+            lblDescription.ForeColor = Color.FromArgb(48, 48, 48);
+            lblDescription.Location = new Point(18, 15);
+            lblDescription.Name = "lblDescription";
+            lblDescription.Size = new Size(100, 25);
+            lblDescription.TabIndex = 0;
+            lblDescription.Text = "步骤描述:";
+            lblDescription.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // panelMain
+            // 
+            panelMain.BackColor = Color.White;
+            panelMain.BorderStyle = BorderStyle.FixedSingle;
+            panelMain.Controls.Add(DataGridViewPLCList);
+            panelMain.Controls.Add(panelButtons);
+            panelMain.Dock = DockStyle.Fill;
+            panelMain.Location = new Point(0, 105);
+            panelMain.Name = "panelMain";
+            panelMain.Padding = new Padding(15, 10, 15, 10);
+            panelMain.Size = new Size(1000, 515);
+            panelMain.TabIndex = 2;
             // 
             // DataGridViewPLCList
             // 
             DataGridViewPLCList.AllowDrop = true;
+            DataGridViewPLCList.AllowUserToResizeRows = false;
             DataGridViewPLCList.BackgroundColor = Color.White;
-            DataGridViewPLCList.BorderStyle = BorderStyle.Fixed3D;
-            DataGridViewPLCList.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            DataGridViewPLCList.BorderStyle = BorderStyle.None;
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.BackColor = Color.FromArgb(65, 100, 204);
+            dataGridViewCellStyle1.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
+            dataGridViewCellStyle1.ForeColor = Color.White;
+            dataGridViewCellStyle1.SelectionBackColor = Color.FromArgb(65, 100, 204);
+            dataGridViewCellStyle1.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = DataGridViewTriState.True;
+            DataGridViewPLCList.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            DataGridViewPLCList.ColumnHeadersHeight = 40;
+            DataGridViewPLCList.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            DataGridViewPLCList.Columns.AddRange(new DataGridViewColumn[] { ColIndex, ColPLCModule, ColPLCAddress, ColWriteValue, ColDescription });
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = Color.White;
+            dataGridViewCellStyle3.Font = new Font("微软雅黑", 9F);
+            dataGridViewCellStyle3.ForeColor = Color.FromArgb(48, 48, 48);
+            dataGridViewCellStyle3.SelectionBackColor = Color.FromArgb(220, 236, 255);
+            dataGridViewCellStyle3.SelectionForeColor = Color.FromArgb(48, 48, 48);
+            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.False;
+            DataGridViewPLCList.DefaultCellStyle = dataGridViewCellStyle3;
             DataGridViewPLCList.Dock = DockStyle.Fill;
-            DataGridViewPLCList.Location = new Point(0, 5);
+            DataGridViewPLCList.EnableHeadersVisualStyles = false;
+            DataGridViewPLCList.GridColor = Color.FromArgb(230, 230, 230);
+            DataGridViewPLCList.Location = new Point(15, 10);
             DataGridViewPLCList.MultiSelect = false;
             DataGridViewPLCList.Name = "DataGridViewPLCList";
-            DataGridViewPLCList.RowHeadersWidth = 51;
-            DataGridViewPLCList.RowTemplate.Height = 27;
+            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle4.BackColor = Color.FromArgb(243, 249, 255);
+            dataGridViewCellStyle4.Font = new Font("微软雅黑", 9F);
+            dataGridViewCellStyle4.ForeColor = Color.FromArgb(48, 48, 48);
+            dataGridViewCellStyle4.SelectionBackColor = Color.FromArgb(80, 160, 255);
+            dataGridViewCellStyle4.SelectionForeColor = Color.White;
+            dataGridViewCellStyle4.WrapMode = DataGridViewTriState.True;
+            DataGridViewPLCList.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            DataGridViewPLCList.RowHeadersWidth = 45;
+            dataGridViewCellStyle5.Font = new Font("微软雅黑", 11F);
+            dataGridViewCellStyle5.Padding = new Padding(3);
+            DataGridViewPLCList.RowsDefaultCellStyle = dataGridViewCellStyle5;
+            DataGridViewPLCList.RowTemplate.Height = 32;
             DataGridViewPLCList.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            DataGridViewPLCList.Size = new Size(880, 345);
+            DataGridViewPLCList.Size = new Size(853, 493);
             DataGridViewPLCList.TabIndex = 0;
             // 
-            // pnlToolbar
+            // ColIndex
             // 
-            pnlToolbar.Controls.Add(btnHelp);
-            pnlToolbar.Controls.Add(btnTest);
-            pnlToolbar.Controls.Add(btnMoveDown);
-            pnlToolbar.Controls.Add(btnMoveUp);
-            pnlToolbar.Controls.Add(btnDelete);
-            pnlToolbar.Controls.Add(btnAdd);
-            pnlToolbar.Dock = DockStyle.Top;
-            pnlToolbar.Location = new Point(10, 80);
-            pnlToolbar.Name = "pnlToolbar";
-            pnlToolbar.Size = new Size(880, 50);
-            pnlToolbar.TabIndex = 1;
+            ColIndex.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = Color.FromArgb(248, 249, 250);
+            ColIndex.DefaultCellStyle = dataGridViewCellStyle2;
+            ColIndex.HeaderText = "序号";
+            ColIndex.Name = "ColIndex";
+            ColIndex.ReadOnly = true;
+            ColIndex.Width = 60;
             // 
-            // btnHelp
+            // ColPLCModule
             // 
-            btnHelp.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnHelp.BackColor = Color.FromArgb(100, 149, 237);
-            btnHelp.FlatAppearance.BorderSize = 0;
-            btnHelp.FlatStyle = FlatStyle.Flat;
-            btnHelp.Font = new Font("微软雅黑", 9F);
-            btnHelp.ForeColor = Color.White;
-            btnHelp.Location = new Point(785, 10);
-            btnHelp.Name = "btnHelp";
-            btnHelp.Size = new Size(90, 32);
-            btnHelp.TabIndex = 5;
-            btnHelp.Text = "帮助";
-            btnHelp.UseVisualStyleBackColor = false;
+            ColPLCModule.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ColPLCModule.DisplayStyle = DataGridViewComboBoxDisplayStyle.Nothing;
+            ColPLCModule.FlatStyle = FlatStyle.Flat;
+            ColPLCModule.HeaderText = "PLC模块";
+            ColPLCModule.Name = "ColPLCModule";
             // 
-            // btnTest
+            // ColPLCAddress
             // 
-            btnTest.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnTest.BackColor = Color.FromArgb(255, 140, 0);
-            btnTest.FlatAppearance.BorderSize = 0;
-            btnTest.FlatStyle = FlatStyle.Flat;
-            btnTest.Font = new Font("微软雅黑", 9F);
-            btnTest.ForeColor = Color.White;
-            btnTest.Location = new Point(685, 10);
-            btnTest.Name = "btnTest";
-            btnTest.Size = new Size(90, 32);
-            btnTest.TabIndex = 4;
-            btnTest.Text = "测试连接";
-            btnTest.UseVisualStyleBackColor = false;
+            ColPLCAddress.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ColPLCAddress.DisplayStyle = DataGridViewComboBoxDisplayStyle.Nothing;
+            ColPLCAddress.FillWeight = 120F;
+            ColPLCAddress.FlatStyle = FlatStyle.Flat;
+            ColPLCAddress.HeaderText = "PLC地址";
+            ColPLCAddress.Name = "ColPLCAddress";
+            // 
+            // ColWriteValue
+            // 
+            ColWriteValue.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ColWriteValue.FillWeight = 120F;
+            ColWriteValue.HeaderText = "写入值（支持 {变量名}）";
+            ColWriteValue.Name = "ColWriteValue";
+            // 
+            // ColDescription
+            // 
+            ColDescription.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ColDescription.HeaderText = "描述";
+            ColDescription.Name = "ColDescription";
+            // 
+            // panelButtons
+            // 
+            panelButtons.BackColor = Color.FromArgb(248, 249, 250);
+            panelButtons.BorderStyle = BorderStyle.FixedSingle;
+            panelButtons.Controls.Add(btnMoveDown);
+            panelButtons.Controls.Add(btnMoveUp);
+            panelButtons.Controls.Add(btnDelete);
+            panelButtons.Controls.Add(btnAdd);
+            panelButtons.Dock = DockStyle.Right;
+            panelButtons.Location = new Point(868, 10);
+            panelButtons.Name = "panelButtons";
+            panelButtons.Padding = new Padding(10, 15, 10, 15);
+            panelButtons.Size = new Size(115, 493);
+            panelButtons.TabIndex = 1;
             // 
             // btnMoveDown
             // 
-            btnMoveDown.BackColor = Color.FromArgb(70, 130, 180);
-            btnMoveDown.FlatAppearance.BorderSize = 0;
-            btnMoveDown.FlatStyle = FlatStyle.Flat;
-            btnMoveDown.Font = new Font("微软雅黑", 9F);
-            btnMoveDown.ForeColor = Color.White;
-            btnMoveDown.Location = new Point(310, 10);
+            btnMoveDown.Cursor = Cursors.Hand;
+            btnMoveDown.FillColor = Color.FromArgb(40, 167, 69);
+            btnMoveDown.FillColor2 = Color.FromArgb(40, 167, 69);
+            btnMoveDown.Font = new Font("微软雅黑", 11F);
+            btnMoveDown.Location = new Point(12, 170);
+            btnMoveDown.MinimumSize = new Size(1, 1);
             btnMoveDown.Name = "btnMoveDown";
-            btnMoveDown.Size = new Size(90, 32);
+            btnMoveDown.RectColor = Color.FromArgb(40, 167, 69);
+            btnMoveDown.RectDisableColor = Color.FromArgb(40, 167, 69);
+            btnMoveDown.Size = new Size(90, 38);
+            btnMoveDown.Style = UIStyle.Custom;
+            btnMoveDown.Symbol = 61703;
+            btnMoveDown.SymbolSize = 20;
             btnMoveDown.TabIndex = 3;
-            btnMoveDown.Text = "下移 ↓";
-            btnMoveDown.UseVisualStyleBackColor = false;
+            btnMoveDown.Text = "下移";
+            btnMoveDown.TipsFont = new Font("微软雅黑", 11F);
             // 
             // btnMoveUp
             // 
-            btnMoveUp.BackColor = Color.FromArgb(70, 130, 180);
-            btnMoveUp.FlatAppearance.BorderSize = 0;
-            btnMoveUp.FlatStyle = FlatStyle.Flat;
-            btnMoveUp.Font = new Font("微软雅黑", 9F);
-            btnMoveUp.ForeColor = Color.White;
-            btnMoveUp.Location = new Point(210, 10);
+            btnMoveUp.BackColor = Color.Transparent;
+            btnMoveUp.Cursor = Cursors.Hand;
+            btnMoveUp.FillColor = Color.FromArgb(40, 167, 69);
+            btnMoveUp.FillColor2 = Color.FromArgb(40, 167, 69);
+            btnMoveUp.Font = new Font("微软雅黑", 11F);
+            btnMoveUp.Location = new Point(12, 120);
+            btnMoveUp.MinimumSize = new Size(1, 1);
             btnMoveUp.Name = "btnMoveUp";
-            btnMoveUp.Size = new Size(90, 32);
+            btnMoveUp.RectColor = Color.FromArgb(40, 167, 69);
+            btnMoveUp.RectDisableColor = Color.FromArgb(40, 167, 69);
+            btnMoveUp.Size = new Size(90, 38);
+            btnMoveUp.Style = UIStyle.Custom;
+            btnMoveUp.Symbol = 61701;
+            btnMoveUp.SymbolSize = 20;
             btnMoveUp.TabIndex = 2;
-            btnMoveUp.Text = "上移 ↑";
-            btnMoveUp.UseVisualStyleBackColor = false;
+            btnMoveUp.Text = "上移";
+            btnMoveUp.TipsFont = new Font("微软雅黑", 11F);
             // 
             // btnDelete
             // 
-            btnDelete.BackColor = Color.FromArgb(220, 53, 69);
-            btnDelete.FlatAppearance.BorderSize = 0;
-            btnDelete.FlatStyle = FlatStyle.Flat;
-            btnDelete.Font = new Font("微软雅黑", 9F);
-            btnDelete.ForeColor = Color.White;
-            btnDelete.Location = new Point(110, 10);
+            btnDelete.Cursor = Cursors.Hand;
+            btnDelete.FillColor = Color.FromArgb(220, 53, 69);
+            btnDelete.FillColor2 = Color.FromArgb(220, 53, 69);
+            btnDelete.FillDisableColor = Color.FromArgb(220, 53, 69);
+            btnDelete.Font = new Font("微软雅黑", 11F);
+            btnDelete.Location = new Point(12, 70);
+            btnDelete.MinimumSize = new Size(1, 1);
             btnDelete.Name = "btnDelete";
-            btnDelete.Size = new Size(90, 32);
+            btnDelete.RectColor = Color.FromArgb(220, 53, 69);
+            btnDelete.RectDisableColor = Color.FromArgb(220, 53, 69);
+            btnDelete.Size = new Size(90, 38);
+            btnDelete.Style = UIStyle.Custom;
+            btnDelete.Symbol = 61460;
+            btnDelete.SymbolSize = 20;
             btnDelete.TabIndex = 1;
             btnDelete.Text = "删除";
-            btnDelete.UseVisualStyleBackColor = false;
+            btnDelete.TipsFont = new Font("微软雅黑", 11F);
             // 
             // btnAdd
             // 
-            btnAdd.BackColor = Color.FromArgb(40, 167, 69);
-            btnAdd.FlatAppearance.BorderSize = 0;
-            btnAdd.FlatStyle = FlatStyle.Flat;
-            btnAdd.Font = new Font("微软雅黑", 9F);
-            btnAdd.ForeColor = Color.White;
-            btnAdd.Location = new Point(10, 10);
+            btnAdd.Cursor = Cursors.Hand;
+            btnAdd.FillColor = Color.DodgerBlue;
+            btnAdd.FillColor2 = Color.DodgerBlue;
+            btnAdd.Font = new Font("微软雅黑", 11F);
+            btnAdd.Location = new Point(12, 20);
+            btnAdd.MinimumSize = new Size(1, 1);
             btnAdd.Name = "btnAdd";
-            btnAdd.Size = new Size(90, 32);
+            btnAdd.RectColor = Color.DodgerBlue;
+            btnAdd.RectDisableColor = Color.DodgerBlue;
+            btnAdd.Size = new Size(90, 38);
+            btnAdd.Symbol = 61543;
+            btnAdd.SymbolSize = 20;
             btnAdd.TabIndex = 0;
             btnAdd.Text = "添加";
-            btnAdd.UseVisualStyleBackColor = false;
+            btnAdd.TipsFont = new Font("微软雅黑", 11F);
             // 
-            // pnlHeader
+            // panelBottom
             // 
-            pnlHeader.Controls.Add(chkEnabled);
-            pnlHeader.Controls.Add(txtDescription);
-            pnlHeader.Controls.Add(lblDescription);
-            pnlHeader.Dock = DockStyle.Top;
-            pnlHeader.Location = new Point(10, 10);
-            pnlHeader.Name = "pnlHeader";
-            pnlHeader.Size = new Size(880, 70);
-            pnlHeader.TabIndex = 0;
+            panelBottom.BackColor = Color.FromArgb(248, 249, 250);
+            panelBottom.Controls.Add(btnHelp);
+            panelBottom.Controls.Add(btnCancel);
+            panelBottom.Controls.Add(btnSave);
+            panelBottom.Dock = DockStyle.Bottom;
+            panelBottom.Location = new Point(0, 620);
+            panelBottom.Name = "panelBottom";
+            panelBottom.Padding = new Padding(15, 10, 15, 10);
+            panelBottom.Size = new Size(1000, 70);
+            panelBottom.TabIndex = 3;
             // 
-            // chkEnabled
+            // btnHelp
             // 
-            chkEnabled.AutoSize = true;
-            chkEnabled.Checked = true;
-            chkEnabled.CheckState = CheckState.Checked;
-            chkEnabled.Font = new Font("微软雅黑", 9F);
-            chkEnabled.Location = new Point(10, 42);
-            chkEnabled.Name = "chkEnabled";
-            chkEnabled.Size = new Size(87, 21);
-            chkEnabled.TabIndex = 2;
-            chkEnabled.Text = "启用此步骤";
-            chkEnabled.UseVisualStyleBackColor = true;
-            // 
-            // txtDescription
-            // 
-            txtDescription.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            txtDescription.Font = new Font("微软雅黑", 9F);
-            txtDescription.Location = new Point(100, 8);
-            txtDescription.Name = "txtDescription";
-            txtDescription.Size = new Size(770, 23);
-            txtDescription.TabIndex = 1;
-            // 
-            // lblDescription
-            // 
-            lblDescription.AutoSize = true;
-            lblDescription.Font = new Font("微软雅黑", 9F);
-            lblDescription.Location = new Point(10, 11);
-            lblDescription.Name = "lblDescription";
-            lblDescription.Size = new Size(68, 17);
-            lblDescription.TabIndex = 0;
-            lblDescription.Text = "步骤描述：";
-            // 
-            // pnlBottom
-            // 
-            pnlBottom.Controls.Add(btnCancel);
-            pnlBottom.Controls.Add(btnSave);
-            pnlBottom.Controls.Add(lblInfo);
-            pnlBottom.Dock = DockStyle.Bottom;
-            pnlBottom.Location = new Point(10, 485);
-            pnlBottom.Name = "pnlBottom";
-            pnlBottom.Size = new Size(880, 70);
-            pnlBottom.TabIndex = 3;
+            btnHelp.Cursor = Cursors.Hand;
+            btnHelp.FillColor = Color.White;
+            btnHelp.Font = new Font("微软雅黑", 11F);
+            btnHelp.ForeColor = Color.FromArgb(65, 100, 204);
+            btnHelp.Location = new Point(20, 15);
+            btnHelp.MinimumSize = new Size(1, 1);
+            btnHelp.Name = "btnHelp";
+            btnHelp.RectColor = Color.FromArgb(65, 100, 204);
+            btnHelp.Size = new Size(80, 40);
+            btnHelp.Style = UIStyle.Custom;
+            btnHelp.StyleCustomMode = true;
+            btnHelp.TabIndex = 3;
+            btnHelp.Text = "帮助";
+            btnHelp.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             // 
             // btnCancel
             // 
-            btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnCancel.BackColor = Color.FromArgb(108, 117, 125);
-            btnCancel.FlatAppearance.BorderSize = 0;
-            btnCancel.FlatStyle = FlatStyle.Flat;
-            btnCancel.Font = new Font("微软雅黑", 10F);
-            btnCancel.ForeColor = Color.White;
-            btnCancel.Location = new Point(760, 20);
+            btnCancel.Cursor = Cursors.Hand;
+            btnCancel.FillColor = Color.White;
+            btnCancel.Font = new Font("微软雅黑", 11F);
+            btnCancel.ForeColor = Color.FromArgb(48, 48, 48);
+            btnCancel.Location = new Point(866, 15);
+            btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
-            btnCancel.Size = new Size(110, 40);
-            btnCancel.TabIndex = 2;
+            btnCancel.RectColor = Color.FromArgb(220, 220, 220);
+            btnCancel.Size = new Size(100, 40);
+            btnCancel.Style = UIStyle.Custom;
+            btnCancel.StyleCustomMode = true;
+            btnCancel.TabIndex = 1;
             btnCancel.Text = "取消";
-            btnCancel.UseVisualStyleBackColor = false;
+            btnCancel.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             // 
             // btnSave
             // 
-            btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnSave.BackColor = Color.FromArgb(0, 123, 255);
-            btnSave.FlatAppearance.BorderSize = 0;
-            btnSave.FlatStyle = FlatStyle.Flat;
-            btnSave.Font = new Font("微软雅黑", 10F);
-            btnSave.ForeColor = Color.White;
-            btnSave.Location = new Point(630, 20);
+            btnSave.Cursor = Cursors.Hand;
+            btnSave.Font = new Font("微软雅黑", 11F);
+            btnSave.Location = new Point(746, 15);
+            btnSave.MinimumSize = new Size(1, 1);
             btnSave.Name = "btnSave";
-            btnSave.Size = new Size(110, 40);
-            btnSave.TabIndex = 1;
+            btnSave.Size = new Size(100, 40);
+            btnSave.TabIndex = 0;
             btnSave.Text = "保存";
-            btnSave.UseVisualStyleBackColor = false;
-            // 
-            // lblInfo
-            // 
-            lblInfo.AutoSize = true;
-            lblInfo.Font = new Font("微软雅黑", 9F);
-            lblInfo.ForeColor = Color.Gray;
-            lblInfo.Location = new Point(10, 30);
-            lblInfo.Name = "lblInfo";
-            lblInfo.Size = new Size(324, 17);
-            lblInfo.TabIndex = 0;
-            lblInfo.Text = "提示：支持使用 {变量名} 引用全局变量，支持拖拽调整顺序";
+            btnSave.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             // 
             // Form_WritePLC
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(248, 249, 250);
-            ClientSize = new Size(900, 600);
-            Controls.Add(pnlMain);
+            ClientSize = new Size(1000, 690);
+            ControlBox = false;
+            Controls.Add(panelMain);
+            Controls.Add(panelBottom);
+            Controls.Add(panelDescription);
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "Form_WritePLC";
             RectColor = Color.FromArgb(65, 100, 204);
             ShowIcon = false;
-            ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            Text = "PLC写入配置";
+            Style = UIStyle.Custom;
+            StyleCustomMode = true;
+            Text = "PLC 写入配置";
             TitleColor = Color.FromArgb(65, 100, 204);
             TitleFont = new Font("微软雅黑", 12F, FontStyle.Bold);
-            ZoomScaleRect = new Rectangle(15, 15, 900, 600);
-            pnlMain.ResumeLayout(false);
-            pnlContent.ResumeLayout(false);
+            ZoomScaleRect = new Rectangle(15, 15, 1000, 690);
+            panelDescription.ResumeLayout(false);
+            panelMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)DataGridViewPLCList).EndInit();
-            pnlToolbar.ResumeLayout(false);
-            pnlHeader.ResumeLayout(false);
-            pnlHeader.PerformLayout();
-            pnlBottom.ResumeLayout(false);
-            pnlBottom.PerformLayout();
+            panelButtons.ResumeLayout(false);
+            panelBottom.ResumeLayout(false);
             ResumeLayout(false);
-
         }
 
         #endregion
-
-        private System.Windows.Forms.Panel pnlMain;
-        private System.Windows.Forms.Panel pnlHeader;
-        private System.Windows.Forms.Label lblDescription;
-        private System.Windows.Forms.TextBox txtDescription;
-        private System.Windows.Forms.CheckBox chkEnabled;
-        private System.Windows.Forms.Panel pnlToolbar;
-        private System.Windows.Forms.Button btnAdd;
-        private System.Windows.Forms.Button btnDelete;
-        private System.Windows.Forms.Button btnMoveUp;
-        private System.Windows.Forms.Button btnMoveDown;
-        private System.Windows.Forms.Button btnTest;
-        private System.Windows.Forms.Button btnHelp;
-        private System.Windows.Forms.Panel pnlContent;
-        private Sunny.UI.UIDataGridView DataGridViewPLCList;
-        private System.Windows.Forms.Panel pnlBottom;
-        private System.Windows.Forms.Label lblInfo;
-        private System.Windows.Forms.Button btnSave;
-        private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Panel panelDescription;
+        private Sunny.UI.UILabel lblDescription;
+        private Sunny.UI.UITextBox txtDescription;
+        private Sunny.UI.UICheckBox chkEnabled;
+        private System.Windows.Forms.Panel panelMain;
+        private System.Windows.Forms.DataGridView DataGridViewPLCList;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColIndex;
+        private System.Windows.Forms.DataGridViewComboBoxColumn ColPLCModule;
+        private System.Windows.Forms.DataGridViewComboBoxColumn ColPLCAddress;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColWriteValue;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColDescription;
+        private System.Windows.Forms.Panel panelButtons;
+        private Sunny.UI.UISymbolButton btnAdd;
+        private Sunny.UI.UISymbolButton btnDelete;
+        private Sunny.UI.UISymbolButton btnMoveUp;
+        private Sunny.UI.UISymbolButton btnMoveDown;
+        private System.Windows.Forms.Panel panelBottom;
+        private Sunny.UI.UIButton btnSave;
+        private Sunny.UI.UIButton btnCancel;
+        private Sunny.UI.UIButton btnTest;
+        private Sunny.UI.UIButton btnHelp;
     }
 }

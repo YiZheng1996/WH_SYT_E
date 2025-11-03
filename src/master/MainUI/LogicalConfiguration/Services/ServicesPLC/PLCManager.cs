@@ -58,7 +58,7 @@ namespace MainUI.LogicalConfiguration.Services.ServicesPLC
             catch (Exception ex)
             {
                 _logger.LogError(ex, "主动初始化失败");
-                return new Dictionary<string, BaseModule>();
+                return [];
             }
         }
 
