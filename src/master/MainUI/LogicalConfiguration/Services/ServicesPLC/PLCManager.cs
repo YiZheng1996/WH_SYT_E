@@ -117,7 +117,7 @@ namespace MainUI.LogicalConfiguration.Services.ServicesPLC
                     _logger.LogWarning("未找到指定模块: {ModuleName}", moduleName);
                     return [];
                 }
-
+                Debug.WriteLine($"Key:{module.Values.Keys}");
                 var configTags = module.Values.Where(k => k.ToString() != "ServerName").ToList();
                 foreach (var tag in configTags)
                 {

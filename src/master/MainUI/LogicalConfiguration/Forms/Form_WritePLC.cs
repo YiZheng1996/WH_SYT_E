@@ -593,23 +593,27 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (string.IsNullOrWhiteSpace(moduleName) || _plcManager == null) return;
                 if (rowIndex < 0 || rowIndex >= DataGridViewPLCList.Rows.Count) return;
 
-                var addresses = await _plcManager.GetModuleTagsAsync(moduleName);
+                var addresses = await _plcManager.GetModuleTagsAsync();
                 if (addresses == null || addresses.Count == 0)
                 {
                     Logger?.LogWarning("模块 {ModuleName} 没有可用地址", moduleName);
                     return;
                 }
 
-                if (DataGridViewPLCList.Rows[rowIndex].Cells["ColPLCAddress"] is DataGridViewComboBoxCell addressCell)
+                if (DataGridViewPLCList.Rows[rowIndex].Cells["ColPLCAddress"] is
+                    DataGridViewComboBoxCell addressCell)
                 {
                     // 保存当前值
                     var currentValue = addressCell.Value;
 
                     // 清空并填充 Items
                     addressCell.Items.Clear();
-                    foreach (var addr in addresses)
+                    if (addresses.TryGetValue(moduleName, out List<string> addresse))
                     {
-                        addressCell.Items.Add(addr);
+                        foreach (var item in addresse)
+                        {
+                            addressCell.Items.Add(item);
+                        }
                     }
 
                     // 恢复或清空值

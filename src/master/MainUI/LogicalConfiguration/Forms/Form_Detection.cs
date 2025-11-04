@@ -1,8 +1,9 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Forms;
-using MainUI.LogicalConfiguration.Methods;
+using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
+using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -10,13 +11,23 @@ using Newtonsoft.Json;
 namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// 检测配置表单
+    /// 检测配置表单 - 改进版
+    /// 提供清晰、美观的界面进行检测项配置
+    /// 支持多种检测类型和数据源
     /// </summary>
     public partial class Form_Detection : BaseParameterForm, IParameterForm<Parameter_Detection>
     {
+        #region 私有字段
+
         private Parameter_Detection _parameter;
+        private bool _isInitializing = true;
+        private bool _hasUnsavedChanges = false;
+        private System.Windows.Forms.Timer _validationTimer;
+
+        #endregion
 
         #region 属性
+
         /// <summary>
         /// 参数对象
         /// </summary>
@@ -33,9 +44,11 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 }
             }
         }
+
         #endregion
 
         #region 构造函数
+
         /// <summary>
         /// 设计器构造函数
         /// </summary>
@@ -69,9 +82,11 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             Parameter = parameter ?? new Parameter_Detection();
             InitializeForm();
         }
+
         #endregion
 
         #region 初始化方法
+
         /// <summary>
         /// 初始化表单
         /// </summary>
@@ -79,12 +94,51 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         {
             if (DesignMode) return;
 
-            _parameter ??= new Parameter_Detection();
-            InitializeComboBoxes();
-            SetupEventHandlers();
+            try
+            {
+                _isInitializing = true;
 
-            // 注意：不在这里调用LoadParameterToForm()
-            // 因为基类的OnLoad事件会自动处理参数加载
+                // 初始化参数
+                _parameter ??= new Parameter_Detection();
+
+                // 初始化验证定时器
+                InitializeValidationTimer();
+
+                // 初始化下拉框
+                InitializeComboBoxes();
+
+                // 初始化变量下拉框
+                InitializeVariableComboBoxes();
+
+                // 设置事件处理器
+                SetupEventHandlers();
+
+                // 加载工具提示
+                InitializeToolTips();
+
+                // 注意：不在这里调用LoadParameterToForm()
+                // 因为基类的OnLoad事件会自动处理参数加载
+
+                _isInitializing = false;
+                Logger?.LogInformation("检测工具窗体初始化完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "初始化表单时发生错误");
+                MessageHelper.MessageOK($"初始化失败：{ex.Message}", TType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 初始化验证定时器
+        /// </summary>
+        private void InitializeValidationTimer()
+        {
+            _validationTimer = new System.Windows.Forms.Timer
+            {
+                Interval = 500
+            };
+            _validationTimer.Tick += ValidationTimer_Tick;
         }
 
         /// <summary>
@@ -119,6 +173,8 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 cmbDataSourceType.SelectedValue = DataSourceType.Variable;
                 cmbOperator.SelectedValue = ComparisonOperator.GreaterThan;
                 cmbFailureAction.SelectedValue = FailureAction.Continue;
+
+                Logger?.LogDebug("下拉框初始化完成");
             }
             catch (Exception ex)
             {
@@ -127,411 +183,503 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         }
 
         /// <summary>
+        /// 初始化变量下拉框
+        /// </summary>
+        private void InitializeVariableComboBoxes()
+        {
+            try
+            {
+                var globalVarManager = Program.ServiceProvider?.GetService<GlobalVariableManager>();
+                if (globalVarManager == null) return;
+
+                var variables = globalVarManager.GetAllVariables()
+                    .Select(v => v.VarName)
+                    .ToList();
+
+                // 变量数据源
+                CboVariableName.Items.Clear();
+                CboVariableName.Items.AddRange(variables.ToArray());
+
+                // 结果变量
+                CboResultVariable.Items.Clear();
+                CboResultVariable.Items.AddRange(variables.ToArray());
+
+                // 值变量
+                CboValueVariable.Items.Clear();
+                CboValueVariable.Items.AddRange(variables.ToArray());
+
+                Logger?.LogDebug("变量下拉框初始化完成，共 {Count} 个变量", variables.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "初始化变量下拉框失败");
+            }
+        }
+
+        /// <summary>
+        /// 初始化PLC下拉框
+        /// </summary>
+        private async void InitializePlcComboBoxes()
+        {
+            try
+            {
+                var plcManager = Program.ServiceProvider?.GetService<IPLCManager>();
+                if (plcManager == null) return;
+
+                // 获取PLC模块列表
+                var modules = await plcManager.GetModuleTagsAsync();
+                CboPlcModule.Items.Clear();
+                CboPlcModule.Items.AddRange(modules.Keys.ToArray());
+
+                Logger?.LogDebug("PLC模块下拉框初始化完成，共 {Count} 个模块", modules.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "初始化PLC下拉框失败");
+            }
+        }
+
+        /// <summary>
+        /// 初始化工具提示
+        /// </summary>
+        private void InitializeToolTips()
+        {
+            toolTip.SetToolTip(txtDetectionName, "输入检测项的名称，用于标识此检测项");
+            toolTip.SetToolTip(txtDescription, "输入检测项的描述信息，说明检测目的");
+            toolTip.SetToolTip(cmbDetectionType, "选择检测类型：值范围、数值比较、布尔检测等");
+            toolTip.SetToolTip(cmbDataSourceType, "选择数据来源：变量或PLC");
+            toolTip.SetToolTip(cmbOperator, "选择比较操作符：大于、小于、等于等");
+            toolTip.SetToolTip(numMinValue, "设置允许的最小值");
+            toolTip.SetToolTip(numMaxValue, "设置允许的最大值");
+            toolTip.SetToolTip(txtTargetValue, "设置目标值或使用 {变量名} 引用变量");
+            toolTip.SetToolTip(numTolerance, "设置允许的容差范围");
+            toolTip.SetToolTip(numTimeoutMs, "设置检测超时时间（毫秒）");
+            toolTip.SetToolTip(numRetryCount, "设置检测失败后的重试次数");
+            toolTip.SetToolTip(numRetryIntervalMs, "设置重试之间的间隔时间（毫秒）");
+            toolTip.SetToolTip(btnTest, "测试当前检测配置");
+            toolTip.SetToolTip(btnHelp, "查看帮助信息");
+        }
+
+        /// <summary>
         /// 设置事件处理器
         /// </summary>
         private void SetupEventHandlers()
         {
-            cmbDetectionType.SelectedIndexChanged += CmbDetectionType_SelectedIndexChanged;
-            cmbDataSourceType.SelectedIndexChanged += CmbDataSourceType_SelectedIndexChanged;
-            cmbFailureAction.SelectedIndexChanged += CmbFailureAction_SelectedIndexChanged;
-            CboPlcModule.SelectedIndexChanged += CboPlcModule_SelectedIndexChanged;
+            try
+            {
+                // 下拉框改变事件
+                cmbDetectionType.SelectedIndexChanged += CmbDetectionType_SelectedIndexChanged;
+                cmbDataSourceType.SelectedIndexChanged += CmbDataSourceType_SelectedIndexChanged;
+                cmbFailureAction.SelectedIndexChanged += CmbFailureAction_SelectedIndexChanged;
 
-            btnOK.Click += BtnOK_Click;
-            btnCancel.Click += BtnCancel_Click;
-            btnTestDetection.Click += BtnTestDetection_Click;
+                // 复选框改变事件
+                chkEnabled.CheckedChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                chkSaveResult.CheckedChanged += ChkSaveResult_CheckedChanged;
+                chkSaveValue.CheckedChanged += ChkSaveValue_CheckedChanged;
+                chkShowResult.CheckedChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+
+                // 文本改变事件
+                txtDetectionName.TextChanged += (s, e) => { if (!_isInitializing) { _hasUnsavedChanges = true; RestartValidationTimer(); } };
+                txtDescription.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                txtTargetValue.TextChanged += (s, e) => { if (!_isInitializing) { _hasUnsavedChanges = true; RestartValidationTimer(); } };
+
+                // 数值改变事件
+                numMinValue.ValueChanged += (s, e) => { if (!_isInitializing) { _hasUnsavedChanges = true; RestartValidationTimer(); } };
+                numMaxValue.ValueChanged += (s, e) => { if (!_isInitializing) { _hasUnsavedChanges = true; RestartValidationTimer(); } };
+                numTolerance.ValueChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                numThreshold.ValueChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                numTimeoutMs.ValueChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                numRetryCount.ValueChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                numRetryIntervalMs.ValueChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                numFailureStep.ValueChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                numSuccessStep.ValueChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+
+                // PLC相关事件
+                CboPlcModule.SelectedIndexChanged += CboPlcModule_SelectedIndexChanged;
+
+                // 按钮事件
+                btnOK.Click += BtnOK_Click;
+                btnCancel.Click += BtnCancel_Click;
+                btnTest.Click += BtnTest_Click;
+                btnHelp.Click += BtnHelp_Click;
+
+                // 窗体关闭事件
+                this.FormClosing += Form_Detection_FormClosing;
+
+                Logger?.LogDebug("事件处理器绑定完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "绑定事件处理器失败");
+            }
         }
+
         #endregion
 
-        #region 数据绑定方法
+        #region 事件处理
+
         /// <summary>
-        /// 加载参数到表单
+        /// 检测类型改变事件
         /// </summary>
-        private async void LoadParameterToForm()
+        private void CmbDetectionType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (_parameter == null) return;
+            if (_isInitializing || cmbDetectionType.SelectedValue == null) return;
+
+            _hasUnsavedChanges = true;
+            UpdateUIBasedOnDetectionType();
+            RestartValidationTimer();
+        }
+
+        /// <summary>
+        /// 数据源类型改变事件
+        /// </summary>
+        private void CmbDataSourceType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_isInitializing || cmbDataSourceType.SelectedValue == null) return;
+
+            _hasUnsavedChanges = true;
+            UpdateUIBasedOnDataSourceType();
+            RestartValidationTimer();
+        }
+
+        /// <summary>
+        /// 失败处理行为改变事件
+        /// </summary>
+        private void CmbFailureAction_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_isInitializing || cmbFailureAction.SelectedValue == null) return;
+
+            _hasUnsavedChanges = true;
+            UpdateUIBasedOnFailureAction();
+        }
+
+        /// <summary>
+        /// PLC模块改变事件
+        /// </summary>
+        private async void CboPlcModule_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_isInitializing || string.IsNullOrEmpty(CboPlcModule.Text)) return;
 
             try
             {
-                // 基本信息
-                txtDetectionName.Text = _parameter.DetectionName;
-                cmbDetectionType.SelectedValue = _parameter.Type;
-                numRefreshRate.Value = _parameter.RefreshRateMs;
-                numTimeout.Value = _parameter.TimeoutMs;
-                numRetryCount.Value = _parameter.RetryCount;
-                numRetryInterval.Value = _parameter.RetryIntervalMs;
+                var plcManager = Program.ServiceProvider?.GetService<IPLCManager>();
+                if (plcManager == null) return;
 
-                // 数据源配置
-                cmbDataSourceType.SelectedValue = _parameter.DataSource.SourceType;
-
-                // 先根据数据源类型加载相应的数据，然后再设置值
-                var sourceType = _parameter.DataSource.SourceType;
-                switch (sourceType)
+                // 获取选中模块的地址列表
+                var addresses = await plcManager.GetModuleTagsAsync();
+                CboPlcAddress.Items.Clear();
+                if (addresses.TryGetValue(CboPlcModule?.SelectedText, out List<string> addresse))
                 {
-                    case DataSourceType.Variable:
-                        ParameterGlobalVariable(); // 先加载变量列表
-                        SetComboBoxValue(CboVariableName, _parameter.DataSource.VariableName);
-                        pnlVariableSource.Visible = true;
-                        pnlPlcSource.Visible = false;
-                        break;
-
-                    case DataSourceType.PLC:
-                        await Parameterplcs(); // 先加载PLC模块列表
-                        SetComboBoxValue(CboPlcModule, _parameter.DataSource.PlcConfig.ModuleName);
-
-                        // 如果有模块名，加载对应的地址列表
-                        if (!string.IsNullOrEmpty(_parameter.DataSource.PlcConfig.ModuleName))
-                        {
-                            await LoadPlcAddresses(_parameter.DataSource.PlcConfig.ModuleName);
-                            SetComboBoxValue(CboPlcAddress, _parameter.DataSource.PlcConfig.Address);
-                        }
-
-                        pnlVariableSource.Visible = false;
-                        pnlPlcSource.Visible = true;
-                        break;
+                    CboPlcAddress.Items.AddRange([.. addresse]);
                 }
 
-                // 检测条件
-                numMinValue.Value = (decimal)_parameter.Condition.MinValue;
-                numMaxValue.Value = (decimal)_parameter.Condition.MaxValue;
-                txtTargetValue.Text = _parameter.Condition.TargetValue;
-                numThreshold.Value = (decimal)_parameter.Condition.ThresholdValue;
-                cmbOperator.SelectedValue = _parameter.Condition.Operator;
-                numTolerance.Value = (decimal)_parameter.Condition.Tolerance;
-
-                // 结果处理
-                chkSaveResult.Checked = _parameter.ResultHandling.SaveToVariable;
-                CboResultVariable.Text = _parameter.ResultHandling.ResultVariableName;
-                chkSaveValue.Checked = _parameter.ResultHandling.SaveValueToVariable;
-                CboValueVariable.Text = _parameter.ResultHandling.ValueVariableName;
-                cmbFailureAction.SelectedValue = _parameter.ResultHandling.OnFailure;
-                numFailureStep.Value = _parameter.ResultHandling.FailureStepIndex;
-                numSuccessStep.Value = _parameter.ResultHandling.SuccessStepIndex;
-                chkShowResult.Checked = _parameter.ResultHandling.ShowResult;
-                //txtMessageTemplate.Text = _parameter.ResultHandling.MessageTemplate;
-
-                // 更新界面布局
-                UpdateFormLayout();
-                UpdateFailureActionLayout();
+                Logger?.LogDebug("加载PLC模块 {Module} 的地址，共 {Count} 个", CboPlcModule.Text, addresses.Count);
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "加载参数到表单失败");
-                MessageHelper.MessageOK($"加载参数失败：{ex.Message}", TType.Error);
-            }
-            finally
-            {
+                Logger?.LogError(ex, "加载PLC地址失败");
             }
         }
 
         /// <summary>
-        /// 安全设置ComboBox的值
+        /// 保存结果复选框改变事件
         /// </summary>
-        private void SetComboBoxValue(UIComboBox comboBox, string value)
+        private void ChkSaveResult_CheckedChanged(object sender, EventArgs e)
         {
-            if (comboBox == null || string.IsNullOrEmpty(value)) return;
+            if (_isInitializing) return;
 
-            try
-            {
-                // 方法1：先尝试在Items中查找匹配项
-                for (int i = 0; i < comboBox.Items.Count; i++)
-                {
-                    if (comboBox.Items[i].ToString().Equals(value, StringComparison.OrdinalIgnoreCase))
-                    {
-                        comboBox.SelectedIndex = i;
-                        return;
-                    }
-                }
+            _hasUnsavedChanges = true;
+            CboResultVariable.Enabled = chkSaveResult.Checked;
 
-                // 方法2：如果没有找到匹配项，且ComboBox允许编辑，则设置Text属性
-                if (comboBox.DropDownStyle == UIDropDownStyle.DropDown)
-                {
-                    comboBox.Text = value;
-                }
-                else
-                {
-                    // 方法3：对于DropDownList类型，如果找不到匹配项，添加该项
-                    comboBox.Items.Add(value);
-                    comboBox.SelectedItem = value;
-                }
-            }
-            catch (Exception ex)
+            if (chkSaveResult.Checked && CboResultVariable.Items.Count == 0)
             {
-                Logger?.LogWarning("设置ComboBox值失败: {value}", ex);
-                // 最后的备用方案
-                try
-                {
-                    comboBox.Text = value;
-                }
-                catch
-                {
-                    // 忽略最终的设置失败
-                }
+                InitializeVariableComboBoxes();
             }
         }
 
         /// <summary>
-        /// 加载指定PLC模块的地址列表
+        /// 保存值复选框改变事件
         /// </summary>
-        private async Task LoadPlcAddresses(string moduleName)
+        private void ChkSaveValue_CheckedChanged(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(moduleName)) return;
+            if (_isInitializing) return;
 
-            try
+            _hasUnsavedChanges = true;
+            CboValueVariable.Enabled = chkSaveValue.Checked;
+
+            if (chkSaveValue.Checked && CboValueVariable.Items.Count == 0)
             {
-                CboPlcAddress.Clear();
-                var modules = await PLCManager.GetModuleTagsAsync();
-                if (modules.TryGetValue(moduleName, out List<string> addresses))
-                {
-                    foreach (var address in addresses)
-                    {
-                        CboPlcAddress.Items.Add(address);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError("加载PLC模块[{moduleName}]地址失败", ex);
+                InitializeVariableComboBoxes();
             }
         }
 
         /// <summary>
-        /// 保存表单数据到参数对象
+        /// 验证定时器触发事件
         /// </summary>
-        private void SaveFormToParameter()
+        private void ValidationTimer_Tick(object sender, EventArgs e)
         {
-            if (_parameter == null) return;
-
-            try
-            {
-                // 基本信息
-                _parameter.DetectionName = txtDetectionName.Text?.Trim() ?? "";
-                _parameter.Type = (DetectionType)cmbDetectionType.SelectedValue;
-                _parameter.RefreshRateMs = (int)numRefreshRate.Value;
-                _parameter.TimeoutMs = (int)numTimeout.Value;
-                _parameter.RetryCount = (int)numRetryCount.Value;
-                _parameter.RetryIntervalMs = (int)numRetryInterval.Value;
-
-                // 数据源配置
-                _parameter.DataSource.SourceType = (DataSourceType)cmbDataSourceType.SelectedValue;
-                _parameter.DataSource.VariableName = CboVariableName.Text?.Trim() ?? "";
-                _parameter.DataSource.PlcConfig.ModuleName = CboPlcModule.Text?.Trim() ?? "";
-                _parameter.DataSource.PlcConfig.Address = CboPlcAddress.Text?.Trim() ?? "";
-
-                // 检测条件
-                _parameter.Condition.MinValue = (double)numMinValue.Value;
-                _parameter.Condition.MaxValue = (double)numMaxValue.Value;
-                _parameter.Condition.TargetValue = txtTargetValue.Text?.Trim() ?? "";
-                _parameter.Condition.ThresholdValue = (double)numThreshold.Value;
-                _parameter.Condition.Operator = (ComparisonOperator)cmbOperator.SelectedValue;
-                _parameter.Condition.Tolerance = (double)numTolerance.Value;
-
-                // 结果处理
-                _parameter.ResultHandling.SaveToVariable = chkSaveResult.Checked;
-                _parameter.ResultHandling.ResultVariableName = CboResultVariable.Text?.Trim() ?? "";
-                _parameter.ResultHandling.SaveValueToVariable = chkSaveValue.Checked;
-                _parameter.ResultHandling.ValueVariableName = CboValueVariable.Text?.Trim() ?? "";
-                _parameter.ResultHandling.OnFailure = (FailureAction)cmbFailureAction.SelectedValue;
-                _parameter.ResultHandling.FailureStepIndex = (int)numFailureStep.Value;
-                _parameter.ResultHandling.SuccessStepIndex = (int)numSuccessStep.Value;
-                _parameter.ResultHandling.ShowResult = chkShowResult.Checked;
-                //_parameter.ResultHandling.MessageTemplate = txtMessageTemplate.Text?.Trim() ?? "";
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "保存表单数据到参数对象失败");
-                throw new InvalidOperationException($"保存表单数据失败：{ex.Message}", ex);
-            }
-        }
-        #endregion
-
-        #region 界面布局更新
-        /// <summary>
-        /// 根据检测类型更新表单布局
-        /// </summary>
-        private void UpdateFormLayout()
-        {
-            if (cmbDetectionType.SelectedValue == null) return;
-
-            try
-            {
-                var detectionType = (DetectionType)cmbDetectionType.SelectedValue;
-
-                // 隐藏所有条件面板
-                pnlRangeCondition.Visible = false;
-                pnlEqualityCondition.Visible = false;
-                pnlThresholdCondition.Visible = false;
-
-                // 根据检测类型显示相应的条件配置面板
-                switch (detectionType)
-                {
-                    case DetectionType.ValueRange:
-                        pnlRangeCondition.Visible = true;
-                        break;
-                    case DetectionType.Equality:
-                        pnlEqualityCondition.Visible = true;
-                        break;
-                    case DetectionType.Status:
-                        pnlThresholdCondition.Visible = true;
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "更新表单布局失败");
-            }
+            _validationTimer.Stop();
+            ValidateConfiguration();
         }
 
         /// <summary>
-        /// 根据数据源类型更新表单布局
+        /// 确定按钮点击事件
         /// </summary>
-        private async void UpdateDataSourceLayout()
-        {
-            if (cmbDataSourceType.SelectedValue == null) return;
-
-            try
-            {
-                var sourceType = (DataSourceType)cmbDataSourceType.SelectedValue;
-
-                // 隐藏所有数据源配置面板
-                pnlVariableSource.Visible = false;
-                pnlPlcSource.Visible = false;
-
-                // 根据数据源类型显示相应的配置面板
-                switch (sourceType)
-                {
-                    case DataSourceType.Variable:
-                        ParameterGlobalVariable();
-                        pnlVariableSource.Visible = true;
-                        break;
-                    case DataSourceType.PLC:
-                        await Parameterplcs();
-                        pnlPlcSource.Visible = true;
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "更新数据源布局失败");
-            }
-        }
-
-        /// <summary>
-        /// 根据失败处理方式更新表单布局
-        /// </summary>
-        private void UpdateFailureActionLayout()
-        {
-            if (cmbFailureAction.SelectedValue == null) return;
-
-            try
-            {
-                var failureAction = (FailureAction)cmbFailureAction.SelectedValue;
-                pnlJumpStep.Visible = failureAction == FailureAction.Jump;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "更新失败处理布局失败");
-            }
-        }
-        #endregion
-
-        #region 参数加载和保存
-        /// <summary>
-        /// 加载所有PLC参数
-        /// </summary>
-        private async Task Parameterplcs()
-        {
-            CboPlcModule.Clear();
-            CboPlcAddress.Clear();
-            var Modules = await PLCManager.GetModuleTagsAsync();
-            foreach (var M in Modules)
-            {
-                CboPlcModule.Items.Add(M.Key);
-            }
-        }
-
-        /// <summary>
-        /// 加载所有全局变量
-        /// </summary>
-        private void ParameterGlobalVariable()
-        {
-            var variable = GlobalVariable.GetUnassignedVariables();
-            if (variable != null)
-            {
-                CboVariableName.Clear();
-                foreach (var v in variable)
-                {
-                    CboVariableName.Items.Add(v.VarName);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 将参数保存到当前流程步骤中
-        /// </summary>
-        private void SaveParameterToProcess()
-        {
-            // 使用基类提供的统一保存逻辑
-            SaveParameters();
-        }
-
-        /// <summary>
-        /// 重写基类的LoadParameterFromStep方法 - 从已保存的步骤参数中加载
-        /// </summary>
-        protected override void LoadParameterFromStep(object stepParameter)
+        private void BtnOK_Click(object sender, EventArgs e)
         {
             try
             {
-                Parameter_Detection loadedParameter = null;
-
-                // 尝试直接类型转换
-                if (stepParameter is Parameter_Detection directParam)
+                if (!ValidateInput())
                 {
-                    loadedParameter = directParam;
-                    Logger?.LogDebug("直接获取Parameter_Detection参数");
-                }
-                // 尝试JSON反序列化
-                else if (stepParameter != null)
-                {
-                    try
-                    {
-                        string jsonString = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
-                        loadedParameter = JsonConvert.DeserializeObject<Parameter_Detection>(jsonString);
-                        Logger?.LogDebug("JSON反序列化获取Parameter_Detection参数");
-                    }
-                    catch (JsonException jsonEx)
-                    {
-                        Logger?.LogWarning(jsonEx, "JSON反序列化失败，使用默认参数");
-                        loadedParameter = null;
-                    }
-                }
-
-                // 如果加载成功，设置参数并加载到界面
-                if (loadedParameter != null)
-                {
-                    _parameter = loadedParameter;
-                    Logger?.LogInformation("成功加载检测参数: {DetectionName}", _parameter.DetectionName);
-                }
-                else
-                {
-                    // 加载失败，使用默认值
-                    Logger?.LogWarning("加载参数失败，使用默认参数");
-                    SetDefaultValues();
                     return;
                 }
 
-                // 加载参数到表单控件
-                LoadParameterToForm();
+                SaveParameters();
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "从步骤参数加载失败");
-                SetDefaultValues();
+                Logger?.LogError(ex, "保存检测配置失败");
+                MessageHelper.MessageOK($"保存失败：{ex.Message}", TType.Error);
             }
         }
 
         /// <summary>
-        /// 重写基类的CollectParameters方法
+        /// 取消按钮点击事件
         /// </summary>
+        private void BtnCancel_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
+        }
+
+        /// <summary>
+        /// 测试按钮点击事件
+        /// </summary>
+        private async void BtnTest_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                UpdateStatusText("正在测试检测配置...", false);
+                btnTest.Enabled = false;
+
+                if (!ValidateInput())
+                {
+                    UpdateStatusText("验证失败，请检查配置", true);
+                    return;
+                }
+
+                // 保存当前配置
+                SaveFormToParameter();
+
+                // 执行测试（这里可以调用实际的检测逻辑）
+                await Task.Delay(1000); // 模拟测试过程
+
+                UpdateStatusText("测试完成 - 配置有效", false);
+                MessageHelper.MessageOK(this, "检测配置测试通过！", TType.Success);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "测试检测配置失败");
+                UpdateStatusText($"测试失败：{ex.Message}", true);
+                MessageHelper.MessageOK($"测试失败：{ex.Message}", TType.Error);
+            }
+            finally
+            {
+                btnTest.Enabled = true;
+            }
+        }
+
+        /// <summary>
+        /// 帮助按钮点击事件
+        /// </summary>
+        private void BtnHelp_Click(object sender, EventArgs e)
+        {
+            string helpText = @"检测工具配置帮助
+
+1. 基本信息：
+   - 检测名称：为此检测项指定一个唯一的名称
+   - 描述：说明此检测项的用途和目的
+   - 检测类型：选择检测方式（值范围、数值比较等）
+
+2. 数据源配置：
+   - 变量：从全局变量中读取数据
+   - PLC：从PLC设备读取数据
+
+3. 检测条件：
+   - 比较操作符：定义如何判断检测结果
+   - 最小值/最大值：定义有效数据范围
+   - 目标值：设置期望的目标值
+   - 容差：允许的偏差范围
+   - 阈值：触发报警的阈值
+
+4. 超时和重试：
+   - 超时时间：检测操作的最长等待时间
+   - 重试次数：失败后重试的次数
+   - 重试间隔：每次重试之间的等待时间
+
+5. 结果处理：
+   - 保存结果：将检测结果（通过/失败）保存到变量
+   - 保存值：将检测的实际数值保存到变量
+   - 失败后操作：定义检测失败时的行为
+   - 失败步骤/成功步骤：跳转到指定步骤（-1表示下一步）
+
+6. 测试功能：
+   - 点击测试按钮验证配置的正确性
+   - 测试不会影响实际的工作流执行";
+
+            MessageHelper.MessageOK(this, helpText, TType.Info);
+        }
+
+        /// <summary>
+        /// 窗体关闭事件
+        /// </summary>
+        private void Form_Detection_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (DialogResult == DialogResult.OK) return;
+            if (_hasUnsavedChanges)
+            {
+                var result = MessageHelper.MessageYes(this, "是否放弃未保存的更改？");
+                if (result != DialogResult.OK)
+                {
+                    e.Cancel = true;
+                }
+            }
+        }
+
+        #endregion
+
+        #region UI更新方法
+
+        /// <summary>
+        /// 根据检测类型更新UI
+        /// </summary>
+        private void UpdateUIBasedOnDetectionType()
+        {
+            if (cmbDetectionType.SelectedValue == null) return;
+
+            var detectionType = (DetectionType)cmbDetectionType.SelectedValue;
+
+            // 根据不同的检测类型显示/隐藏相应的控件
+            switch (detectionType)
+            {
+                case DetectionType.ValueRange:
+                    // 值范围检测：显示最小值和最大值
+                    numMinValue.Visible = lblMinValue.Visible = true;
+                    numMaxValue.Visible = lblMaxValue.Visible = true;
+                    txtTargetValue.Visible = lblTargetValue.Visible = false;
+                    numThreshold.Visible = lblThreshold.Visible = false;
+                    break;
+
+                case DetectionType.Equality:
+                    // 值比较检测：显示目标值和容差
+                    numMinValue.Visible = lblMinValue.Visible = false;
+                    numMaxValue.Visible = lblMaxValue.Visible = false;
+                    txtTargetValue.Visible = lblTargetValue.Visible = true;
+                    numTolerance.Visible = lblTolerance.Visible = true;
+                    numThreshold.Visible = lblThreshold.Visible = false;
+                    break;
+
+                case DetectionType.Status:
+                    // 阈值检测：显示阈值
+                    numMinValue.Visible = lblMinValue.Visible = false;
+                    numMaxValue.Visible = lblMaxValue.Visible = false;
+                    txtTargetValue.Visible = lblTargetValue.Visible = false;
+                    numThreshold.Visible = lblThreshold.Visible = true;
+                    break;
+
+                default:
+                    // 默认显示所有
+                    numMinValue.Visible = lblMinValue.Visible = true;
+                    numMaxValue.Visible = lblMaxValue.Visible = true;
+                    txtTargetValue.Visible = lblTargetValue.Visible = true;
+                    numTolerance.Visible = lblTolerance.Visible = true;
+                    numThreshold.Visible = lblThreshold.Visible = true;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 根据数据源类型更新UI
+        /// </summary>
+        private void UpdateUIBasedOnDataSourceType()
+        {
+            if (cmbDataSourceType.SelectedValue == null) return;
+
+            var sourceType = (DataSourceType)cmbDataSourceType.SelectedValue;
+
+            // 显示/隐藏相应的数据源面板
+            switch (sourceType)
+            {
+                case DataSourceType.Variable:
+                    pnlVariableSource.Visible = true;
+                    pnlPlcSource.Visible = false;
+                    break;
+
+                case DataSourceType.PLC:
+                    pnlVariableSource.Visible = false;
+                    pnlPlcSource.Visible = true;
+
+                    // 初始化PLC下拉框
+                    if (CboPlcModule.Items.Count == 0)
+                    {
+                        InitializePlcComboBoxes();
+                    }
+                    break;
+
+                default:
+                    pnlVariableSource.Visible = true;
+                    pnlPlcSource.Visible = false;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 根据失败处理行为更新UI
+        /// </summary>
+        private void UpdateUIBasedOnFailureAction()
+        {
+            if (cmbFailureAction.SelectedValue == null) return;
+
+            var failureAction = (FailureAction)cmbFailureAction.SelectedValue;
+
+            // 根据失败处理行为显示/隐藏步骤输入
+            bool showStepInputs = failureAction == FailureAction.Jump ||
+                                 failureAction == FailureAction.Stop;
+
+            numFailureStep.Visible = lblFailureStep.Visible = showStepInputs;
+        }
+
+        /// <summary>
+        /// 重启验证定时器
+        /// </summary>
+        private void RestartValidationTimer()
+        {
+            _validationTimer.Stop();
+            _validationTimer.Start();
+        }
+
+        /// <summary>
+        /// 更新状态栏文本
+        /// </summary>
+        private void UpdateStatusText(string text, bool isError = false)
+        {
+            lblStatusText.Text = text;
+            lblStatusText.ForeColor = isError ?
+                System.Drawing.Color.FromArgb(220, 53, 69) :
+                System.Drawing.Color.FromArgb(100, 100, 100);
+        }
+
+        #endregion
+
+        #region 参数处理
+
+        /// <summary>
+        /// 收集参数（基类方法重写）
+        /// 供基类框架调用，返回通用的参数对象
+        /// </summary>
+        /// <returns>当前配置的参数对象</returns>
         protected override object CollectParameters()
         {
             SaveFormToParameter();
@@ -539,21 +687,15 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 重写基类的ValidateParameters方法
-        /// </summary>
-        protected override bool ValidateParameters()
-        {
-            return ValidateInput();
-        }
-
-        /// <summary>
-        /// 重写基类的SetDefaultValues方法，默认参数
+        /// 设置默认值
         /// </summary>
         protected override void SetDefaultValues()
         {
             _parameter = new Parameter_Detection
             {
-                DetectionName = $"{WorkflowState.StepName}-{WorkflowState.StepNum + 1}",
+                DetectionName = $"检测项 {_workflowState?.StepNum + 1}",
+                //Description = "",
+                //Enabled = true,
                 Type = DetectionType.ValueRange,
                 TimeoutMs = 5000,
                 RetryCount = 0,
@@ -581,9 +723,290 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             Logger?.LogDebug("设置检测参数默认值");
             LoadParameterToForm();
         }
+
+        /// <summary>
+        /// 从参数加载到界面
+        /// </summary>
+        protected void LoadParameterToForm()
+        {
+            if (_parameter == null || _isInitializing) return;
+
+            try
+            {
+                _isInitializing = true;
+
+                // 基本信息
+                txtDetectionName.Text = _parameter.DetectionName ?? "";
+                //txtDescription.Text = _parameter.Description ?? "";
+                cmbDetectionType.SelectedValue = _parameter.Type;
+                //chkEnabled.Checked = _parameter.Enabled;
+
+                // 数据源
+                cmbDataSourceType.SelectedValue = _parameter.DataSource?.SourceType ?? DataSourceType.Variable;
+                CboVariableName.Text = _parameter.DataSource?.VariableName ?? "";
+                CboPlcModule.Text = _parameter.DataSource?.PlcConfig?.ModuleName ?? "";
+                CboPlcAddress.Text = _parameter.DataSource?.PlcConfig?.Address ?? "";
+
+                // 检测条件
+                numMinValue.Value = _parameter.Condition?.MinValue ?? 0;
+                numMaxValue.Value = _parameter.Condition?.MaxValue ?? 100;
+                txtTargetValue.Text = _parameter.Condition?.TargetValue ?? "";
+                numTolerance.Value = _parameter.Condition?.Tolerance ?? 0;
+                numThreshold.Value = _parameter.Condition?.ThresholdValue ?? 0;
+                cmbOperator.SelectedValue = _parameter.Condition?.Operator ?? ComparisonOperator.GreaterThan;
+
+                // 超时和重试
+                numTimeoutMs.Value = _parameter.TimeoutMs;
+                numRetryCount.Value = _parameter.RetryCount;
+                numRetryIntervalMs.Value = _parameter.RetryIntervalMs;
+
+                // 结果处理
+                chkSaveResult.Checked = _parameter.ResultHandling?.SaveToVariable ?? false;
+                CboResultVariable.Text = _parameter.ResultHandling?.ResultVariableName ?? "";
+                chkSaveValue.Checked = _parameter.ResultHandling?.SaveValueToVariable ?? false;
+                CboValueVariable.Text = _parameter.ResultHandling?.ValueVariableName ?? "";
+                cmbFailureAction.SelectedValue = _parameter.ResultHandling?.OnFailure ?? FailureAction.Continue;
+                numFailureStep.Value = _parameter.ResultHandling?.FailureStepIndex ?? -1;
+                numSuccessStep.Value = _parameter.ResultHandling?.SuccessStepIndex ?? -1;
+                chkShowResult.Checked = _parameter.ResultHandling?.ShowResult ?? true;
+
+                // 更新UI状态
+                UpdateUIBasedOnDetectionType();
+                UpdateUIBasedOnDataSourceType();
+                UpdateUIBasedOnFailureAction();
+
+                _hasUnsavedChanges = false;
+                Logger?.LogDebug("参数加载到界面完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载参数到界面失败");
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+        }
+
+        /// <summary>
+        /// 从界面保存到参数
+        /// </summary>
+        private void SaveFormToParameter()
+        {
+            if (_parameter == null) return;
+
+            try
+            {
+                // 基本信息
+                _parameter.DetectionName = txtDetectionName.Text?.Trim() ?? "";
+                //_parameter.Description = txtDescription.Text?.Trim() ?? "";
+                _parameter.Type = (DetectionType)(cmbDetectionType.SelectedValue ?? DetectionType.ValueRange);
+                //_parameter.Enabled = chkEnabled.Checked;
+
+                // 数据源
+                _parameter.DataSource ??= new DataSourceConfig();
+                _parameter.DataSource.SourceType = (DataSourceType)(cmbDataSourceType.SelectedValue ?? DataSourceType.Variable);
+                _parameter.DataSource.VariableName = CboVariableName.Text?.Trim() ?? "";
+                _parameter.DataSource.PlcConfig ??= new PlcAddressConfig();
+                _parameter.DataSource.PlcConfig.ModuleName = CboPlcModule.Text?.Trim() ?? "";
+                _parameter.DataSource.PlcConfig.Address = CboPlcAddress.Text?.Trim() ?? "";
+
+                // 检测条件
+                _parameter.Condition ??= new DetectionCondition();
+                _parameter.Condition.MinValue = (double)numMinValue.Value;
+                _parameter.Condition.MaxValue = (double)numMaxValue.Value;
+                _parameter.Condition.TargetValue = txtTargetValue.Text?.Trim() ?? "";
+                _parameter.Condition.ThresholdValue = (double)numThreshold.Value;
+                _parameter.Condition.Operator = (ComparisonOperator)(cmbOperator.SelectedValue ?? ComparisonOperator.GreaterThan);
+                _parameter.Condition.Tolerance = (double)numTolerance.Value;
+
+                // 超时和重试
+                _parameter.TimeoutMs = numTimeoutMs.Value;
+                _parameter.RetryCount = numRetryCount.Value;
+                _parameter.RetryIntervalMs = numRetryIntervalMs.Value;
+
+                // 结果处理
+                _parameter.ResultHandling ??= new ResultHandling();
+                _parameter.ResultHandling.SaveToVariable = chkSaveResult.Checked;
+                _parameter.ResultHandling.ResultVariableName = CboResultVariable.Text?.Trim() ?? "";
+                _parameter.ResultHandling.SaveValueToVariable = chkSaveValue.Checked;
+                _parameter.ResultHandling.ValueVariableName = CboValueVariable.Text?.Trim() ?? "";
+                _parameter.ResultHandling.OnFailure = (FailureAction)(cmbFailureAction.SelectedValue ?? FailureAction.Continue);
+                _parameter.ResultHandling.FailureStepIndex = numFailureStep.Value;
+                _parameter.ResultHandling.SuccessStepIndex = numSuccessStep.Value;
+                _parameter.ResultHandling.ShowResult = chkShowResult.Checked;
+
+                _hasUnsavedChanges = false;
+                Logger?.LogDebug("界面参数保存完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "保存界面参数失败");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region 验证方法
+
+        /// <summary>
+        /// 验证配置
+        /// </summary>
+        private void ValidateConfiguration()
+        {
+            try
+            {
+                var errors = new List<string>();
+
+                // 验证检测名称
+                if (string.IsNullOrWhiteSpace(txtDetectionName.Text))
+                {
+                    errors.Add("请输入检测名称");
+                }
+
+                // 验证数据源
+                if (cmbDataSourceType.SelectedValue != null)
+                {
+                    var sourceType = (DataSourceType)cmbDataSourceType.SelectedValue;
+                    if (sourceType == DataSourceType.Variable)
+                    {
+                        if (string.IsNullOrWhiteSpace(CboVariableName.Text))
+                        {
+                            errors.Add("请选择变量");
+                        }
+                    }
+                    else if (sourceType == DataSourceType.PLC)
+                    {
+                        if (string.IsNullOrWhiteSpace(CboPlcModule.Text))
+                        {
+                            errors.Add("请选择PLC模块");
+                        }
+                        if (string.IsNullOrWhiteSpace(CboPlcAddress.Text))
+                        {
+                            errors.Add("请选择PLC地址");
+                        }
+                    }
+                }
+
+                // 验证检测条件
+                if (cmbDetectionType.SelectedValue != null)
+                {
+                    var detectionType = (DetectionType)cmbDetectionType.SelectedValue;
+                    if (detectionType == DetectionType.ValueRange)
+                    {
+                        if (numMinValue.Value > numMaxValue.Value)
+                        {
+                            errors.Add("最小值不能大于最大值");
+                        }
+                    }
+                }
+
+                // 更新状态显示
+                if (errors.Count > 0)
+                {
+                    UpdateStatusText($"配置验证失败：{string.Join("; ", errors)}", true);
+                }
+                else
+                {
+                    UpdateStatusText("配置有效", false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "验证配置失败");
+            }
+        }
+
+        /// <summary>
+        /// 验证输入
+        /// </summary>
+        protected bool ValidateInput()
+        {
+            try
+            {
+                // 验证检测名称
+                if (string.IsNullOrWhiteSpace(txtDetectionName.Text))
+                {
+                    MessageHelper.MessageOK("请输入检测名称！", TType.Warn);
+                    txtDetectionName.Focus();
+                    return false;
+                }
+
+                // 验证数据源
+                if (cmbDataSourceType.SelectedValue != null)
+                {
+                    var sourceType = (DataSourceType)cmbDataSourceType.SelectedValue;
+                    if (sourceType == DataSourceType.Variable)
+                    {
+                        if (string.IsNullOrWhiteSpace(CboVariableName.Text))
+                        {
+                            MessageHelper.MessageOK("请选择要检测的变量！", TType.Warn);
+                            CboVariableName.Focus();
+                            return false;
+                        }
+                    }
+                    else if (sourceType == DataSourceType.PLC)
+                    {
+                        if (string.IsNullOrWhiteSpace(CboPlcModule.Text))
+                        {
+                            MessageHelper.MessageOK("请选择PLC模块！", TType.Warn);
+                            CboPlcModule.Focus();
+                            return false;
+                        }
+                        if (string.IsNullOrWhiteSpace(CboPlcAddress.Text))
+                        {
+                            MessageHelper.MessageOK("请选择PLC地址！", TType.Warn);
+                            CboPlcAddress.Focus();
+                            return false;
+                        }
+                    }
+                }
+
+                // 验证检测条件
+                if (cmbDetectionType.SelectedValue != null)
+                {
+                    var detectionType = (DetectionType)cmbDetectionType.SelectedValue;
+                    if (detectionType == DetectionType.ValueRange)
+                    {
+                        if (numMinValue.Value > numMaxValue.Value)
+                        {
+                            MessageHelper.MessageOK("最小值不能大于最大值！", TType.Warn);
+                            numMinValue.Focus();
+                            return false;
+                        }
+                    }
+                }
+
+                // 验证结果变量
+                if (chkSaveResult.Checked && string.IsNullOrWhiteSpace(CboResultVariable.Text))
+                {
+                    MessageHelper.MessageOK("启用了保存结果，但未选择结果变量！", TType.Warn);
+                    CboResultVariable.Focus();
+                    return false;
+                }
+
+                if (chkSaveValue.Checked && string.IsNullOrWhiteSpace(CboValueVariable.Text))
+                {
+                    MessageHelper.MessageOK("启用了保存值，但未选择值变量！", TType.Warn);
+                    CboValueVariable.Focus();
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "验证输入失败");
+                MessageHelper.MessageOK($"验证失败：{ex.Message}", TType.Error);
+                return false;
+            }
+        }
+
         #endregion
 
         #region IParameterForm<Parameter_Detection> 接口实现
+
         public void PopulateControls(Parameter_Detection parameter)
         {
             Parameter = parameter;
@@ -616,226 +1039,15 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 {
                     return JsonConvert.DeserializeObject<Parameter_Detection>(jsonStr);
                 }
-                catch (Exception ex)
+                catch (JsonException ex)
                 {
-                    Logger?.LogWarning(ex, "JSON参数转换失败，使用默认参数");
-                    return new Parameter_Detection();
+                    Logger?.LogWarning(ex, "JSON反序列化失败");
                 }
             }
 
             return new Parameter_Detection();
         }
+
         #endregion
-
-        #region 输入验证
-        /// <summary>
-        /// 验证输入
-        /// </summary>
-        private bool ValidateInput()
-        {
-            try
-            {
-                // 数据源验证
-                var sourceType = (DataSourceType)cmbDataSourceType.SelectedValue;
-                switch (sourceType)
-                {
-                    case DataSourceType.Variable:
-                        if (string.IsNullOrWhiteSpace(CboVariableName.Text))
-                        {
-                            MessageHelper.MessageOK("请选择变量名", TType.Warn);
-                            CboVariableName.Focus();
-                            return false;
-                        }
-                        break;
-
-                    case DataSourceType.PLC:
-                        if (string.IsNullOrWhiteSpace(CboPlcModule.Text))
-                        {
-                            MessageHelper.MessageOK("请选择PLC模块名", TType.Warn);
-                            CboPlcModule.Focus();
-                            return false;
-                        }
-                        if (string.IsNullOrWhiteSpace(CboPlcAddress.Text))
-                        {
-                            MessageHelper.MessageOK("请选择PLC地址", TType.Warn);
-                            CboPlcAddress.Focus();
-                            return false;
-                        }
-                        break;
-                }
-
-                // 检测条件验证
-                var detectionType = (DetectionType)cmbDetectionType.SelectedValue;
-                if (detectionType == DetectionType.ValueRange)
-                {
-                    if (numMinValue.Value >= numMaxValue.Value)
-                    {
-                        MessageHelper.MessageOK("最小值必须小于最大值", TType.Warn);
-                        numMinValue.Focus();
-                        return false;
-                    }
-                }
-
-                // 结果处理验证
-                if (chkSaveResult.Checked && string.IsNullOrWhiteSpace(CboResultVariable.Text))
-                {
-                    MessageHelper.MessageOK("保存结果时必须指定结果变量名", TType.Warn);
-                    CboResultVariable.Focus();
-                    return false;
-                }
-
-                if (chkSaveValue.Checked && string.IsNullOrWhiteSpace(CboValueVariable.Text))
-                {
-                    MessageHelper.MessageOK("保存检测值时必须指定值变量名", TType.Warn);
-                    CboValueVariable.Focus();
-                    return false;
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "参数验证时发生错误");
-                MessageHelper.MessageOK($"参数验证失败：{ex.Message}", TType.Error);
-                return false;
-            }
-        }
-        #endregion
-
-        #region 事件处理器
-        private async void CboPlcModule_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!IsLoading)
-            {
-                CboPlcAddress.Clear();
-                var selectedModule = CboPlcModule.Text;
-                var Modules = await PLCManager.GetModuleTagsAsync();
-                foreach (var M in Modules)
-                {
-                    if (M.Key == selectedModule)
-                        foreach (var addr in M.Value)
-                            CboPlcAddress.Items.Add(addr);
-                }
-            }
-        }
-
-        private void CmbDetectionType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!IsLoading)
-            {
-                UpdateFormLayout();
-            }
-        }
-
-        // 数据源触发事件
-        private void CmbDataSourceType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!IsLoading)
-            {
-                UpdateDataSourceLayout();
-            }
-        }
-
-        // 失败处理触发事件
-        private void CmbFailureAction_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!IsLoading)
-            {
-                UpdateFailureActionLayout();
-            }
-        }
-
-        // 保存按钮点击事件
-        private void BtnOK_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // 验证输入
-                if (!ValidateInput())
-                {
-                    return;
-                }
-
-                // 保存参数到流程中（使用基类方案）
-                SaveParameterToProcess();
-
-                // 如果保存成功，对话框会在基类的SaveParameters方法中关闭
-                DialogResult = DialogResult.OK;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "保存操作失败");
-                MessageHelper.MessageOK($"保存失败: {ex.Message}", TType.Error);
-            }
-        }
-
-        // 取消按钮点击事件
-        private void BtnCancel_Click(object sender, EventArgs e)
-        {
-            DialogResult = DialogResult.Cancel;
-            Close();
-        }
-
-        // 测试检测按钮点击事件
-        private async void BtnTestDetection_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                btnTestDetection.Enabled = false;
-                btnTestDetection.Text = "测试中...";
-
-                // 验证并保存当前配置到参数对象
-                if (!ValidateInput())
-                {
-                    return;
-                }
-
-                SaveFormToParameter();
-
-                // 执行测试检测
-                bool result = await TestDetection();
-
-                string message = result ? "检测测试成功！" : "检测测试失败！";
-                var messageType = result ? TType.Success : TType.Error;
-                MessageHelper.MessageOK(message, messageType);
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "测试检测失败");
-                MessageHelper.MessageOK($"测试失败: {ex.Message}", TType.Error);
-            }
-            finally
-            {
-                btnTestDetection.Enabled = true;
-                btnTestDetection.Text = "测试检测";
-            }
-        }
-        #endregion
-
-        #region 测试功能
-        /// <summary>
-        /// 测试检测功能
-        /// </summary>
-        private async Task<bool> TestDetection()
-        {
-            try
-            {
-                // 1. 通过Program.ServiceProvider获取DetectionMethods服务
-                var detectionMethods = Program.ServiceProvider?.GetService<DetectionMethods>();
-
-                // 2. 调用实际的检测方法
-                bool result = await detectionMethods.Detection(_parameter);
-
-                // 3. 记录日志和性能指标
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "检测测试执行失败");
-                throw new Exception($"检测测试失败: {ex.Message}", ex);
-            }
-        }
-        #endregion
-
     }
 }

@@ -140,7 +140,7 @@ namespace MainUI.LogicalConfiguration.Parameter
         /// <summary>
         /// 数据类型
         /// </summary>
-        //public string DataType { get; set; } = "Float";
+        public string DataType { get; set; } = "Float";
 
         /// <summary>
         /// 转换为PLC读取项（用于读取操作）
