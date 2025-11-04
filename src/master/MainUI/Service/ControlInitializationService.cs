@@ -108,6 +108,8 @@
                 container.Controls["btnWorkmanshipForms"] as AntdUI.Button);
             controls.NavigationButtons.Add(1, 
                 container.Controls["btnReportForms"] as AntdUI.Button);
+            controls.NavigationButtons.Add(2,
+                container.Controls["btnTestDetails"] as AntdUI.Button);
         }
     }
 }

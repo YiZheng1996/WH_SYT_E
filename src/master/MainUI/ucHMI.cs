@@ -1,6 +1,8 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration;
+using MainUI.Procedure.Controls;
 using MainUI.Service;
-using Sunny.UI;
+using Microsoft.Extensions.Logging;
 using Label = System.Windows.Forms.Label;
 
 namespace MainUI
@@ -25,13 +27,16 @@ namespace MainUI
         private readonly TableService _tableService;
         private readonly CountdownService _countdownService;
 
+        // 添加依赖注入的字段
+        private readonly WorkflowExecutionService _workflowService;
+        private readonly Microsoft.Extensions.Logging.ILogger _logger;
+        private UcTestDetails ucTestDetails;// 试验详情控件
+        private Dictionary<int, StepStatusControl> stepControls = []; // 步骤状态字典
         #endregion
-
-        /// <summary>
-        /// 实例化服务控件
-        /// </summary>
-        public UcHMI()
+        public UcHMI(WorkflowExecutionService workflowService, ILogger<UcHMI> logger)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _workflowService = workflowService;
             InitializeComponent();
             _opcEventRegistration = new OPCEventRegistration(this);
             reportPath = Path.Combine(Application.StartupPath, Constants.ReportsPath);
@@ -39,7 +44,134 @@ namespace MainUI
             _tableService = new TableService(TableItemPoint, _itemPoints);
             _countdownService = new CountdownService(LabTestTime);
             _controlInitService = new ControlInitializationService(controls);
+
+            if (_workflowService != null)
+            {
+                // 订阅工作流服务的事件
+                _workflowService.ProgressMessage += OnWorkflowProgressMessage;
+                _workflowService.ErrorOccurred += OnWorkflowError;
+                _workflowService.ConfigurationLoaded += OnConfigurationLoaded;
+                _workflowService.WorkflowStarted += OnWorkflowStarted;
+                _workflowService.WorkflowCompleted += OnWorkflowCompleted;
+                _workflowService.StepStatusChanged += OnWorkflowStepStatusChanged;
+            }
         }
+
+        #region 工作流事件处理
+        /// <summary>
+        /// 工作流进度消息处理
+        /// </summary>
+        private void OnWorkflowProgressMessage(string message)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string>(OnWorkflowProgressMessage), message);
+                return;
+            }
+            AppendText(message);
+        }
+
+        /// <summary>
+        /// 工作流错误处理
+        /// </summary>
+        private void OnWorkflowError(string message, Exception ex)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string, Exception>(OnWorkflowError), message, ex);
+                return;
+            }
+            AppendText($"✗ {message}: {ex.Message}");
+            NlogHelper.Default.Error(message, ex);
+        }
+
+        /// <summary>
+        /// 配置加载完成处理
+        /// </summary>
+        private void OnConfigurationLoaded(int configCount, int totalSteps)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<int, int>(OnConfigurationLoaded), configCount, totalSteps);
+                return;
+            }
+            // 可以在这里更新UI，比如显示已加载的配置数量
+        }
+
+        /// <summary>
+        /// 工作流开始事件
+        /// </summary>
+        private void OnWorkflowStarted(string itemName, int stepCount)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string, int>(OnWorkflowStarted), itemName, stepCount);
+                return;
+            }
+
+            try
+            {
+                // 获取步骤列表
+                var steps = _workflowService.GetConfiguration(itemName);
+                if (steps != null)
+                {
+                    // 更新试验详情显示
+                    ucTestDetails.StartTest(itemName, steps);
+
+                    // 自动切换到试验详情页面
+                    tabs1.SelectedIndex = 2;
+                    NavigationButtonStyles.UpdateNavigationButtons(2, controls);
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("处理工作流开始事件失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 工作流完成事件
+        /// </summary>
+        private void OnWorkflowCompleted(string itemName, bool success)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string, bool>(OnWorkflowCompleted), itemName, success);
+                return;
+            }
+
+            try
+            {
+                ucTestDetails.TestCompleted(success);
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("处理工作流完成事件失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 步骤状态变化事件（更新）
+        /// </summary>
+        private void OnWorkflowStepStatusChanged(ChildModel step, int stepIndex)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<ChildModel, int>(OnWorkflowStepStatusChanged), step, stepIndex);
+                return;
+            }
+
+            try
+            {
+                // 更新试验详情显示
+                ucTestDetails.UpdateStepStatus(stepIndex, step);
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("处理步骤状态变化失败", ex);
+            }
+        }
+        #endregion
 
         #region 初始化
         public void Init()
@@ -54,6 +186,7 @@ namespace MainUI
                 InitializePermissions(); //初始化权限
                 InitializeProcessInterface(); //加载工艺界面
                 EnsureFrmHandleCreated(); //确保主窗体句柄已创建
+                InitializeTestDetailsPage();
 
             }
             catch (Exception ex)
@@ -61,6 +194,33 @@ namespace MainUI
                 MessageBox.Show(ex.Message, "系统提示", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        /// <summary>
+        /// 初始化试验详情页面
+        /// </summary>
+        private void InitializeTestDetailsPage()
+        {
+            try
+            {
+                // 创建试验详情控件
+                ucTestDetails = new UcTestDetails
+                {
+                    Dock = DockStyle.Fill
+                };
+
+                // 添加到 tabs1 的第3个页面（索引2）
+                // 确保 tabs1.TabPages 中已有 tabPageTestDetails
+                if (tabs1.Pages.Count > 2)
+                {
+                    tabs1.Pages[2].Controls.Add(ucTestDetails);
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("初始化试验详情页面失败", ex);
+            }
+        }
+
 
         /// <summary>
         /// 加载工艺界面
@@ -378,12 +538,20 @@ namespace MainUI
         }
 
         //刷新型号
-        public void ParaRefresh()
+        public async void ParaRefresh()
         {
             try
             {
                 if (string.IsNullOrEmpty(txtModel.Text)) return;
+                // 加载参数
                 InitParaConfig();
+                // 加载工作流配置
+                if (_workflowService != null)
+                {
+                    await _workflowService.LoadConfigurationsAsync(
+                        VarHelper.TestViewModel.ModelTypeName,
+                        VarHelper.TestViewModel.ModelName);
+                }
             }
             catch (Exception ex)
             {
@@ -410,181 +578,76 @@ namespace MainUI
                 Disable(true);
                 TestStateChanged?.Invoke(true, true);
 
-                // 3. 初始化取消计时器令牌
+                // 3. 初始化取消令牌
                 _cancellationTokenSource = new CancellationTokenSource();
 
-                // 4. 正计时（不知道要运行多久，从0开始计时）
+                // 4. 启动计时器
                 _ = _countdownService.StartCountup(_cancellationTokenSource.Token);
 
-                // 5. 开始测试
-                await Task.Factory.StartNew(() => BackgroundWorker(_cancellationTokenSource),
-                   _cancellationTokenSource.Token,
-                   TaskCreationOptions.LongRunning,
-                   TaskScheduler.Default);
-            }
-            catch (TaskCanceledException ex)
-            {
-                Debug.WriteLine($"试验已取消：{ex.Message}");
-            }
-            catch (OperationCanceledException ex)
-            {
-                Debug.WriteLine($"试验已取消: {ex}");
+                // 5. 获取要执行的测试项
+                var checkedItems = GetCheckedTestItemNames();
+
+                // 6. 批量执行工作流（只需一行）
+                if (_workflowService != null && checkedItems.Count > 0)
+                {
+                    var results = await _workflowService.ExecuteMultipleWorkflowsAsync(
+                        checkedItems,
+                        VarHelper.TestViewModel.ModelTypeName,
+                        VarHelper.TestViewModel.ModelName);
+
+                    // 显示执行结果摘要
+                    int successCount = results.Count(r => r.Value);
+                    AppendText($"\n========== 执行完成: {successCount}/{results.Count} 成功 ==========");
+                }
             }
             catch (Exception ex)
             {
+                _logger.LogError($"测试执行错误：{ex.Message}", ex);
                 MessageHelper.MessageOK($"试验开始错误：{ex.Message}");
-            }
-        }
-
-        // 试验项点启动
-        private async void BackgroundWorker(CancellationTokenSource source)
-        {
-            try
-            {
-                _itemPoints.ForEach(i => { i.ColorState = 0; });
-                TableItemPoint.Invalidate(); // 刷新表格显示
-
-                // 动态初始化所有项点类
-                DicTestItems = CreateDynamicTestItemsAsync();
-
-                if (DicTestItems.Count == 0)
-                {
-                    NlogHelper.Default.Debug("未找到可执行的测试项");
-                    return;
-                }
-
-                // 在测试开始前调用一次全局初始化
-                GeneralBaseTest.GlobalInit();
-
-                NlogHelper.Default.Debug($"已加载 {DicTestItems.Count} 个测试项");
-
-                // 根据Key找到对应的测试项并执行
-                foreach (var item in _itemPoints.Where(p => p.Check))
-                {
-                    if (source.IsCancellationRequested)
-                    {
-                        NlogHelper.Default.Debug("测试被取消");
-                        break;
-                    }
-
-                    var taskInfo = DicTestItems.Keys.FirstOrDefault(t => t.TaskName == item.ItemName);
-                    if (taskInfo != null && DicTestItems.TryGetValue(taskInfo, out var test))
-                    {
-                        try
-                        {
-                            TableColor(item, 1); // 将当前项点设置为黄色(1 = 执行中)
-                            NlogHelper.Default.Debug($"开始执行：{item.ItemName}");
-
-                            bool result = await test.Execute(taskInfo.CancellationTokenSource.Token);
-
-                            TableColor(item, result ? 2 : 3); // 设置为成功或失败状态
-                            NlogHelper.Default.Debug($"完成执行：{item.ItemName} - {(result ? "成功" : "失败")}");
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            TableColor(item, 3); // 设置为取消状态
-                            NlogHelper.Default.Debug($"测试项被取消：{item.ItemName}");
-                        }
-                        catch (Exception ex)
-                        {
-                            TableColor(item, 3); // 设置为错误状态
-                            NlogHelper.Default.Debug($"测试项执行错误：{item.ItemName} - {ex.Message}");
-                            NlogHelper.Default.Error($"测试项执行错误：{item.ItemName}", ex);
-                        }
-                    }
-                    else
-                    {
-                        NlogHelper.Default.Debug($"未找到测试项实现：{item.ItemName}");
-                        TableColor(item, 3); // 设置为错误状态
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("测试执行发生错误", ex);
             }
             finally
             {
-                // 测试结束后调用全局清理
-                GeneralBaseTest.GlobalCleanup();
+                // 结束测试
                 IsTestEnd();
             }
         }
 
         /// <summary>
-        /// 根据TestProcessModel动态创建测试项字典
+        /// 获取选中的测试项名称列表
         /// </summary>
-        /// <returns></returns>
-        private Dictionary<TaskInfo, BaseTest> CreateDynamicTestItemsAsync()
+        private List<string> GetCheckedTestItemNames()
         {
-            var testItems = new Dictionary<TaskInfo, BaseTest>();
+            var items = new List<string>();
 
             try
             {
-                // 获取当前选中的测试步骤
-                TestStepBLL stepBLL = new();
-                var testSteps = stepBLL.GetTestItems(VarHelper.TestViewModel.ID);
-
-                if (testSteps?.Count == 0)
+                // 从数据源 _itemPoints 中筛选选中的项
+                foreach (var itemPoint in _itemPoints)
                 {
-                    NlogHelper.Default.Debug("未配置测试步骤");
-                    return testItems;
-                }
-
-                foreach (var step in testSteps.Where(s => s.IsVisible))
-                {
-                    try
+                    if (itemPoint.Check) // Check 属性表示是否选中
                     {
-                        // 获取对应的TestProcess信息
-                        TestProcessBLL processBLL = new();
-                        var processModel = TestProcessBLL.GetTestProcess()
-                            .FirstOrDefault(p => p.ID == step.TestProcessID);
-
-                        if (processModel == null)
+                        if (!string.IsNullOrEmpty(itemPoint.ItemName))
                         {
-                            NlogHelper.Default.Debug($"未找到测试流程：{step.TestProcessName}");
-                            continue;
+                            items.Add(itemPoint.ItemName);
                         }
-
-                        if (string.IsNullOrEmpty(processModel.EntityClassName))
-                        {
-                            NlogHelper.Default.Debug($"测试流程 {processModel.ProcessName} 未配置实体类名");
-                            continue;
-                        }
-
-                        // 检查测试类型是否已注册
-                        if (!TestFactory.IsTestTypeRegistered(processModel.EntityClassName))
-                        {
-                            NlogHelper.Default.Debug($"未注册的测试类型：{processModel.EntityClassName}");
-                            continue;
-                        }
-
-                        // 创建TaskInfo
-                        var taskInfo = new TaskInfo
-                        {
-                            TaskName = processModel.ProcessName,
-                            CancellationTokenSource = new CancellationTokenSource()
-                        };
-
-                        // 动态创建测试实例
-                        var testInstance = TestFactory.CreateTest(processModel.EntityClassName);
-
-                        testItems.Add(taskInfo, testInstance);
-                        NlogHelper.Default.Debug($"已加载测试项：{processModel.ProcessName} -> {processModel.EntityClassName}");
-                    }
-                    catch (Exception ex)
-                    {
-                        NlogHelper.Default.Debug($"创建测试项失败：{step.TestProcessName} - {ex.Message}");
-                        NlogHelper.Default.Error($"创建测试项失败：{step.TestProcessName}", ex);
                     }
                 }
+
+                _logger?.LogInformation("找到 {Count} 个选中的测试项", items.Count);
+
+                if (items.Count == 0)
+                {
+                    _logger?.LogWarning("没有选中任何测试项");
+                }
+
+                return items;
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error("加载测试配置失败", ex);
+                _logger?.LogError(ex, "获取选中测试项失败");
+                NlogHelper.Default.Error("获取选中测试项失败", ex);
+                return [];
             }
-
-            return testItems;
         }
 
         /// <summary>
@@ -596,28 +659,6 @@ namespace MainUI
         {
             itemPoint.ColorState = state;
             TableItemPoint.Invalidate();
-        }
-
-        // 取消DicTestItems中所有测试任务
-        private void CancelAllTestTasksAsync()
-        {
-            try
-            {
-                Task.Run(() =>
-                {
-                    foreach (var item in DicTestItems)
-                    {
-                        item.Key.CancellationTokenSource.Cancel();
-                        item.Key.CancellationTokenSource.Dispose();
-                        Debug.WriteLine($"Task {item.Key.TaskName} 已停止并释放资源（立即取消）");
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error($"Task释放资源错误：{ex}");
-                MessageHelper.MessageOK($"Task释放资源错误：{ex.Message}");
-            }
         }
 
         private void btnStopTest_Click(object sender, EventArgs e) => IsTestEnd();
@@ -651,7 +692,8 @@ namespace MainUI
                 Disable(false);
                 AppendText("试验结束");
                 TestStateChanged?.Invoke(false, false);
-                CancelAllTestTasksAsync();
+                // 停止工作流执行
+                _workflowService?.StopExecution();
                 _countdownService.StopCountdown();
                 _cancellationTokenSource.Cancel();
             }
@@ -674,7 +716,7 @@ namespace MainUI
             {
                 var btn = sender as UIButton;
                 using frmSetOutValue fs = new(OPCHelper.TestCongrp[btn.Tag.ToInt32()].ToDouble(), btn.Text, 10000);
-                VarHelper.ShowDialogWithOverlay(frm, fs);   
+                VarHelper.ShowDialogWithOverlay(frm, fs);
                 if (fs.DialogResult == DialogResult.OK)
                 {
                     ControlHelper.ButtonClickAsync(sender, () =>
@@ -828,6 +870,16 @@ namespace MainUI
             tabs1.SelectedIndex = 1;
             NavigationButtonStyles.UpdateNavigationButtons
                 (tabs1.SelectedIndex, controls);
+        }
+
+        /// <summary>
+        /// 试验详情按钮点击事件
+        /// </summary>
+        private void btnTestDetails_Click(object sender, EventArgs e)
+        {
+            tabs1.SelectedIndex = 2; // 切换到试验详情页面
+            NavigationButtonStyles.UpdateNavigationButtons(
+                tabs1.SelectedIndex, controls);
         }
 
         private void btnProductSelection_Click(object sender, EventArgs e)

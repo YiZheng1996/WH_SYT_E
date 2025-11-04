@@ -1,4 +1,9 @@
-﻿using MainUI.Service;
+﻿using MainUI.LogicalConfiguration;
+using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Services;
+using MainUI.Service;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 
 namespace MainUI;
@@ -70,11 +75,28 @@ public partial class frmMainMenu : Form
     /// </summary>
     private void InitializeComponents()
     {
-        _hmi = new UcHMI { Dock = DockStyle.Fill };
-        InitializeEvents(); // 确保在变量初始化完成后再订阅事件
-        _hmi.Init();
-        _hardWare = new frmHardWare();
-        _opcStatus = OPCHelper.opcStatus;
+        if (!DesignMode) // 设计模式下不加载
+        {
+            try
+            {
+                var _workflowService = Program.ServiceProvider?.GetService<WorkflowExecutionService>();
+                var _logger = Program.ServiceProvider?.GetService<ILogger<UcHMI>>();
+                if (_workflowService == null)
+                {
+                    // 如果获取不到服务，记录警告但不影响其他功能
+                    Debug.WriteLine("警告：无法获取工作流服务，工作流执行功能将不可用");
+                }
+                _hmi = new UcHMI(_workflowService, _logger) { Dock = DockStyle.Fill };
+                InitializeEvents(); // 确保在变量初始化完成后再订阅事件
+                _hmi.Init();
+                _hardWare = new frmHardWare();
+                _opcStatus = OPCHelper.opcStatus;
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.MessageOK(this, $"获取工作流服务失败: {ex.Message}");
+            }
+        }
     }
 
     /// <summary>

@@ -247,6 +247,7 @@ namespace MainUI
             services.AddTransient<frmMainMenu>();// 主窗体
             services.AddSingleton<IFormService, FormService>();// 窗体集合管理类
             services.AddTransient<DataGridViewManager>(); // UI管理器
+            services.AddSingleton<WorkflowExecutionService>(); // 工作流执行服务
 
             // 日志服务
             services.AddLogging(builder =>

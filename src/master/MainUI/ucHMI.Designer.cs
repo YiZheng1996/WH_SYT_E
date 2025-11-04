@@ -80,6 +80,8 @@ namespace MainUI
             tabPage3 = new AntdUI.TabPage();
             grpRainy = new UIPanel();
             tabs1 = new Tabs();
+            tabPageTestDetails = new AntdUI.TabPage();
+            btnTestDetails = new AntdUI.Button();
             uiTitlePanel3.SuspendLayout();
             uiTitlePanel8.SuspendLayout();
             uiTitlePanel4.SuspendLayout();
@@ -578,7 +580,7 @@ namespace MainUI
             btnReportForms.BorderWidth = 1F;
             btnReportForms.Font = new Font("微软雅黑", 12.5F, FontStyle.Bold);
             btnReportForms.ForeColor = Color.White;
-            btnReportForms.JoinMode = TJoinMode.Right;
+            btnReportForms.JoinMode = TJoinMode.LR;
             btnReportForms.Location = new Point(382, 0);
             btnReportForms.Name = "btnReportForms";
             btnReportForms.Size = new Size(124, 35);
@@ -988,20 +990,49 @@ namespace MainUI
             tabs1.BackColor = Color.FromArgb(236, 236, 237);
             tabs1.Controls.Add(tabPage3);
             tabs1.Controls.Add(tabPage1);
+            tabs1.Controls.Add(tabPageTestDetails);
             tabs1.Location = new Point(257, 33);
             tabs1.Name = "tabs1";
             tabs1.Pages.Add(tabPage3);
             tabs1.Pages.Add(tabPage1);
+            tabs1.Pages.Add(tabPageTestDetails);
             tabs1.ScrollForeHover = SystemColors.ActiveBorder;
             tabs1.Size = new Size(900, 856);
             tabs1.Style = styleLine1;
             tabs1.TabIndex = 405;
             tabs1.TabMenuVisible = false;
             // 
+            // tabPageTestDetails
+            // 
+            tabPageTestDetails.Dock = DockStyle.Fill;
+            tabPageTestDetails.Location = new Point(0, 0);
+            tabPageTestDetails.Name = "tabPageTestDetails";
+            tabPageTestDetails.Size = new Size(900, 856);
+            tabPageTestDetails.TabIndex = 2;
+            tabPageTestDetails.Text = "tabPage2";
+            // 
+            // btnTestDetails
+            // 
+            btnTestDetails.BackActive = Color.FromArgb(196, 199, 204);
+            btnTestDetails.BackColor = Color.FromArgb(196, 199, 204);
+            btnTestDetails.BorderWidth = 1F;
+            btnTestDetails.Font = new Font("微软雅黑", 12.5F, FontStyle.Bold);
+            btnTestDetails.ForeColor = Color.White;
+            btnTestDetails.JoinMode = TJoinMode.Right;
+            btnTestDetails.Location = new Point(507, 0);
+            btnTestDetails.Name = "btnTestDetails";
+            btnTestDetails.Size = new Size(124, 35);
+            btnTestDetails.TabIndex = 495;
+            btnTestDetails.Text = "试验详情";
+            btnTestDetails.Type = TTypeMini.Primary;
+            btnTestDetails.WaveSize = 1;
+            btnTestDetails.Click += btnTestDetails_Click;
+            // 
             // UcHMI
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 236);
+            Controls.Add(btnTestDetails);
             Controls.Add(panelHand);
             Controls.Add(uiTitlePanel4);
             Controls.Add(tabs1);
@@ -1074,5 +1105,7 @@ namespace MainUI
         private UITextBox uiTextBox5;
         private UILabel uiLabel1;
         private UITextBox uiTextBox6;
+        private AntdUI.TabPage tabPageTestDetails;
+        private AntdUI.Button btnTestDetails;
     }
 }
