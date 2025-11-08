@@ -187,7 +187,6 @@ namespace MainUI
                 InitializeProcessInterface(); //加载工艺界面
                 EnsureFrmHandleCreated(); //确保主窗体句柄已创建
                 InitializeTestDetailsPage();
-
             }
             catch (Exception ex)
             {
