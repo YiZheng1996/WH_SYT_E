@@ -1,10 +1,12 @@
 ﻿using MainUI.LogicalConfiguration;
+using System.Net.NetworkInformation;
 
 namespace MainUI.Procedure.Controls
 {
     /// <summary>
     /// 试验详情用户控件
     /// 用于显示工作流执行的实时状态和详细信息
+    /// 支持步骤参数和结果的详细展示
     /// </summary>
     public partial class UcTestDetails : UserControl
     {
@@ -16,6 +18,12 @@ namespace MainUI.Procedure.Controls
         // 测试开始时间
         private DateTime testStartTime;
 
+        // 步骤开始时间字典
+        private Dictionary<int, DateTime> _stepStartTimes = [];
+
+        // 步骤数据字典（保存完整的步骤信息）
+        private Dictionary<int, ChildModel> _stepDataDict = [];
+
         #endregion
 
         #region 构造函数
@@ -25,7 +33,6 @@ namespace MainUI.Procedure.Controls
             InitializeComponent();
             InitializeTimer();
         }
-
 
         /// <summary>
         /// 初始化定时器
@@ -38,7 +45,6 @@ namespace MainUI.Procedure.Controls
             };
             updateTimer.Tick += UpdateTimer_Tick;
         }
-
 
         #endregion
 
@@ -64,36 +70,24 @@ namespace MainUI.Procedure.Controls
                 lblTestStatus.Text = "▶ 执行中";
                 lblTestStatus.ForeColor = Color.FromArgb(24, 144, 255);
                 lblElapsedTime.Text = "⏱ 已用时间: 00:00:00";
-                lblCurrentStep.Text = "📍 当前步骤: 准备中...";
+                lblCurrentStep.Text = "  当前步骤: 准备中...";
                 progressBar.Value = 0;
 
                 // 清空并创建步骤控件
                 _stepControls.Clear();
+                _stepStartTimes.Clear();
+                _stepDataDict.Clear();
                 panelStepList.Controls.Clear();
 
-                int yPosition = 0;
+                // 创建步骤控件
                 for (int i = 0; i < steps.Count; i++)
                 {
-                    var stepControl = new StepStatusControl
-                    {
-                        StepNumber = i + 1,
-                        StepName = steps[i].StepName,
-                        StepDescription = GetStepDescription(steps[i]),
-                        Status = StepStatus.Pending,
-                        Location = new Point(0, yPosition),
-                        Size = new Size(820, 90),
-                        Anchor = AnchorStyles.Left | AnchorStyles.Top
-                    };
+                    var stepControl = new StepStatusControl(i + 1, steps[i].StepName);
 
                     panelStepList.Controls.Add(stepControl);
                     _stepControls[i] = stepControl;
-
-                    yPosition += 100; // 步骤间距
+                    _stepDataDict[i] = steps[i]; // 保存步骤数据
                 }
-
-                // 调整容器高度以容纳所有步骤
-                //panelStepList.Height = yPosition;
-                panelStepList.Width = 670;
 
                 // 重置并启动定时器
                 testStartTime = DateTime.Now;
@@ -122,40 +116,56 @@ namespace MainUI.Procedure.Controls
             {
                 if (_stepControls.TryGetValue(stepIndex, out var stepControl))
                 {
-                    // 更新步骤状态
+                    // 更新步骤数据
+                    _stepDataDict[stepIndex] = step;
+
+                    // 根据 step.Status 更新步骤状态
                     // Status 值: 0=待执行, 1=执行中, 2=成功, 3=失败
-                    var newStatus = step.Status switch
-                    {
-                        1 => StepStatus.Running,
-                        2 => StepStatus.Success,
-                        3 => StepStatus.Failed,
-                        _ => StepStatus.Pending
-                    };
+                    string statusText;
+                    string message = "";
 
-                    // 如果状态从其他变为 Running，记录开始时间
-                    if (newStatus == StepStatus.Running && stepControl.Status != StepStatus.Running)
+                    switch (step.Status)
                     {
-                        stepControl.StartTime = DateTime.Now;
-                    }
-                    // 如果状态从 Running 变为完成/失败，记录结束时间并计算耗时
-                    else if (stepControl.Status == StepStatus.Running &&
-                            (newStatus == StepStatus.Success || newStatus == StepStatus.Failed))
-                    {
-                        stepControl.EndTime = DateTime.Now;
+                        case 0:
+                            statusText = "waiting";
+                            break;
+
+                        case 1:
+                            statusText = "running";
+                            message = GetStepRunningMessage(step);
+
+                            // 记录开始时间
+                            if (!_stepStartTimes.ContainsKey(stepIndex))
+                            {
+                                _stepStartTimes[stepIndex] = DateTime.Now;
+                            }
+                            break;
+
+                        case 2:
+                            statusText = "success";
+                            break;
+
+                        case 3:
+                            statusText = "failed";
+                            message = GetStepErrorMessage(step);
+                            break;
+
+                        default:
+                            statusText = "waiting";
+                            break;
                     }
 
-                    stepControl.Status = newStatus;
+                    // 更新步骤控件状态（传递完整的步骤数据以显示详情）
+                    stepControl.UpdateStatus(statusText, message, step);
 
                     // 更新当前步骤显示
                     if (step.Status == 1) // 执行中
                     {
-                        lblCurrentStep.Text = $"📍 当前步骤: [{stepIndex + 1}/{_stepControls.Count}] {step.StepName}";
+                        lblCurrentStep.Text = $"  当前步骤: [{stepIndex + 1}/{_stepControls.Count}] {step.StepName}";
                     }
 
                     // 更新进度条
-                    int completedSteps = _stepControls.Values.Count(s =>
-                        s.Status == StepStatus.Success || s.Status == StepStatus.Failed);
-                    progressBar.Value = (int)((double)completedSteps / _stepControls.Count * 100);
+                    UpdateProgressBar();
                 }
             }
             catch (Exception ex)
@@ -180,13 +190,12 @@ namespace MainUI.Procedure.Controls
             {
                 updateTimer.Stop();
 
-                lblTestStatus.Text = success
-                    ? "✓ 测试完成" : "✗ 测试失败";
+                lblTestStatus.Text = success ? "✓ 测试完成" : "✕ 测试失败";
                 lblTestStatus.ForeColor = success
-                    ? Color.FromArgb(82, 196, 26)
-                    : Color.FromArgb(245, 63, 63);
+                    ? Color.FromArgb(82, 196, 26)   // 成功绿
+                    : Color.FromArgb(231, 54, 36);   // 失败红
 
-                lblCurrentStep.Text = success ? "📍 所有步骤已完成" : "📍 测试中断";
+                lblCurrentStep.Text = success ? "  所有步骤已完成" : "  测试中断";
                 progressBar.Value = 100;
             }
             catch (Exception ex)
@@ -210,14 +219,16 @@ namespace MainUI.Procedure.Controls
             {
                 updateTimer.Stop();
 
-                lblCurrentTest.Text = "当前测试项:未开始";
-                lblTestStatus.Text = "⏸ 待机";
-                lblTestStatus.ForeColor = Color.FromArgb(82, 86, 89);
+                lblCurrentTest.Text = "当前测试项: 未开始";
+                lblTestStatus.Text = "● 待机中";
+                lblTestStatus.ForeColor = Color.FromArgb(196, 199, 204);  // 等待灰
                 lblElapsedTime.Text = "⏱ 已用时间: 00:00:00";
-                lblCurrentStep.Text = "📍 当前步骤: 等待开始...";
+                lblCurrentStep.Text = "  当前步骤: 等待开始...";
                 progressBar.Value = 0;
 
                 _stepControls.Clear();
+                _stepStartTimes.Clear();
+                _stepDataDict.Clear();
                 panelStepList.Controls.Clear();
 
                 testStartTime = DateTime.MinValue;
@@ -242,8 +253,31 @@ namespace MainUI.Procedure.Controls
                 if (testStartTime == DateTime.MinValue)
                     testStartTime = DateTime.Now;
 
+                // 更新总时间
                 TimeSpan elapsed = DateTime.Now - testStartTime;
                 lblElapsedTime.Text = $"⏱ 已用时间: {elapsed:hh\\:mm\\:ss}";
+
+                // 更新正在执行步骤的时间
+                foreach (var kvp in _stepStartTimes.ToList())
+                {
+                    int stepIndex = kvp.Key;
+
+                    // 检查步骤是否仍在执行中
+                    if (_stepDataDict.TryGetValue(stepIndex, out var stepData) && stepData.Status == 1)
+                    {
+                        if (_stepControls.TryGetValue(stepIndex, out var stepControl))
+                        {
+                            TimeSpan stepElapsed = DateTime.Now - kvp.Value;
+                            stepControl.UpdateTime(stepElapsed);
+
+                            // 如果是延时步骤，更新进度
+                            if (stepData.StepName == "延时等待")
+                            {
+                                UpdateDelayProgress(stepControl, stepData, stepElapsed);
+                            }
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -256,37 +290,112 @@ namespace MainUI.Procedure.Controls
         #region 私有方法 - 辅助功能
 
         /// <summary>
-        /// 获取步骤描述信息
+        /// 更新进度条
         /// </summary>
-        /// <param name="step">步骤模型</param>
-        /// <returns>步骤描述文字</returns>
-        private string GetStepDescription(ChildModel step)
+        private void UpdateProgressBar()
         {
             try
             {
-                // 根据步骤类型返回不同的描述
-                if (step.StepParameter != null)
+                int completedSteps = 0;
+
+                foreach (var kvp in _stepDataDict)
                 {
-                    return step.StepName switch
+                    var stepData = kvp.Value;
+                    // 状态为2(成功)或3(失败)都算完成
+                    if (stepData.Status == 2 || stepData.Status == 3)
                     {
-                        "延时等待" => "暂停执行,等待指定时间",
-                        "消息通知" => "显示消息提示框",
-                        "变量定义" => "定义全局变量",
-                        "试验参数" => "定义试验参数",
-                        "变量赋值" => "为变量赋值",
-                        "读取PLC" => "从PLC读取数据",
-                        "写入PLC" => "向PLC写入数据",
-                        "条件判断" => "根据条件决定流程",
-                        "读取单元格" => "读取报表单元格数据",
-                        "写入单元格" => "写入数据到报表单元格",
-                        _ => "执行自定义操作"
-                    };
+                        completedSteps++;
+                    }
                 }
-                return "正在执行...";
+
+                if (_stepControls.Count > 0)
+                {
+                    progressBar.Value = (int)((double)completedSteps / _stepControls.Count * 100);
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("更新进度条失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 获取步骤执行中的消息
+        /// </summary>
+        private string GetStepRunningMessage(ChildModel step)
+        {
+            try
+            {
+                return step.StepName switch
+                {
+                    "延时等待" => "等待中...",
+                    "读取PLC" => "正在从PLC读取数据...",
+                    "写入PLC" => "正在向PLC写入数据...",
+                    "变量赋值" => "正在计算表达式...",
+                    "条件判断" => "正在评估条件...",
+                    "消息通知" => "等待用户确认...",
+                    "读取单元格" => "正在读取报表数据...",
+                    "写入单元格" => "正在写入报表数据...",
+                    _ => "执行中..."
+                };
             }
             catch
             {
-                return "";
+                return "执行中...";
+            }
+        }
+
+        /// <summary>
+        /// 获取步骤错误消息
+        /// </summary>
+        private string GetStepErrorMessage(ChildModel step)
+        {
+            try
+            {
+                // 这里可以从 step 中获取实际的错误信息
+                // 如果有 ErrorMessage 字段可以使用
+                return "执行失败";
+            }
+            catch
+            {
+                return "执行失败";
+            }
+        }
+
+        /// <summary>
+        /// 更新延时步骤的进度
+        /// </summary>
+        private void UpdateDelayProgress(StepStatusControl stepControl, ChildModel stepData, TimeSpan elapsed)
+        {
+            try
+            {
+                // 从步骤参数中获取延时时长
+                // 这里需要根据实际的参数结构来解析
+                int totalSeconds = 30; // 默认30秒
+
+                // 尝试解析参数
+                if (stepData.StepParameter != null)
+                {
+                    string paramStr = stepData.StepParameter.ToString();
+                    // 这里应该根据实际的参数格式来解析
+                    // 示例：假设参数中有 DelayTime 字段
+
+                    // 简化处理：如果能解析出数字就使用，否则使用默认值
+                    if (int.TryParse(paramStr, out int parsedValue))
+                    {
+                        totalSeconds = parsedValue;
+                    }
+                }
+
+                int currentSeconds = (int)elapsed.TotalSeconds;
+                if (currentSeconds <= totalSeconds)
+                {
+                    stepControl.UpdateProgress(currentSeconds, totalSeconds);
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("更新延时进度失败", ex);
             }
         }
 
