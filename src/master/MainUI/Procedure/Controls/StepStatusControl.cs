@@ -30,21 +30,21 @@ namespace MainUI.Procedure.Controls
         // 状态颜色定义
         private static class StatusColors
         {
-            public static readonly Color Waiting = Color.FromArgb(196, 199, 204);
-            public static readonly Color Running = Color.FromArgb(24, 144, 255);
-            public static readonly Color Success = Color.FromArgb(82, 196, 26);
-            public static readonly Color Failed = Color.FromArgb(231, 54, 36);
-            public static readonly Color Skipped = Color.FromArgb(250, 173, 20);
+            public static readonly Color Waiting = ColorTranslator.FromHtml("#C4C7CC");  // 灰色
+            public static readonly Color Running = ColorTranslator.FromHtml("#1890FF");  // 蓝色
+            public static readonly Color Success = ColorTranslator.FromHtml("#52C41A");  // 绿色
+            public static readonly Color Failed = ColorTranslator.FromHtml("#E73624");   // 红色
+            public static readonly Color Skipped = ColorTranslator.FromHtml("#FAAD14");  // 橙色
         }
 
         // 背景颜色定义
         private static class BackgroundColors
         {
-            public static readonly Color Waiting = Color.FromArgb(250, 250, 250);
-            public static readonly Color Running = Color.FromArgb(230, 244, 255);
-            public static readonly Color Success = Color.FromArgb(240, 255, 244);
-            public static readonly Color Failed = Color.FromArgb(255, 241, 240);
-            public static readonly Color Skipped = Color.FromArgb(255, 251, 230);
+            public static readonly Color Waiting = ColorTranslator.FromHtml("#FAFAFA");  // 灰色浅背景
+            public static readonly Color Running = ColorTranslator.FromHtml("#E6F4FF");  // 蓝色浅背景
+            public static readonly Color Success = ColorTranslator.FromHtml("#F0FFF4");  // 绿色浅背景
+            public static readonly Color Failed = ColorTranslator.FromHtml("#FFF1F0");   // 红色浅背景
+            public static readonly Color Skipped = ColorTranslator.FromHtml("#FFFBE6");  // 橙色浅背景
         }
 
         #endregion
@@ -56,10 +56,10 @@ namespace MainUI.Procedure.Controls
             this.stepNumber = stepNumber;
 
             // 主面板设置（简洁模式高度）
-            BackColor = BackgroundColors.Waiting;
             Height = 85;
+            Width = 860;
+            BackColor = BackgroundColors.Waiting;
             Margin = new Padding(0, 0, 0, 12);
-            Dock = DockStyle.Top;
 
             // 状态指示条（左侧5px）
             statusIndicator = new Panel
@@ -154,19 +154,6 @@ namespace MainUI.Procedure.Controls
                 Radius = 3
             };
             contentPanel.Controls.Add(progressBar);
-
-            // 添加底部空白面板
-            var spacer = new Panel
-            {
-                Height = 12,  // 这里设置间距
-                Dock = DockStyle.Bottom,
-                BackColor = Color.Transparent,
-                RectColor = Color.Transparent,
-                RectDisableColor = Color.Transparent,
-                FillColor = Color.Transparent,
-                FillColor2 = Color.Transparent,
-            };
-            Controls.Add(spacer);
 
             // 监听尺寸变化以更新时间位置
             contentPanel.Resize += (s, e) => UpdateTimePosition();
@@ -674,7 +661,8 @@ namespace MainUI.Procedure.Controls
                 Font = new Font("微软雅黑", 9F, FontStyle.Bold),
                 ForeColor = StatusColors.Running,
                 AutoSize = true,
-                Location = new Point(xPosition, yPosition)
+                Location = new Point(xPosition, yPosition),
+                Padding = new Padding(10, 5, 5, 5)
             };
             detailsPanel.Controls.Add(lblTitle);
 
@@ -693,7 +681,8 @@ namespace MainUI.Procedure.Controls
                 ForeColor = valueColor ?? Color.FromArgb(128, 128, 128),
                 Location = new Point(xPosition, yPosition),
                 MaximumSize = new Size(maxWidth, 0),
-                AutoSize = true
+                AutoSize = true,
+                Padding = new Padding(10, 5, 5, 5)
             };
 
             detailsPanel.Controls.Add(lblLine);

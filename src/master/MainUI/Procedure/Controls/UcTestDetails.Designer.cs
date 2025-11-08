@@ -45,7 +45,7 @@ namespace MainUI.Procedure.Controls
             lblCurrentStep = new AntdUI.Label();
             progressBar = new AntdUI.Progress();
             panelSteps = new AntdUI.Panel();
-            panelStepList = new UIPanel();
+            panelStepList = new FlowLayoutPanel();
             panelInfo.SuspendLayout();
             statusPanel.SuspendLayout();
             statusBadge.SuspendLayout();
@@ -167,25 +167,28 @@ namespace MainUI.Procedure.Controls
             // 
             // panelStepList
             // 
-            panelStepList.AutoScroll = true;
             panelStepList.AutoScrollMargin = new Size(10, 10);
             panelStepList.AutoScrollMinSize = new Size(10, 10);
+            panelStepList.AutoSize = true;
             panelStepList.BackColor = Color.Transparent;
             panelStepList.Dock = DockStyle.Fill;
-            panelStepList.FillColor = Color.FromArgb(245, 247, 250);
-            panelStepList.FillColor2 = Color.FromArgb(245, 247, 250);
+            //panelStepList.FillColor = Color.FromArgb(245, 247, 250);
+            //panelStepList.FillColor2 = Color.FromArgb(245, 247, 250);
+            panelStepList.FlowDirection = FlowDirection.TopDown;
             panelStepList.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             panelStepList.Location = new Point(0, 15);
             panelStepList.Margin = new Padding(4, 5, 4, 5);
             panelStepList.MinimumSize = new Size(1, 1);
             panelStepList.Name = "panelStepList";
-            panelStepList.Padding = new Padding(0, 0, 10, 12);
-            panelStepList.RectColor = Color.FromArgb(245, 247, 250);
-            panelStepList.RectDisableColor = Color.FromArgb(245, 247, 250);
+            panelStepList.Padding = new Padding(15, 0, 15, 12);
+            //panelStepList.RectColor = Color.FromArgb(245, 247, 250);
+            //panelStepList.RectDisableColor = Color.FromArgb(245, 247, 250);
+            //panelStepList.ShowText = false;
             panelStepList.Size = new Size(900, 665);
             panelStepList.TabIndex = 0;
             panelStepList.Text = null;
-            panelStepList.TextAlignment = ContentAlignment.MiddleCenter;
+            //panelStepList.TextAlignment = ContentAlignment.MiddleCenter;
+            panelStepList.WrapContents = false;
             // 
             // UcTestDetails
             // 
@@ -205,6 +208,7 @@ namespace MainUI.Procedure.Controls
             statusPanel.ResumeLayout(false);
             statusBadge.ResumeLayout(false);
             panelSteps.ResumeLayout(false);
+            panelSteps.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -219,7 +223,7 @@ namespace MainUI.Procedure.Controls
         private AntdUI.Label lblElapsedTime;
         private AntdUI.Label lblCurrentStep;
         private AntdUI.Progress progressBar;
-        private Sunny.UI.UIPanel panelStepList;
+        private FlowLayoutPanel panelStepList;
         private System.Windows.Forms.Timer updateTimer;
         private Sunny.UI.UIPanel statusBadge;
         private AntdUI.Panel statusPanel;
