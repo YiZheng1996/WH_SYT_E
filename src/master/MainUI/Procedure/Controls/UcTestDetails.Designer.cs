@@ -167,13 +167,12 @@ namespace MainUI.Procedure.Controls
             // 
             // panelStepList
             // 
+            panelStepList.AutoScroll = true;
             panelStepList.AutoScrollMargin = new Size(10, 10);
             panelStepList.AutoScrollMinSize = new Size(10, 10);
             panelStepList.AutoSize = true;
-            panelStepList.BackColor = Color.Transparent;
+            panelStepList.BackColor = Color.FromArgb(245, 247, 250);
             panelStepList.Dock = DockStyle.Fill;
-            //panelStepList.FillColor = Color.FromArgb(245, 247, 250);
-            //panelStepList.FillColor2 = Color.FromArgb(245, 247, 250);
             panelStepList.FlowDirection = FlowDirection.TopDown;
             panelStepList.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             panelStepList.Location = new Point(0, 15);
@@ -181,13 +180,8 @@ namespace MainUI.Procedure.Controls
             panelStepList.MinimumSize = new Size(1, 1);
             panelStepList.Name = "panelStepList";
             panelStepList.Padding = new Padding(15, 0, 15, 12);
-            //panelStepList.RectColor = Color.FromArgb(245, 247, 250);
-            //panelStepList.RectDisableColor = Color.FromArgb(245, 247, 250);
-            //panelStepList.ShowText = false;
             panelStepList.Size = new Size(900, 665);
             panelStepList.TabIndex = 0;
-            panelStepList.Text = null;
-            //panelStepList.TextAlignment = ContentAlignment.MiddleCenter;
             panelStepList.WrapContents = false;
             // 
             // UcTestDetails

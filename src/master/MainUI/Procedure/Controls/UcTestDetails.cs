@@ -114,6 +114,14 @@ namespace MainUI.Procedure.Controls
 
             try
             {
+                // 调试输出
+                Debug.WriteLine($"========== 步骤 {stepIndex} 状态更新 ==========");
+                Debug.WriteLine($"Status: {step.Status}, StepName: {step.StepName}");
+                Debug.WriteLine($"当前 _stepStartTimes 字典内容:");
+                foreach (var kvp in _stepStartTimes)
+                {
+                    Debug.WriteLine($"  步骤 {kvp.Key}: {kvp.Value:HH:mm:ss}");
+                }
                 if (_stepControls.TryGetValue(stepIndex, out var stepControl))
                 {
                     // 更新步骤数据
@@ -128,6 +136,7 @@ namespace MainUI.Procedure.Controls
                     {
                         case 0:
                             statusText = "waiting";
+                            Debug.WriteLine($"步骤 {stepIndex} → 等待中");
                             break;
 
                         case 1:
@@ -138,16 +147,37 @@ namespace MainUI.Procedure.Controls
                             if (!_stepStartTimes.ContainsKey(stepIndex))
                             {
                                 _stepStartTimes[stepIndex] = DateTime.Now;
+                                Debug.WriteLine($"✅ 步骤 {stepIndex} 开始计时: {DateTime.Now:HH:mm:ss.fff}");
+                            }
+                            else
+                            {
+                                Debug.WriteLine($"⚠️ 步骤 {stepIndex} 已有开始时间，不重复记录");
                             }
                             break;
 
                         case 2:
                             statusText = "success";
+                            // 步骤完成时移除开始时间
+                            if (_stepStartTimes.ContainsKey(stepIndex))
+                            {
+                                var elapsed = DateTime.Now - _stepStartTimes[stepIndex];
+                                Debug.WriteLine($"✅ 步骤 {stepIndex} 完成，用时: {elapsed:hh\\:mm\\:ss}");
+                                _stepStartTimes.Remove(stepIndex);
+                                Debug.WriteLine($"✅ 步骤 {stepIndex} 开始时间已清除");
+                            }
                             break;
 
                         case 3:
                             statusText = "failed";
                             message = GetStepErrorMessage(step);
+                            // 步骤失败时移除开始时间
+                            if (_stepStartTimes.ContainsKey(stepIndex))
+                            {
+                                var elapsed = DateTime.Now - _stepStartTimes[stepIndex];
+                                Debug.WriteLine($"❌ 步骤 {stepIndex} 失败，用时: {elapsed:hh\\:mm\\:ss}");
+                                _stepStartTimes.Remove(stepIndex);
+                                Debug.WriteLine($"✅ 步骤 {stepIndex} 开始时间已清除");
+                            }
                             break;
 
                         default:
@@ -167,6 +197,7 @@ namespace MainUI.Procedure.Controls
                     // 更新进度条
                     UpdateProgressBar();
                 }
+                 Debug.WriteLine($"========== 步骤 {stepIndex} 状态更新完成 ==========\n");
             }
             catch (Exception ex)
             {
@@ -261,13 +292,14 @@ namespace MainUI.Procedure.Controls
                 foreach (var kvp in _stepStartTimes.ToList())
                 {
                     int stepIndex = kvp.Key;
-
+                    Debug.WriteLine($"🕐 Timer Tick - 检查步骤 {stepIndex}, 开始时间: {kvp.Value:HH:mm:ss}");
                     // 检查步骤是否仍在执行中
                     if (_stepDataDict.TryGetValue(stepIndex, out var stepData) && stepData.Status == 1)
                     {
                         if (_stepControls.TryGetValue(stepIndex, out var stepControl))
                         {
                             TimeSpan stepElapsed = DateTime.Now - kvp.Value;
+                            Debug.WriteLine($"   → 更新时间: {stepElapsed:hh\\:mm\\:ss}");
                             stepControl.UpdateTime(stepElapsed);
 
                             // 如果是延时步骤，更新进度

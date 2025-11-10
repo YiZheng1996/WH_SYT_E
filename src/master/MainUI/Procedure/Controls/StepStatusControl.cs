@@ -20,8 +20,10 @@ namespace MainUI.Procedure.Controls
         private readonly Label lblStepStatus;          // 步骤状态
         private readonly Label lblStepTime;            // 执行时间
         private readonly Panel separatorLine;          // 分隔线
-        private readonly Panel detailsPanel;           // 详情面板
         private readonly AntdUI.Progress progressBar;  // 进度条（延时步骤用）
+        private readonly Panel detailsPanel;           // 详情面板
+        private Label lblTitle = new();               // 详情面板标题
+
 
         private int stepNumber;
         private string currentStatus = "waiting";
@@ -66,6 +68,8 @@ namespace MainUI.Procedure.Controls
             {
                 Width = 5,
                 Dock = DockStyle.Left,
+                FillColor = StatusColors.Waiting,
+                RectColor = StatusColors.Waiting,
                 BackColor = StatusColors.Waiting
             };
             Controls.Add(statusIndicator);
@@ -76,6 +80,8 @@ namespace MainUI.Procedure.Controls
                 Dock = DockStyle.Fill,
                 BackColor = Color.Transparent,
                 Padding = new Padding(15, 12, 15, 12),
+                FillColor = BackgroundColors.Waiting,
+                RectColor = StatusColors.Waiting,
             };
             Controls.Add(contentPanel);
 
@@ -115,7 +121,7 @@ namespace MainUI.Procedure.Controls
             // 执行时间（右上角）
             lblStepTime = new Label
             {
-                Text = "",
+                Text = "⏱ 00:00:00",
                 Font = new Font("微软雅黑", 9F),
                 ForeColor = Color.FromArgb(140, 140, 140),
                 AutoSize = true,
@@ -148,7 +154,7 @@ namespace MainUI.Procedure.Controls
             progressBar = new AntdUI.Progress
             {
                 Location = new Point(15, 0),
-                Height = 6,
+                Height = 15,
                 Visible = false,
                 ForeColor = StatusColors.Running,
                 Radius = 3
@@ -227,10 +233,15 @@ namespace MainUI.Procedure.Controls
             }
 
             // 更新UI元素
-            statusIndicator.BackColor = statusColor;
-            BackColor = bgColor;
+            lblStepTime.ForeColor = statusColor;
             lblStepStatus.ForeColor = statusColor;
             lblStepStatus.Text = statusText;
+            SetPanelColor(statusIndicator, statusColor);
+            SetPanelColor(separatorLine, statusColor);
+            SetPanelColor(contentPanel, bgColor);
+            detailsPanel.RectColor = statusColor;
+            detailsPanel.FillColor = bgColor;
+            lblTitle.ForeColor = statusColor;  //暂时为空
             circlePanel.Invalidate(); // 触发圆形重绘
 
             // 显示或隐藏详情
@@ -242,6 +253,15 @@ namespace MainUI.Procedure.Controls
             {
                 HideDetails();
             }
+        }
+
+        private void SetPanelColor(UIPanel panel, Color color)
+        {
+            panel.BackColor = Color.Transparent;
+            panel.FillColor = color;
+            panel.FillColor2 = color;
+            panel.RectColor = color;
+            panel.RectDisableColor = color;
         }
 
         /// <summary>
@@ -317,7 +337,7 @@ namespace MainUI.Procedure.Controls
             detailsPanel.Height = yPosition;
 
             // 调整整体卡片高度
-            int newHeight = 85 + yPosition + 20; // 基础高度 + 详情高度 + 底部边距
+            int newHeight = 85 + yPosition + 5; // 基础高度 + 详情高度 + 底部边距
 
             // 如果是延时步骤且正在执行，需要额外空间显示进度条
             if (stepType == "延时等待" && currentStatus == "running" && progressBar.Visible)
@@ -655,7 +675,7 @@ namespace MainUI.Procedure.Controls
         /// </summary>
         private int AddSectionTitle(string title, int yPosition, int xPosition)
         {
-            var lblTitle = new Label
+            lblTitle = new Label
             {
                 Text = title,
                 Font = new Font("微软雅黑", 9F, FontStyle.Bold),
@@ -678,7 +698,7 @@ namespace MainUI.Procedure.Controls
             {
                 Text = $"{label}: {value}",
                 Font = new Font("微软雅黑", 9F),
-                ForeColor = valueColor ?? Color.FromArgb(128, 128, 128),
+                ForeColor = valueColor ?? Color.Black,
                 Location = new Point(xPosition, yPosition),
                 MaximumSize = new Size(maxWidth, 0),
                 AutoSize = true,
@@ -747,7 +767,7 @@ namespace MainUI.Procedure.Controls
                 // 尝试解析 JSON 格式的参数
                 string paramStr = stepData.StepParameter.ToString();
 
-                if (paramStr.StartsWith("{"))
+                if (paramStr.StartsWith('{'))
                 {
                     var json = JObject.Parse(paramStr);
                     foreach (var prop in json.Properties())
