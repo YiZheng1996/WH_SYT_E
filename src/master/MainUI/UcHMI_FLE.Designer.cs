@@ -134,11 +134,8 @@
             DCFVX06 = new UIValve();
             uiPipe20 = new UIPipe();
             uiPipe22 = new UIPipe();
-            uiPipe5 = new UIPipe();
-            uiPipe19 = new UIPipe();
             uiPipe21 = new UIPipe();
             uiPipe23 = new UIPipe();
-            uiPanel4 = new UIPanel();
             uiLabel4 = new UILabel();
             uiPanel1 = new UIPanel();
             uiPanel2 = new UIPanel();
@@ -186,7 +183,7 @@
             // 
             uiPanel3.FillColor = Color.White;
             uiPanel3.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            uiPanel3.Location = new Point(714, 579);
+            uiPanel3.Location = new Point(666, 623);
             uiPanel3.Margin = new Padding(4, 5, 4, 5);
             uiPanel3.MinimumSize = new Size(1, 1);
             uiPanel3.Name = "uiPanel3";
@@ -201,7 +198,7 @@
             // 
             EP01.FillColor = Color.White;
             EP01.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            EP01.Location = new Point(714, 597);
+            EP01.Location = new Point(666, 641);
             EP01.Margin = new Padding(4, 5, 4, 5);
             EP01.MinimumSize = new Size(1, 1);
             EP01.Name = "EP01";
@@ -419,7 +416,7 @@
             DCFVX03.RectColor = Color.Gray;
             DCFVX03.Size = new Size(60, 60);
             DCFVX03.TabIndex = 559;
-            DCFVX03.Tag = "3";
+            DCFVX03.Tag = "10";
             DCFVX03.Text = "uiValve1";
             DCFVX03.ValveColor = Color.Gray;
             DCFVX03.ZoomScaleDisabled = true;
@@ -434,7 +431,7 @@
             DCFVX05.RectColor = Color.Gray;
             DCFVX05.Size = new Size(60, 60);
             DCFVX05.TabIndex = 560;
-            DCFVX05.Tag = "5";
+            DCFVX05.Tag = "12";
             DCFVX05.Text = "uiValve1";
             DCFVX05.ValveColor = Color.Gray;
             DCFVX05.ZoomScaleDisabled = true;
@@ -449,7 +446,7 @@
             DCFVX08.RectColor = Color.Gray;
             DCFVX08.Size = new Size(60, 60);
             DCFVX08.TabIndex = 561;
-            DCFVX08.Tag = "8";
+            DCFVX08.Tag = "15";
             DCFVX08.Text = "uiValve1";
             DCFVX08.ValveColor = Color.Gray;
             DCFVX08.ZoomScaleDisabled = true;
@@ -464,7 +461,7 @@
             DCFVX10.RectColor = Color.Gray;
             DCFVX10.Size = new Size(60, 60);
             DCFVX10.TabIndex = 562;
-            DCFVX10.Tag = "10";
+            DCFVX10.Tag = "17";
             DCFVX10.Text = "uiValve1";
             DCFVX10.ValveColor = Color.Gray;
             DCFVX10.ZoomScaleDisabled = true;
@@ -494,7 +491,7 @@
             DCFVX01.RectColor = Color.Gray;
             DCFVX01.Size = new Size(51, 60);
             DCFVX01.TabIndex = 564;
-            DCFVX01.Tag = "1";
+            DCFVX01.Tag = "8";
             DCFVX01.Text = "uiValve1";
             DCFVX01.ValveColor = Color.Gray;
             DCFVX01.ZoomScaleDisabled = true;
@@ -509,7 +506,7 @@
             DCFVX02.RectColor = Color.Gray;
             DCFVX02.Size = new Size(60, 60);
             DCFVX02.TabIndex = 567;
-            DCFVX02.Tag = "2";
+            DCFVX02.Tag = "9";
             DCFVX02.Text = "uiValve1";
             DCFVX02.ValveColor = Color.Gray;
             DCFVX02.ZoomScaleDisabled = true;
@@ -524,7 +521,7 @@
             DCFVX04.RectColor = Color.Gray;
             DCFVX04.Size = new Size(60, 60);
             DCFVX04.TabIndex = 572;
-            DCFVX04.Tag = "4";
+            DCFVX04.Tag = "11";
             DCFVX04.Text = "uiValve1";
             DCFVX04.ValveColor = Color.Gray;
             DCFVX04.ZoomScaleDisabled = true;
@@ -555,7 +552,7 @@
             DCFVX11.RectColor = Color.Gray;
             DCFVX11.Size = new Size(60, 60);
             DCFVX11.TabIndex = 571;
-            DCFVX11.Tag = "11";
+            DCFVX11.Tag = "18";
             DCFVX11.Text = "uiValve1";
             DCFVX11.ValveColor = Color.Gray;
             DCFVX11.ZoomScaleDisabled = true;
@@ -586,7 +583,7 @@
             DCFVX13.RectColor = Color.Gray;
             DCFVX13.Size = new Size(60, 60);
             DCFVX13.TabIndex = 568;
-            DCFVX13.Tag = "13";
+            DCFVX13.Tag = "20";
             DCFVX13.Text = "uiValve1";
             DCFVX13.ValveColor = Color.Gray;
             DCFVX13.ZoomScaleDisabled = true;
@@ -1525,7 +1522,7 @@
             DCFVX07.RectColor = Color.Gray;
             DCFVX07.Size = new Size(60, 60);
             DCFVX07.TabIndex = 604;
-            DCFVX07.Tag = "7";
+            DCFVX07.Tag = "14";
             DCFVX07.Text = "uiValve1";
             DCFVX07.ValveColor = Color.Gray;
             DCFVX07.ZoomScaleDisabled = true;
@@ -1568,7 +1565,7 @@
             DCFVX12.RectColor = Color.Gray;
             DCFVX12.Size = new Size(60, 60);
             DCFVX12.TabIndex = 608;
-            DCFVX12.Tag = "12";
+            DCFVX12.Tag = "19";
             DCFVX12.Text = "uiValve1";
             DCFVX12.ValveColor = Color.Gray;
             DCFVX12.ZoomScaleDisabled = true;
@@ -1676,7 +1673,7 @@
             DCFVX06.RectColor = Color.Gray;
             DCFVX06.Size = new Size(60, 60);
             DCFVX06.TabIndex = 616;
-            DCFVX06.Tag = "6";
+            DCFVX06.Tag = "13";
             DCFVX06.Text = "uiValve1";
             DCFVX06.ValveColor = Color.Gray;
             DCFVX06.ZoomScaleDisabled = true;
@@ -1685,7 +1682,7 @@
             // uiPipe20
             // 
             uiPipe20.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe20.Location = new Point(683, 602);
+            uiPipe20.Location = new Point(680, 648);
             uiPipe20.MinimumSize = new Size(1, 1);
             uiPipe20.Name = "uiPipe20";
             uiPipe20.Radius = 12;
@@ -1712,42 +1709,6 @@
             uiPipe22.TabIndex = 621;
             uiPipe22.Text = "uiPipe1";
             uiPipe22.ZoomScaleDisabled = true;
-            // 
-            // uiPipe5
-            // 
-            uiPipe5.Direction = UILine.LineDirection.Vertical;
-            uiPipe5.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe5.Location = new Point(785, 602);
-            uiPipe5.MinimumSize = new Size(1, 1);
-            uiPipe5.Name = "uiPipe5";
-            uiPipe5.Radius = 12;
-            uiPipe5.RadiusSides = UICornerRadiusSides.RightTop;
-            uiPipe5.RectColor = Color.Gray;
-            uiPipe5.Size = new Size(12, 50);
-            uiPipe5.Style = UIStyle.Custom;
-            uiPipe5.StyleCustomMode = true;
-            uiPipe5.TabIndex = 539;
-            uiPipe5.Text = "uiPipe1";
-            uiPipe5.ZoomScaleDisabled = true;
-            uiPipe5.Click += uiPipe29_Click;
-            // 
-            // uiPipe19
-            // 
-            uiPipe19.Direction = UILine.LineDirection.Vertical;
-            uiPipe19.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe19.Location = new Point(678, 557);
-            uiPipe19.MinimumSize = new Size(1, 1);
-            uiPipe19.Name = "uiPipe19";
-            uiPipe19.Radius = 12;
-            uiPipe19.RadiusSides = UICornerRadiusSides.RightBottom;
-            uiPipe19.RectColor = Color.Gray;
-            uiPipe19.Size = new Size(12, 103);
-            uiPipe19.Style = UIStyle.Custom;
-            uiPipe19.StyleCustomMode = true;
-            uiPipe19.TabIndex = 539;
-            uiPipe19.Text = "uiPipe1";
-            uiPipe19.ZoomScaleDisabled = true;
-            uiPipe19.Click += uiPipe29_Click;
             // 
             // uiPipe21
             // 
@@ -1781,27 +1742,6 @@
             uiPipe23.TabIndex = 623;
             uiPipe23.Text = "uiPipe1";
             uiPipe23.ZoomScaleDisabled = true;
-            // 
-            // uiPanel4
-            // 
-            uiPanel4.BackColor = Color.Transparent;
-            uiPanel4.FillColor = Color.FromArgb(85, 131, 211);
-            uiPanel4.FillColor2 = Color.FromArgb(10, 63, 153);
-            uiPanel4.FillColorGradient = true;
-            uiPanel4.FillDisableColor = Color.White;
-            uiPanel4.Font = new Font("微软雅黑", 10.5F);
-            uiPanel4.ForeColor = Color.White;
-            uiPanel4.Location = new Point(646, 533);
-            uiPanel4.Margin = new Padding(4, 5, 4, 5);
-            uiPanel4.MinimumSize = new Size(1, 1);
-            uiPanel4.Name = "uiPanel4";
-            uiPanel4.Radius = 37;
-            uiPanel4.RectColor = Color.FromArgb(85, 131, 211);
-            uiPanel4.RectDisableColor = Color.FromArgb(85, 131, 211);
-            uiPanel4.Size = new Size(73, 45);
-            uiPanel4.TabIndex = 624;
-            uiPanel4.Text = "C01 0.5L";
-            uiPanel4.TextAlignment = ContentAlignment.MiddleCenter;
             // 
             // uiLabel4
             // 
@@ -1950,7 +1890,7 @@
             DCFVX09.RectColor = Color.Gray;
             DCFVX09.Size = new Size(60, 60);
             DCFVX09.TabIndex = 631;
-            DCFVX09.Tag = "9";
+            DCFVX09.Tag = "16";
             DCFVX09.Text = "uiValve1";
             DCFVX09.ValveColor = Color.Gray;
             DCFVX09.ZoomScaleDisabled = true;
@@ -2044,12 +1984,10 @@
             Controls.Add(uiPanel2);
             Controls.Add(uiPanel1);
             Controls.Add(uiLabel4);
-            Controls.Add(uiPanel4);
             Controls.Add(uiPanel24);
             Controls.Add(uiPipe33);
             Controls.Add(EP01);
             Controls.Add(uiPanel3);
-            Controls.Add(uiPipe5);
             Controls.Add(uiPipe20);
             Controls.Add(uiPipe2);
             Controls.Add(uiPipe23);
@@ -2095,7 +2033,6 @@
             Controls.Add(uiPipe18);
             Controls.Add(uiPipe1);
             Controls.Add(uiLabel1);
-            Controls.Add(uiPipe19);
             Controls.Add(uiPipe3);
             Controls.Add(uiPipe30);
             Controls.Add(uiPipe7);
@@ -2241,11 +2178,8 @@
         private UIValve DCFVX06;
         private UIPipe uiPipe20;
         private UIPipe uiPipe22;
-        private UIPipe uiPipe5;
-        private UIPipe uiPipe19;
         private UIPipe uiPipe21;
         private UIPipe uiPipe23;
-        private UIPanel uiPanel4;
         private UILabel uiLabel4;
         private UIPanel uiPanel1;
         private UIPanel uiPanel2;

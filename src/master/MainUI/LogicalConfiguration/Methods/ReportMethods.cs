@@ -4,7 +4,6 @@ using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using MainUI.Service;
 using System.Reflection;
-using System.Text.RegularExpressions;
 
 namespace MainUI.LogicalConfiguration.Methods
 {
@@ -243,8 +242,12 @@ namespace MainUI.LogicalConfiguration.Methods
                     return $"[变量未找到:{item.VariableName}]";
                 }
 
-                NlogHelper.Default.Debug($"获取变量值成功: {item.VariableName} = {variable}");
-                return variable;
+                var value = variable.VarValue;
+
+                NlogHelper.Default.Debug($"获取变量值成功: {item.VariableName} = {value} (类型: {variable.VarType})");
+
+                // 如果值为 null，返回空字符串
+                return value ?? string.Empty;
             }
             catch (Exception ex)
             {
@@ -330,7 +333,7 @@ namespace MainUI.LogicalConfiguration.Methods
                     var propertyName = parts[i];
 
                     // 检查是否是方法调用 (例如: ToString("yyyy-MM-dd"))
-                    if (propertyName.Contains("("))
+                    if (propertyName.Contains('('))
                     {
                         var result = EvaluateMethodCall(currentObject ?? currentType, propertyName);
                         NlogHelper.Default.Debug($"方法调用成功: {item.PropertyPath} = {result}");

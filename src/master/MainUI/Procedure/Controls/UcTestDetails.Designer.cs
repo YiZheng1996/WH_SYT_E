@@ -20,11 +20,6 @@ namespace MainUI.Procedure.Controls
             {
                 components.Dispose();
             }
-            if (disposing)
-            {
-                updateTimer?.Stop();
-                updateTimer?.Dispose();
-            }
             base.Dispose(disposing);
         }
 
@@ -73,6 +68,7 @@ namespace MainUI.Procedure.Controls
             // lblCurrentTest
             // 
             lblCurrentTest.AutoSizeMode = AntdUI.TAutoSize.Auto;
+            lblCurrentTest.BackColor = Color.Transparent;
             lblCurrentTest.Font = new Font("微软雅黑", 14F, FontStyle.Bold);
             lblCurrentTest.ForeColor = Color.FromArgb(64, 64, 64);
             lblCurrentTest.Location = new Point(20, 20);
@@ -138,9 +134,9 @@ namespace MainUI.Procedure.Controls
             lblCurrentStep.ForeColor = Color.FromArgb(128, 128, 128);
             lblCurrentStep.Location = new Point(250, 60);
             lblCurrentStep.Name = "lblCurrentStep";
-            lblCurrentStep.Size = new Size(124, 18);
+            lblCurrentStep.Size = new Size(115, 18);
             lblCurrentStep.TabIndex = 3;
-            lblCurrentStep.Text = "📍 当前步骤: 准备中...";
+            lblCurrentStep.Text = " 当前步骤: 准备中...";
             // 
             // progressBar
             // 
@@ -153,9 +149,12 @@ namespace MainUI.Procedure.Controls
             progressBar.Radius = 4;
             progressBar.Size = new Size(844, 30);
             progressBar.TabIndex = 5;
+            progressBar.Value = 0.1F;
+            progressBar.ValueRatio = 0.8F;
             // 
             // panelSteps
             // 
+            panelSteps.Back = Color.FromArgb(245, 247, 250);
             panelSteps.BackColor = Color.FromArgb(245, 247, 250);
             panelSteps.Controls.Add(panelStepList);
             panelSteps.Dock = DockStyle.Fill;
@@ -218,7 +217,6 @@ namespace MainUI.Procedure.Controls
         private AntdUI.Label lblCurrentStep;
         private AntdUI.Progress progressBar;
         private FlowLayoutPanel panelStepList;
-        private System.Windows.Forms.Timer updateTimer;
         private Sunny.UI.UIPanel statusBadge;
         private AntdUI.Panel statusPanel;
 

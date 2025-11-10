@@ -1,4 +1,5 @@
 ﻿using MainUI.LogicalConfiguration;
+using Newtonsoft.Json.Linq;
 using System.Net.NetworkInformation;
 
 namespace MainUI.Procedure.Controls
@@ -31,21 +32,7 @@ namespace MainUI.Procedure.Controls
         public UcTestDetails()
         {
             InitializeComponent();
-            InitializeTimer();
         }
-
-        /// <summary>
-        /// 初始化定时器
-        /// </summary>
-        private void InitializeTimer()
-        {
-            updateTimer = new System.Windows.Forms.Timer()
-            {
-                Interval = 1000 // 每秒更新一次
-            };
-            updateTimer.Tick += UpdateTimer_Tick;
-        }
-
         #endregion
 
         #region 公共方法
@@ -71,7 +58,7 @@ namespace MainUI.Procedure.Controls
                 lblTestStatus.ForeColor = Color.FromArgb(24, 144, 255);
                 lblElapsedTime.Text = "⏱ 已用时间: 00:00:00";
                 lblCurrentStep.Text = "  当前步骤: 准备中...";
-                progressBar.Value = 0;
+                progressBar.Value = 0.0f;
 
                 // 清空并创建步骤控件
                 _stepControls.Clear();
@@ -91,11 +78,75 @@ namespace MainUI.Procedure.Controls
 
                 // 重置并启动定时器
                 testStartTime = DateTime.Now;
-                updateTimer.Start();
             }
             catch (Exception ex)
             {
                 NlogHelper.Default.Error("启动测试详情显示失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 从外部更新已用时间（由 CountdownService 触发）
+        /// </summary>
+        /// <param name="elapsed">已用时间</param>
+        public void UpdateElapsedTime(TimeSpan elapsed)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<TimeSpan>(UpdateElapsedTime), elapsed);
+                return;
+            }
+
+            try
+            {
+                // 直接使用传入的时间
+                lblElapsedTime.Text = $"⏱ 已用时间: {elapsed:hh\\:mm\\:ss}";
+
+                Debug.WriteLine($"🕐 总时间更新: {elapsed:hh\\:mm\\:ss}");
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("更新总时间显示失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 更新步骤时间（由外部定时器触发）
+        /// </summary>
+        public void UpdateStepTimes()
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(UpdateStepTimes));
+                return;
+            }
+
+            try
+            {
+                foreach (var kvp in _stepStartTimes.ToList())
+                {
+                    int stepIndex = kvp.Key;
+
+                    // 检查步骤是否仍在执行中
+                    if (_stepDataDict.TryGetValue(stepIndex, out var stepData) && stepData.Status == 1)
+                    {
+                        if (_stepControls.TryGetValue(stepIndex, out var stepControl))
+                        {
+                            TimeSpan stepElapsed = DateTime.Now - kvp.Value;
+                            stepControl.UpdateTime(stepElapsed);
+
+                            // 如果是延时步骤，更新进度
+                            if (stepData.StepName == "延时等待")
+                            {
+                                UpdateDelayProgress(stepControl, stepData, stepElapsed);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("更新步骤时间失败", ex);
             }
         }
 
@@ -122,6 +173,7 @@ namespace MainUI.Procedure.Controls
                 {
                     Debug.WriteLine($"  步骤 {kvp.Key}: {kvp.Value:HH:mm:ss}");
                 }
+
                 if (_stepControls.TryGetValue(stepIndex, out var stepControl))
                 {
                     // 更新步骤数据
@@ -185,8 +237,7 @@ namespace MainUI.Procedure.Controls
                             break;
                     }
 
-                    // 更新步骤控件状态（传递完整的步骤数据以显示详情）
-                    stepControl.UpdateStatus(statusText, message, step);
+                    stepControl.UpdateStatus(statusText, step, message);
 
                     // 更新当前步骤显示
                     if (step.Status == 1) // 执行中
@@ -197,7 +248,7 @@ namespace MainUI.Procedure.Controls
                     // 更新进度条
                     UpdateProgressBar();
                 }
-                 Debug.WriteLine($"========== 步骤 {stepIndex} 状态更新完成 ==========\n");
+                Debug.WriteLine($"========== 步骤 {stepIndex} 状态更新完成 ==========\n");
             }
             catch (Exception ex)
             {
@@ -219,15 +270,13 @@ namespace MainUI.Procedure.Controls
 
             try
             {
-                updateTimer.Stop();
-
                 lblTestStatus.Text = success ? "✓ 测试完成" : "✕ 测试失败";
                 lblTestStatus.ForeColor = success
                     ? Color.FromArgb(82, 196, 26)   // 成功绿
                     : Color.FromArgb(231, 54, 36);   // 失败红
 
                 lblCurrentStep.Text = success ? "  所有步骤已完成" : "  测试中断";
-                progressBar.Value = 100;
+                progressBar.Value = 1.0f;
             }
             catch (Exception ex)
             {
@@ -248,14 +297,12 @@ namespace MainUI.Procedure.Controls
 
             try
             {
-                updateTimer.Stop();
-
                 lblCurrentTest.Text = "当前测试项: 未开始";
                 lblTestStatus.Text = "● 待机中";
                 lblTestStatus.ForeColor = Color.FromArgb(196, 199, 204);  // 等待灰
                 lblElapsedTime.Text = "⏱ 已用时间: 00:00:00";
                 lblCurrentStep.Text = "  当前步骤: 等待开始...";
-                progressBar.Value = 0;
+                progressBar.Value = 0.0f;
 
                 _stepControls.Clear();
                 _stepStartTimes.Clear();
@@ -267,53 +314,6 @@ namespace MainUI.Procedure.Controls
             catch (Exception ex)
             {
                 NlogHelper.Default.Error("重置显示失败", ex);
-            }
-        }
-
-        #endregion
-
-        #region 私有方法 - 事件处理
-
-        /// <summary>
-        /// 定时器更新事件
-        /// </summary>
-        private void UpdateTimer_Tick(object sender, EventArgs e)
-        {
-            try
-            {
-                if (testStartTime == DateTime.MinValue)
-                    testStartTime = DateTime.Now;
-
-                // 更新总时间
-                TimeSpan elapsed = DateTime.Now - testStartTime;
-                lblElapsedTime.Text = $"⏱ 已用时间: {elapsed:hh\\:mm\\:ss}";
-
-                // 更新正在执行步骤的时间
-                foreach (var kvp in _stepStartTimes.ToList())
-                {
-                    int stepIndex = kvp.Key;
-                    Debug.WriteLine($"🕐 Timer Tick - 检查步骤 {stepIndex}, 开始时间: {kvp.Value:HH:mm:ss}");
-                    // 检查步骤是否仍在执行中
-                    if (_stepDataDict.TryGetValue(stepIndex, out var stepData) && stepData.Status == 1)
-                    {
-                        if (_stepControls.TryGetValue(stepIndex, out var stepControl))
-                        {
-                            TimeSpan stepElapsed = DateTime.Now - kvp.Value;
-                            Debug.WriteLine($"   → 更新时间: {stepElapsed:hh\\:mm\\:ss}");
-                            stepControl.UpdateTime(stepElapsed);
-
-                            // 如果是延时步骤，更新进度
-                            if (stepData.StepName == "延时等待")
-                            {
-                                UpdateDelayProgress(stepControl, stepData, stepElapsed);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("更新时间显示失败", ex);
             }
         }
 
@@ -342,7 +342,14 @@ namespace MainUI.Procedure.Controls
 
                 if (_stepControls.Count > 0)
                 {
-                    progressBar.Value = (int)((double)completedSteps / _stepControls.Count * 100);
+                    // 根据 progressBar 的类型选择合适的值范围
+
+                    // 如果是 AntdUI.Progress，使用 0.0f-1.0f
+                    float progressValue = (float)completedSteps / _stepControls.Count;
+                    progressBar.Value = progressValue;  // 0.0f 到 1.0f
+
+                    // 如果需要显示文字（可选）
+                    int percentage = (int)(progressValue * 100);
                 }
             }
             catch (Exception ex)
@@ -394,35 +401,51 @@ namespace MainUI.Procedure.Controls
             }
         }
 
-        /// <summary>
-        /// 更新延时步骤的进度
-        /// </summary>
         private void UpdateDelayProgress(StepStatusControl stepControl, ChildModel stepData, TimeSpan elapsed)
         {
             try
             {
-                // 从步骤参数中获取延时时长
-                // 这里需要根据实际的参数结构来解析
                 int totalSeconds = 30; // 默认30秒
 
-                // 尝试解析参数
-                if (stepData.StepParameter != null)
+                if (stepData?.StepParameter != null)
                 {
                     string paramStr = stepData.StepParameter.ToString();
-                    // 这里应该根据实际的参数格式来解析
-                    // 示例：假设参数中有 DelayTime 字段
+                    Debug.WriteLine($"参数字符串: {paramStr}");
 
-                    // 简化处理：如果能解析出数字就使用，否则使用默认值
-                    if (int.TryParse(paramStr, out int parsedValue))
+                    // 尝试解析 JSON 格式
+                    if (paramStr.StartsWith('{'))
                     {
-                        totalSeconds = parsedValue;
+                        try
+                        {
+                            var json = JObject.Parse(paramStr);
+                            // 参数字段是 T（毫秒），需要转换为秒
+                            if (json["T"] != null)
+                            {
+                                double milliseconds = json["T"].Value<double>();
+                                totalSeconds = (int)(milliseconds / 1000.0);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            totalSeconds = stepControl.GetDelayTotalSeconds();
+                        }
                     }
                 }
 
                 int currentSeconds = (int)elapsed.TotalSeconds;
+
+                // 计算浮点数进度（0.0-1.0）
+                float progressFloat = currentSeconds <= totalSeconds ? (float)currentSeconds / totalSeconds : 1.0f;
+
+                // 只在未超时的情况下更新进度
                 if (currentSeconds <= totalSeconds)
                 {
                     stepControl.UpdateProgress(currentSeconds, totalSeconds);
+                }
+                else
+                {
+                    // 如果已经超时，显示100%
+                    stepControl.UpdateProgress(totalSeconds, totalSeconds);
                 }
             }
             catch (Exception ex)
@@ -430,7 +453,6 @@ namespace MainUI.Procedure.Controls
                 NlogHelper.Default.Error("更新延时进度失败", ex);
             }
         }
-
         #endregion
     }
 }

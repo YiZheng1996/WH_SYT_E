@@ -172,16 +172,23 @@ namespace MainUI.Procedure.Controls
         /// <summary>
         /// 更新步骤状态
         /// </summary>
-        public void UpdateStatus(string status, string message = "", ChildModel stepData = null)
+        public void UpdateStatus(string status, ChildModel stepData = null, string message = "")
         {
             if (InvokeRequired)
             {
-                Invoke(new Action<string, string, ChildModel>(UpdateStatus), status, message, stepData);
+                Invoke(new Action<string, ChildModel, string>(UpdateStatus), status, stepData, message);
                 return;
             }
 
             currentStatus = status.ToLower();
             currentStepData = stepData;
+
+            // 添加调试输出
+            Debug.WriteLine($"🔍 UpdateStatus 调用 - Status: {status}, StepData: {stepData?.StepName}, Message: {message}");
+            if (stepData?.StepParameter != null)
+            {
+                Debug.WriteLine($"   StepParameter: {stepData.StepParameter}");
+            }
 
             Color statusColor;
             Color bgColor;
@@ -292,10 +299,44 @@ namespace MainUI.Procedure.Controls
 
             if (total > 0 && progressBar.Visible)
             {
-                int percentage = (int)((double)current / total * 100);
-                progressBar.Value = percentage;
-                progressBar.Text = $"{percentage}% ({current}/{total}秒)";
+                // 将百分比转换为 0.0f - 1.0f 的浮点数
+                float percentage = Math.Min(1.0f, (float)current / total);
+                progressBar.Value = percentage;  // 设置为 0.0 到 1.0 之间的值
+
+                // 文字仍然显示百分比形式（0-100%）
+                int percentageDisplay = (int)(percentage * 100);
+                progressBar.Text = $"{percentageDisplay}% ({current}/{total}秒)";
+
+                // 同时更新详情面板中的已等待时间
+                UpdateDelayDetailsInRealtime(current, total);
             }
+        }
+
+        /// <summary>
+        /// 实时更新延时详情显示
+        /// </summary>
+        private void UpdateDelayDetailsInRealtime(int current, int total)
+        {
+            try
+            {
+                // 查找并更新"已等待"和"剩余时间"标签
+                foreach (Control control in detailsPanel.Controls)
+                {
+                    if (control is Label label)
+                    {
+                        if (label.Text.StartsWith("已等待:"))
+                        {
+                            label.Text = $"已等待: {current}秒";
+                        }
+                        else if (label.Text.StartsWith("剩余时间:"))
+                        {
+                            int remaining = Math.Max(0, total - current);
+                            label.Text = $"剩余时间: {remaining}秒";
+                        }
+                    }
+                }
+            }
+            catch { }
         }
 
         #endregion
@@ -337,7 +378,7 @@ namespace MainUI.Procedure.Controls
             detailsPanel.Height = yPosition;
 
             // 调整整体卡片高度
-            int newHeight = 85 + yPosition + 5; // 基础高度 + 详情高度 + 底部边距
+            int newHeight = 85 + yPosition + 15; // 基础高度 + 详情高度 + 底部边距
 
             // 如果是延时步骤且正在执行，需要额外空间显示进度条
             if (stepType == "延时等待" && currentStatus == "running" && progressBar.Visible)
@@ -468,35 +509,79 @@ namespace MainUI.Procedure.Controls
             int leftY = yPosition;
             leftY = AddSectionTitle(" 等待参数", leftY, 0);
 
-            string delayTime = parameters.GetValueOrDefault("DelayTime", "30");
-            leftY = AddDetailLine("延时时长", delayTime + "秒", leftY, 0, leftWidth);
+            // 正确读取参数 T（毫秒），并转换为秒
+            string delayTimeMs = parameters.GetValueOrDefault("T", "30000");
+            double delayTimeSeconds = double.TryParse(delayTimeMs, out double ms) ? ms / 1000.0 : 30;
+
+            // 保存延时时间到字段，供进度更新使用
+            if (currentStatus == "running")
+            {
+                currentStepData = stepData;  // 保存当前步骤数据
+            }
+
+            leftY = AddDetailLine("延时时长", $"{delayTimeSeconds:F1}秒", leftY, 0, leftWidth);
 
             if (currentStatus == "running")
             {
                 string elapsed = results.GetValueOrDefault("Elapsed", "0");
-                string remaining = results.GetValueOrDefault("Remaining", delayTime);
+                string remaining = results.GetValueOrDefault("Remaining", delayTimeSeconds.ToString());
                 leftY = AddDetailLine("已等待", elapsed + "秒", leftY, 0, leftWidth);
                 leftY = AddDetailLine("剩余时间", remaining + "秒", leftY, 0, leftWidth);
 
-                // 显示进度条
+                // 初始化进度条为 0.0f
+                progressBar.Value = 0.0f;
+                progressBar.Text = "0% (0/30秒)";
                 progressBar.Visible = true;
             }
             else if (currentStatus == "success")
             {
+                // 完成时将进度条设置为100%
+                if (progressBar.Visible)
+                {
+                    progressBar.Value = 1.0f;  // 100%
+                    progressBar.Text = $"100% ({delayTimeSeconds:F0}/{delayTimeSeconds:F0}秒)";
+                    Debug.WriteLine($"✅ 延时完成，进度条设置为100%");
+                }
+
                 string reason = parameters.GetValueOrDefault("Reason", "等待设备稳定");
                 leftY = AddDetailLine("等待原因", reason, leftY, 0, leftWidth);
 
                 // 右栏：执行结果
                 int rightY = yPosition;
                 rightY = AddSectionTitle(" 执行结果", rightY, leftWidth + 10);
-                string actualTime = results.GetValueOrDefault("ActualTime", delayTime);
-                rightY = AddDetailLine("实际耗时", actualTime + "秒", rightY, leftWidth + 10, leftWidth);
+                string actualTime = results.GetValueOrDefault("ActualTime", delayTimeSeconds.ToString());
+                rightY = AddDetailLine("实际耗时", $"{actualTime}秒", rightY, leftWidth + 10, leftWidth);
                 rightY = AddDetailLine("状态", "正常完成", rightY, leftWidth + 10, leftWidth, StatusColors.Success);
 
                 return Math.Max(leftY, rightY);
             }
 
             return leftY;
+        }
+
+        /// <summary>
+        /// 获取延时步骤的总时间（秒）
+        /// </summary>
+        public int GetDelayTotalSeconds()
+        {
+            if (currentStepData?.StepParameter == null) return 30;
+
+            try
+            {
+                var parameters = ParseStepParameters(currentStepData);
+                string delayTimeMs = parameters.GetValueOrDefault("T", "30000");
+
+                if (double.TryParse(delayTimeMs, out double ms))
+                {
+                    return (int)(ms / 1000.0);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"解析延时参数失败: {ex.Message}");
+            }
+
+            return 30;
         }
 
         /// <summary>

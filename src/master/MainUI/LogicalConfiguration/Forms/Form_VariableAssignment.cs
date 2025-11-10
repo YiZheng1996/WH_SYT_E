@@ -197,9 +197,16 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 if (globalVariableManager != null)
                 {
-                    // 初始化核心引擎 
-                    var expressionValidator = new ExpressionEngine(globalVariableManager);
-                    var assignmentEngine = new VariableAssignmentEngine(globalVariableManager, plcManager);
+                    var expressionValidator = Program.ServiceProvider?.GetService<ExpressionEngine>();
+                    var assignmentEngine = Program.ServiceProvider?.GetService<VariableAssignmentEngine>();
+                    if (expressionValidator == null || assignmentEngine == null)
+                    {
+                        Logger?.LogError("无法从 DI 容器获取引擎实例，尝试创建新实例");
+
+                        // 如果无法从 DI 获取，则回退到创建新实例
+                        expressionValidator = new ExpressionEngine(globalVariableManager, plcManager);
+                        assignmentEngine = new VariableAssignmentEngine(globalVariableManager, plcManager);
+                    }
 
                     // 使用反射设置私有字段（保持兼容性）
                     var expressionField = typeof(Form_VariableAssignment).GetField("_engine",

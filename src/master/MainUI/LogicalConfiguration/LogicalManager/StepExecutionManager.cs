@@ -225,7 +225,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         }
 
         /// <summary>
-        /// 
+        /// 变量赋值
         /// </summary>
         /// <param name="step">当前步骤信息</param>
         private async Task<ExecutionResult> ExecuteVariableAssignment(ChildModel step)

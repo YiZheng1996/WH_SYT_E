@@ -323,6 +323,31 @@ namespace MainUI
             BaseTest.WaitTick += BaseTest_WaitTick;
             BaseTest.WaitStepTick += BaseTest_WaitStepTick;
             BaseTest.TimingChanged += BaseTest_TimingChanged;
+
+            // 订阅 CountdownService 的时间更新事件
+            _countdownService.TimingUpdated += CountdownService_TimingUpdated;
+
+        }
+
+        // CountdownService 时间更新事件处理
+        private void CountdownService_TimingUpdated(int seconds)
+        {
+            try
+            {
+                TimeSpan elapsed = TimeSpan.FromSeconds(seconds);
+
+                // 更新 UcTestDetails 的总时间显示
+                ucTestDetails?.UpdateElapsedTime(elapsed);
+
+                // 更新 UcTestDetails 的步骤时间
+                ucTestDetails?.UpdateStepTimes();
+
+                Debug.WriteLine($"⏱️ 时间同步更新: {elapsed:hh\\:mm\\:ss}");
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("时间同步更新失败", ex);
+            }
         }
 
         // 测试计时变更事件

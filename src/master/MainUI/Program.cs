@@ -242,7 +242,7 @@ namespace MainUI
             services.AddSingleton<ReportMethods>();
 
             services.AddSingleton<ExpressionEngine>();
-            services.AddTransient<VariableAssignmentEngine>();
+            services.AddSingleton<VariableAssignmentEngine>();
 
             services.AddTransient<frmMainMenu>();// 主窗体
             services.AddSingleton<IFormService, FormService>();// 窗体集合管理类

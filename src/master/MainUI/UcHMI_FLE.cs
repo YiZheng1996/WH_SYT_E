@@ -141,7 +141,7 @@ namespace MainUI.Procedure.User
 
         private void AOgrp_AOvalueGrpChaned(object sender, int index, double value)
         {
-            if (index == 1)
+            if (index == 0)
             {
                 EP01.Text = value.ToString("f1");
             }

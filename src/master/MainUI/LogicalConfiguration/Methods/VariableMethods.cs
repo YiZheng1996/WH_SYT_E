@@ -1,23 +1,22 @@
-﻿using MainUI.LogicalConfiguration;
+﻿using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
-using MainUI.LogicalConfiguration.Services;
 
 namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
     /// 变量管理方法集合
     /// </summary>
-    public class VariableMethods(IWorkflowStateService workflowStateService,
-        GlobalVariableManager globalVariableManager) : DSLMethodBase
+    public class VariableMethods(
+        GlobalVariableManager globalVariableManager,
+        VariableAssignmentEngine assignmentEngine) : DSLMethodBase
     {
         public override string Category => "变量管理";
-
         public override string Description => "提供变量定义、赋值等变量管理功能";
 
-        private readonly IWorkflowStateService _workflowStateService = workflowStateService;
-        private readonly GlobalVariableManager _globalVariableManager = globalVariableManager;
+        private readonly GlobalVariableManager _globalVariableManager = globalVariableManager ?? throw new ArgumentNullException(nameof(globalVariableManager));
+        private readonly VariableAssignmentEngine _assignmentEngine = assignmentEngine ?? throw new ArgumentNullException(nameof(assignmentEngine));
 
         /// <summary>
         /// 变量定义方法
@@ -26,32 +25,19 @@ namespace MainUI.LogicalConfiguration.Methods
         {
             return await ExecuteWithLogging(param, () =>
             {
-                var variables = _globalVariableManager.GetAllVariables();
+                // 统一使用 GlobalVariableManager
+                _globalVariableManager.AddOrUpdateVariable(new VarItem_Enhanced
+                {
+                    VarName = param.VarName,
+                    VarValue = param.VarValue,
+                    VarType = param.VarType,
+                    LastUpdated = DateTime.Now,
+                    IsAssignedByStep = false,
+                    AssignmentType = VariableAssignmentType.None
+                });
 
-                // 检查变量是否已存在
-                var existingVar = variables.FirstOrDefault(v => v.VarName == param.VarName);
-                if (existingVar != null)
-                {
-                    existingVar.VarName = param.VarName;
-                    existingVar.VarType = param.VarType;
-                    existingVar.UpdateValue(param.VarValue, "变量定义更新");
-                    return Task.FromResult(true);
-                }
-                else
-                {
-                    var newVar = new VarItem_Enhanced
-                    {
-                        VarName = param.VarName,
-                        VarValue = param.VarValue,
-                        VarType = param.VarType,
-                        LastUpdated = DateTime.Now,
-                        IsAssignedByStep = false,
-                        AssignmentType = VariableAssignmentType.None
-                    };
-                    _workflowStateService.AddVariable(newVar);
-                    return Task.FromResult(true);
-                }
-            }, false); // 默认返回false
+                return Task.FromResult(true);
+            }, false);
         }
 
         /// <summary>
@@ -61,24 +47,29 @@ namespace MainUI.LogicalConfiguration.Methods
         {
             return await ExecuteWithLogging(param, async () =>
             {
+                // 1. 验证目标变量是否存在
                 var targetVar = _globalVariableManager.FindVariableByName(param.TargetVarName) ??
-                    throw new ArgumentException($"目标变量不存在: {param.TargetVarName}");
+                throw new ArgumentException($"目标变量不存在: {param.TargetVarName}");
 
-                string newValue = await CalculateAssignmentValue(param);
-                targetVar.UpdateValue(newValue, $"变量赋值: {param.TargetVarName}");
+                // 2. 使用赋值引擎执行赋值操作
+                var result = await _assignmentEngine.ExecuteAssignmentAsync(param);
+
+                // 3. 检查执行结果
+                if (!result.Success)
+                {
+                    throw new InvalidOperationException($"变量赋值失败: {result.ErrorMessage}");
+                }
+
+                // 4. 记录日志
+                NlogHelper.Default.Info(
+                    $"变量赋值成功 - 变量: {param.TargetVarName}, " +
+                    $"赋值类型: {param.AssignmentType}, " +
+                    $"新值: {result.NewValue}, " +
+                    $"旧值: {result.OldValue}, " +
+                    $"耗时: {result.ExecutionTime.TotalMilliseconds}ms");
 
                 return true;
             }, false);
-        }
-
-        /// <summary>
-        /// 计算赋值值（私有方法不需要包装）
-        /// </summary>
-        private async Task<string> CalculateAssignmentValue(Parameter_VariableAssignment param)
-        {
-            // 实现赋值逻辑
-            await Task.CompletedTask;
-            return param.TargetVarName.ToString() ?? "";
         }
     }
 }

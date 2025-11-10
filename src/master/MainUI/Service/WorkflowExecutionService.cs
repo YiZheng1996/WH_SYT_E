@@ -1,6 +1,7 @@
 ﻿using MainUI.LogicalConfiguration;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace MainUI.Service
@@ -312,6 +313,9 @@ namespace MainUI.Service
                 WorkflowStarted?.Invoke(itemName, steps.Count);
                 ProgressMessage?.Invoke($"开始执行工作流: {itemName} ({steps.Count} 个步骤)");
 
+                // 在工作流执行前调用
+                await EnsureVariablesLoadedAsync();
+
                 // 更新工作流状态配置
                 _workflowState.UpdateConfiguration(modelType, modelName, itemName);
 
@@ -470,6 +474,42 @@ namespace MainUI.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "处理步骤状态变化时发生错误");
+            }
+        }
+
+        /// <summary>
+        /// 在工作流执行前调用,否则无法获取变量集合
+        /// </summary>
+        /// <returns></returns>
+        public async Task EnsureVariablesLoadedAsync()
+        {
+            try
+            {
+                var workflowState = Program.ServiceProvider.GetRequiredService<IWorkflowStateService>();
+                var config = await JsonManager.GetOrCreateConfigAsync();
+
+                // 清空并重新加载
+                workflowState.ClearVariables();
+                foreach (var varItem in config.Variable)
+                {
+                    var enhancedVar = new VarItem_Enhanced
+                    {
+                        VarName = varItem.VarName,
+                        VarType = varItem.VarType,
+                        VarValue = varItem.VarValue,
+                        VarText = varItem.VarText,
+                        LastUpdated = DateTime.Now,
+                        IsAssignedByStep = false,
+                        AssignmentType = VariableAssignmentType.None
+                    };
+
+                    workflowState.AddVariable(enhancedVar);
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("加载变量失败", ex);
+                throw;
             }
         }
 
