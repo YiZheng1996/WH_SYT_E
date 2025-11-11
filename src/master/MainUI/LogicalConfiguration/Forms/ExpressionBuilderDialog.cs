@@ -1,8 +1,9 @@
 ﻿using AntdUI;
-using MainUI.LogicalConfiguration.Services;
-using MainUI.LogicalConfiguration.LogicalManager;
-using System.Text;
+using Google.Protobuf.WellKnownTypes;
 using MainUI.LogicalConfiguration.Engine;
+using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Services;
+using System.Text;
 
 namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 {
@@ -55,17 +56,17 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             {
                 "数学函数", new List<FunctionInfo>
                 {
-                    new("Math.Abs", "x", "绝对值", "Math.Abs(-5) → 5"),
-                    new("Math.Max", "x, y", "最大值", "Math.Max(10, 20) → 20"),
-                    new("Math.Min", "x, y", "最小值", "Math.Min(10, 20) → 10"),
-                    new("Math.Round", "x, [digits]", "四舍五入", "Math.Round(3.14159, 2) → 3.14"),
-                    new("Math.Floor", "x", "向下取整", "Math.Floor(3.7) → 3"),
-                    new("Math.Ceiling", "x", "向上取整", "Math.Ceiling(3.2) → 4"),
-                    new("Math.Sqrt", "x", "平方根", "Math.Sqrt(16) → 4"),
-                    new("Math.Pow", "x, y", "幂运算", "Math.Pow(2, 3) → 8"),
-                    new("Math.Sin", "x", "正弦值(弧度)", "Math.Sin(Math.PI/2) → 1"),
-                    new("Math.Cos", "x", "余弦值(弧度)", "Math.Cos(0) → 1"),
-                    new("Math.Tan", "x", "正切值(弧度)", "Math.Tan(Math.PI/4) → 1")
+                    new("Math.Abs", "value", "绝对值", "Math.Abs(-5) → 5"),
+                    new("Math.Max", "val1, val2", "最大值", "Math.Max(10, 20) → 20"),
+                    new("Math.Min", "val1, val2", "最小值", "Math.Min(10, 20) → 10"),
+                    new("Math.Round", "value, digits", "四舍五入", "Math.Round({a}, 2) → 保留2位小数"),
+                    new("Math.Floor", "value", "向下取整", "Math.Floor(3.7) → 3"),
+                    new("Math.Ceiling", "value", "向上取整", "Math.Ceiling(3.2) → 4"),
+                    //new("Math.Sqrt", "value", "平方根", "Math.Sqrt(16) → 4"),
+                    //new("Math.Pow", "base, exponent", "幂运算", "Math.Pow(2, 3) → 8"),
+                    //new("Math.Sin", "x", "正弦值(弧度)", "Math.Sin(Math.PI/2) → 1"),
+                    //new("Math.Cos", "x", "余弦值(弧度)", "Math.Cos(0) → 1"),
+                    //new("Math.Tan", "x", "正切值(弧度)", "Math.Tan(Math.PI/4) → 1")
                 }
             },
             {
@@ -222,7 +223,8 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                     foreach (var variable in group)
                     {
                         var currentValue = variable.VarValue ?? "null";
-                        var displayText = $"  {variable.VarName} = {currentValue}";
+                        //var displayText = $"  {variable.VarName} = {currentValue}";
+                        var displayText = $"  {variable.VarName}";
                         lstVariables.Items.Add(displayText);
                     }
                 }
@@ -249,7 +251,8 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                     lstFunctions.Items.Add($"━━━ {category.Key} ━━━");
                     foreach (var func in category.Value)
                     {
-                        var displayText = $"  {func.Name}({func.Parameters})";
+                        // 加上中文使用案例
+                        var displayText = $"  {func.Name}({func.Parameters}) ({func.Description})";
                         lstFunctions.Items.Add(displayText);
                     }
                     lstFunctions.Items.Add(""); // 空行分隔
@@ -257,7 +260,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             }
             catch (Exception)
             {
-
                 lstFunctions.Items.Clear();
                 lstFunctions.Items.Add("❌ 加载函数失败");
             }
@@ -436,12 +438,10 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 !selectedText.Contains("加载失败"))
             {
                 // 提取变量名 (格式: "  VarName = value")
-                var parts = selectedText.Trim().Split('=');
-                if (parts.Length > 0)
-                {
-                    var varName = parts[0].Trim();
-                    InsertTextAtCursor($"{{{varName}}}");
-                }
+                var text = selectedText.Trim();
+                var openParenIndex = text.IndexOf('(');
+                var varName = openParenIndex > 0 ? text.Substring(0, openParenIndex).Trim() : text;
+                InsertTextAtCursor($"{{{varName}}}");
             }
         }
 
@@ -454,16 +454,23 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 !selectedText.Contains("━") &&
                 !string.IsNullOrWhiteSpace(selectedText))
             {
-                // 提取函数名 (格式: "  FunctionName(params)")
+                // 🔧 修改：提取函数名（格式: "  FunctionName(params) (说明)"）
                 var text = selectedText.Trim();
-                var openParenIndex = text.IndexOf('(');
-                if (openParenIndex > 0)
+
+                // 找到第一个左括号的位置
+                var firstParenIndex = text.IndexOf('(');
+                if (firstParenIndex > 0)
                 {
-                    var funcName = text.Substring(0, openParenIndex);
+                    var funcName = text.Substring(0, firstParenIndex);
                     InsertTextAtCursor($"{funcName}()");
 
-                    // 将光标移到括号内
-                    txtExpression.SelectionStart -= 1;
+                    // 将光标移动到括号内
+                    if (txtExpression != null)
+                    {
+                        txtExpression.SelectionStart = txtExpression.Text.LastIndexOf('(') + 1;
+                        txtExpression.SelectionLength = 0;
+                        txtExpression.Focus();
+                    }
                 }
             }
         }
@@ -675,48 +682,41 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         /// </summary>
         private void ValidateExpression()
         {
+            if (string.IsNullOrWhiteSpace(txtExpression.Text))
+            {
+                lblValidationResult.Text = "验证结果: 请输入表达式";
+                lblValidationResult.ForeColor = Color.Gray;
+                rtbPreview.Text = "";
+                return;
+            }
+
             try
             {
-                var expression = txtExpression.Text?.Trim();
+                var validationResult = _engine.ValidateExpression(txtExpression.Text);
 
-                if (string.IsNullOrWhiteSpace(expression))
+                if (validationResult.IsValid)
                 {
-                    lblValidationResult.Text = "验证结果: 等待输入";
-                    lblValidationResult.ForeColor = Color.Gray;
-                    rtbPreview.Text = "💡 请输入表达式或选择模板开始";
-                    return;
-                }
-
-                // 执行验证
-                var validationResult = _engine?.ValidateExpression(expression);
-
-                if (validationResult?.IsValid == true)
-                {
-                    lblValidationResult.Text = "验证结果: ✅ 表达式语法正确";
+                    // 验证成功
+                    lblValidationResult.Text = "验证结果: ✓ 表达式语法正确";
                     lblValidationResult.ForeColor = Color.FromArgb(40, 167, 69);
 
-                    // 尝试计算预期值
-                    var calcResult = _engine.CalculateExpectedValue(expression);
-                    if (calcResult?.Success == true)
-                    {
-                        var preview = new StringBuilder();
-                        preview.AppendLine("✅ 验证成功!");
-                        preview.AppendLine();
-                        preview.AppendLine("📊 预期结果:");
-                        preview.AppendLine($"  {calcResult.Result ?? "null"}");
-                        preview.AppendLine();
-                        preview.AppendLine("💡 提示:");
-                        preview.AppendLine("  表达式将在工作流执行时计算实际值");
+                    // 简化预览 - 不计算实际值
+                    var preview = new StringBuilder();
+                    preview.AppendLine("✅ 表达式验证通过!");
+                    preview.AppendLine();
+                    preview.AppendLine("📝 表达式:");
+                    preview.AppendLine($"  {txtExpression.Text}");
+                    preview.AppendLine();
+                    preview.AppendLine("💡 提示:");
+                    preview.AppendLine("  • 表达式语法正确");
+                    preview.AppendLine("  • 变量引用有效");
+                    preview.AppendLine("  • 表达式将在工作流执行时计算实际值");
 
-                        rtbPreview.Text = preview.ToString();
-                    }
-                    else
-                    {
-                        rtbPreview.Text = $"⚠️ 语法正确但无法计算预期值\n\n错误: {calcResult?.ErrorMessage}";
-                    }
+                    rtbPreview.Text = preview.ToString();
                 }
                 else
                 {
+                    // 验证失败
                     var errors = validationResult?.Errors != null
                         ? string.Join("; ", validationResult.Errors.Select(e => e?.ToString() ?? ""))
                         : "未知错误";
@@ -749,7 +749,14 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             {
                 lblValidationResult.Text = $"验证结果: ❌ 验证异常: {ex.Message}";
                 lblValidationResult.ForeColor = Color.FromArgb(220, 53, 69);
-                rtbPreview.Text = $"❌ 验证异常\n\n{ex.Message}";
+
+                var errorDetail = new StringBuilder();
+                errorDetail.AppendLine("❌ 验证异常");
+                errorDetail.AppendLine();
+                errorDetail.AppendLine("错误信息:");
+                errorDetail.AppendLine($"  {ex.Message}");
+
+                rtbPreview.Text = errorDetail.ToString();
             }
         }
 
@@ -762,9 +769,9 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             {
                 var welcome = new StringBuilder();
                 welcome.AppendLine("快速开始:");
-                welcome.AppendLine("1️.从模板下拉框选择常用表达式");
-                welcome.AppendLine("2️.或双击左侧列表插入变量/函数");
-                welcome.AppendLine("3️.或直接输入表达式");
+                welcome.AppendLine("1.从模板下拉框选择常用表达式");
+                welcome.AppendLine("2.或双击左侧列表插入变量/函数");
+                welcome.AppendLine("3.或直接输入表达式");
                 welcome.AppendLine();
                 welcome.AppendLine("提示:");
                 welcome.AppendLine("• 变量使用 {变量名} 格式");

@@ -444,6 +444,20 @@ namespace MainUI.LogicalConfiguration.Forms
                 Logger?.LogError(ex, "加载参数时发生错误");
                 MessageHelper.MessageOK($"加载参数失败：{ex.Message}", TType.Error);
             }
+            finally
+            {
+                // 参数加载完成后，手动触发验证和预览
+                // 延迟100ms确保界面完全更新
+                await Task.Delay(100);
+
+                // 触发验证
+                ValidateConfigurationAsync();
+
+                // 触发预览刷新
+                RefreshPreviewAsync();
+
+                Logger?.LogDebug("参数加载完成，已触发验证和预览刷新");
+            }
         }
 
         /// <summary>
@@ -782,144 +796,21 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 异步验证配置的完整性
-        /// 提供更全面的配置验证，返回详细的验证结果
-        /// 主要用于实时验证和状态显示，同时更新验证结果界面
+        /// 异步验证配置
         /// </summary>
-        /// <returns>包含验证结果和错误信息的ValidationResult对象</returns>
-        private ValidationResult ValidateConfigurationAsync()
+        private void ValidateConfigurationAsync()
         {
             try
             {
-                var parameter = GetParameter();
-                var errors = new List<string>();
-                var warnings = new List<string>();
-
-                // 基本验证
-                if (string.IsNullOrWhiteSpace(parameter.TargetVarName))
+                var result = ValidateConfiguration();
+                if (result != null)
                 {
-                    errors.Add("目标变量名不能为空");
+                    UpdateValidationUI(result);
                 }
-                else
-                {
-                    // 验证目标变量是否存在
-                    var targetVar = GetTargetVariableType();
-                    if (targetVar == null)
-                    {
-                        errors.Add($"目标变量 '{parameter.TargetVarName}' 不存在");
-                    }
-                }
-
-                // 根据赋值类型进行不同的验证
-                switch (parameter.AssignmentType)
-                {
-                    case VariableAssignmentType.DirectAssignment:
-                        if (string.IsNullOrWhiteSpace(parameter.Expression))
-                        {
-                            errors.Add("直接赋值的值不能为空");
-                        }
-                        break;
-
-                    case VariableAssignmentType.ExpressionCalculation:
-                        if (string.IsNullOrWhiteSpace(parameter.Expression))
-                        {
-                            errors.Add("表达式不能为空");
-                        }
-                        else
-                        {
-                            // 验证表达式语法
-                            var context = new ValidationContext
-                            {
-                                TargetVariableName = parameter.TargetVarName,
-                                TargetVariableType = GetTargetVariableType()
-                            };
-
-                            var expressionResult = _engine?.ValidateExpression(parameter.Expression, context);
-                            if (expressionResult != null)
-                            {
-                                if (!expressionResult.IsValid)
-                                    errors.AddRange(expressionResult.Errors);
-                                warnings.AddRange(expressionResult.Warnings);
-                            }
-                        }
-                        break;
-
-                    case VariableAssignmentType.VariableCopy:
-                        if (string.IsNullOrWhiteSpace(parameter.Expression))
-                        {
-                            errors.Add("源变量名不能为空");
-                        }
-                        else
-                        {
-                            // 验证源变量是否存在
-                            var sourceVarName = parameter.Expression.Trim();
-                            if (sourceVarName.StartsWith("{") && sourceVarName.EndsWith("}"))
-                            {
-                                sourceVarName = sourceVarName.Substring(1, sourceVarName.Length - 2);
-                            }
-
-                            var globalVariableManager = _globalVariable ?? Program.ServiceProvider?.GetService<GlobalVariableManager>();
-                            var sourceVar = globalVariableManager?.FindVariableByName(sourceVarName);
-                            if (sourceVar == null)
-                            {
-                                errors.Add($"源变量 '{sourceVarName}' 不存在");
-                            }
-                        }
-                        break;
-
-                    case VariableAssignmentType.PLCRead:
-                        // PLC读取验证
-                        if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.ModuleName))
-                        {
-                            errors.Add("请选择PLC模块");
-                        }
-                        if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.Address))
-                        {
-                            errors.Add("请选择PLC地址");
-                        }
-                        break;
-                }
-
-                // 条件验证（可选）
-                if (!string.IsNullOrWhiteSpace(parameter.Condition))
-                {
-                    var conditionResult = _engine?.ValidateExpression(parameter.Condition, new ValidationContext());
-                    if (conditionResult != null && !conditionResult.IsValid)
-                    {
-                        errors.Add("执行条件表达式错误");
-                        errors.AddRange(conditionResult.Errors.Select(e => $"条件错误: {e}"));
-                    }
-                }
-
-                var combinedResult = new ValidationResult
-                {
-                    IsValid = errors.Count == 0,
-                    Errors = errors,
-                    Message = GenerateValidationMessage(new ValidationResult
-                    {
-                        IsValid = errors.Count == 0,
-                        Errors = errors
-                    })
-                };
-
-                // 更新UI显示
-                if (this.InvokeRequired)
-                {
-                    this.Invoke(new Action(() => UpdateValidationUI(combinedResult)));
-                }
-                else
-                {
-                    UpdateValidationUI(combinedResult);
-                }
-
-                return combinedResult;
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "异步验证配置时发生错误");
-                var errorResult = ValidationResult.Error($"验证过程发生错误: {ex.Message}");
-                UpdateValidationUI(errorResult);
-                return errorResult;
+                Logger?.LogError(ex, "验证配置时发生错误");
             }
         }
 
@@ -1153,31 +1044,19 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                if (rtbValidationResult != null)
+                // 触发预览刷新，验证结果会一起显示
+                RefreshPreviewAsync();
+
+                // 根据验证结果设置按钮状态
+                if (result.IsValid)
                 {
-                    rtbValidationResult.Clear();
-                    rtbValidationResult.Text = result.Message;
-
-                    // 根据验证结果设置颜色和按钮状态
-                    if (result.IsValid)
-                    {
-                        rtbValidationResult.ForeColor = Color.FromArgb(40, 167, 69); // 绿色
-
-                        // 有警告时使用橙色
-                        if (result.Warnings?.Any() == true)
-                        {
-                            rtbValidationResult.ForeColor = Color.FromArgb(255, 193, 7); // 橙色
-                        }
-
-                        if (btnOK != null) btnOK.Enabled = true;
-                        if (btnTest != null) btnTest.Enabled = true;
-                    }
-                    else
-                    {
-                        rtbValidationResult.ForeColor = Color.FromArgb(220, 53, 69); // 红色
-                        if (btnOK != null) btnOK.Enabled = false;
-                        if (btnTest != null) btnTest.Enabled = false;
-                    }
+                    if (btnOK != null) btnOK.Enabled = true;
+                    if (btnTest != null) btnTest.Enabled = true;
+                }
+                else
+                {
+                    if (btnOK != null) btnOK.Enabled = false;
+                    if (btnTest != null) btnTest.Enabled = false;
                 }
             }
             catch (Exception ex)
@@ -1213,24 +1092,55 @@ namespace MainUI.LogicalConfiguration.Forms
         #endregion
 
         #region 预览功能
-
         /// <summary>
-        /// 异步刷新预览
-        /// 根据当前配置实时显示预览结果
-        /// 包括目标变量信息、当前值和预期值等
+        /// 刷新预览 - 包含验证结果和预览内容
         /// </summary>
         private void RefreshPreviewAsync()
         {
             try
             {
-                var previewLines = new List<string>();
                 var parameter = GetParameter();
 
-                // 基本信息
-                previewLines.Add($"目标变量：{parameter.TargetVarName}");
-                previewLines.Add(item: $"赋值方式：{parameter.AssignmentType.GetDescription()}");
+                // ━━━━━━ 验证结果部分 ━━━━━━
+                var validationResult = ValidateConfiguration();
+                string validationText = "";
+                Color validationColor = Color.Gray;
 
-                // 根据赋值类型显示内容
+                if (validationResult != null)
+                {
+                    if (validationResult.IsValid)
+                    {
+                        validationText = validationResult.HasWarnings
+                            ? $"验证结果: ⚠️ {validationResult.Message}"
+                            : $"验证结果: ✓ {validationResult.Message}";
+                        validationColor = validationResult.HasWarnings
+                            ? Color.FromArgb(255, 193, 7)  // 橙色
+                            : Color.FromArgb(40, 167, 69);  // 绿色
+                    }
+                    else
+                    {
+                        var errors = validationResult.Errors != null
+                            ? string.Join("; ", validationResult.Errors)
+                            : "未知错误";
+                        validationText = $"验证结果: ❌ {errors}";
+                        validationColor = Color.FromArgb(220, 53, 69);  // 红色
+                    }
+                }
+                else
+                {
+                    validationText = "验证结果: 等待验证...";
+                    validationColor = Color.Gray;
+                }
+
+                // ━━━━━━ 预览内容部分 ━━━━━━
+                var previewLines = new List<string>();
+                previewLines.Add(""); // 空行分隔
+                previewLines.Add("━━━━━━━━━━━━━━━━━━━━━━");
+                previewLines.Add("📋 配置预览");
+                previewLines.Add("━━━━━━━━━━━━━━━━━━━━━━");
+                previewLines.Add($"目标变量：{parameter.TargetVarName}");
+                previewLines.Add($"赋值方式：{parameter.AssignmentType.GetDescription()}");
+
                 switch (parameter.AssignmentType)
                 {
                     case VariableAssignmentType.PLCRead:
@@ -1250,25 +1160,18 @@ namespace MainUI.LogicalConfiguration.Forms
                 previewLines.Add($"状态：{(parameter.IsAssignment ? "启用" : "禁用")}");
                 previewLines.Add("");
 
-                // 计算预期结果
+                // 当前值
                 try
                 {
                     var globalVariableManager = _globalVariable ?? Program.ServiceProvider?.GetService<GlobalVariableManager>();
                     var targetVar = globalVariableManager?.FindVariableByName(parameter.TargetVarName);
                     if (targetVar != null)
                     {
-                        previewLines.Add($"当前值：{targetVar.VarValue ?? "null"}");
-
-                        // 使用表达式验证器计算预期值
-                        var calculationResult = _engine?.CalculateExpectedValue(parameter.Expression);
-                        if (calculationResult?.Success == true)
-                        {
-                            previewLines.Add($"预期值：{calculationResult.Result ?? "null"}");
-                        }
-                        else
-                        {
-                            previewLines.Add($"预期值：计算失败 - {calculationResult?.ErrorMessage}");
-                        }
+                        //previewLines.Add($"当前值：{targetVar.VarValue ?? "null"}");
+                        //previewLines.Add("");
+                        previewLines.Add("💡 提示：");
+                        previewLines.Add("  • 赋值将在工作流执行时进行");
+                        previewLines.Add("  • 实际值将根据运行时计算");
                     }
                     else
                     {
@@ -1277,23 +1180,48 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
                 catch (Exception ex)
                 {
-                    previewLines.Add($"预览计算异常：{ex.Message}");
+                    previewLines.Add($"预览信息获取异常：{ex.Message}");
                 }
 
-                // 更新预览界面
                 var previewText = string.Join("\n", previewLines);
+
+                // 更新界面（使用RichTextBox支持多种颜色）
                 if (this.InvokeRequired)
                 {
                     this.Invoke(new Action(() =>
                     {
                         if (rtbPreviewResult != null)
-                            rtbPreviewResult.Text = previewText;
+                        {
+                            rtbPreviewResult.Clear();
+
+                            // 添加验证结果（带颜色）
+                            rtbPreviewResult.SelectionColor = validationColor;
+                            rtbPreviewResult.SelectionFont = new Font(rtbPreviewResult.Font, FontStyle.Bold);
+                            rtbPreviewResult.AppendText(validationText);
+
+                            // 添加预览内容（默认颜色）
+                            rtbPreviewResult.SelectionColor = rtbPreviewResult.ForeColor;
+                            rtbPreviewResult.SelectionFont = new Font(rtbPreviewResult.Font, FontStyle.Regular);
+                            rtbPreviewResult.AppendText(previewText);
+                        }
                     }));
                 }
                 else
                 {
                     if (rtbPreviewResult != null)
-                        rtbPreviewResult.Text = previewText;
+                    {
+                        rtbPreviewResult.Clear();
+
+                        // 添加验证结果（带颜色）
+                        rtbPreviewResult.SelectionColor = validationColor;
+                        rtbPreviewResult.SelectionFont = new Font(rtbPreviewResult.Font, FontStyle.Bold);
+                        rtbPreviewResult.AppendText(validationText);
+
+                        // 添加预览内容（默认颜色）
+                        rtbPreviewResult.SelectionColor = rtbPreviewResult.ForeColor;
+                        rtbPreviewResult.SelectionFont = new Font(rtbPreviewResult.Font, FontStyle.Regular);
+                        rtbPreviewResult.AppendText(previewText);
+                    }
                 }
             }
             catch (Exception ex)
@@ -1302,6 +1230,74 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
+        /// <summary>
+        /// 验证配置
+        /// </summary>
+        private ValidationResult ValidateConfiguration()
+        {
+            var parameter = GetParameter();
+
+            // 根据赋值类型进行不同的验证
+            switch (parameter.AssignmentType)
+            {
+                case VariableAssignmentType.PLCRead:
+                    // PLC读取：验证PLC配置
+                    return ValidatePlcConfiguration(parameter);
+
+                case VariableAssignmentType.DirectAssignment:
+                case VariableAssignmentType.ExpressionCalculation:
+                case VariableAssignmentType.VariableCopy:
+                default:
+                    // 其他类型：验证表达式
+                    var context = new ValidationContext
+                    {
+                        AllowFunctionCalls = true,
+                        AllowPlcReferences = false,
+                        StrictMode = false,
+                        TargetVariableType = "",
+                        ValidationLabel = "变量赋值"
+                    };
+                    return _engine?.ValidateExpression(parameter.Expression, context);
+            }
+        }
+
+        /// <summary>
+        /// 验证PLC配置
+        /// </summary>
+        private ValidationResult ValidatePlcConfiguration(Parameter_VariableAssignment parameter)
+        {
+            var result = new ValidationResult { IsValid = true };
+
+            // 验证PLC模块名
+            if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.ModuleName))
+            {
+                result.IsValid = false;
+                result.Message = "PLC模块名不能为空";
+                result.Errors.Add("请选择PLC模块");
+                return result;
+            }
+
+            // 验证PLC地址
+            if (string.IsNullOrWhiteSpace(parameter.DataSource.PlcConfig.Address))
+            {
+                result.IsValid = false;
+                result.Message = "PLC地址不能为空";
+                result.Errors.Add("请选择或输入PLC地址");
+                return result;
+            }
+
+            // 验证目标变量
+            if (string.IsNullOrWhiteSpace(parameter.TargetVarName))
+            {
+                result.IsValid = false;
+                result.Message = "目标变量不能为空";
+                result.Errors.Add("请选择目标变量");
+                return result;
+            }
+
+            result.Message = "PLC配置验证通过";
+            return result;
+        }
         #endregion
 
         #region 按钮事件
@@ -1379,12 +1375,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 btnTest.Text = "测试中...";
 
                 // 先验证配置
-                var validationResult = ValidateConfigurationAsync();
-                if (!validationResult.IsValid)
-                {
-                    MessageHelper.MessageOK($"配置验证失败，无法测试：\n{string.Join("\n", validationResult.Errors)}", TType.Warn);
-                    return;
-                }
+                ValidateConfigurationAsync();
 
                 // 获取当前参数
                 var parameter = GetParameter();

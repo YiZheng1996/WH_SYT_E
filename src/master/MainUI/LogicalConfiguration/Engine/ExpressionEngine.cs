@@ -19,8 +19,8 @@ namespace MainUI.LogicalConfiguration.Engine
 
         #region 正则表达式模式
 
-        // 变量引用模式: {变量名}
-        private readonly Regex _variablePattern = new(@"\{(\w+)\}", RegexOptions.Compiled);
+        // 变量引用模式: {变量名} - 支持所有 Unicode 字符
+        private readonly Regex _variablePattern = new(@"\{([\p{L}\p{N}_]+)\}", RegexOptions.Compiled);
 
         // 函数调用模式: 函数名(参数)
         private readonly Regex _functionPattern = new(@"\b(\w+)\s*\(([^)]*)\)", RegexOptions.Compiled);
@@ -202,7 +202,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 1. 检查无效字符
                 var invalidChars = GetInvalidCharacters(expression);
-                if (invalidChars.Any())
+                if (invalidChars.Count != 0)
                 {
                     result.IsValid = false;
                     result.Message = $"表达式包含无效字符: {string.Join(", ", invalidChars)}";
@@ -1789,22 +1789,36 @@ namespace MainUI.LogicalConfiguration.Engine
             };
 
             // === 数学函数 ===
-            functions["ABS"] = args => Math.Abs(Convert.ToDouble(args[0]));
-            functions["MAX"] = args => args.Max(x => Convert.ToDouble(x));
-            functions["MIN"] = args => args.Min(x => Convert.ToDouble(x));
-            functions["ROUND"] = args =>
+            // 定义实际函数逻辑
+            Func<List<object>, object> absFunc = args => Math.Abs(Convert.ToDouble(args[0]));
+            Func<List<object>, object> maxFunc = args => args.Max(x => Convert.ToDouble(x));
+            Func<List<object>, object> minFunc = args => args.Min(x => Convert.ToDouble(x));
+            Func<List<object>, object> roundFunc = args =>
             {
                 var value = Convert.ToDouble(args[0]);
                 var digits = args.Count > 1 ? Convert.ToInt32(args[1]) : 0;
                 return Math.Round(value, digits);
             };
-            functions["FLOOR"] = args => Math.Floor(Convert.ToDouble(args[0]));
-            functions["CEILING"] = args => Math.Ceiling(Convert.ToDouble(args[0]));
-            functions["SQRT"] = args => Math.Sqrt(Convert.ToDouble(args[0]));
-            functions["POW"] = args => Math.Pow(Convert.ToDouble(args[0]), Convert.ToDouble(args[1]));
-            functions["SIN"] = args => Math.Sin(Convert.ToDouble(args[0]));
-            functions["COS"] = args => Math.Cos(Convert.ToDouble(args[0]));
-            functions["TAN"] = args => Math.Tan(Convert.ToDouble(args[0]));
+            Func<List<object>, object> floorFunc = args => Math.Floor(Convert.ToDouble(args[0]));
+            Func<List<object>, object> ceilingFunc = args => Math.Ceiling(Convert.ToDouble(args[0]));
+            Func<List<object>, object> sqrtFunc = args => Math.Sqrt(Convert.ToDouble(args[0]));
+            Func<List<object>, object> powFunc = args => Math.Pow(Convert.ToDouble(args[0]), Convert.ToDouble(args[1]));
+            Func<List<object>, object> sinFunc = args => Math.Sin(Convert.ToDouble(args[0]));
+            Func<List<object>, object> cosFunc = args => Math.Cos(Convert.ToDouble(args[0]));
+            Func<List<object>, object> tanFunc = args => Math.Tan(Convert.ToDouble(args[0]));
+
+            // 同时注册带和不带 Math. 前缀的版本
+            functions["ABS"] = functions["Math.Abs"] = absFunc;
+            functions["MAX"] = functions["Math.Max"] = maxFunc;
+            functions["MIN"] = functions["Math.Min"] = minFunc;
+            functions["ROUND"] = functions["Math.Round"] = roundFunc;
+            functions["FLOOR"] = functions["Math.Floor"] = floorFunc;
+            functions["CEILING"] = functions["Math.Ceiling"] = ceilingFunc;
+            functions["SQRT"] = functions["Math.Sqrt"] = sqrtFunc;
+            functions["POW"] = functions["Math.Pow"] = powFunc;
+            functions["SIN"] = functions["Math.Sin"] = sinFunc;
+            functions["COS"] = functions["Math.Cos"] = cosFunc;
+            functions["TAN"] = functions["Math.Tan"] = tanFunc;
 
             // === 日期时间函数 ===
             functions["NOW"] = args => DateTime.Now;
@@ -1847,6 +1861,24 @@ namespace MainUI.LogicalConfiguration.Engine
                     return dt.AddMinutes(minutes);
                 }
                 return args[0];
+            };
+
+            // === 条件逻辑函数 ===
+            functions["IF"] = args =>
+            {
+                var condition = Convert.ToBoolean(args[0]);
+                return condition ? args[1] : args[2];
+            };
+
+            functions["ISNULL"] = args =>
+            {
+                return args[0] ?? args[1];
+            };
+
+            functions["ISEMPTY"] = args =>
+            {
+                var str = args[0]?.ToString();
+                return string.IsNullOrEmpty(str);
             };
 
             return functions;

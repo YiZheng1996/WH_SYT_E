@@ -341,8 +341,6 @@ namespace MainUI
 
                 // 更新 UcTestDetails 的步骤时间
                 ucTestDetails?.UpdateStepTimes();
-
-                Debug.WriteLine($"⏱️ 时间同步更新: {elapsed:hh\\:mm\\:ss}");
             }
             catch (Exception ex)
             {

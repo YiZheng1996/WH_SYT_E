@@ -433,45 +433,51 @@ namespace MainUI.LogicalConfiguration.Methods
         /// </summary>
         private object ApplyFormatting(object value, string formatString)
         {
-            if (value == null || string.IsNullOrWhiteSpace(formatString))
+            if (value == null)
                 return value;
 
             try
             {
-                // 支持日期、数字等格式化
-                if (value is DateTime dt)
+                // 记录原始类型用于调试
+                var originalType = value.GetType().Name;
+                NlogHelper.Default.Debug($"ApplyFormatting - 原始类型: {originalType}, 值: {value}, 格式: {formatString ?? "无"}");
+
+                // 统一处理：先判断是否为数值类型的字符串
+                string valueStr = value.ToString();
+
+                // 尝试解析为数值
+                if (double.TryParse(valueStr, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double numValue))
                 {
-                    var formatted = dt.ToString(formatString);
-                    NlogHelper.Default.Debug($"日期格式化: {dt} -> {formatted} (格式:{formatString})");
+                    // 如果没有指定格式，默认保留一位小数
+                    if (string.IsNullOrWhiteSpace(formatString))
+                    {
+                        formatString = "F1";
+                    }
+
+                    var formatted = numValue.ToString(formatString, System.Globalization.CultureInfo.InvariantCulture);
+                    NlogHelper.Default.Debug($"数值格式化: {value} ({originalType}) -> {formatted} (格式:{formatString})");
                     return formatted;
                 }
 
-                if (value is decimal dec)
+                // 日期时间处理
+                if (value is DateTime dt || DateTime.TryParse(valueStr, out dt))
                 {
-                    var formatted = dec.ToString(formatString);
-                    NlogHelper.Default.Debug($"数值格式化: {dec} -> {formatted} (格式:{formatString})");
-                    return formatted;
+                    if (!string.IsNullOrWhiteSpace(formatString))
+                    {
+                        var formatted = dt.ToString(formatString);
+                        NlogHelper.Default.Debug($"日期格式化: {dt} -> {formatted} (格式:{formatString})");
+                        return formatted;
+                    }
                 }
 
-                if (value is double dbl)
-                {
-                    var formatted = dbl.ToString(formatString);
-                    NlogHelper.Default.Debug($"数值格式化: {dbl} -> {formatted} (格式:{formatString})");
-                    return formatted;
-                }
-
-                if (value is int i)
-                {
-                    var formatted = i.ToString(formatString);
-                    NlogHelper.Default.Debug($"整数格式化: {i} -> {formatted} (格式:{formatString})");
-                    return formatted;
-                }
-
+                // 如果都不是，返回原值
+                NlogHelper.Default.Debug($"未格式化，返回原值: {value} ({originalType})");
                 return value;
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Warn($"格式化失败 (值:{value}, 格式:{formatString}): {ex.Message}");
+                NlogHelper.Default.Warn($"格式化失败 (值:{value}, 类型:{value.GetType().Name}, 格式:{formatString}): {ex.Message}");
                 return value;
             }
         }

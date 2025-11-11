@@ -102,7 +102,7 @@ namespace MainUI.Procedure.Controls
                 // 直接使用传入的时间
                 lblElapsedTime.Text = $"⏱ 已用时间: {elapsed:hh\\:mm\\:ss}";
 
-                Debug.WriteLine($"🕐 总时间更新: {elapsed:hh\\:mm\\:ss}");
+                //Debug.WriteLine($"🕐 总时间更新: {elapsed:hh\\:mm\\:ss}");
             }
             catch (Exception ex)
             {
@@ -410,7 +410,6 @@ namespace MainUI.Procedure.Controls
                 if (stepData?.StepParameter != null)
                 {
                     string paramStr = stepData.StepParameter.ToString();
-                    Debug.WriteLine($"参数字符串: {paramStr}");
 
                     // 尝试解析 JSON 格式
                     if (paramStr.StartsWith('{'))
@@ -425,7 +424,7 @@ namespace MainUI.Procedure.Controls
                                 totalSeconds = (int)(milliseconds / 1000.0);
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             totalSeconds = stepControl.GetDelayTotalSeconds();
                         }

@@ -57,9 +57,6 @@ namespace MainUI.LogicalConfiguration.Forms
             chkEnabled = new UICheckBox();
             grpPreview = new UIPanel();
             uiLine3 = new UILine();
-            lblValidation = new UILabel();
-            rtbValidationResult = new UIRichTextBox();
-            lblPreview = new UILabel();
             rtbPreviewResult = new UIRichTextBox();
             pnlButtons = new UIPanel();
             btnOK = new UISymbolButton();
@@ -77,6 +74,8 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // grpBasicConfig
             // 
+            grpBasicConfig.Controls.Add(lblDescription);
+            grpBasicConfig.Controls.Add(txtDescription);
             grpBasicConfig.Controls.Add(pnlPlcSource);
             grpBasicConfig.Controls.Add(pnlVoluationSource);
             grpBasicConfig.Controls.Add(uiLine1);
@@ -94,7 +93,7 @@ namespace MainUI.LogicalConfiguration.Forms
             grpBasicConfig.Name = "grpBasicConfig";
             grpBasicConfig.Radius = 8;
             grpBasicConfig.RectColor = Color.FromArgb(65, 100, 204);
-            grpBasicConfig.Size = new Size(454, 280);
+            grpBasicConfig.Size = new Size(454, 463);
             grpBasicConfig.TabIndex = 0;
             grpBasicConfig.Text = null;
             grpBasicConfig.TextAlignment = ContentAlignment.MiddleCenter;
@@ -349,22 +348,21 @@ namespace MainUI.LogicalConfiguration.Forms
             grpAdvancedConfig.Controls.Add(uiLine2);
             grpAdvancedConfig.Controls.Add(lblCondition);
             grpAdvancedConfig.Controls.Add(txtCondition);
-            grpAdvancedConfig.Controls.Add(lblDescription);
-            grpAdvancedConfig.Controls.Add(txtDescription);
             grpAdvancedConfig.Controls.Add(chkEnabled);
             grpAdvancedConfig.FillColor = Color.White;
             grpAdvancedConfig.FillColor2 = Color.White;
             grpAdvancedConfig.Font = new Font("微软雅黑", 9F);
-            grpAdvancedConfig.Location = new Point(15, 335);
+            grpAdvancedConfig.Location = new Point(515, 34);
             grpAdvancedConfig.Margin = new Padding(4, 5, 4, 5);
             grpAdvancedConfig.MinimumSize = new Size(1, 1);
             grpAdvancedConfig.Name = "grpAdvancedConfig";
             grpAdvancedConfig.Radius = 8;
             grpAdvancedConfig.RectColor = Color.FromArgb(65, 100, 204);
-            grpAdvancedConfig.Size = new Size(454, 265);
+            grpAdvancedConfig.Size = new Size(52, 10);
             grpAdvancedConfig.TabIndex = 1;
             grpAdvancedConfig.Text = null;
             grpAdvancedConfig.TextAlignment = ContentAlignment.MiddleCenter;
+            grpAdvancedConfig.Visible = false;
             // 
             // uiLine2
             // 
@@ -414,7 +412,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblDescription.BackColor = Color.Transparent;
             lblDescription.Font = new Font("微软雅黑", 10F);
             lblDescription.ForeColor = Color.FromArgb(48, 48, 48);
-            lblDescription.Location = new Point(15, 95);
+            lblDescription.Location = new Point(15, 291);
             lblDescription.Name = "lblDescription";
             lblDescription.Size = new Size(100, 23);
             lblDescription.TabIndex = 3;
@@ -426,7 +424,7 @@ namespace MainUI.LogicalConfiguration.Forms
             txtDescription.AutoScroll = true;
             txtDescription.Cursor = Cursors.IBeam;
             txtDescription.Font = new Font("微软雅黑", 10F);
-            txtDescription.Location = new Point(130, 95);
+            txtDescription.Location = new Point(130, 291);
             txtDescription.Margin = new Padding(4, 5, 4, 5);
             txtDescription.MinimumSize = new Size(1, 16);
             txtDescription.Multiline = true;
@@ -434,7 +432,7 @@ namespace MainUI.LogicalConfiguration.Forms
             txtDescription.Padding = new Padding(5);
             txtDescription.RectColor = Color.FromArgb(65, 100, 204);
             txtDescription.ShowText = false;
-            txtDescription.Size = new Size(255, 119);
+            txtDescription.Size = new Size(300, 158);
             txtDescription.TabIndex = 4;
             txtDescription.TextAlignment = ContentAlignment.TopLeft;
             toolTip.SetToolTip(txtDescription, "对此赋值操作进行详细描述，便于后期维护");
@@ -458,9 +456,6 @@ namespace MainUI.LogicalConfiguration.Forms
             // grpPreview
             // 
             grpPreview.Controls.Add(uiLine3);
-            grpPreview.Controls.Add(lblValidation);
-            grpPreview.Controls.Add(rtbValidationResult);
-            grpPreview.Controls.Add(lblPreview);
             grpPreview.Controls.Add(rtbPreviewResult);
             grpPreview.FillColor = Color.White;
             grpPreview.FillColor2 = Color.White;
@@ -471,7 +466,7 @@ namespace MainUI.LogicalConfiguration.Forms
             grpPreview.Name = "grpPreview";
             grpPreview.Radius = 8;
             grpPreview.RectColor = Color.FromArgb(65, 100, 204);
-            grpPreview.Size = new Size(579, 555);
+            grpPreview.Size = new Size(579, 463);
             grpPreview.TabIndex = 2;
             grpPreview.Text = null;
             grpPreview.TextAlignment = ContentAlignment.MiddleCenter;
@@ -487,55 +482,14 @@ namespace MainUI.LogicalConfiguration.Forms
             uiLine3.Name = "uiLine3";
             uiLine3.Size = new Size(551, 29);
             uiLine3.TabIndex = 0;
-            uiLine3.Text = "实时预览与验证";
+            uiLine3.Text = "实时预览";
             uiLine3.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // lblValidation
-            // 
-            lblValidation.BackColor = Color.Transparent;
-            lblValidation.Font = new Font("微软雅黑", 10F);
-            lblValidation.ForeColor = Color.FromArgb(48, 48, 48);
-            lblValidation.Location = new Point(15, 50);
-            lblValidation.Name = "lblValidation";
-            lblValidation.Size = new Size(100, 23);
-            lblValidation.TabIndex = 1;
-            lblValidation.Text = "验证结果";
-            lblValidation.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // rtbValidationResult
-            // 
-            rtbValidationResult.FillColor = Color.FromArgb(248, 248, 248);
-            rtbValidationResult.Font = new Font("微软雅黑", 9F);
-            rtbValidationResult.Location = new Point(15, 75);
-            rtbValidationResult.Margin = new Padding(4, 5, 4, 5);
-            rtbValidationResult.MinimumSize = new Size(1, 1);
-            rtbValidationResult.Name = "rtbValidationResult";
-            rtbValidationResult.Padding = new Padding(2);
-            rtbValidationResult.ReadOnly = true;
-            rtbValidationResult.RectColor = Color.FromArgb(65, 100, 204);
-            rtbValidationResult.ShowText = false;
-            rtbValidationResult.Size = new Size(551, 205);
-            rtbValidationResult.TabIndex = 2;
-            rtbValidationResult.TextAlignment = ContentAlignment.MiddleCenter;
-            toolTip.SetToolTip(rtbValidationResult, "显示配置验证的结果");
-            // 
-            // lblPreview
-            // 
-            lblPreview.BackColor = Color.Transparent;
-            lblPreview.Font = new Font("微软雅黑", 10F);
-            lblPreview.ForeColor = Color.FromArgb(48, 48, 48);
-            lblPreview.Location = new Point(15, 290);
-            lblPreview.Name = "lblPreview";
-            lblPreview.Size = new Size(100, 23);
-            lblPreview.TabIndex = 3;
-            lblPreview.Text = "预览结果";
-            lblPreview.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // rtbPreviewResult
             // 
             rtbPreviewResult.FillColor = Color.FromArgb(248, 248, 248);
             rtbPreviewResult.Font = new Font("微软雅黑", 9F);
-            rtbPreviewResult.Location = new Point(15, 315);
+            rtbPreviewResult.Location = new Point(15, 47);
             rtbPreviewResult.Margin = new Padding(4, 5, 4, 5);
             rtbPreviewResult.MinimumSize = new Size(1, 1);
             rtbPreviewResult.Name = "rtbPreviewResult";
@@ -543,7 +497,7 @@ namespace MainUI.LogicalConfiguration.Forms
             rtbPreviewResult.ReadOnly = true;
             rtbPreviewResult.RectColor = Color.FromArgb(65, 100, 204);
             rtbPreviewResult.ShowText = false;
-            rtbPreviewResult.Size = new Size(551, 226);
+            rtbPreviewResult.Size = new Size(551, 402);
             rtbPreviewResult.TabIndex = 4;
             rtbPreviewResult.TextAlignment = ContentAlignment.MiddleCenter;
             toolTip.SetToolTip(rtbPreviewResult, "显示赋值操作的预期结果");
@@ -552,12 +506,13 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             pnlButtons.Controls.Add(btnOK);
             pnlButtons.Controls.Add(btnCancel);
+            pnlButtons.Controls.Add(grpAdvancedConfig);
             pnlButtons.Controls.Add(btnTest);
             pnlButtons.Controls.Add(btnHelp);
             pnlButtons.FillColor = Color.White;
             pnlButtons.FillColor2 = Color.White;
             pnlButtons.Font = new Font("微软雅黑", 9F);
-            pnlButtons.Location = new Point(15, 610);
+            pnlButtons.Location = new Point(15, 518);
             pnlButtons.Margin = new Padding(4, 5, 4, 5);
             pnlButtons.MinimumSize = new Size(1, 1);
             pnlButtons.Name = "pnlButtons";
@@ -644,10 +599,9 @@ namespace MainUI.LogicalConfiguration.Forms
             // Form_VariableAssignment
             // 
             AutoScaleMode = AutoScaleMode.None;
-            ClientSize = new Size(1071, 694);
+            ClientSize = new Size(1071, 603);
             Controls.Add(pnlButtons);
             Controls.Add(grpPreview);
-            Controls.Add(grpAdvancedConfig);
             Controls.Add(grpBasicConfig);
             Font = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             MaximizeBox = false;
@@ -693,9 +647,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private Sunny.UI.UIPanel grpPreview;
         private Sunny.UI.UILine uiLine3;
-        private Sunny.UI.UILabel lblValidation;
-        private Sunny.UI.UIRichTextBox rtbValidationResult;
-        private Sunny.UI.UILabel lblPreview;
         private Sunny.UI.UIRichTextBox rtbPreviewResult;
 
         private Sunny.UI.UIPanel pnlButtons;
