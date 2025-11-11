@@ -79,23 +79,6 @@
             uiPipe30 = new UIPipe();
             uiPipe7 = new UIPipe();
             uiPipe12 = new UIPipe();
-            uiPanel22 = new UIPanel();
-            uiPanel21 = new UIPanel();
-            uiDigitalLabel1 = new UIDigitalLabel();
-            grpDI = new UIPanel();
-            uiLedBulb3 = new UILedBulb();
-            uiLedBulb2 = new UILedBulb();
-            uiLedBulb1 = new UILedBulb();
-            uiLabel32 = new UILabel();
-            uiLabel33 = new UILabel();
-            uiLabel34 = new UILabel();
-            grpDO = new UIPanel();
-            uiSwitch2 = new UISwitch();
-            label9 = new Label();
-            uiSwitch1 = new UISwitch();
-            label8 = new Label();
-            uiSwitch = new UISwitch();
-            label19 = new Label();
             uiLabel7 = new UILabel();
             uiLabel35 = new UILabel();
             uiLabel36 = new UILabel();
@@ -153,9 +136,6 @@
             uiPanel20.SuspendLayout();
             uiPanel9.SuspendLayout();
             panel1.SuspendLayout();
-            uiPanel21.SuspendLayout();
-            grpDI.SuspendLayout();
-            grpDO.SuspendLayout();
             uiPanel24.SuspendLayout();
             uiPanel25.SuspendLayout();
             uiPanel7.SuspendLayout();
@@ -914,262 +894,6 @@
             uiPipe12.TabIndex = 556;
             uiPipe12.Text = "uiPipe1";
             uiPipe12.ZoomScaleDisabled = true;
-            // 
-            // uiPanel22
-            // 
-            uiPanel22.FillColor = Color.FromArgb(236, 236, 237);
-            uiPanel22.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPanel22.Location = new Point(8, 813);
-            uiPanel22.Margin = new Padding(4, 5, 4, 5);
-            uiPanel22.MinimumSize = new Size(1, 1);
-            uiPanel22.Name = "uiPanel22";
-            uiPanel22.RectColor = Color.FromArgb(65, 100, 204);
-            uiPanel22.Size = new Size(113, 31);
-            uiPanel22.TabIndex = 600;
-            uiPanel22.Text = "可调电源(V)";
-            uiPanel22.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // uiPanel21
-            // 
-            uiPanel21.Controls.Add(uiDigitalLabel1);
-            uiPanel21.FillColor = Color.White;
-            uiPanel21.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPanel21.Location = new Point(7, 765);
-            uiPanel21.Margin = new Padding(4, 5, 4, 5);
-            uiPanel21.MinimumSize = new Size(1, 1);
-            uiPanel21.Name = "uiPanel21";
-            uiPanel21.RectColor = Color.White;
-            uiPanel21.Size = new Size(116, 46);
-            uiPanel21.TabIndex = 599;
-            uiPanel21.Text = null;
-            uiPanel21.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // uiDigitalLabel1
-            // 
-            uiDigitalLabel1.BackColor = Color.FromArgb(236, 236, 237);
-            uiDigitalLabel1.DecimalPlaces = 1;
-            uiDigitalLabel1.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiDigitalLabel1.ForeColor = Color.DarkOliveGreen;
-            uiDigitalLabel1.Location = new Point(3, 2);
-            uiDigitalLabel1.MinimumSize = new Size(1, 1);
-            uiDigitalLabel1.Name = "uiDigitalLabel1";
-            uiDigitalLabel1.RectSize = 2;
-            uiDigitalLabel1.Size = new Size(110, 42);
-            uiDigitalLabel1.TabIndex = 518;
-            uiDigitalLabel1.Tag = "4";
-            uiDigitalLabel1.Text = "uiDigitalLabel1";
-            uiDigitalLabel1.TextAlign = HorizontalAlignment.Center;
-            uiDigitalLabel1.Click += PowerSetting_Click;
-            // 
-            // grpDI
-            // 
-            grpDI.Controls.Add(uiLedBulb3);
-            grpDI.Controls.Add(uiLedBulb2);
-            grpDI.Controls.Add(uiLedBulb1);
-            grpDI.Controls.Add(uiLabel32);
-            grpDI.Controls.Add(uiLabel33);
-            grpDI.Controls.Add(uiLabel34);
-            grpDI.FillColor = Color.White;
-            grpDI.FillColor2 = Color.White;
-            grpDI.FillDisableColor = Color.White;
-            grpDI.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            grpDI.Location = new Point(132, 766);
-            grpDI.Margin = new Padding(4, 5, 4, 5);
-            grpDI.MinimumSize = new Size(1, 1);
-            grpDI.Name = "grpDI";
-            grpDI.Radius = 30;
-            grpDI.RectColor = Color.White;
-            grpDI.RectDisableColor = Color.White;
-            grpDI.Size = new Size(413, 79);
-            grpDI.TabIndex = 597;
-            grpDI.Text = null;
-            grpDI.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // uiLedBulb3
-            // 
-            uiLedBulb3.BackColor = Color.White;
-            uiLedBulb3.Location = new Point(312, 15);
-            uiLedBulb3.Name = "uiLedBulb3";
-            uiLedBulb3.On = false;
-            uiLedBulb3.Size = new Size(36, 37);
-            uiLedBulb3.TabIndex = 601;
-            uiLedBulb3.Tag = "12";
-            uiLedBulb3.Text = "uiLedBulb1";
-            // 
-            // uiLedBulb2
-            // 
-            uiLedBulb2.BackColor = Color.White;
-            uiLedBulb2.Location = new Point(183, 15);
-            uiLedBulb2.Name = "uiLedBulb2";
-            uiLedBulb2.On = false;
-            uiLedBulb2.Size = new Size(36, 37);
-            uiLedBulb2.TabIndex = 601;
-            uiLedBulb2.Tag = "11";
-            uiLedBulb2.Text = "uiLedBulb1";
-            // 
-            // uiLedBulb1
-            // 
-            uiLedBulb1.BackColor = Color.White;
-            uiLedBulb1.Location = new Point(53, 13);
-            uiLedBulb1.Name = "uiLedBulb1";
-            uiLedBulb1.On = false;
-            uiLedBulb1.Size = new Size(36, 37);
-            uiLedBulb1.TabIndex = 601;
-            uiLedBulb1.Tag = "10";
-            uiLedBulb1.Text = "uiLedBulb1";
-            // 
-            // uiLabel32
-            // 
-            uiLabel32.BackColor = Color.White;
-            uiLabel32.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiLabel32.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel32.Location = new Point(10, 53);
-            uiLabel32.Name = "uiLabel32";
-            uiLabel32.Size = new Size(129, 17);
-            uiLabel32.TabIndex = 515;
-            uiLabel32.Text = "压力开关电源控制检测";
-            // 
-            // uiLabel33
-            // 
-            uiLabel33.BackColor = Color.White;
-            uiLabel33.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiLabel33.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel33.Location = new Point(145, 53);
-            uiLabel33.Name = "uiLabel33";
-            uiLabel33.Size = new Size(129, 17);
-            uiLabel33.TabIndex = 515;
-            uiLabel33.Text = "电磁阀电源控制检测";
-            // 
-            // uiLabel34
-            // 
-            uiLabel34.BackColor = Color.White;
-            uiLabel34.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiLabel34.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel34.Location = new Point(281, 53);
-            uiLabel34.Name = "uiLabel34";
-            uiLabel34.Size = new Size(110, 17);
-            uiLabel34.TabIndex = 515;
-            uiLabel34.Text = "绝缘耐压测换检测";
-            // 
-            // grpDO
-            // 
-            grpDO.Controls.Add(uiSwitch2);
-            grpDO.Controls.Add(label9);
-            grpDO.Controls.Add(uiSwitch1);
-            grpDO.Controls.Add(label8);
-            grpDO.Controls.Add(uiSwitch);
-            grpDO.Controls.Add(label19);
-            grpDO.FillColor = Color.White;
-            grpDO.FillColor2 = Color.White;
-            grpDO.FillDisableColor = Color.White;
-            grpDO.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            grpDO.Location = new Point(550, 766);
-            grpDO.Margin = new Padding(4, 5, 4, 5);
-            grpDO.MinimumSize = new Size(1, 1);
-            grpDO.Name = "grpDO";
-            grpDO.Radius = 30;
-            grpDO.RectColor = Color.White;
-            grpDO.RectDisableColor = Color.White;
-            grpDO.Size = new Size(334, 77);
-            grpDO.TabIndex = 598;
-            grpDO.Text = null;
-            grpDO.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // uiSwitch2
-            // 
-            uiSwitch2.ActiveColor = Color.LimeGreen;
-            uiSwitch2.BackColor = Color.Transparent;
-            uiSwitch2.Font = new Font("Microsoft Sans Serif", 14F, FontStyle.Bold);
-            uiSwitch2.ForeColor = Color.FromArgb(235, 227, 221);
-            uiSwitch2.InActiveColor = Color.FromArgb(231, 54, 36);
-            uiSwitch2.Location = new Point(235, 15);
-            uiSwitch2.MinimumSize = new Size(1, 1);
-            uiSwitch2.MultiLanguageSupport = false;
-            uiSwitch2.Name = "uiSwitch2";
-            uiSwitch2.Radius = 30;
-            uiSwitch2.Size = new Size(72, 31);
-            uiSwitch2.SwitchShape = UISwitch.UISwitchShape.Square;
-            uiSwitch2.TabIndex = 17;
-            uiSwitch2.Tag = "22";
-            uiSwitch2.TagString = "";
-            uiSwitch2.Text = "123";
-            uiSwitch2.Click += DO_Click;
-            // 
-            // label9
-            // 
-            label9.AutoSize = true;
-            label9.BackColor = Color.Transparent;
-            label9.Font = new Font("微软雅黑", 12F);
-            label9.ForeColor = Color.FromArgb(64, 64, 64);
-            label9.Location = new Point(223, 53);
-            label9.Name = "label9";
-            label9.Size = new Size(106, 21);
-            label9.TabIndex = 18;
-            label9.Text = "绝缘耐压切换";
-            // 
-            // uiSwitch1
-            // 
-            uiSwitch1.ActiveColor = Color.LimeGreen;
-            uiSwitch1.BackColor = Color.Transparent;
-            uiSwitch1.Font = new Font("Microsoft Sans Serif", 14F, FontStyle.Bold);
-            uiSwitch1.ForeColor = Color.FromArgb(235, 227, 221);
-            uiSwitch1.InActiveColor = Color.FromArgb(231, 54, 36);
-            uiSwitch1.Location = new Point(130, 15);
-            uiSwitch1.MinimumSize = new Size(1, 1);
-            uiSwitch1.MultiLanguageSupport = false;
-            uiSwitch1.Name = "uiSwitch1";
-            uiSwitch1.Radius = 30;
-            uiSwitch1.Size = new Size(72, 31);
-            uiSwitch1.SwitchShape = UISwitch.UISwitchShape.Square;
-            uiSwitch1.TabIndex = 17;
-            uiSwitch1.Tag = "21";
-            uiSwitch1.TagString = "";
-            uiSwitch1.Text = "123";
-            uiSwitch1.Click += DO_Click;
-            // 
-            // label8
-            // 
-            label8.AutoSize = true;
-            label8.BackColor = Color.Transparent;
-            label8.Font = new Font("微软雅黑", 12F);
-            label8.ForeColor = Color.FromArgb(64, 64, 64);
-            label8.Location = new Point(118, 53);
-            label8.Name = "label8";
-            label8.Size = new Size(106, 21);
-            label8.TabIndex = 18;
-            label8.Text = "压力开关电源";
-            // 
-            // uiSwitch
-            // 
-            uiSwitch.ActiveColor = Color.LimeGreen;
-            uiSwitch.BackColor = Color.Transparent;
-            uiSwitch.Font = new Font("Microsoft Sans Serif", 14F, FontStyle.Bold);
-            uiSwitch.ForeColor = Color.FromArgb(235, 227, 221);
-            uiSwitch.InActiveColor = Color.FromArgb(231, 54, 36);
-            uiSwitch.Location = new Point(25, 15);
-            uiSwitch.MinimumSize = new Size(1, 1);
-            uiSwitch.MultiLanguageSupport = false;
-            uiSwitch.Name = "uiSwitch";
-            uiSwitch.Radius = 30;
-            uiSwitch.Size = new Size(72, 31);
-            uiSwitch.SwitchShape = UISwitch.UISwitchShape.Square;
-            uiSwitch.TabIndex = 17;
-            uiSwitch.Tag = "20";
-            uiSwitch.TagString = "";
-            uiSwitch.Text = "123";
-            uiSwitch.Click += DO_Click;
-            // 
-            // label19
-            // 
-            label19.AutoSize = true;
-            label19.BackColor = Color.Transparent;
-            label19.Font = new Font("微软雅黑", 12F);
-            label19.ForeColor = Color.FromArgb(64, 64, 64);
-            label19.Location = new Point(18, 53);
-            label19.Name = "label19";
-            label19.Size = new Size(90, 21);
-            label19.TabIndex = 18;
-            label19.Text = "电磁阀电源";
             // 
             // uiLabel7
             // 
@@ -2005,10 +1729,6 @@
             Controls.Add(uiPipe13);
             Controls.Add(DCFVX07);
             Controls.Add(uiPanel7);
-            Controls.Add(uiPanel22);
-            Controls.Add(uiPanel21);
-            Controls.Add(grpDI);
-            Controls.Add(grpDO);
             Controls.Add(uiPanel11);
             Controls.Add(uiPipe10);
             Controls.Add(uiPanel25);
@@ -2055,10 +1775,6 @@
             uiPanel9.PerformLayout();
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
-            uiPanel21.ResumeLayout(false);
-            grpDI.ResumeLayout(false);
-            grpDO.ResumeLayout(false);
-            grpDO.PerformLayout();
             uiPanel24.ResumeLayout(false);
             uiPanel24.PerformLayout();
             uiPanel25.ResumeLayout(false);
@@ -2123,20 +1839,6 @@
         private UIPipe uiPipe30;
         private UIPipe uiPipe7;
         private UIPipe uiPipe12;
-        private UIPanel uiPanel22;
-        private UIPanel uiPanel21;
-        private UIDigitalLabel uiDigitalLabel1;
-        private UIPanel grpDI;
-        private UILabel uiLabel32;
-        private UILabel uiLabel33;
-        private UILabel uiLabel34;
-        private UIPanel grpDO;
-        private UISwitch uiSwitch2;
-        private Label label9;
-        private UISwitch uiSwitch1;
-        private Label label8;
-        private UISwitch uiSwitch;
-        private Label label19;
         private UILabel uiLabel7;
         private UILabel uiLabel35;
         private UILabel uiLabel36;
@@ -2157,9 +1859,6 @@
         private AntdUI.Label label12;
         private UILabel uiLabel46;
         private UILabel LabPE02;
-        private UILedBulb uiLedBulb3;
-        private UILedBulb uiLedBulb2;
-        private UILedBulb uiLedBulb1;
         private UIPanel uiPanel7;
         private AntdUI.Label label13;
         private UILabel uiLabel3;

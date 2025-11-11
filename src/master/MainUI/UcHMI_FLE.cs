@@ -23,8 +23,6 @@ namespace MainUI.Procedure.User
         {
             LoaddicDCF();
             LoaddicCGQ();
-            LoaddicDO();
-            LoaddicDI();
 
             OPCHelper.DOgrp.DOgrpChanged += DOgrp_DOgrpChanged;
             OPCHelper.DOgrp.Fresh();
@@ -75,45 +73,6 @@ namespace MainUI.Procedure.User
             catch (Exception ex)
             {
                 NlogHelper.Default.Error("加载传感器信号控件异常！：", ex); ;
-            }
-        }
-        private void LoaddicDO()
-        {
-            rbtDO.Clear();
-            try
-            {
-                foreach (var item in grpDO.Controls)
-                {
-                    if (item is UISwitch)
-                    {
-                        UISwitch sp = item as UISwitch;
-                        rbtDO.Add(Convert.ToInt32(sp.Tag), sp);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("加载DO控制信号控件异常！：", ex); ;
-            }
-        }
-
-        private void LoaddicDI()
-        {
-            rbtDI.Clear();
-            try
-            {
-                foreach (var item in grpDI.Controls)
-                {
-                    if (item is UILedBulb)
-                    {
-                        UILedBulb sp = item as UILedBulb;
-                        rbtDI.Add(Convert.ToInt32(sp.Tag), sp);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("加载DI检测信号控件异常！：", ex); ;
             }
         }
 
