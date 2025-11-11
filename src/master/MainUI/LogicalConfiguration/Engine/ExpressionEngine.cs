@@ -823,15 +823,22 @@ namespace MainUI.LogicalConfiguration.Engine
 
         /// <summary>
         /// 检查是否包含无效字符
+        /// 支持中文变量：允许所有 Unicode 字符（字母、数字、中文等）
         /// </summary>
         private List<char> GetInvalidCharacters(string expression)
         {
-            var validChars = new HashSet<char>(
+            // 定义基本的有效字符（英文字母、数字、运算符、标点符号）
+            var basicValidChars = new HashSet<char>(
                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" +
                 "+-*/%=!<>&|(){}[].,;:\"' \t\n\r_"
             );
 
-            return expression.Where(c => !validChars.Contains(c)).Distinct().ToList();
+            // 返回不是基本有效字符，且不是 Unicode 字母、数字的字符
+            return expression.Where(c =>
+                !basicValidChars.Contains(c) &&
+                !char.IsLetter(c) &&           // 允许所有 Unicode 字母（包括中文）
+                !char.IsDigit(c)                // 允许所有 Unicode 数字
+            ).Distinct().ToList();
         }
 
         /// <summary>
