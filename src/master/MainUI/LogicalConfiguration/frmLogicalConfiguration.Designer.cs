@@ -1,4 +1,4 @@
-﻿namespace MainUI.Procedure
+﻿namespace MainUI.LogicalConfiguration
 {
     partial class FrmLogicalConfiguration
     {

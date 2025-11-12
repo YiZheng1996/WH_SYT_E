@@ -93,17 +93,29 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 }
             },
             {
-                "日期时间", new List<FunctionInfo>
-                {
-                    new("DateTime.Now", "", "当前时间", "DateTime.Now → 2025-01-15 10:30:00"),
-                    new("DateTime.Today", "", "今天日期", "DateTime.Today → 2025-01-15"),
-                    new("DateTime.AddDays", "date, days", "增加天数", "DateTime.Now.AddDays(7)"),
-                    new("DateTime.AddHours", "date, hours", "增加小时", "DateTime.Now.AddHours(2)"),
-                    new("DateTime.ToString", "date, format", "格式化日期", "DateTime.Now.ToString(\"yyyy-MM-dd\")"),
-                    new("DateTime.Year", "date", "获取年份", "DateTime.Now.Year → 2025"),
-                    new("DateTime.Month", "date", "获取月份", "DateTime.Now.Month → 1"),
-                    new("DateTime.Day", "date", "获取日期", "DateTime.Now.Day → 15")
-                }
+                 "日期时间", new List<FunctionInfo>
+    {
+        // 基础函数
+        new("NOW()", "", "获取当前日期和时间", "NOW() → 2025-11-11 14:30:25"),
+        new("DateTime.Now()", "", "获取当前日期和时间", "DateTime.Now() → 2025-11-11 14:30:25"),
+        new("TODAY()", "", "获取今天日期（时间为00:00:00）", "TODAY() → 2025-11-11 00:00:00"),
+        new("DateTime.Today()", "", "获取今天日期", "DateTime.Today() → 2025-11-11"),
+        
+        // DateTime 属性
+        new("DateTime.Now.Year", "", "获取当前年份", "DateTime.Now.Year → 2025"),
+        new("DateTime.Now.Month", "", "获取当前月份", "DateTime.Now.Month → 11"),
+        new("DateTime.Now.Day", "", "获取当前日期", "DateTime.Now.Day → 11"),
+        new("DateTime.Now.Hour", "", "获取当前小时", "DateTime.Now.Hour → 14"),
+        new("DateTime.Now.Minute", "", "获取当前分钟", "DateTime.Now.Minute → 30"),
+        new("DateTime.Now.Second", "", "获取当前秒数", "DateTime.Now.Second → 25"),
+        new("DateTime.Now.DayOfWeek", "", "获取星期几（0=周日）", "DateTime.Now.DayOfWeek → 2"),
+        
+        // 格式化和运算
+        new("FORMAT(date, format)", "日期, 格式", "格式化日期时间", "FORMAT(DateTime.Now(), \"yyyy-MM-dd\") → \"2025-11-11\""),
+        new("ADDDAYS(date, days)", "日期, 天数", "增加天数", "ADDDAYS(DateTime.Now(), 7) → 7天后"),
+        new("ADDHOURS(date, hours)", "日期, 小时", "增加小时", "ADDHOURS(DateTime.Now(), 2) → 2小时后"),
+        new("ADDMINUTES(date, minutes)", "日期, 分钟", "增加分钟", "ADDMINUTES(DateTime.Now(), 30) → 30分钟后")
+    }
             },
             {
                 "条件逻辑", new List<FunctionInfo>

@@ -23,7 +23,7 @@ namespace MainUI.LogicalConfiguration.Engine
         private readonly Regex _variablePattern = new(@"\{([\p{L}\p{N}_]+)\}", RegexOptions.Compiled);
 
         // 函数调用模式: 函数名(参数)
-        private readonly Regex _functionPattern = new(@"\b(\w+)\s*\(([^)]*)\)", RegexOptions.Compiled);
+        private readonly Regex _functionPattern = new(@"([\w\.]+)\s*\(([^)]*)\)", RegexOptions.Compiled);
 
         // 数字模式
         private readonly Regex _numberPattern = new(@"\b\d+(\.\d+)?\b", RegexOptions.Compiled);
@@ -121,8 +121,8 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 3. 检查变量存在性
                 var referencedVars = GetReferencedVariables(expression);
-                var missingVars = referencedVars.Where(v => _variableManager.TryFindVariableByName(v) != null).ToList();
-                if (missingVars.Count == 0)
+                var missingVars = referencedVars.Where(v => _variableManager.TryFindVariableByName(v) == null).ToList();
+                if (missingVars.Count > 0)
                 {
                     result.IsValid = false;
                     result.Message = $"以下变量不存在: {string.Join(", ", missingVars)}";
@@ -343,7 +343,16 @@ namespace MainUI.LogicalConfiguration.Engine
                 }
 
                 // 2. 预处理表达式(替换变量引用)
-                var processedExpression = PreprocessExpression(expression);
+                string processedExpression;
+                try
+                {
+                    processedExpression = PreprocessExpression(expression);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // 变量值为空，返回友好错误信息
+                    return EvaluationResult.Error($"无法计算: {ex.Message}");
+                }
 
                 // 3. 执行计算(不修改任何变量)
                 var result = EvaluateProcessedExpression(processedExpression);
@@ -823,15 +832,22 @@ namespace MainUI.LogicalConfiguration.Engine
 
         /// <summary>
         /// 检查是否包含无效字符
+        /// 支持中文变量：允许所有 Unicode 字符（字母、数字、中文等）
         /// </summary>
         private List<char> GetInvalidCharacters(string expression)
         {
-            var validChars = new HashSet<char>(
+            // 定义基本的有效字符（英文字母、数字、运算符、标点符号）
+            var basicValidChars = new HashSet<char>(
                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" +
                 "+-*/%=!<>&|(){}[].,;:\"' \t\n\r_"
             );
 
-            return expression.Where(c => !validChars.Contains(c)).Distinct().ToList();
+            // 返回不是基本有效字符，且不是 Unicode 字母、数字的字符
+            return expression.Where(c =>
+                !basicValidChars.Contains(c) &&
+                !char.IsLetter(c) &&           // 允许所有 Unicode 字母（包括中文）
+                !char.IsDigit(c)                // 允许所有 Unicode 数字
+            ).Distinct().ToList();
         }
 
         /// <summary>
@@ -896,12 +912,13 @@ namespace MainUI.LogicalConfiguration.Engine
             // 移除字符串后检查运算符
             var withoutStrings = RemoveStringLiterals(expression);
 
-            // 简单检查：确保有运算符或者是纯数字/变量
+            // 简单检查：确保有运算符、纯数字/变量、或函数调用
             var hasOperator = _supportedOperators.Any(op => withoutStrings.Contains(op));
             var hasVariableOrNumber = _variablePattern.IsMatch(withoutStrings) ||
                                      _numberPattern.IsMatch(withoutStrings);
+            var hasFunctionCall = _functionPattern.IsMatch(withoutStrings);
 
-            return hasOperator || hasVariableOrNumber;
+            return hasOperator || hasVariableOrNumber || hasFunctionCall;
         }
 
         /// <summary>
@@ -934,9 +951,10 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 var value = variable.VarValue;
 
-                if (value == null)
+                if (value == null || (value is string str && string.IsNullOrEmpty(str)))
                 {
-                    return "null";
+                    _logger?.LogWarning("预处理时发现变量值为空: {VarName}", varName);
+                    throw new InvalidOperationException($"变量 '{varName}' 的值为空，无法计算表达式");
                 }
 
                 // 调用统一的格式化方法
@@ -1598,7 +1616,7 @@ namespace MainUI.LogicalConfiguration.Engine
             return value switch
             {
                 // ========================================
-                // ✅ 数值类型: 不加引号 (关键修复点)
+                //  数值类型: 不加引号
                 // ========================================
                 int i => i.ToString(CultureInfo.InvariantCulture),
                 long l => l.ToString(CultureInfo.InvariantCulture),
@@ -1620,7 +1638,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 bool bo => bo.ToString().ToLower(),
 
                 // ========================================
-                //  字符串类型: 必须加引号并转义 (这是正确的)
+                //  字符串类型: 必须加引号并转义 
                 // ========================================
                 string s => $"\"{EscapeString(s)}\"",
 
@@ -1821,8 +1839,27 @@ namespace MainUI.LogicalConfiguration.Engine
             functions["TAN"] = functions["Math.Tan"] = tanFunc;
 
             // === 日期时间函数 ===
+            // 无参数函数 - 获取当前时间
             functions["NOW"] = args => DateTime.Now;
+            functions["DateTime.Now"] = args => DateTime.Now;
+
             functions["TODAY"] = args => DateTime.Today;
+            functions["DateTime.Today"] = args => DateTime.Today;
+
+            // DateTime 属性访问
+            functions["DateTime.Now.Year"] = args => DateTime.Now.Year;
+            functions["DateTime.Now.Month"] = args => DateTime.Now.Month;
+            functions["DateTime.Now.Day"] = args => DateTime.Now.Day;
+            functions["DateTime.Now.Hour"] = args => DateTime.Now.Hour;
+            functions["DateTime.Now.Minute"] = args => DateTime.Now.Minute;
+            functions["DateTime.Now.Second"] = args => DateTime.Now.Second;
+            functions["DateTime.Now.DayOfWeek"] = args => (int)DateTime.Now.DayOfWeek;
+            functions["DateTime.Today.Year"] = args => DateTime.Today.Year;
+            functions["DateTime.Today.Month"] = args => DateTime.Today.Month;
+            functions["DateTime.Today.Day"] = args => DateTime.Today.Day;
+            functions["DateTime.Today.DayOfWeek"] = args => (int)DateTime.Today.DayOfWeek;
+
+            // 格式化函数
             functions["FORMAT"] = args =>
             {
                 if (args[0] is DateTime dt)
@@ -1863,6 +1900,114 @@ namespace MainUI.LogicalConfiguration.Engine
                 return args[0];
             };
 
+            // DATEDIFF_SECONDS - 计算两个时间相差的秒数
+            functions["DATEDIFF_SECONDS"] = args =>
+            {
+                try
+                {
+                    var endTime = ConvertToDateTime(args[0]);
+                    var startTime = ConvertToDateTime(args[1]);
+                    return (endTime - startTime).TotalSeconds;
+                }
+                catch
+                {
+                    return 0;
+                }
+            };
+            functions["DateDiff.Seconds"] = functions["DATEDIFF_SECONDS"]; // 别名
+
+            // DATEDIFF_MILLISECONDS - 计算两个时间相差的毫秒数
+            functions["DATEDIFF_MILLISECONDS"] = args =>
+            {
+                try
+                {
+                    var endTime = ConvertToDateTime(args[0]);
+                    var startTime = ConvertToDateTime(args[1]);
+                    return (endTime - startTime).TotalMilliseconds;
+                }
+                catch
+                {
+                    return 0;
+                }
+            };
+            functions["DateDiff.Milliseconds"] = functions["DATEDIFF_MILLISECONDS"]; // 别名
+
+            // DATEDIFF_MINUTES - 计算两个时间相差的分钟数
+            functions["DATEDIFF_MINUTES"] = args =>
+            {
+                try
+                {
+                    var endTime = ConvertToDateTime(args[0]);
+                    var startTime = ConvertToDateTime(args[1]);
+                    return (endTime - startTime).TotalMinutes;
+                }
+                catch
+                {
+                    return 0;
+                }
+            };
+            functions["DateDiff.Minutes"] = functions["DATEDIFF_MINUTES"]; // 别名
+
+            // DATEDIFF_HOURS - 计算两个时间相差的小时数
+            functions["DATEDIFF_HOURS"] = args =>
+            {
+                try
+                {
+                    var endTime = ConvertToDateTime(args[0]);
+                    var startTime = ConvertToDateTime(args[1]);
+                    return (endTime - startTime).TotalHours;
+                }
+                catch
+                {
+                    return 0;
+                }
+            };
+            functions["DateDiff.Hours"] = functions["DATEDIFF_HOURS"]; // 别名
+
+            // DATEDIFF_DAYS - 计算两个时间相差的天数
+            functions["DATEDIFF_DAYS"] = args =>
+            {
+                try
+                {
+                    var endTime = ConvertToDateTime(args[0]);
+                    var startTime = ConvertToDateTime(args[1]);
+                    return (endTime - startTime).TotalDays;
+                }
+                catch
+                {
+                    return 0;
+                }
+            };
+            functions["DateDiff.Days"] = functions["DATEDIFF_DAYS"]; // 别名
+
+            // ELAPSED_SECONDS - 计算从某个时间到现在经过的秒数
+            functions["ELAPSED_SECONDS"] = args =>
+            {
+                try
+                {
+                    var startTime = ConvertToDateTime(args[0]);
+                    return (DateTime.Now - startTime).TotalSeconds;
+                }
+                catch
+                {
+                    return 0;
+                }
+            };
+
+            // ELAPSED_MILLISECONDS - 计算从某个时间到现在经过的毫秒数
+            functions["ELAPSED_MILLISECONDS"] = args =>
+            {
+                try
+                {
+                    var startTime = ConvertToDateTime(args[0]);
+                    return (DateTime.Now - startTime).TotalMilliseconds;
+                }
+                catch
+                {
+                    return 0;
+                }
+            };
+
             // === 条件逻辑函数 ===
             functions["IF"] = args =>
             {
@@ -1884,6 +2029,34 @@ namespace MainUI.LogicalConfiguration.Engine
             return functions;
         }
 
+        /// <summary>
+        /// 将对象转换为 DateTime
+        /// </summary>
+        private DateTime ConvertToDateTime(object value)
+        {
+            if (value is DateTime dt)
+            {
+                return dt;
+            }
+
+            if (value is string str)
+            {
+                if (DateTime.TryParse(str, out DateTime result))
+                {
+                    return result;
+                }
+            }
+
+            // 尝试直接转换
+            try
+            {
+                return Convert.ToDateTime(value);
+            }
+            catch
+            {
+                return DateTime.MinValue;
+            }
+        }
         #endregion
     }
 

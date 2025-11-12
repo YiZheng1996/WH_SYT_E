@@ -313,6 +313,9 @@ namespace MainUI.Service
                 WorkflowStarted?.Invoke(itemName, steps.Count);
                 ProgressMessage?.Invoke($"开始执行工作流: {itemName} ({steps.Count} 个步骤)");
 
+                // 测试前刷新测试信息变量
+                //TestInfoVariableHelper.UpdateTestInfoVariables(_workflowState);
+
                 // 在工作流执行前调用
                 await EnsureVariablesLoadedAsync();
 
