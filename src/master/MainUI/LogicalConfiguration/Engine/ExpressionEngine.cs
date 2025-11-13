@@ -951,15 +951,50 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 var value = variable.VarValue;
 
+                // 当变量值为空时，根据变量类型使用默认值
                 if (value == null || (value is string str && string.IsNullOrEmpty(str)))
                 {
-                    _logger?.LogWarning("预处理时发现变量值为空: {VarName}", varName);
-                    throw new InvalidOperationException($"变量 '{varName}' 的值为空，无法计算表达式");
+                    _logger?.LogWarning("预处理时发现变量值为空: {VarName}，使用类型默认值", varName);
+                    var defaultValue = GetDefaultValueForType(variable.VarType);
+                    return FormatValueForExpression(defaultValue);
                 }
 
                 // 调用统一的格式化方法
                 return FormatValueForExpression(value);
             });
+        }
+
+        /// <summary>
+        /// 根据变量类型获取默认值
+        /// </summary>
+        private object GetDefaultValueForType(string varType)
+        {
+            return varType?.ToLower() switch
+            {
+                "string" => "",
+                "int" => 0,
+                "int32" => 0,
+                "long" => 0L,
+                "int64" => 0L,
+                "short" => (short)0,
+                "int16" => (short)0,
+                "byte" => (byte)0,
+                "uint" => 0U,
+                "uint32" => 0U,
+                "ulong" => 0UL,
+                "uint64" => 0UL,
+                "ushort" => (ushort)0,
+                "uint16" => (ushort)0,
+                "sbyte" => (sbyte)0,
+                "double" => 0.0,
+                "float" => 0.0f,
+                "single" => 0.0f,
+                "decimal" => 0.0m,
+                "bool" => false,
+                "boolean" => false,
+                "datetime" => DateTime.MinValue,
+                _ => "" // 默认返回空字符串
+            };
         }
 
         #endregion
