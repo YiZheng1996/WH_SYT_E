@@ -192,7 +192,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 var globalVarManager = Program.ServiceProvider?.GetService<GlobalVariableManager>();
                 if (globalVarManager == null) return;
 
-                var variables = globalVarManager.GetAllVariables()
+                var variables = globalVarManager.GetAllUserVariables()
                     .Select(v => v.VarName)
                     .ToList();
 

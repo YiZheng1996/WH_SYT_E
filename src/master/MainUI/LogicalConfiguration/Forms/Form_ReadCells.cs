@@ -4,6 +4,7 @@ using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using System.Windows.Forms;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -128,6 +129,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 数据网格单元格值变化
             DataGridViewDefineVar.CellValueChanged += DataGridView_CellValueChanged;
             DataGridViewDefineVar.CurrentCellDirtyStateChanged += DataGridView_CurrentCellDirtyStateChanged;
+            DataGridViewDefineVar.DataError += DataGridView_DataError;
 
             // 单元格验证
             DataGridViewDefineVar.CellValidating += DataGridView_CellValidating;
@@ -144,7 +146,7 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             if (_variableManager == null) return;
 
-            var variables = _variableManager.GetAllVariables()
+            var variables = _variableManager.GetAllUserVariables()
                 .Select(v => v.VarName)
                 .OrderBy(n => n)
                 .ToList();
@@ -399,6 +401,19 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
+        private void DataGridView_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            if (e.Exception is ArgumentException &&
+                e.Context == DataGridViewDataErrorContexts.Commit)
+            {
+                MessageBox.Show($"输入的值无效，请从下拉列表中选择有效的选项。",
+                              "数据错误",
+                              MessageBoxButtons.OK,
+                              MessageBoxIcon.Warning);
+                e.ThrowException = false;
+            }
+        }
+
         /// <summary>
         /// 单元格验证
         /// </summary>
@@ -503,7 +518,7 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// ✅ 重写基类的 CollectParameters 方法
+        /// 重写基类的 CollectParameters 方法
         /// 这个方法会被基类的 SaveParameters() 调用
         /// </summary>
         protected override object CollectParameters()

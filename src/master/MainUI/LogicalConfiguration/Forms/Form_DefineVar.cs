@@ -42,7 +42,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 DataGridViewDefineVar.Rows.Clear();
 
                 // 使用新的线程安全方法
-                var variables = _workflowState.GetAllVariables();
+                var variables = _variableManager.GetAllUserVariables();
 
                 foreach (var variable in variables)
                 {
@@ -173,7 +173,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         {
                             // 使用新的线程安全方法获取所有变量
                             config.Variable.Clear();
-                            var allVariables = _workflowState.GetAllVariables();
+                            var allVariables = _globalVariable.GetAllUserVariables();
                             config.Variable.AddRange(allVariables.Cast<VarItem>());
 
                             _logger.LogDebug("变量配置已保存到JSON文件");

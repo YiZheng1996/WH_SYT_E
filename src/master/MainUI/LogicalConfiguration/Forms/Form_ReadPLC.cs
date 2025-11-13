@@ -131,7 +131,7 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 // 获取所有可用变量
-                var allVariables = _variableManager.GetAllVariables();
+                var allVariables = _variableManager.GetAllUserVariables();
                 var variableNames = allVariables.Select(v => v.VarName).ToArray();
 
                 // 设置目标变量下拉框
@@ -413,40 +413,6 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 NlogHelper.Default.Error("加载PLC参数错误", ex);
                 MessageHelper.MessageOK("加载PLC参数错误：" + ex.Message, TType.Error);
-            }
-        }
-
-        /// <summary>
-        /// 初始化变量下拉框
-        /// </summary>
-        private void InitializeVariableComboBox()
-        {
-            try
-            {
-                try
-                {
-                    var variables = _variableManager.GetAllVariables();
-
-                    // 清空并重新加载
-                    ColVariable.Items.Clear();
-
-                    // 添加空选项
-                    ColVariable.Items.Add("");
-
-                    foreach (var variable in variables)
-                    {
-                        ColVariable.Items.Add(variable.VarName);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    NlogHelper.Default.Error("初始化变量下拉框失败", ex);
-                    MessageHelper.MessageOK("初始化变量下拉框失败：" + ex.Message, TType.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("初始化变量下拉框失败", ex);
             }
         }
 

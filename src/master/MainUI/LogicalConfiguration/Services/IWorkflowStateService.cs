@@ -187,7 +187,7 @@ namespace MainUI.LogicalConfiguration.Services
         T FindVariable<T>(Func<T, bool> predicate) where T : class;
 
         /// <summary>
-        /// 获取所有 VarItem_Enhanced 类型的变量
+        /// 获取所有 VarItem_Enhanced 类型的变量，排除了系统全局变量
         /// 这是一个便捷方法，等同于 GetVariables&lt;VarItem_Enhanced&gt;()
         /// </summary>
         /// <returns>所有增强型变量的列表</returns>

@@ -631,7 +631,7 @@ namespace MainUI.LogicalConfiguration.Services
         /// </summary>
         public List<VarItem_Enhanced> GetAllVariables()
         {
-            return GetVariables<VarItem_Enhanced>();
+            return [.. GetVariables<VarItem_Enhanced>()];
         }
 
         /// <summary>

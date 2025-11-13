@@ -820,7 +820,8 @@ namespace MainUI.LogicalConfiguration
                     // 使用新的线程安全方法获取变量
                     config.Variable.Clear();
                     var variables = _variableManager.GetAllVariables();
-                    config.Variable.AddRange(variables.Cast<VarItem_Enhanced>());
+                    config.Variable.AddRange(variables.Where(v => !v.IsSystemVariable).
+                        Cast<VarItem_Enhanced>());
 
                     // 使用线程安全方法获取步骤
                     config.Form[0].ChildSteps.Clear();

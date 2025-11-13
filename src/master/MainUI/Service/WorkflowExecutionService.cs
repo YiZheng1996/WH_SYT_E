@@ -501,7 +501,8 @@ namespace MainUI.Service
                 workflowState.ClearUserVariables();
 
                 // 初始化测试信息相关的全局变量
-                TestInfoVariableHelper.InitializeTestInfoVariables(_variableManager);
+                //TestInfoVariableHelper.InitializeTestInfoVariables(_variableManager);
+
                 foreach (var varItem in config.Variable)
                 {
                     var enhancedVar = new VarItem_Enhanced

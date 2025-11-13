@@ -20,6 +20,14 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         }
 
         /// <summary>
+        /// 获取所有变量,不带系统变量
+        /// </summary>
+        public List<VarItem_Enhanced> GetAllUserVariables()
+        {
+            return _workflowState.GetAllVariables().Where(v => !v.IsSystemVariable).ToList();
+        }
+
+        /// <summary>
         /// 通过名称查找变量
         /// </summary>
         public VarItem_Enhanced FindVariableByName(string varName)

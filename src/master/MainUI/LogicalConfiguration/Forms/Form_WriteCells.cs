@@ -8,18 +8,13 @@ using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
 using Label = AntdUI.Label;
 using Panel = AntdUI.Panel;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// 写入单元格参数配置表单 - 增强版
+    /// 写入单元格参数配置表单
     /// 新增功能:
     /// 1. 变量选择对话框
     /// 2. 表达式构建器
@@ -91,7 +86,14 @@ namespace MainUI.LogicalConfiguration.Forms
         public Parameter_WriteCells Parameter
         {
             get => GetCurrentParameters();
-            set => LoadParameters(value);
+            set
+            {
+                _currentParameter = value ?? new Parameter_WriteCells();
+                if (!DesignMode && !_isLoading && IsHandleCreated)
+                {
+                    LoadParametersToForm();
+                }
+            }
         }
 
         #endregion
@@ -152,8 +154,52 @@ namespace MainUI.LogicalConfiguration.Forms
             InitializeDataGridView();
             BindEvents();
             ShowQuickGuide();
-
+            LoadParametersToForm();
             _logger?.LogInformation("Form_WriteCells 增强版初始化完成");
+        }
+
+        /// <summary>
+        /// 从参数对象加载到表单
+        /// </summary>
+        private void LoadParametersToForm()
+        {
+            if (_currentParameter == null) return;
+
+            _isLoading = true;
+
+            try
+            {
+                _isLoading = true;
+                txtSheetName.Text = _currentParameter.SheetName ?? "Sheet1";
+
+                DataGridViewDefineVar.Rows.Clear();
+                if (_currentParameter.Items != null)
+                {
+                    foreach (var item in _currentParameter.Items)
+                    {
+                        var rowIndex = DataGridViewDefineVar.Rows.Add();
+                        var row = DataGridViewDefineVar.Rows[rowIndex];
+
+                        row.Cells["ColVarName"].Value = item.CellAddress ?? "";
+                        row.Cells["ColVarType"].Value = GetSourceTypeDisplayName(item.SourceType);
+
+                        var content = item.SourceType switch
+                        {
+                            CellsDataSourceType.FixedValue => item.FixedValue,
+                            CellsDataSourceType.Variable => item.VariableName,
+                            CellsDataSourceType.Expression => item.Expression,
+                            CellsDataSourceType.SystemProperty => item.PropertyPath,
+                            _ => string.Empty
+                        };
+
+                        row.Cells["ColVarText"].Value = content ?? "";
+                    }
+                }
+            }
+            finally
+            {
+                _isLoading = false;
+            }
         }
 
         /// <summary>
@@ -172,7 +218,7 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                DataGridViewDefineVar.AllowUserToAddRows = true;
+                DataGridViewDefineVar.AllowUserToAddRows = false;
                 DataGridViewDefineVar.AllowUserToDeleteRows = true;
                 DataGridViewDefineVar.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
                 DataGridViewDefineVar.MultiSelect = false;
@@ -183,13 +229,13 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (DataGridViewDefineVar.Columns["ColVarType"] is DataGridViewComboBoxColumn typeColumn)
                 {
                     typeColumn.Items.Clear();
-                    typeColumn.Items.AddRange(new object[]
-                    {
+                    typeColumn.Items.AddRange(
+                    [
                         "固定值",
                         "变量",
                         "表达式",
                         "系统属性"
-                    });
+                    ]);
                 }
 
                 // 为内容列添加提示文本
@@ -201,7 +247,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 添加操作按钮列
                 AddOperationButtonColumn();
 
-                _logger?.LogDebug("DataGridView 增强版初始化完成");
+                _logger?.LogDebug("DataGridView 初始化完成");
             }
             catch (Exception ex)
             {
@@ -312,52 +358,6 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 _logger?.LogError(ex, "获取当前参数时发生错误");
                 return new Parameter_WriteCells();
-            }
-        }
-
-        private void LoadParameters(Parameter_WriteCells param)
-        {
-            try
-            {
-                _isLoading = true;
-                _currentParameter = param ?? new Parameter_WriteCells();
-                txtSheetName.Text = _currentParameter.SheetName ?? "Sheet1";
-
-                DataGridViewDefineVar.Rows.Clear();
-
-                if (_currentParameter.Items != null)
-                {
-                    foreach (var item in _currentParameter.Items)
-                    {
-                        var rowIndex = DataGridViewDefineVar.Rows.Add();
-                        var row = DataGridViewDefineVar.Rows[rowIndex];
-
-                        row.Cells["ColVarName"].Value = item.CellAddress ?? "";
-                        row.Cells["ColVarType"].Value = GetSourceTypeDisplayName(item.SourceType);
-
-                        var content = item.SourceType switch
-                        {
-                            CellsDataSourceType.FixedValue => item.FixedValue,
-                            CellsDataSourceType.Variable => item.VariableName,
-                            CellsDataSourceType.Expression => item.Expression,
-                            CellsDataSourceType.SystemProperty => item.PropertyPath,
-                            _ => string.Empty
-                        };
-
-                        row.Cells["ColVarText"].Value = content ?? "";
-                    }
-                }
-
-                _logger?.LogInformation($"成功加载参数,包含 {_currentParameter.Items?.Count ?? 0} 项");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "加载参数到界面时发生错误");
-                MessageHelper.MessageOK($"加载参数失败:{ex.Message}", TType.Error);
-            }
-            finally
-            {
-                _isLoading = false;
             }
         }
 
@@ -703,25 +703,30 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // 检查预览面板是否存在
-                if (!this.Controls.ContainsKey("panelPreview"))
+                // 直接查找预览面板中的控件
+                // uiGroupBox3 是预览面板的容器（不是 panelPreview）
+                var panelPreview = this.Controls.Find("uiGroupBox3", false).FirstOrDefault() as UIPanel;
+                if (panelPreview == null)
                 {
+                    _logger?.LogWarning("未找到预览面板 uiGroupBox3");
                     return;
                 }
 
-                var panelPreview = this.Controls["panelPreview"] as Panel;
-                var lblPreviewTitle = panelPreview?.Controls.Find("lblPreviewTitle", false).FirstOrDefault() as Label;
-                var lblPreviewContent = panelPreview?.Controls.Find("lblPreviewContent", false).FirstOrDefault() as Label;
+                // uiLabel3 是预览标题（显示"实时预览"），lblPreviewContent 是预览内容
+                var lblPreviewTitle = panelPreview.Controls.Find("uiLabel3", false).FirstOrDefault() as UILabel;
+                var lblPreviewContent = panelPreview.Controls.Find("lblPreviewContent", false).FirstOrDefault() as UILabel;
 
                 if (lblPreviewTitle == null || lblPreviewContent == null)
                 {
+                    _logger?.LogWarning("预览面板控件未找到: lblPreviewTitle={0}, lblPreviewContent={1}",
+                        lblPreviewTitle != null, lblPreviewContent != null);
                     return;
                 }
 
                 // 获取当前选中行
                 if (DataGridViewDefineVar.SelectedRows.Count == 0)
                 {
-                    lblPreviewTitle.Text = "📋 预览";
+                    lblPreviewTitle.Text = " 实时预览";
                     lblPreviewContent.Text = "请选择一行查看预览";
                     lblPreviewContent.ForeColor = Color.Gray;
                     return;
@@ -731,7 +736,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 var sourceType = row.Cells["ColVarType"].Value?.ToString() ?? "固定值";
                 var content = row.Cells["ColVarText"].Value?.ToString() ?? "";
 
-                lblPreviewTitle.Text = $"📋 预览 - {sourceType}";
+                lblPreviewTitle.Text = $" 实时预览 - {sourceType}";
 
                 if (string.IsNullOrWhiteSpace(content))
                 {
@@ -775,42 +780,71 @@ namespace MainUI.LogicalConfiguration.Forms
 
         /// <summary>
         /// 预览变量值
+        /// 配置时:允许变量未赋值,给出友好提示
+        /// 运行时:期望变量已赋值
         /// </summary>
-        private void PreviewVariable(string varName, Label lblPreview)
+        private void PreviewVariable(string varName, UILabel lblPreview)
         {
             try
             {
-                var variable = _variableManager?.GetAllVariables();
+                var variable = _variableManager?.FindVariableByName(varName);
+
                 if (variable == null)
                 {
-                    lblPreview.Text = "变量管理器不可用";
-                    lblPreview.ForeColor = Color.Red;
+                    // 配置时: 变量未定义是正常的
+                    lblPreview.Text = $" 变量 '{varName}' 尚未赋值\n(运行时将从工作流变量中获取)";
+                    lblPreview.ForeColor = Color.Gray;
                     return;
                 }
 
-                if (variable.Select(v => v.VarName).Contains(varName))
+                // 显示详细信息
+                var valueStr = FormatVariableValue(variable);
+                var typeInfo = $"[{variable.VarType}]";
+
+                lblPreview.Text = $"✓ 变量 '{varName}' {typeInfo}\n当前值: {valueStr}";
+
+                // 根据赋值状态设置颜色
+                lblPreview.ForeColor = variable.IsAssignedByStep
+                    ? Color.DarkGreen   // 已赋值
+                    : Color.DarkOrange; // 声明但未赋值
+
+                // 可选: 显示赋值来源
+                if (variable.IsAssignedByStep && !string.IsNullOrWhiteSpace(variable.AssignedByStepInfo))
                 {
-                    var valueStr = variable[0].VarValue?.ToString() ?? "null";
-                    lblPreview.Text = $"变量 '{varName}' 当前值: {valueStr}";
-                    lblPreview.ForeColor = Color.DarkGreen;
-                }
-                else
-                {
-                    lblPreview.Text = $"变量 '{varName}' 未赋值或不存在";
-                    lblPreview.ForeColor = Color.OrangeRed;
+                    lblPreview.Text += $"\n来源: {variable.AssignedByStepInfo}";
                 }
             }
             catch (Exception ex)
             {
+                _logger?.LogError(ex, "预览变量 {VarName} 失败", varName);
                 lblPreview.Text = $"预览失败: {ex.Message}";
                 lblPreview.ForeColor = Color.Red;
             }
         }
 
         /// <summary>
+        /// 格式化变量值显示
+        /// </summary>
+        private string FormatVariableValue(VarItem_Enhanced variable)
+        {
+            if (variable.VarValue == null)
+                return "(null)";
+
+            return variable.VarType?.ToLower() switch
+            {
+                "datetime" => variable.VarValue is DateTime dt
+                    ? dt.ToString("yyyy-MM-dd HH:mm:ss")
+                    : variable.VarValue.ToString(),
+                "double" or "decimal" => string.Format("{0:F2}", variable.VarValue),
+                "bool" => variable.VarValue.ToString(),
+                _ => variable.VarValue.ToString()
+            };
+        }
+
+        /// <summary>
         /// 预览表达式计算结果
         /// </summary>
-        private void PreviewExpression(string expression, Label lblPreview)
+        private void PreviewExpression(string expression, UILabel lblPreview)
         {
             try
             {
@@ -992,9 +1026,78 @@ namespace MainUI.LogicalConfiguration.Forms
             MessageHelper.MessageOK(helpText.ToString(), TType.Info);
         }
 
+        #region 重写基类方法
+        /// <summary>
+        /// 从步骤参数加载 - 重写基类方法实现自动加载
+        /// </summary>
+        protected override void LoadParameterFromStep(object stepParameter)
+        {
+            try
+            {
+                Parameter_WriteCells loadedParameter = null;
+
+                // 尝试直接类型转换
+                if (stepParameter is Parameter_WriteCells directParam)
+                {
+                    loadedParameter = directParam;
+                }
+                // 尝试JSON反序列化
+                else if (stepParameter != null)
+                {
+                    try
+                    {
+                        string jsonString = stepParameter is string s
+                            ? s
+                            : JsonConvert.SerializeObject(stepParameter);
+                        loadedParameter = JsonConvert.DeserializeObject<Parameter_WriteCells>(jsonString);
+                    }
+                    catch (JsonException)
+                    {
+                        loadedParameter = null;
+                    }
+                }
+
+                // 加载成功则更新参数并刷新界面
+                if (loadedParameter != null)
+                {
+                    _currentParameter = loadedParameter;
+                    LoadParametersToForm();  // 刷新界面控件
+                }
+                else
+                {
+                    SetDefaultValues();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "从步骤参数加载失败");
+                SetDefaultValues();
+            }
+        }
+
+        /// <summary>
+        /// 设置默认值
+        /// </summary>
+        protected override void SetDefaultValues()
+        {
+            try
+            {
+                _currentParameter = new Parameter_WriteCells();
+                LoadParametersToForm();
+                _logger?.LogDebug("设置默认值");
+
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "设置默认值失败");
+            }
+        }
+        #endregion
+
+        #region IParameterForm<Parameter_WriteCells> 接口实现
         public void PopulateControls(Parameter_WriteCells parameter)
         {
-            throw new NotImplementedException();
+            Parameter = parameter;
         }
 
         void IParameterForm<Parameter_WriteCells>.SetDefaultValues()
@@ -1004,18 +1107,37 @@ namespace MainUI.LogicalConfiguration.Forms
 
         public bool ValidateTypedParameters()
         {
-            throw new NotImplementedException();
+            return ValidateParameters();
         }
 
         public Parameter_WriteCells CollectTypedParameters()
         {
-            throw new NotImplementedException();
+            return GetCurrentParameters();
         }
 
         public Parameter_WriteCells ConvertParameter(object stepParameter)
         {
-            throw new NotImplementedException();
+
+            if (stepParameter is Parameter_WriteCells param)
+            {
+                return param;
+            }
+
+            if (stepParameter is string json)
+            {
+                try
+                {
+                    return JsonConvert.DeserializeObject<Parameter_WriteCells>(json);
+                }
+                catch
+                {
+                    return new Parameter_WriteCells();
+                }
+            }
+
+            return new Parameter_WriteCells();
         }
+        #endregion
 
         #endregion
     }

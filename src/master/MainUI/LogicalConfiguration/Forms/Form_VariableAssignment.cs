@@ -305,7 +305,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 var globalVariableManager = _globalVariable ?? Program.ServiceProvider?.GetService<GlobalVariableManager>();
                 if (globalVariableManager != null && cmbTargetVariable != null)
                 {
-                    var variables = globalVariableManager.GetAllVariables();
+                    var variables = globalVariableManager.GetAllUserVariables();
                     var variableItems = variables.Select(v => new
                     {
                         Text = $"{v.VarName}",
