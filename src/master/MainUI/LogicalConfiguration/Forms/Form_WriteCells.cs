@@ -1,17 +1,31 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
+using MainUI.LogicalConfiguration.Services.ServicesPLC;
+using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
+using Label = AntdUI.Label;
+using Panel = AntdUI.Panel;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// 写入单元格参数配置表单
-    /// 支持固定值、变量、表达式、系统属性等多种数据源
-    /// 使用 ReportExpressionHelper 进行表达式验证和计算
+    /// 写入单元格参数配置表单 - 增强版
+    /// 新增功能:
+    /// 1. 变量选择对话框
+    /// 2. 表达式构建器
+    /// 3. 实时预览面板
+    /// 4. 智能提示
+    /// 5. 操作按钮列
     /// </summary>
     public partial class Form_WriteCells : BaseParameterForm, IParameterForm<Parameter_WriteCells>
     {
@@ -19,8 +33,12 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private readonly GlobalVariableManager _variableManager;
         private readonly ReportExpressionHelper _expressionHelper;
+        private readonly ExpressionEngine _engine;
         private Parameter_WriteCells _currentParameter;
         private bool _isLoading = false;
+
+        // 预览定时器 - 延迟更新预览,避免频繁计算
+        private System.Windows.Forms.Timer _previewTimer;
 
         // 数据源类型的使用说明
         private readonly Dictionary<string, string> _sourceTypeHints = new()
@@ -33,7 +51,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 "  • 2025-01-01"
             },
             { "变量",
-                "💡 输入全局变量名称\n" +
+                "💡 输入全局变量名称或点击'选择'按钮\n" +
                 "示例:\n" +
                 "  • TestResult\n" +
                 "  • Temperature\n" +
@@ -41,7 +59,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 "⚠️ 变量必须在工作流中已定义"
             },
             { "表达式",
-                "💡 输入包含变量的表达式\n" +
+                "💡 输入包含变量的表达式或点击'构建'按钮\n" +
                 "格式: 使用 {变量名} 包裹变量\n" +
                 "示例:\n" +
                 "  • {Var1} + {Var2}\n" +
@@ -92,11 +110,13 @@ namespace MainUI.LogicalConfiguration.Forms
 
                     // 从全局服务提供者获取变量管理器
                     _variableManager = Program.ServiceProvider?.GetService<GlobalVariableManager>();
+                    var plcManager = Program.ServiceProvider?.GetService<IPLCManager>();
 
-                    // 初始化表达式助手
+                    // 初始化表达式助手和引擎
                     if (_variableManager != null)
                     {
                         _expressionHelper = new ReportExpressionHelper(_variableManager, _logger);
+                        _engine = new ExpressionEngine(_variableManager, plcManager);
                     }
 
                     InitializeForm();
@@ -116,7 +136,9 @@ namespace MainUI.LogicalConfiguration.Forms
         public Form_WriteCells(GlobalVariableManager variableManager) : this()
         {
             _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
+            var plcManager = Program.ServiceProvider?.GetService<IPLCManager>();
             _expressionHelper = new ReportExpressionHelper(_variableManager, _logger);
+            _engine = new ExpressionEngine(_variableManager, plcManager);
         }
 
         #endregion
@@ -126,11 +148,24 @@ namespace MainUI.LogicalConfiguration.Forms
         private void InitializeForm()
         {
             _currentParameter = new Parameter_WriteCells();
+            InitializePreviewTimer();
             InitializeDataGridView();
             BindEvents();
-            ShowQuickGuide(); // 显示快速指南
+            ShowQuickGuide();
 
-            _logger?.LogInformation("Form_WriteCells 方案2版本初始化完成");
+            _logger?.LogInformation("Form_WriteCells 增强版初始化完成");
+        }
+
+        /// <summary>
+        /// 初始化预览定时器
+        /// </summary>
+        private void InitializePreviewTimer()
+        {
+            _previewTimer = new System.Windows.Forms.Timer
+            {
+                Interval = 500 // 500ms延迟
+            };
+            _previewTimer.Tick += PreviewTimer_Tick;
         }
 
         private void InitializeDataGridView()
@@ -144,7 +179,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 DataGridViewDefineVar.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
                 DataGridViewDefineVar.EditMode = DataGridViewEditMode.EditOnEnter;
 
-                // 更新ComboBox选项为新的数据源类型
+                // 更新ComboBox选项
                 if (DataGridViewDefineVar.Columns["ColVarType"] is DataGridViewComboBoxColumn typeColumn)
                 {
                     typeColumn.Items.Clear();
@@ -163,7 +198,10 @@ namespace MainUI.LogicalConfiguration.Forms
                     textColumn.HeaderText = "内容 (根据类型填写)";
                 }
 
-                _logger?.LogDebug("DataGridView 初始化完成");
+                // 添加操作按钮列
+                AddOperationButtonColumn();
+
+                _logger?.LogDebug("DataGridView 增强版初始化完成");
             }
             catch (Exception ex)
             {
@@ -172,24 +210,48 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        private void BindEvents()
+        /// <summary>
+        /// 添加操作按钮列
+        /// </summary>
+        private void AddOperationButtonColumn()
         {
-            btnSave.Click += BtnSave_Click; ;
-            btnAddRow.Click += BtnAdd_Click;
-            BtnDelete.Click += BtnDelete_Click;
-            DataGridViewDefineVar.CellValueChanged += DataGridViewDefineVar_CellValueChanged;
-            DataGridViewDefineVar.CurrentCellDirtyStateChanged += DataGridViewDefineVar_CurrentCellDirtyStateChanged;
-            DataGridViewDefineVar.CellEnter += DataGridViewDefineVar_CellEnter; // 进入单元格时显示提示
-            DataGridViewDefineVar.CellDoubleClick += DataGridViewDefineVar_CellDoubleClick; // 双击显示详细帮助
+            // 检查是否已存在操作列
+            if (DataGridViewDefineVar.Columns.Contains("ColOperation"))
+            {
+                return;
+            }
+
+            var btnColumn = new DataGridViewButtonColumn
+            {
+                Name = "ColOperation",
+                HeaderText = "操作",
+                Text = "...",
+                UseColumnTextForButtonValue = false, // 不使用列文本,我们会动态设置
+                Width = 80,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.None
+            };
+
+            DataGridViewDefineVar.Columns.Add(btnColumn);
         }
 
-        /// <summary>
-        /// 显示快速指南
-        /// </summary>
+        private void BindEvents()
+        {
+            btnSave.Click += BtnSave_Click;
+            btnAddRow.Click += BtnAdd_Click;
+            BtnDelete.Click += BtnDelete_Click;
+
+            // DataGridView事件
+            DataGridViewDefineVar.CellValueChanged += DataGridViewDefineVar_CellValueChanged;
+            DataGridViewDefineVar.CurrentCellDirtyStateChanged += DataGridViewDefineVar_CurrentCellDirtyStateChanged;
+            DataGridViewDefineVar.CellEnter += DataGridViewDefineVar_CellEnter;
+            DataGridViewDefineVar.CellDoubleClick += DataGridViewDefineVar_CellDoubleClick;
+            DataGridViewDefineVar.SelectionChanged += DataGridViewDefineVar_SelectionChanged;
+            DataGridViewDefineVar.CellContentClick += DataGridViewDefineVar_CellContentClick;
+            DataGridViewDefineVar.CellFormatting += DataGridViewDefineVar_CellFormatting;
+        }
+
         private void ShowQuickGuide()
         {
-            // 如果窗体上有提示标签,可以设置文本
-            // 这里只记录日志
             _logger?.LogDebug("快速指南已准备");
         }
 
@@ -301,7 +363,70 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 事件处理器
+        #region DataGridView事件处理器
+
+        private void DataGridViewDefineVar_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (_isLoading || e.RowIndex < 0) return;
+
+            try
+            {
+                var columnName = DataGridViewDefineVar.Columns[e.ColumnIndex].Name;
+
+                // 动态设置操作按钮的文本
+                if (columnName == "ColOperation")
+                {
+                    var row = DataGridViewDefineVar.Rows[e.RowIndex];
+                    var sourceType = row.Cells["ColVarType"].Value?.ToString() ?? "固定值";
+
+                    e.Value = sourceType switch
+                    {
+                        "变量" => "选择...",
+                        "表达式" => "构建...",
+                        "系统属性" => "浏览...",
+                        _ => ""
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "格式化单元格时发生错误");
+            }
+        }
+
+        private void DataGridViewDefineVar_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (_isLoading || e.RowIndex < 0 || e.ColumnIndex < 0) return;
+
+            try
+            {
+                var columnName = DataGridViewDefineVar.Columns[e.ColumnIndex].Name;
+
+                // 处理操作按钮点击
+                if (columnName == "ColOperation")
+                {
+                    var row = DataGridViewDefineVar.Rows[e.RowIndex];
+                    var sourceType = row.Cells["ColVarType"].Value?.ToString() ?? "固定值";
+
+                    switch (sourceType)
+                    {
+                        case "变量":
+                            ShowVariableSelector(row);
+                            break;
+                        case "表达式":
+                            ShowExpressionBuilder(row);
+                            break;
+                        case "系统属性":
+                            MessageHelper.MessageOK(this, "系统属性浏览功能开发中...", TType.Info);
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "处理按钮点击时发生错误");
+            }
+        }
 
         private void BtnAdd_Click(object sender, EventArgs e)
         {
@@ -362,9 +487,6 @@ namespace MainUI.LogicalConfiguration.Forms
             SaveParameters();
         }
 
-        /// <summary>
-        /// 进入单元格时显示提示
-        /// </summary>
         private void DataGridViewDefineVar_CellEnter(object sender, DataGridViewCellEventArgs e)
         {
             if (_isLoading || e.RowIndex < 0 || e.ColumnIndex < 0) return;
@@ -391,9 +513,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 双击单元格显示详细帮助
-        /// </summary>
         private void DataGridViewDefineVar_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if (_isLoading || e.RowIndex < 0 || e.ColumnIndex < 0) return;
@@ -406,6 +525,22 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (columnName == "ColVarType")
                 {
                     ShowDetailedHelp();
+                }
+                // 如果双击内容列,根据类型打开相应的辅助工具
+                else if (columnName == "ColVarText")
+                {
+                    var row = DataGridViewDefineVar.Rows[e.RowIndex];
+                    var sourceType = row.Cells["ColVarType"].Value?.ToString() ?? "固定值";
+
+                    switch (sourceType)
+                    {
+                        case "变量":
+                            ShowVariableSelector(row);
+                            break;
+                        case "表达式":
+                            ShowExpressionBuilder(row);
+                            break;
+                    }
                 }
             }
             catch (Exception ex)
@@ -420,35 +555,24 @@ namespace MainUI.LogicalConfiguration.Forms
 
             try
             {
-                var row = DataGridViewDefineVar.Rows[e.RowIndex];
                 var columnName = DataGridViewDefineVar.Columns[e.ColumnIndex].Name;
 
-                // 当数据源类型改变时,清空内容并设置提示
+                // 当类型列改变时,清空内容列并更新预览
                 if (columnName == "ColVarType")
                 {
-                    var sourceType = row.Cells["ColVarType"].Value?.ToString();
-                    var contentCell = row.Cells["ColVarText"];
+                    var row = DataGridViewDefineVar.Rows[e.RowIndex];
+                    row.Cells["ColVarText"].Value = "";
 
-                    contentCell.ReadOnly = false;
-                    contentCell.Style.BackColor = Color.White;
-                    contentCell.Value = ""; // 清空内容
-
-                    // 设置占位提示
-                    if (_sourceTypeHints.TryGetValue(sourceType, out var hint))
-                    {
-                        contentCell.ToolTipText = hint;
-                    }
+                    // 刷新操作列按钮文本
+                    DataGridViewDefineVar.InvalidateRow(e.RowIndex);
                 }
 
-                // 当内容改变时,进行实时验证
-                if (columnName == "ColVarText")
-                {
-                    ValidateCellContent(row);
-                }
+                // 重启预览定时器
+                RestartPreviewTimer();
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "处理单元格值改变事件时发生错误");
+                _logger?.LogError(ex, "处理单元格值变化时发生错误");
             }
         }
 
@@ -456,209 +580,271 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             if (_isLoading) return;
 
+            // 立即提交ComboBox的更改,以便CellValueChanged事件能立即触发
             if (DataGridViewDefineVar.CurrentCell is DataGridViewComboBoxCell)
             {
                 DataGridViewDefineVar.CommitEdit(DataGridViewDataErrorContexts.Commit);
             }
         }
 
+        private void DataGridViewDefineVar_SelectionChanged(object sender, EventArgs e)
+        {
+            if (_isLoading) return;
+
+            // 行选择变化时更新预览
+            RestartPreviewTimer();
+        }
+
         #endregion
 
-        #region 验证方法
+        #region 辅助对话框方法
 
         /// <summary>
-        /// 验证单元格内容
+        /// 显示变量选择对话框
         /// </summary>
-        private void ValidateCellContent(DataGridViewRow row)
+        private void ShowVariableSelector(DataGridViewRow row)
         {
             try
             {
-                var sourceType = row.Cells["ColVarType"].Value?.ToString();
-                var content = row.Cells["ColVarText"].Value?.ToString();
-                var contentCell = row.Cells["ColVarText"];
-
-                if (string.IsNullOrWhiteSpace(content))
+                if (_variableManager == null)
                 {
-                    contentCell.Style.BackColor = Color.White;
+                    MessageHelper.MessageOK(this, "变量管理器不可用", TType.Error);
                     return;
                 }
 
-                bool isValid = sourceType switch
+                using var selector = new VariableSelectionDialog(_variableManager)
                 {
-                    "固定值" => true,
-                    "变量" => ValidateVariableName(content),
-                    "表达式" => ValidateExpression(content),
-                    "系统属性" => ValidateSystemProperty(content),
-                    _ => true
+                    StartPosition = FormStartPosition.CenterParent
                 };
 
-                // 根据验证结果设置背景色
-                contentCell.Style.BackColor = isValid ? Color.LightGreen : Color.LightYellow;
+                VarHelper.ShowDialogWithOverlay(this, selector);
+
+                if (selector.DialogResult == DialogResult.OK && !string.IsNullOrEmpty(selector.SelectedVariableName))
+                {
+                    row.Cells["ColVarText"].Value = selector.SelectedVariableName;
+                    _logger?.LogDebug($"选中变量: {selector.SelectedVariableName}");
+
+                    // 更新预览
+                    RestartPreviewTimer();
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "验证单元格内容时发生错误");
+                _logger?.LogError(ex, "显示变量选择对话框时发生错误");
+                MessageHelper.MessageOK(this, $"打开变量选择器失败: {ex.Message}", TType.Error);
             }
         }
 
         /// <summary>
-        /// 验证变量名
+        /// 显示表达式构建器对话框
         /// </summary>
-        private bool ValidateVariableName(string varName)
+        private void ShowExpressionBuilder(DataGridViewRow row)
         {
-            if (string.IsNullOrWhiteSpace(varName))
-                return false;
-
-            // 检查变量名是否存在
-            if (_variableManager != null)
+            try
             {
-                var variable = _variableManager.FindVariableByName(varName);
-                return variable != null;
+                if (_variableManager == null || _engine == null)
+                {
+                    MessageHelper.MessageOK(this, "表达式引擎不可用", TType.Error);
+                    return;
+                }
+
+                var currentExpression = row.Cells["ColVarText"].Value?.ToString() ?? "";
+
+                using var builder = new ExpressionBuilderDialog(_variableManager, _engine)
+                {
+                    InitialExpression = currentExpression,
+                    StartPosition = FormStartPosition.CenterParent
+                };
+
+                VarHelper.ShowDialogWithOverlay(this, builder);
+
+                if (builder.DialogResult == DialogResult.OK && !string.IsNullOrEmpty(builder.GeneratedExpression))
+                {
+                    row.Cells["ColVarText"].Value = builder.GeneratedExpression;
+                    _logger?.LogDebug($"生成表达式: {builder.GeneratedExpression}");
+
+                    // 更新预览
+                    RestartPreviewTimer();
+                }
             }
-
-            // 简单验证格式
-            return System.Text.RegularExpressions.Regex.IsMatch(varName, @"^[a-zA-Z_][a-zA-Z0-9_]*$");
-        }
-
-        /// <summary>
-        /// 验证表达式 - 使用 ReportExpressionHelper
-        /// </summary>
-        private bool ValidateExpression(string expression)
-        {
-            if (string.IsNullOrWhiteSpace(expression))
-                return false;
-
-            // 使用表达式助手验证
-            if (_expressionHelper != null)
+            catch (Exception ex)
             {
-                return _expressionHelper.ValidateExpression(expression);
+                _logger?.LogError(ex, "显示表达式构建器时发生错误");
+                MessageHelper.MessageOK(this, $"打开表达式构建器失败: {ex.Message}", TType.Error);
             }
+        }
 
-            // 简单验证:检查是否包含变量或运算符
-            return expression.Contains('{') || expression.Contains('+') ||
-                   expression.Contains('-') || expression.Contains('*') || expression.Contains('/');
+        #endregion
+
+        #region 预览功能
+
+        /// <summary>
+        /// 重启预览定时器
+        /// </summary>
+        private void RestartPreviewTimer()
+        {
+            _previewTimer?.Stop();
+            _previewTimer?.Start();
         }
 
         /// <summary>
-        /// 验证系统属性
+        /// 预览定时器触发事件
         /// </summary>
-        private bool ValidateSystemProperty(string propertyPath)
+        private void PreviewTimer_Tick(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(propertyPath))
-                return false;
-
-            var parts = propertyPath.Split('.');
-            if (parts.Length < 2)
-                return false;
-
-            var validRoots = new[] { "NewUsers", "VarHelper", "DateTime", "BaseTest" };
-            return validRoots.Contains(parts[0]);
+            _previewTimer.Stop();
+            UpdatePreviewPanel();
         }
-
-        #endregion
-
-        #region 帮助方法
 
         /// <summary>
-        /// 显示详细帮助对话框
+        /// 更新预览面板
         /// </summary>
-        private void ShowDetailedHelp()
+        private void UpdatePreviewPanel()
         {
-            var helpText = new System.Text.StringBuilder();
-            helpText.AppendLine("📖 数据源类型详细说明\n");
-            helpText.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            try
+            {
+                // 检查预览面板是否存在
+                if (!this.Controls.ContainsKey("panelPreview"))
+                {
+                    return;
+                }
 
-            helpText.AppendLine("1️ 【固定值】");
-            helpText.AppendLine("   直接输入要写入单元格的文本或数值");
-            helpText.AppendLine("   📌 示例:");
-            helpText.AppendLine("      • 测试报告");
-            helpText.AppendLine("      • 123.45");
-            helpText.AppendLine("      • 2025-01-01\n");
+                var panelPreview = this.Controls["panelPreview"] as Panel;
+                var lblPreviewTitle = panelPreview?.Controls.Find("lblPreviewTitle", false).FirstOrDefault() as Label;
+                var lblPreviewContent = panelPreview?.Controls.Find("lblPreviewContent", false).FirstOrDefault() as Label;
 
-            helpText.AppendLine("2️ 【变量】");
-            helpText.AppendLine("   从工作流全局变量中获取值");
-            helpText.AppendLine("   📌 示例:");
-            helpText.AppendLine("      • TestResult");
-            helpText.AppendLine("      • Temperature");
-            helpText.AppendLine("      • UserName\n");
+                if (lblPreviewTitle == null || lblPreviewContent == null)
+                {
+                    return;
+                }
 
-            helpText.AppendLine("3️ 【表达式】 ⭐增强功能");
-            helpText.AppendLine("   使用变量和函数进行计算或拼接");
-            helpText.AppendLine("   📌 基础运算:");
-            helpText.AppendLine("      • {Var1} + {Var2}");
-            helpText.AppendLine("      • {Price} * 1.13");
-            helpText.AppendLine("      • ({Max} + {Min}) / 2");
-            helpText.AppendLine("   📌 字符串函数:");
-            helpText.AppendLine("      • UPPER({Name})");
-            helpText.AppendLine("      • LOWER({Text})");
-            helpText.AppendLine("      • SUBSTRING({Text}, 0, 10)");
-            helpText.AppendLine("   📌 日期函数:");
-            helpText.AppendLine("      • FORMAT(NOW(), \"yyyy-MM-dd\")");
-            helpText.AppendLine("      • FORMAT(NOW(), \"HH:mm:ss\")");
-            helpText.AppendLine("   📌 数学函数:");
-            helpText.AppendLine("      • ABS({Value})");
-            helpText.AppendLine("      • MAX({Val1}, {Val2}, {Val3})");
-            helpText.AppendLine("      • MIN({Val1}, {Val2}, {Val3})");
-            helpText.AppendLine("   📌 逻辑运算:");
-            helpText.AppendLine("      • {Score} >= 60");
-            helpText.AppendLine("      • {Temp} > 20 && {Temp} < 30\n");
+                // 获取当前选中行
+                if (DataGridViewDefineVar.SelectedRows.Count == 0)
+                {
+                    lblPreviewTitle.Text = "📋 预览";
+                    lblPreviewContent.Text = "请选择一行查看预览";
+                    lblPreviewContent.ForeColor = Color.Gray;
+                    return;
+                }
 
-            helpText.AppendLine("4️⃣ 【系统属性】");
-            helpText.AppendLine("   通过反射获取系统对象的属性值");
-            helpText.AppendLine("   📌 用户信息:");
-            helpText.AppendLine("      • NewUsers.NewUserInfo.Username");
-            helpText.AppendLine("      • NewUsers.NewUserInfo.RoleName");
-            helpText.AppendLine("   📌 系统变量:");
-            helpText.AppendLine("      • VarHelper.TestViewModel.ModelName");
-            helpText.AppendLine("      • VarHelper.TestViewModel.DrawingNo");
-            helpText.AppendLine("   📌 日期时间:");
-            helpText.AppendLine("      • DateTime.Now.ToString(\"yyyy-MM-dd\")");
-            helpText.AppendLine("      • DateTime.Now.Year\n");
+                var row = DataGridViewDefineVar.SelectedRows[0];
+                var sourceType = row.Cells["ColVarType"].Value?.ToString() ?? "固定值";
+                var content = row.Cells["ColVarText"].Value?.ToString() ?? "";
 
-            helpText.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-            helpText.AppendLine("💡 使用技巧:");
-            helpText.AppendLine("   • 内容单元格会显示ToolTip提示");
-            helpText.AppendLine("   • 绿色背景 = 格式正确");
-            helpText.AppendLine("   • 黄色背景 = 可能有问题");
-            helpText.AppendLine("   • 表达式支持完整的函数库");
-            helpText.AppendLine("   • 可以组合使用多种功能\n");
+                lblPreviewTitle.Text = $"📋 预览 - {sourceType}";
 
-            helpText.AppendLine("🔍 更多函数请参考文档");
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    lblPreviewContent.Text = "(内容为空)";
+                    lblPreviewContent.ForeColor = Color.Gray;
+                    return;
+                }
 
-            MessageHelper.MessageOK(helpText.ToString(), TType.Info);
+                // 根据数据源类型显示预览
+                switch (sourceType)
+                {
+                    case "固定值":
+                        lblPreviewContent.Text = $"将写入: {content}";
+                        lblPreviewContent.ForeColor = Color.Black;
+                        break;
+
+                    case "变量":
+                        PreviewVariable(content, lblPreviewContent);
+                        break;
+
+                    case "表达式":
+                        PreviewExpression(content, lblPreviewContent);
+                        break;
+
+                    case "系统属性":
+                        lblPreviewContent.Text = $"系统属性: {content}\n(运行时计算)";
+                        lblPreviewContent.ForeColor = Color.DarkBlue;
+                        break;
+
+                    default:
+                        lblPreviewContent.Text = content;
+                        lblPreviewContent.ForeColor = Color.Black;
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "更新预览面板时发生错误");
+            }
+        }
+
+        /// <summary>
+        /// 预览变量值
+        /// </summary>
+        private void PreviewVariable(string varName, Label lblPreview)
+        {
+            try
+            {
+                var variable = _variableManager?.GetAllVariables();
+                if (variable == null)
+                {
+                    lblPreview.Text = "变量管理器不可用";
+                    lblPreview.ForeColor = Color.Red;
+                    return;
+                }
+
+                if (variable.Select(v => v.VarName).Contains(varName))
+                {
+                    var valueStr = variable[0].VarValue?.ToString() ?? "null";
+                    lblPreview.Text = $"变量 '{varName}' 当前值: {valueStr}";
+                    lblPreview.ForeColor = Color.DarkGreen;
+                }
+                else
+                {
+                    lblPreview.Text = $"变量 '{varName}' 未赋值或不存在";
+                    lblPreview.ForeColor = Color.OrangeRed;
+                }
+            }
+            catch (Exception ex)
+            {
+                lblPreview.Text = $"预览失败: {ex.Message}";
+                lblPreview.ForeColor = Color.Red;
+            }
+        }
+
+        /// <summary>
+        /// 预览表达式计算结果
+        /// </summary>
+        private void PreviewExpression(string expression, Label lblPreview)
+        {
+            try
+            {
+                if (_expressionHelper == null)
+                {
+                    lblPreview.Text = "表达式引擎不可用";
+                    lblPreview.ForeColor = Color.Red;
+                    return;
+                }
+
+                // 尝试计算表达式
+                var result = _expressionHelper.EvaluateForReport(expression);
+
+                if (result != null && !result.ToString().Contains("错误"))
+                {
+                    lblPreview.Text = $"表达式计算结果: {result}";
+                    lblPreview.ForeColor = Color.DarkGreen;
+                }
+                else
+                {
+                    lblPreview.Text = $"表达式: {expression}\n{result}";
+                    lblPreview.ForeColor = Color.OrangeRed;
+                }
+            }
+            catch (Exception ex)
+            {
+                lblPreview.Text = $"表达式计算失败: {ex.Message}";
+                lblPreview.ForeColor = Color.Red;
+            }
         }
 
         #endregion
 
-        #region 辅助方法
-
-        private CellsDataSourceType ParseSourceType(string typeStr)
-        {
-            return typeStr switch
-            {
-                "固定值" => CellsDataSourceType.FixedValue,
-                "变量" => CellsDataSourceType.Variable,
-                "表达式" => CellsDataSourceType.Expression,
-                "系统属性" => CellsDataSourceType.SystemProperty,
-                _ => CellsDataSourceType.FixedValue
-            };
-        }
-
-        private string GetSourceTypeDisplayName(CellsDataSourceType type)
-        {
-            return type switch
-            {
-                CellsDataSourceType.FixedValue => "固定值",
-                CellsDataSourceType.Variable => "变量",
-                CellsDataSourceType.Expression => "表达式",
-                CellsDataSourceType.SystemProperty => "系统属性",
-                _ => "固定值"
-            };
-        }
-
-        #endregion
-
-        #region 重写基类方法
+        #region 验证和保存
 
         protected override object CollectParameters()
         {
@@ -710,38 +896,105 @@ namespace MainUI.LogicalConfiguration.Forms
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "验证参数时发生错误");
-                MessageHelper.MessageOK($"参数验证失败:{ex.Message}", TType.Error);
+                MessageHelper.MessageOK($"验证失败:{ex.Message}", TType.Error);
                 return false;
             }
         }
 
-        protected override void LoadParameterFromStep(object stepParameter)
-        {
-            try
-            {
-                var parameter = ConvertParameter(stepParameter);
-                LoadParameters(parameter);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "从步骤加载参数失败");
-            }
-        }
-
-        protected override void SetDefaultValues()
-        {
-            _currentParameter = new Parameter_WriteCells();
-            txtSheetName.Text = "Sheet1";
-            DataGridViewDefineVar.Rows.Clear();
-        }
-
         #endregion
 
-        #region IParameterForm 接口实现
+        #region 辅助方法
+
+        private CellsDataSourceType ParseSourceType(string typeStr)
+        {
+            return typeStr switch
+            {
+                "固定值" => CellsDataSourceType.FixedValue,
+                "变量" => CellsDataSourceType.Variable,
+                "表达式" => CellsDataSourceType.Expression,
+                "系统属性" => CellsDataSourceType.SystemProperty,
+                _ => CellsDataSourceType.FixedValue
+            };
+        }
+
+        private string GetSourceTypeDisplayName(CellsDataSourceType type)
+        {
+            return type switch
+            {
+                CellsDataSourceType.FixedValue => "固定值",
+                CellsDataSourceType.Variable => "变量",
+                CellsDataSourceType.Expression => "表达式",
+                CellsDataSourceType.SystemProperty => "系统属性",
+                _ => "固定值"
+            };
+        }
+
+        /// <summary>
+        /// 显示详细帮助对话框
+        /// </summary>
+        private void ShowDetailedHelp()
+        {
+            var helpText = new System.Text.StringBuilder();
+            helpText.AppendLine("📖 数据源类型详细说明\n");
+            helpText.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+            helpText.AppendLine("1️⃣ 【固定值】");
+            helpText.AppendLine("   直接输入要写入单元格的文本或数值");
+            helpText.AppendLine("   📌 示例:");
+            helpText.AppendLine("      • 测试报告");
+            helpText.AppendLine("      • 123.45");
+            helpText.AppendLine("      • 2025-01-01\n");
+
+            helpText.AppendLine("2️⃣ 【变量】 ⭐可使用'选择'按钮");
+            helpText.AppendLine("   从工作流全局变量中获取值");
+            helpText.AppendLine("   📌 示例:");
+            helpText.AppendLine("      • TestResult");
+            helpText.AppendLine("      • Temperature");
+            helpText.AppendLine("      • UserName");
+            helpText.AppendLine("   💡 提示: 双击或点击'选择'按钮打开变量选择器\n");
+
+            helpText.AppendLine("3️⃣ 【表达式】 ⭐可使用'构建'按钮");
+            helpText.AppendLine("   使用变量和函数进行计算或拼接");
+            helpText.AppendLine("   📌 基础运算:");
+            helpText.AppendLine("      • {Var1} + {Var2}");
+            helpText.AppendLine("      • {Price} * 1.13");
+            helpText.AppendLine("      • ({Max} + {Min}) / 2");
+            helpText.AppendLine("   📌 字符串函数:");
+            helpText.AppendLine("      • UPPER({Name})");
+            helpText.AppendLine("      • LOWER({Text})");
+            helpText.AppendLine("      • SUBSTRING({Text}, 0, 10)");
+            helpText.AppendLine("   📌 日期函数:");
+            helpText.AppendLine("      • FORMAT(NOW(), \"yyyy-MM-dd\")");
+            helpText.AppendLine("      • FORMAT(NOW(), \"HH:mm:ss\")");
+            helpText.AppendLine("   💡 提示: 双击或点击'构建'按钮打开表达式构建器\n");
+
+            helpText.AppendLine("4️⃣ 【系统属性】");
+            helpText.AppendLine("   通过反射获取系统对象的属性值");
+            helpText.AppendLine("   📌 用户信息:");
+            helpText.AppendLine("      • NewUsers.NewUserInfo.Username");
+            helpText.AppendLine("      • NewUsers.NewUserInfo.RoleName");
+            helpText.AppendLine("   📌 系统变量:");
+            helpText.AppendLine("      • VarHelper.TestViewModel.ModelName");
+            helpText.AppendLine("      • VarHelper.TestViewModel.DrawingNo");
+            helpText.AppendLine("   📌 日期时间:");
+            helpText.AppendLine("      • DateTime.Now.ToString(\"yyyy-MM-dd\")");
+            helpText.AppendLine("      • DateTime.Now.Year\n");
+
+            helpText.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            helpText.AppendLine("💡 新功能:");
+            helpText.AppendLine("   • 🔍 实时预览面板 - 查看当前值或计算结果");
+            helpText.AppendLine("   • 🎯 变量选择器 - 搜索和选择可用变量");
+            helpText.AppendLine("   • 🛠️ 表达式构建器 - 可视化构建复杂表达式");
+            helpText.AppendLine("   • 📝 智能提示 - 输入时显示相关帮助\n");
+
+            helpText.AppendLine("🔍 更多函数请参考文档");
+
+            MessageHelper.MessageOK(helpText.ToString(), TType.Info);
+        }
 
         public void PopulateControls(Parameter_WriteCells parameter)
         {
-            LoadParameters(parameter);
+            throw new NotImplementedException();
         }
 
         void IParameterForm<Parameter_WriteCells>.SetDefaultValues()
@@ -751,36 +1004,17 @@ namespace MainUI.LogicalConfiguration.Forms
 
         public bool ValidateTypedParameters()
         {
-            return ValidateParameters();
+            throw new NotImplementedException();
         }
 
         public Parameter_WriteCells CollectTypedParameters()
         {
-            return GetCurrentParameters();
+            throw new NotImplementedException();
         }
 
         public Parameter_WriteCells ConvertParameter(object stepParameter)
         {
-            try
-            {
-                if (stepParameter is Parameter_WriteCells typedParam)
-                {
-                    return typedParam;
-                }
-
-                if (stepParameter != null)
-                {
-                    var jsonString = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
-                    return JsonConvert.DeserializeObject<Parameter_WriteCells>(jsonString);
-                }
-
-                return new Parameter_WriteCells();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "转换参数失败");
-                return new Parameter_WriteCells();
-            }
+            throw new NotImplementedException();
         }
 
         #endregion
