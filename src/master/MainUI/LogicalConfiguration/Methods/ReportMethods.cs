@@ -234,17 +234,42 @@ namespace MainUI.LogicalConfiguration.Methods
 
             try
             {
-                var variable = _globalVariableManager.FindVariableByName(item.VariableName);
+                // 清理变量名：移除可能的花括号
+                var cleanVarName = item.VariableName.Trim();
+                if (cleanVarName.StartsWith('{') && cleanVarName.EndsWith('}'))
+                {
+                    cleanVarName = cleanVarName[1..^1].Trim();
+                    NlogHelper.Default.Debug($"清理变量名: {item.VariableName} -> {cleanVarName}");
+                }
 
+                // 输出当前所有变量（用于调试）
+                var allVariables = _globalVariableManager.GetAllVariables();
+                if (allVariables != null && allVariables.Count > 0)
+                {
+                    var varNames = string.Join(", ", allVariables.Select(v => $"'{v.VarName}'"));
+                    NlogHelper.Default.Debug($"变量列表: {varNames}");
+                }
+
+                var variable = _globalVariableManager.FindVariableByName(cleanVarName);
                 if (variable == null)
                 {
-                    NlogHelper.Default.Warn($"变量未找到: {item.VariableName}");
-                    return $"[变量未找到:{item.VariableName}]";
+                    NlogHelper.Default.Warn($"变量未找到: {cleanVarName}");
+                    NlogHelper.Default.Warn($"原始变量名: {item.VariableName}");
+
+                    // 尝试模糊匹配（容错处理）
+                    var similarVar = allVariables?
+                        .FirstOrDefault(v => v.VarName.Equals(cleanVarName, StringComparison.OrdinalIgnoreCase));
+
+                    if (similarVar != null)
+                    {
+                        NlogHelper.Default.Info($"找到大小写不匹配的变量: {similarVar.VarName}，使用该变量");
+                        return similarVar.VarValue ?? string.Empty;
+                    }
+
+                    return $"[变量未找到:{cleanVarName}]";
                 }
 
                 var value = variable.VarValue;
-
-                NlogHelper.Default.Debug($"获取变量值成功: {item.VariableName} = {value} (类型: {variable.VarType})");
 
                 // 如果值为 null，返回空字符串
                 return value ?? string.Empty;

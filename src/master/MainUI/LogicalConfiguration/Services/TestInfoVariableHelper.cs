@@ -86,7 +86,6 @@ namespace MainUI.LogicalConfiguration.Services
                 VarText = "当前试验台名称"
             });
 
-            var aa = variableManager.GetAllVariables();
             NlogHelper.Default.Info("测试信息变量初始化完成");
         }
 

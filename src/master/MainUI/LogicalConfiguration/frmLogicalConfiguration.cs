@@ -416,7 +416,7 @@ namespace MainUI.LogicalConfiguration
                 }).Cast<object>().ToList();
 
                 // 清空现有变量并添加新变量
-                _workflowState.ClearAllVariables();
+                _workflowState.ClearUserVariables();
                 foreach (var variable in enhancedVarItems)
                 {
                     _workflowState.AddVariable(variable);

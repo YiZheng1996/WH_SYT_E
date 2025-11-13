@@ -1,8 +1,10 @@
 ﻿using AntdUI;
 using Google.Protobuf.WellKnownTypes;
+using MainUI.LogicalConfiguration;
 using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
+using Sunny.UI;
 using System.Text;
 
 namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
@@ -94,28 +96,28 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             },
             {
                  "日期时间", new List<FunctionInfo>
-    {
-        // 基础函数
-        new("NOW()", "", "获取当前日期和时间", "NOW() → 2025-11-11 14:30:25"),
-        new("DateTime.Now()", "", "获取当前日期和时间", "DateTime.Now() → 2025-11-11 14:30:25"),
-        new("TODAY()", "", "获取今天日期（时间为00:00:00）", "TODAY() → 2025-11-11 00:00:00"),
-        new("DateTime.Today()", "", "获取今天日期", "DateTime.Today() → 2025-11-11"),
-        
-        // DateTime 属性
-        new("DateTime.Now.Year", "", "获取当前年份", "DateTime.Now.Year → 2025"),
-        new("DateTime.Now.Month", "", "获取当前月份", "DateTime.Now.Month → 11"),
-        new("DateTime.Now.Day", "", "获取当前日期", "DateTime.Now.Day → 11"),
-        new("DateTime.Now.Hour", "", "获取当前小时", "DateTime.Now.Hour → 14"),
-        new("DateTime.Now.Minute", "", "获取当前分钟", "DateTime.Now.Minute → 30"),
-        new("DateTime.Now.Second", "", "获取当前秒数", "DateTime.Now.Second → 25"),
-        new("DateTime.Now.DayOfWeek", "", "获取星期几（0=周日）", "DateTime.Now.DayOfWeek → 2"),
-        
-        // 格式化和运算
-        new("FORMAT(date, format)", "日期, 格式", "格式化日期时间", "FORMAT(DateTime.Now(), \"yyyy-MM-dd\") → \"2025-11-11\""),
-        new("ADDDAYS(date, days)", "日期, 天数", "增加天数", "ADDDAYS(DateTime.Now(), 7) → 7天后"),
-        new("ADDHOURS(date, hours)", "日期, 小时", "增加小时", "ADDHOURS(DateTime.Now(), 2) → 2小时后"),
-        new("ADDMINUTES(date, minutes)", "日期, 分钟", "增加分钟", "ADDMINUTES(DateTime.Now(), 30) → 30分钟后")
-    }
+                {
+                    // 基础函数
+                    new("NOW()", "", "获取当前日期和时间", "NOW() → 2025-11-11 14:30:25"),
+                    new("DateTime.Now()", "", "获取当前日期和时间", "DateTime.Now() → 2025-11-11 14:30:25"),
+                    new("TODAY()", "", "获取今天日期（时间为00:00:00）", "TODAY() → 2025-11-11 00:00:00"),
+                    new("DateTime.Today()", "", "获取今天日期", "DateTime.Today() → 2025-11-11"),
+                    
+                    // DateTime 属性
+                    new("DateTime.Now.Year", "", "获取当前年份", "DateTime.Now.Year → 2025"),
+                    new("DateTime.Now.Month", "", "获取当前月份", "DateTime.Now.Month → 11"),
+                    new("DateTime.Now.Day", "", "获取当前日期", "DateTime.Now.Day → 11"),
+                    new("DateTime.Now.Hour", "", "获取当前小时", "DateTime.Now.Hour → 14"),
+                    new("DateTime.Now.Minute", "", "获取当前分钟", "DateTime.Now.Minute → 30"),
+                    new("DateTime.Now.Second", "", "获取当前秒数", "DateTime.Now.Second → 25"),
+                    new("DateTime.Now.DayOfWeek", "", "获取星期几（0=周日）", "DateTime.Now.DayOfWeek → 2"),
+                    
+                    // 格式化和运算
+                    new("FORMAT(date, format)", "日期, 格式", "格式化日期时间", "FORMAT(DateTime.Now(), \"yyyy-MM- dd\") →      \"2025-11-11\""),
+                    new("ADDDAYS(date, days)", "日期, 天数", "增加天数", "ADDDAYS(DateTime.Now(), 7) → 7天后"),
+                    new("ADDHOURS(date, hours)", "日期, 小时", "增加小时", "ADDHOURS(DateTime.Now(), 2) → 2小时后"),
+                    new("ADDMINUTES(date, minutes)", "日期, 分钟", "增加分钟", "ADDMINUTES(DateTime.Now(), 30) → 30分钟   后")
+                }
             },
             {
                 "条件逻辑", new List<FunctionInfo>
@@ -142,7 +144,14 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             { "最小值", "Math.Min({Var1}, {Var2})" },
             { "绝对值", "Math.Abs({Var1})" },
             { "类型转换", "Convert.ToDouble({Var1})" },
-            { "空值处理", "ISNULL({Var1}, 0)" }
+            { "空值处理", "ISNULL({Var1}, 0)" },
+
+            // 新增系统变量模板
+            { "测试人员信息", "{试验员} + \" - \" + {产品型号}" },
+            { "完整产品信息", "{产品类型} + \"-\" + {产品型号} + \"-\" + {产品图号}" },
+            { "测试记录标题", "{试验员} + \"_\" + {产品型号} + \"_\" + DateTime.Now.ToString(\"yyyyMMdd\")" },
+            { "带时间的报告名", "{产品型号} + \"测试报告_\" + {测试时间}" },
+            { "试验台记录", "{试验台} + \" - \" + {测试时间}" }
         };
 
         #endregion
@@ -227,19 +236,70 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                     return;
                 }
 
-                // 按类型分组显示
-                var groupedVars = variables.GroupBy(v => v.VarType);
-                foreach (var group in groupedVars.OrderBy(g => g.Key))
+                // 分离系统变量和普通变量
+                var systemVariables = variables
+                    .Where(v => v is VarItem_Enhanced enhanced && enhanced.IsSystemVariable)
+                    .ToList();
+
+                var normalVariables = variables
+                    .Where(v => !(v is VarItem_Enhanced enhanced && enhanced.IsSystemVariable))
+                    .ToList();
+
+                // 优先显示系统变量
+                if (systemVariables.Count != 0)
                 {
-                    lstVariables.Items.Add($"━━ {group.Key} 类型 ━━");
-                    foreach (var variable in group)
+                    lstVariables.Items.Add("━━ 系统变量 ━━");
+                    foreach (var variable in systemVariables.OrderBy(v => v.VarName))
                     {
-                        var currentValue = variable.VarValue ?? "null";
-                        //var displayText = $"  {variable.VarName} = {currentValue}";
-                        var displayText = $"  {variable.VarName}";
+                        var displayText = $"{{{variable.VarName}}}";
+                        //if (!string.IsNullOrWhiteSpace(variable.VarText))
+                        //{
+                        //    displayText += $" - {variable.VarText}";
+                        //}
+
+                        // 显示当前值(如果有)
+                        if (!string.IsNullOrEmpty(variable.VarValue.ToString()))
+                        {
+                            displayText += $" [当前: {variable.VarValue}]";
+                        }
+
                         lstVariables.Items.Add(displayText);
                     }
+
+                    lstVariables.Items.Add(""); // 空行分隔
                 }
+
+                // 按类型分组显示普通变量
+                if (normalVariables.Count != 0)
+                {
+                    var groupedVars = normalVariables.GroupBy(v => v.VarType);
+                    foreach (var group in groupedVars.OrderBy(g => g.Key))
+                    {
+                        lstVariables.Items.Add($"━━ {group.Key} 类型 ━━");
+                        foreach (var variable in group)
+                        {
+                            var currentValue = variable.VarValue ?? "未赋值";
+                            var displayText = $"{{{variable.VarName}}}";
+
+                            //displayText += $" [{currentValue}]";
+                            lstVariables.Items.Add(displayText);
+                        }
+                    }
+                }
+
+                //// 按类型分组显示
+                //var groupedVars = variables.GroupBy(v => v.VarType);
+                //foreach (var group in groupedVars.OrderBy(g => g.Key))
+                //{
+                //    lstVariables.Items.Add($"━━ {group.Key} 类型 ━━");
+                //    foreach (var variable in group)
+                //    {
+                //        var currentValue = variable.VarValue ?? "null";
+                //        //var displayText = $"  {variable.VarName} = {currentValue}";
+                //        var displayText = $"  {variable.VarName}";
+                //        lstVariables.Items.Add(displayText);
+                //    }
+                //}
             }
             catch (Exception ex)
             {
@@ -444,17 +504,59 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         /// </summary>
         private void LstVariables_DoubleClick(object sender, EventArgs e)
         {
-            if (lstVariables.SelectedItem?.ToString() is string selectedText &&
+            if (lstVariables.SelectedItem?.ToString() is string selectedText &&  // ✅ 正确!
                 !selectedText.Contains("━") &&
                 !selectedText.Contains("暂无") &&
-                !selectedText.Contains("加载失败"))
+                !selectedText.Contains("加载失败") &&
+                !string.IsNullOrWhiteSpace(selectedText))
             {
-                // 提取变量名 (格式: "  VarName = value")
-                var text = selectedText.Trim();
-                var openParenIndex = text.IndexOf('(');
-                var varName = openParenIndex > 0 ? text.Substring(0, openParenIndex).Trim() : text;
-                InsertTextAtCursor($"{{{varName}}}");
+                var varName = ExtractVariableName(selectedText);
+                if (!string.IsNullOrWhiteSpace(varName))
+                {
+                    InsertTextAtCursor($"{{{varName}}}");
+                }
             }
+        }
+
+        /// <summary>
+        /// 从显示文本中提取变量名
+        /// 支持多种格式:
+        /// 1. "🔧 {试验员} - 当前试验员姓名 [当前: 张三]"
+        /// 2. "{Var1} - 变量说明 [100]"
+        /// 3. "  VarName (说明)"
+        /// 4. "  {VarName} = value"
+        /// </summary>
+        private string ExtractVariableName(string displayText)
+        {
+            if (string.IsNullOrWhiteSpace(displayText))
+                return null;
+
+            var text = displayText.Trim();
+
+            // 方法1: 提取 {} 中的内容 (优先级最高)
+            var braceMatch = System.Text.RegularExpressions.Regex.Match(text, @"\{([^}]+)\}");
+            if (braceMatch.Success)
+            {
+                return braceMatch.Groups[1].Value.Trim();
+            }
+
+            // 方法2: 提取空格后到第一个分隔符之间的内容
+            var spaceMatch = System.Text.RegularExpressions.Regex.Match(text, @"^\s*(\w+)[\s\(\=\-\[]");
+            if (spaceMatch.Success)
+            {
+                return spaceMatch.Groups[1].Value.Trim();
+            }
+
+            // 方法3: 去掉所有特殊字符后的第一个单词
+            var cleanText = System.Text.RegularExpressions.Regex.Replace(
+                text,
+                @"[^\w\s\u4e00-\u9fa5]+",  // 保留字母数字下划线和中文
+                " "
+            ).Trim();
+
+            var firstWord = cleanText.Split([' '], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
+            return firstWord?.Trim();
         }
 
         /// <summary>
@@ -704,7 +806,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
             try
             {
-               var validationResult = _engine.ValidateExpression(txtExpression.Text);
+                var validationResult = _engine.ValidateExpression(txtExpression.Text);
 
                 if (validationResult.IsValid)
                 {
