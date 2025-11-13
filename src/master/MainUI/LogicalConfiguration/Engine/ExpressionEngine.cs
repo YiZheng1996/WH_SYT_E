@@ -20,7 +20,7 @@ namespace MainUI.LogicalConfiguration.Engine
         #region 正则表达式模式
 
         // 变量引用模式: {变量名} - 支持所有 Unicode 字符
-        private readonly Regex _variablePattern = new(@"\{([\p{L}\p{N}_]+)\}", RegexOptions.Compiled);
+        private readonly Regex _variablePattern = new(@"\{([^}]+)\}", RegexOptions.Compiled);
 
         // 函数调用模式: 函数名(参数)
         private readonly Regex _functionPattern = new(@"([\w\.]+)\s*\(([^)]*)\)", RegexOptions.Compiled);

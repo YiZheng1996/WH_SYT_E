@@ -1,5 +1,7 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration;
+using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Services;
 using MainUI.Procedure.Controls;
 using MainUI.Service;
 using Microsoft.Extensions.Logging;

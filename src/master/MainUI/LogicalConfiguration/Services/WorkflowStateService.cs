@@ -541,12 +541,34 @@ namespace MainUI.LogicalConfiguration.Services
         /// <summary>
         /// 清空所有变量
         /// </summary>
-        public void ClearVariables()
+        public void ClearAllVariables()
         {
             _variablesLock.EnterWriteLock();
             try
             {
                 _variables.Clear();
+            }
+            finally
+            {
+                _variablesLock.ExitWriteLock();
+            }
+        }
+
+        // <summary>
+        /// 清空所有用户变量(保留系统变量)
+        /// </summary>
+        public void ClearUserVariables()
+        {
+            _variablesLock.EnterWriteLock();
+            try
+            {
+                var systemVars = _variables
+                    .OfType<VarItem_Enhanced>()
+                    .Where(v => v.IsSystemVariable)
+                    .ToList();
+
+                _variables.Clear();
+                _variables.AddRange(systemVars);
             }
             finally
             {

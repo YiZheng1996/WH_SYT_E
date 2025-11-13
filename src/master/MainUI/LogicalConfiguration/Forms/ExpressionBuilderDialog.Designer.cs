@@ -492,13 +492,13 @@
             // grpButtons
             // 
             grpButtons.BackColor = Color.White;
+            grpButtons.Controls.Add(btnValidate);
             grpButtons.Controls.Add(btnCancel);
             grpButtons.Controls.Add(btnOK);
             grpButtons.Controls.Add(btnHelp);
             grpButtons.Controls.Add(btnRedo);
             grpButtons.Controls.Add(btnUndo);
             grpButtons.Controls.Add(btnClear);
-            grpButtons.Controls.Add(btnValidate);
             grpButtons.Dock = DockStyle.Bottom;
             grpButtons.FillColor = Color.White;
             grpButtons.FillColor2 = Color.White;

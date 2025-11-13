@@ -1,5 +1,6 @@
 ﻿using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
+using MainUI.LogicalConfiguration.Services;
 using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.LogicalManager
@@ -63,6 +64,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
             try
             {
+                TestInfoVariableHelper.InitializeTestInfoVariables(_globalVariableManager);
                 NlogHelper.Default.Info($"开始执行步骤序列，共 {_steps.Count} 个步骤");
 
                 while (_isExecuting && _currentStepIndex < _steps.Count)

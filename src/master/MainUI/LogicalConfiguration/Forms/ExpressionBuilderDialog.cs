@@ -704,7 +704,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
             try
             {
-                var validationResult = _engine.ValidateExpression(txtExpression.Text);
+               var validationResult = _engine.ValidateExpression(txtExpression.Text);
 
                 if (validationResult.IsValid)
                 {

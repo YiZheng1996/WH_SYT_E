@@ -194,6 +194,9 @@ namespace MainUI
                 // 获取主窗体
                 var mainForm = ServiceProvider.GetRequiredService<frmMainMenu>();
 
+                // 在应用启动时创建系统变量占位符
+                InitializeSystemVariables();
+
                 // 运行主程序
                 Application.Run(mainForm);
             }
@@ -202,6 +205,25 @@ namespace MainUI
                 NlogHelper.Default.Error("主应用程序启动失败：", ex);
                 MessageBox.Show($"主应用程序启动失败：{ex.Message}", "系统提示",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static void InitializeSystemVariables()
+        {
+            try
+            {
+                var globalVariableManager = ServiceProvider.GetService<GlobalVariableManager>();
+                if (globalVariableManager != null)
+                {
+                    // 创建系统变量占位符
+                    TestInfoVariableHelper.InitializeTestInfoVariables(globalVariableManager);
+
+                    NlogHelper.Default.Info("✓ 系统变量占位符已创建");
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("初始化系统变量失败", ex);
             }
         }
 
@@ -265,7 +287,6 @@ namespace MainUI
                 steps => ActivatorUtilities.CreateInstance<StepExecutionManager>(provider, steps));
 
         }
-
         #endregion
     }
 }

@@ -1,5 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using MainUI.LogicalConfiguration.LogicalManager;
+﻿using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.Service;
 
 namespace MainUI.LogicalConfiguration.Services
@@ -33,6 +32,7 @@ namespace MainUI.LogicalConfiguration.Services
                 VarName = VAR_TESTER,
                 VarType = "string",
                 VarValue = GetCurrentTester(),
+                IsSystemVariable = true,  // 标记为系统变量
                 VarText = "当前试验员姓名"
             });
 
@@ -42,6 +42,7 @@ namespace MainUI.LogicalConfiguration.Services
                 VarName = VAR_MODEL_TYPE,
                 VarType = "string",
                 VarValue = GetCurrentModelType(),
+                IsSystemVariable = true,  // 标记为系统变量
                 VarText = "当前产品类型名称"
             });
 
@@ -51,6 +52,7 @@ namespace MainUI.LogicalConfiguration.Services
                 VarName = VAR_MODEL_NAME,
                 VarType = "string",
                 VarValue = GetCurrentModelName(),
+                IsSystemVariable = true,  // 标记为系统变量
                 VarText = "当前产品型号名称"
             });
 
@@ -60,6 +62,7 @@ namespace MainUI.LogicalConfiguration.Services
                 VarName = VAR_TEST_ID,
                 VarType = "string",
                 VarValue = GetCurrentTestID(),
+                IsSystemVariable = true,  // 标记为系统变量
                 VarText = "当前产品图号/测试ID"
             });
 
@@ -69,6 +72,7 @@ namespace MainUI.LogicalConfiguration.Services
                 VarName = VAR_TEST_TIME,
                 VarType = "string",
                 VarValue = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                IsSystemVariable = true,  // 标记为系统变量
                 VarText = "当前测试时间"
             });
 
@@ -78,9 +82,11 @@ namespace MainUI.LogicalConfiguration.Services
                 VarName = VAR_TEST_BENCH,
                 VarType = "string",
                 VarValue = GetCurrentTestBench(),
+                IsSystemVariable = true,  // 标记为系统变量
                 VarText = "当前试验台名称"
             });
 
+            var aa = variableManager.GetAllVariables();
             NlogHelper.Default.Info("测试信息变量初始化完成");
         }
 

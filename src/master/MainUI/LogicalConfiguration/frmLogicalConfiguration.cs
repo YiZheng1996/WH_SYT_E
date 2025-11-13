@@ -400,9 +400,6 @@ namespace MainUI.LogicalConfiguration
         {
             try
             {
-                // 初始化测试信息变量（试验员、产品型号等）
-                TestInfoVariableHelper.InitializeTestInfoVariables(_variableManager);
-
                 // 读取JSON文件中的变量项
                 var VarItems = await JsonManager.ReadVarItemsAsync();
 
@@ -419,7 +416,7 @@ namespace MainUI.LogicalConfiguration
                 }).Cast<object>().ToList();
 
                 // 清空现有变量并添加新变量
-                _workflowState.ClearVariables();
+                _workflowState.ClearAllVariables();
                 foreach (var variable in enhancedVarItems)
                 {
                     _workflowState.AddVariable(variable);

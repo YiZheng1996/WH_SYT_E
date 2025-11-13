@@ -111,7 +111,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 _logger.LogInformation("开始保存变量定义");
 
                 // 先清空所有变量
-                _workflowState.ClearVariables();
+                _workflowState.ClearAllVariables();
 
                 var addedVariables = new List<string>();
                 var errorMessages = new List<string>();

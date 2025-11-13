@@ -33,6 +33,12 @@ namespace MainUI.LogicalConfiguration
         public DateTime LastUpdated { get; set; } = DateTime.Now;
 
         /// <summary>
+        /// 是否为系统变量
+        /// 系统变量不应该被 ClearVariables 清空
+        /// </summary>
+        public bool IsSystemVariable { get; set; } = false;
+
+        /// <summary>
         /// 变量的历史值（可选，用于调试）
         /// </summary>
         [Newtonsoft.Json.JsonIgnore]

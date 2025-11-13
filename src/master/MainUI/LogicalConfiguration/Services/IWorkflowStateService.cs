@@ -162,7 +162,12 @@ namespace MainUI.LogicalConfiguration.Services
         /// 清空所有变量
         /// 谨慎使用：这会删除所有已定义的变量
         /// </summary>
-        void ClearVariables();
+        void ClearAllVariables();
+
+        /// <summary>
+        /// 清空所有用户变量(保留系统变量)
+        /// </summary>
+        void ClearUserVariables();
 
         /// <summary>
         /// 获取指定类型的所有变量

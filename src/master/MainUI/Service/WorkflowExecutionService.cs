@@ -1,6 +1,7 @@
 ﻿using MainUI.LogicalConfiguration;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
+using MainUI.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -26,7 +27,8 @@ namespace MainUI.Service
 
         // 当前执行的工作流管理器
         private StepExecutionManager _currentExecutionManager;
-
+        private GlobalVariableManager _variableManager =
+            Program.ServiceProvider?.GetService<GlobalVariableManager>();
         private bool _disposed = false;
 
         #endregion
@@ -313,11 +315,14 @@ namespace MainUI.Service
                 WorkflowStarted?.Invoke(itemName, steps.Count);
                 ProgressMessage?.Invoke($"开始执行工作流: {itemName} ({steps.Count} 个步骤)");
 
+                // 配置路径
+                string TestPath = $"{Application.StartupPath}Procedure\\{modelType}\\{modelName}\\{itemName}.json";
+
                 // 测试前刷新测试信息变量
                 //TestInfoVariableHelper.UpdateTestInfoVariables(_workflowState);
 
                 // 在工作流执行前调用
-                await EnsureVariablesLoadedAsync();
+                await EnsureVariablesLoadedAsync(TestPath);
 
                 // 更新工作流状态配置
                 _workflowState.UpdateConfiguration(modelType, modelName, itemName);
@@ -484,15 +489,19 @@ namespace MainUI.Service
         /// 在工作流执行前调用,否则无法获取变量集合
         /// </summary>
         /// <returns></returns>
-        public async Task EnsureVariablesLoadedAsync()
+        public async Task EnsureVariablesLoadedAsync(string TestPath)
         {
             try
             {
+                JsonManager.FilePath = TestPath;
                 var workflowState = Program.ServiceProvider.GetRequiredService<IWorkflowStateService>();
                 var config = await JsonManager.GetOrCreateConfigAsync();
 
                 // 清空并重新加载
-                workflowState.ClearVariables();
+                workflowState.ClearUserVariables();
+
+                // 初始化测试信息相关的全局变量
+                TestInfoVariableHelper.InitializeTestInfoVariables(_variableManager);
                 foreach (var varItem in config.Variable)
                 {
                     var enhancedVar = new VarItem_Enhanced
@@ -503,6 +512,7 @@ namespace MainUI.Service
                         VarText = varItem.VarText,
                         LastUpdated = DateTime.Now,
                         IsAssignedByStep = false,
+                        IsSystemVariable = false,
                         AssignmentType = VariableAssignmentType.None
                     };
 

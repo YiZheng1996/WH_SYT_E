@@ -160,7 +160,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// </summary>
         public void ClearAllVariables()
         {
-            _workflowState.ClearVariables();
+            _workflowState.ClearAllVariables();
         }
 
         #endregion
