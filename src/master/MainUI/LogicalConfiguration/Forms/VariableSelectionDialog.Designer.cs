@@ -361,7 +361,6 @@
 
         #endregion
 
-        private System.Windows.Forms.Panel panelTop;
         private System.Windows.Forms.Panel panelSearch;
         private Sunny.UI.UITextBox txtSearch;
         private Sunny.UI.UIComboBox cmbFilter;

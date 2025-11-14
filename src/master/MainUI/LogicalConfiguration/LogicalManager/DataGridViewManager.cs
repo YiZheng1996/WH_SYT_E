@@ -3,9 +3,19 @@
     /// <summary>
     /// DataGridView 管理器 - 只负责UI操作
     /// </summary>
-    public class DataGridViewManager(DataGridView grid)
+    public class DataGridViewManager
     {
-        private readonly DataGridView _grid = grid ?? throw new ArgumentNullException(nameof(grid));
+        private readonly DataGridView _grid;
+        private readonly StepDetailsProvider _detailsProvider;
+
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        public DataGridViewManager(DataGridView grid, ILogger logger = null)
+        {
+            _grid = grid ?? throw new ArgumentNullException(nameof(grid));
+            _detailsProvider = new StepDetailsProvider((Microsoft.Extensions.Logging.ILogger)logger);
+        }
 
         /// <summary>
         /// 获取选中行的索引
@@ -38,11 +48,12 @@
             foreach (var step in steps)
             {
                 _grid.Rows.Add(
-                    step.StepNum,           // 步骤号
-                    step.StepName,          // 步骤名称
-                    GetStepTypeName(step),  // 步骤类型
-                    GetStatusText(step.Status), // 状态
-                    "-"                      // 执行时间
+                    step.StepNum,                           // 步骤号
+                    step.StepName,                          // 步骤名称
+                    GetStepTypeName(step),                  // 步骤类型
+                    _detailsProvider.GetStepDetailsPreview(step),  // 🆕 步骤详情
+                    GetStatusText(step.Status),             // 状态
+                    "-"                                     // 执行时间
                 );
             }
         }
@@ -89,7 +100,6 @@
         /// </summary>
         private string GetStepTypeName(ChildModel step)
         {
-            // 根据步骤名称返回类型
             return step.StepName switch
             {
                 "延时等待" => "逻辑控制",
@@ -130,10 +140,10 @@
         {
             return status switch
             {
-                0 => Color.White,                      // 未执行
-                1 => Color.LightYellow,                // 执行中
-                2 => Color.LightGreen,                 // 成功
-                3 => Color.LightCoral,                 // 失败
+                0 => Color.White,
+                1 => Color.LightYellow,
+                2 => Color.LightGreen,
+                3 => Color.LightCoral,
                 _ => Color.White
             };
         }

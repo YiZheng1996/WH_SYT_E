@@ -140,16 +140,6 @@ namespace MainUI.LogicalConfiguration.Methods
                 if (param.Items == null || param.Items.Count == 0)
                     throw new ArgumentException("写入项列表不能为空");
 
-                // 检查报表控件是否可用
-                if (!ReportService.IsReportAvailable)
-                {
-                    throw new InvalidOperationException(
-                        "报表控件未初始化,请确保:\n" +
-                        "1. 已在HMI界面加载报表\n" +
-                        "2. UcHMI.Init() 已正确执行\n" +
-                        "3. 报表文件路径正确");
-                }
-
                 // 遍历写入每个单元格
                 foreach (var item in param.Items)
                 {

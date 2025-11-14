@@ -10,7 +10,7 @@ namespace MainUI.CurrencyHelper
         public static string SoftName = "";
         public static string ModelTypeName => $"{TestViewModel.ModelTypeName}_{TestViewModel.ModelName}";
         public static NewModels TestViewModel = new();
-        
+
         static VarHelper() { }
 
         /// <summary>

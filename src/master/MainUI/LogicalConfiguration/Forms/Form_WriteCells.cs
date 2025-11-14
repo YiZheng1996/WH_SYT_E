@@ -281,6 +281,7 @@ namespace MainUI.LogicalConfiguration.Forms
         private void BindEvents()
         {
             btnSave.Click += BtnSave_Click;
+            btnCancel.Click += BtnCancel_Click;
             btnAddRow.Click += BtnAdd_Click;
             BtnDelete.Click += BtnDelete_Click;
 
@@ -485,6 +486,11 @@ namespace MainUI.LogicalConfiguration.Forms
             SaveParameters();
         }
 
+        private void BtnCancel_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
         private void DataGridViewDefineVar_CellEnter(object sender, DataGridViewCellEventArgs e)
         {
             if (_isLoading || e.RowIndex < 0 || e.ColumnIndex < 0) return;
@@ -616,7 +622,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     return;
                 }
 
-                 var selector = new VariableSelectionDialog(_variableManager)
+                var selector = new VariableSelectionDialog(_variableManager)
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
@@ -730,7 +736,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 获取当前选中行
                 if (DataGridViewDefineVar.SelectedRows.Count == 0)
                 {
-                    lblPreviewTitle.Text = "📋 实时预览";
+                    lblPreviewTitle.Text = "实时预览";
                     lblPreviewContent.Text = "请选择一行查看预览";
                     lblPreviewContent.ForeColor = Color.Gray;
                     _logger?.LogDebug("无选中行,显示默认提示");
@@ -745,7 +751,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 _logger?.LogDebug($"选中行: 单元格={{0}}, 类型={{1}}, 内容={{2}}",
                     cellAddress, sourceType, content);
 
-                lblPreviewTitle.Text = $"📋 实时预览 - {sourceType}";
+                lblPreviewTitle.Text = $"实时预览 - {sourceType}";
 
                 if (string.IsNullOrWhiteSpace(content))
                 {
@@ -996,60 +1002,57 @@ namespace MainUI.LogicalConfiguration.Forms
         private void ShowDetailedHelp()
         {
             var helpText = new System.Text.StringBuilder();
-            helpText.AppendLine("📖 数据源类型详细说明\n");
+            helpText.AppendLine("数据源类型详细说明\n");
             helpText.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
-            helpText.AppendLine("1️⃣ 【固定值】");
-            helpText.AppendLine("   直接输入要写入单元格的文本或数值");
+            helpText.AppendLine("【固定值】");
+            helpText.AppendLine(" 直接输入要写入单元格的文本或数值");
             helpText.AppendLine("   📌 示例:");
             helpText.AppendLine("      • 测试报告");
             helpText.AppendLine("      • 123.45");
             helpText.AppendLine("      • 2025-01-01\n");
 
-            helpText.AppendLine("2️⃣ 【变量】 ⭐可使用'选择'按钮");
+            helpText.AppendLine("【变量】 ⭐可使用'选择'按钮");
             helpText.AppendLine("   从工作流全局变量中获取值");
-            helpText.AppendLine("   📌 示例:");
-            helpText.AppendLine("      • TestResult");
-            helpText.AppendLine("      • Temperature");
-            helpText.AppendLine("      • UserName");
-            helpText.AppendLine("   💡 提示: 双击或点击'选择'按钮打开变量选择器\n");
+            helpText.AppendLine("   示例:");
+            helpText.AppendLine("   • TestResult");
+            helpText.AppendLine("   • Temperature");
+            helpText.AppendLine("   • UserName");
+            helpText.AppendLine("   提示: 双击或点击'选择'按钮打开变量选择器\n");
 
-            helpText.AppendLine("3️⃣ 【表达式】 ⭐可使用'构建'按钮");
+            helpText.AppendLine("【表达式】 ⭐可使用'构建'按钮");
             helpText.AppendLine("   使用变量和函数进行计算或拼接");
-            helpText.AppendLine("   📌 基础运算:");
-            helpText.AppendLine("      • {Var1} + {Var2}");
-            helpText.AppendLine("      • {Price} * 1.13");
-            helpText.AppendLine("      • ({Max} + {Min}) / 2");
-            helpText.AppendLine("   📌 字符串函数:");
-            helpText.AppendLine("      • UPPER({Name})");
-            helpText.AppendLine("      • LOWER({Text})");
-            helpText.AppendLine("      • SUBSTRING({Text}, 0, 10)");
-            helpText.AppendLine("   📌 日期函数:");
-            helpText.AppendLine("      • FORMAT(NOW(), \"yyyy-MM-dd\")");
-            helpText.AppendLine("      • FORMAT(NOW(), \"HH:mm:ss\")");
-            helpText.AppendLine("   💡 提示: 双击或点击'构建'按钮打开表达式构建器\n");
+            helpText.AppendLine("   基础运算:");
+            helpText.AppendLine("   • {Var1} + {Var2}");
+            helpText.AppendLine("   • {Price} * 1.13");
+            helpText.AppendLine("   • ({Max} + {Min}) / 2");
+            helpText.AppendLine("   字符串函数:");
+            helpText.AppendLine("   • UPPER({Name})");
+            helpText.AppendLine("   • LOWER({Text})");
+            helpText.AppendLine("   • SUBSTRING({Text}, 0, 10)");
+            helpText.AppendLine("   日期函数:");
+            helpText.AppendLine("   • FORMAT(NOW(), \"yyyy-MM-dd\")");
+            helpText.AppendLine("   • FORMAT(NOW(), \"HH:mm:ss\")");
+            helpText.AppendLine("   提示: 双击或点击'构建'按钮打开表达式构建器\n");
 
-            helpText.AppendLine("4️⃣ 【系统属性】");
+            helpText.AppendLine("【系统属性】");
             helpText.AppendLine("   通过反射获取系统对象的属性值");
-            helpText.AppendLine("   📌 用户信息:");
-            helpText.AppendLine("      • NewUsers.NewUserInfo.Username");
-            helpText.AppendLine("      • NewUsers.NewUserInfo.RoleName");
-            helpText.AppendLine("   📌 系统变量:");
-            helpText.AppendLine("      • VarHelper.TestViewModel.ModelName");
-            helpText.AppendLine("      • VarHelper.TestViewModel.DrawingNo");
-            helpText.AppendLine("   📌 日期时间:");
-            helpText.AppendLine("      • DateTime.Now.ToString(\"yyyy-MM-dd\")");
-            helpText.AppendLine("      • DateTime.Now.Year\n");
+            helpText.AppendLine("   用户信息:");
+            helpText.AppendLine("   • NewUsers.NewUserInfo.Username");
+            helpText.AppendLine("   • NewUsers.NewUserInfo.RoleName");
+            helpText.AppendLine("   系统变量:");
+            helpText.AppendLine("   • VarHelper.TestViewModel.ModelName");
+            helpText.AppendLine("   • VarHelper.TestViewModel.DrawingNo");
+            helpText.AppendLine("   日期时间:");
+            helpText.AppendLine("   • DateTime.Now.ToString(\"yyyy-MM-dd\")");
+            helpText.AppendLine("   • DateTime.Now.Year\n");
 
             helpText.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-            helpText.AppendLine("💡 新功能:");
-            helpText.AppendLine("   • 🔍 实时预览面板 - 查看当前值或计算结果");
-            helpText.AppendLine("   • 🎯 变量选择器 - 搜索和选择可用变量");
-            helpText.AppendLine("   • 🛠️ 表达式构建器 - 可视化构建复杂表达式");
-            helpText.AppendLine("   • 📝 智能提示 - 输入时显示相关帮助\n");
-
-            helpText.AppendLine("🔍 更多函数请参考文档");
-
+            helpText.AppendLine("新功能:");
+            helpText.AppendLine("• 实时预览面板 - 查看当前值或计算结果");
+            helpText.AppendLine("• 变量选择器 - 搜索和选择可用变量");
+            helpText.AppendLine("• 表达式构建器 - 可视化构建复杂表达式");
+            helpText.AppendLine("• 智能提示 - 输入时显示相关帮助\n");
             MessageHelper.MessageOK(helpText.ToString(), TType.Info);
         }
 

@@ -61,7 +61,7 @@ namespace MainUI.LogicalConfiguration
                 Text = $"产品类型：{modelType}，产品型号：{modelName}，项点名称：{processName}";
 
                 // 更新全局变量
-                TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelType, modelName); 
+                TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelType, modelName);
 
                 // 创建配置文件
                 CreateJsonFileAsync(modelType, modelName, processName).Wait();

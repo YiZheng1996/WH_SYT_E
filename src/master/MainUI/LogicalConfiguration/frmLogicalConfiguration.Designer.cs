@@ -34,11 +34,12 @@
         {
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmLogicalConfiguration));
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle7 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle9 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle10 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
             splitContainerMain = new SplitContainer();
             palTools = new UIPanel();
             ToolTreeView = new UITreeView();
@@ -47,11 +48,6 @@
             splitContainerRight = new SplitContainer();
             palProcess = new UIPanel();
             ProcessDataGridView = new UIDataGridView();
-            ColStepNumber = new DataGridViewTextBoxColumn();
-            ColStepName = new DataGridViewTextBoxColumn();
-            ColStepType = new DataGridViewTextBoxColumn();
-            ColStatus = new DataGridViewTextBoxColumn();
-            ColExecutionTime = new DataGridViewTextBoxColumn();
             palProcessTop = new UIPanel();
             splitContainerBottom = new SplitContainer();
             palStepDetails = new UIPanel();
@@ -78,6 +74,12 @@
             btnClose = new UISymbolButton();
             btnExecute = new UISymbolButton();
             btnSave = new UISymbolButton();
+            ColStepNumber = new DataGridViewTextBoxColumn();
+            ColStepName = new DataGridViewTextBoxColumn();
+            ColStepType = new DataGridViewTextBoxColumn();
+            ColStepDetails = new DataGridViewTextBoxColumn();
+            ColStatus = new DataGridViewTextBoxColumn();
+            ColExecutionTime = new DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)splitContainerMain).BeginInit();
             splitContainerMain.Panel1.SuspendLayout();
             splitContainerMain.Panel2.SuspendLayout();
@@ -262,29 +264,29 @@
             ProcessDataGridView.AllowUserToDeleteRows = false;
             ProcessDataGridView.AllowUserToResizeColumns = false;
             ProcessDataGridView.AllowUserToResizeRows = false;
-            dataGridViewCellStyle6.BackColor = Color.White;
-            ProcessDataGridView.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle1.BackColor = Color.White;
+            ProcessDataGridView.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             ProcessDataGridView.BackgroundColor = Color.White;
             ProcessDataGridView.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
-            dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle7.BackColor = Color.FromArgb(80, 160, 255);
-            dataGridViewCellStyle7.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            dataGridViewCellStyle7.ForeColor = Color.White;
-            dataGridViewCellStyle7.SelectionBackColor = Color.FromArgb(80, 160, 255);
-            dataGridViewCellStyle7.SelectionForeColor = Color.White;
-            dataGridViewCellStyle7.WrapMode = DataGridViewTriState.True;
-            ProcessDataGridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle7;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = Color.FromArgb(80, 160, 255);
+            dataGridViewCellStyle2.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
+            dataGridViewCellStyle2.ForeColor = Color.White;
+            dataGridViewCellStyle2.SelectionBackColor = Color.FromArgb(80, 160, 255);
+            dataGridViewCellStyle2.SelectionForeColor = Color.White;
+            dataGridViewCellStyle2.WrapMode = DataGridViewTriState.True;
+            ProcessDataGridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             ProcessDataGridView.ColumnHeadersHeight = 40;
             ProcessDataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            ProcessDataGridView.Columns.AddRange(new DataGridViewColumn[] { ColStepNumber, ColStepName, ColStepType, ColStatus, ColExecutionTime });
-            dataGridViewCellStyle8.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle8.BackColor = Color.White;
-            dataGridViewCellStyle8.Font = new Font("微软雅黑", 9F);
-            dataGridViewCellStyle8.ForeColor = Color.FromArgb(48, 48, 48);
-            dataGridViewCellStyle8.SelectionBackColor = Color.FromArgb(227, 242, 253);
-            dataGridViewCellStyle8.SelectionForeColor = Color.Black;
-            dataGridViewCellStyle8.WrapMode = DataGridViewTriState.False;
-            ProcessDataGridView.DefaultCellStyle = dataGridViewCellStyle8;
+            ProcessDataGridView.Columns.AddRange(new DataGridViewColumn[] { ColStepNumber, ColStepName, ColStepType, ColStepDetails, ColStatus, ColExecutionTime });
+            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle4.BackColor = Color.White;
+            dataGridViewCellStyle4.Font = new Font("微软雅黑", 9F);
+            dataGridViewCellStyle4.ForeColor = Color.FromArgb(48, 48, 48);
+            dataGridViewCellStyle4.SelectionBackColor = Color.FromArgb(227, 242, 253);
+            dataGridViewCellStyle4.SelectionForeColor = Color.Black;
+            dataGridViewCellStyle4.WrapMode = DataGridViewTriState.False;
+            ProcessDataGridView.DefaultCellStyle = dataGridViewCellStyle4;
             ProcessDataGridView.Dock = DockStyle.Fill;
             ProcessDataGridView.EnableHeadersVisualStyles = false;
             ProcessDataGridView.Font = new Font("微软雅黑", 9F);
@@ -294,19 +296,19 @@
             ProcessDataGridView.Name = "ProcessDataGridView";
             ProcessDataGridView.ReadOnly = true;
             ProcessDataGridView.RectColor = Color.White;
-            dataGridViewCellStyle9.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle9.BackColor = SystemColors.Control;
-            dataGridViewCellStyle9.Font = new Font("微软雅黑", 12F);
-            dataGridViewCellStyle9.ForeColor = SystemColors.WindowText;
-            dataGridViewCellStyle9.SelectionBackColor = SystemColors.Highlight;
-            dataGridViewCellStyle9.SelectionForeColor = SystemColors.HighlightText;
-            dataGridViewCellStyle9.WrapMode = DataGridViewTriState.True;
-            ProcessDataGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle9;
+            dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle5.BackColor = SystemColors.Control;
+            dataGridViewCellStyle5.Font = new Font("微软雅黑", 12F);
+            dataGridViewCellStyle5.ForeColor = SystemColors.WindowText;
+            dataGridViewCellStyle5.SelectionBackColor = SystemColors.Highlight;
+            dataGridViewCellStyle5.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle5.WrapMode = DataGridViewTriState.True;
+            ProcessDataGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle5;
             ProcessDataGridView.RowHeadersVisible = false;
             ProcessDataGridView.RowHeadersWidth = 35;
-            dataGridViewCellStyle10.BackColor = Color.White;
-            dataGridViewCellStyle10.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            ProcessDataGridView.RowsDefaultCellStyle = dataGridViewCellStyle10;
+            dataGridViewCellStyle6.BackColor = Color.White;
+            dataGridViewCellStyle6.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            ProcessDataGridView.RowsDefaultCellStyle = dataGridViewCellStyle6;
             ProcessDataGridView.RowTemplate.DefaultCellStyle.Font = new Font("微软雅黑", 12F);
             ProcessDataGridView.RowTemplate.Height = 35;
             ProcessDataGridView.SelectedIndex = -1;
@@ -314,45 +316,6 @@
             ProcessDataGridView.Size = new Size(983, 588);
             ProcessDataGridView.StripeOddColor = Color.White;
             ProcessDataGridView.TabIndex = 0;
-            // 
-            // ColStepNumber
-            // 
-            ColStepNumber.HeaderText = "步骤";
-            ColStepNumber.Name = "ColStepNumber";
-            ColStepNumber.ReadOnly = true;
-            ColStepNumber.SortMode = DataGridViewColumnSortMode.NotSortable;
-            // 
-            // ColStepName
-            // 
-            ColStepName.HeaderText = "操作名称";
-            ColStepName.Name = "ColStepName";
-            ColStepName.ReadOnly = true;
-            ColStepName.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepName.Width = 278;
-            // 
-            // ColStepType
-            // 
-            ColStepType.HeaderText = "操作类型";
-            ColStepType.Name = "ColStepType";
-            ColStepType.ReadOnly = true;
-            ColStepType.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepType.Width = 200;
-            // 
-            // ColStatus
-            // 
-            ColStatus.HeaderText = "状态";
-            ColStatus.Name = "ColStatus";
-            ColStatus.ReadOnly = true;
-            ColStatus.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStatus.Width = 200;
-            // 
-            // ColExecutionTime
-            // 
-            ColExecutionTime.HeaderText = "执行时间";
-            ColExecutionTime.Name = "ColExecutionTime";
-            ColExecutionTime.ReadOnly = true;
-            ColExecutionTime.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColExecutionTime.Width = 200;
             // 
             // palProcessTop
             // 
@@ -851,6 +814,55 @@
             btnSave.Text = "保存配置";
             btnSave.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             // 
+            // ColStepNumber
+            // 
+            ColStepNumber.HeaderText = "步骤";
+            ColStepNumber.Name = "ColStepNumber";
+            ColStepNumber.ReadOnly = true;
+            ColStepNumber.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStepNumber.Width = 60;
+            // 
+            // ColStepName
+            // 
+            ColStepName.HeaderText = "操作名称";
+            ColStepName.Name = "ColStepName";
+            ColStepName.ReadOnly = true;
+            ColStepName.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStepName.Width = 150;
+            // 
+            // ColStepType
+            // 
+            ColStepType.HeaderText = "操作类型";
+            ColStepType.Name = "ColStepType";
+            ColStepType.ReadOnly = true;
+            ColStepType.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStepType.Width = 120;
+            // 
+            // ColStepDetails
+            // 
+            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.True;
+            ColStepDetails.DefaultCellStyle = dataGridViewCellStyle3;
+            ColStepDetails.HeaderText = "步骤详情";
+            ColStepDetails.Name = "ColStepDetails";
+            ColStepDetails.ReadOnly = true;
+            ColStepDetails.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStepDetails.Width = 430;
+            // 
+            // ColStatus
+            // 
+            ColStatus.HeaderText = "状态";
+            ColStatus.Name = "ColStatus";
+            ColStatus.ReadOnly = true;
+            ColStatus.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStatus.Width = 120;
+            // 
+            // ColExecutionTime
+            // 
+            ColExecutionTime.HeaderText = "执行时间";
+            ColExecutionTime.Name = "ColExecutionTime";
+            ColExecutionTime.ReadOnly = true;
+            ColExecutionTime.SortMode = DataGridViewColumnSortMode.NotSortable;
+            // 
             // FrmLogicalConfiguration
             // 
             AutoScaleMode = AutoScaleMode.None;
@@ -926,16 +938,16 @@
         private Sunny.UI.UISymbolButton btnExecute;
         private ImageList imageList1;
         private UISymbolButton btnVariableDefine;
-        private DataGridViewTextBoxColumn ColStepNumber;
-        private DataGridViewTextBoxColumn ColStepName;
-        private DataGridViewTextBoxColumn ColStepType;
-        private DataGridViewTextBoxColumn ColStatus;
-        private DataGridViewTextBoxColumn ColExecutionTime;
         private UISymbolButton btnClose;
         private UISymbolButton btnSave;
         private UISymbolButton BtnSystemParams;
         private UISymbolButton BtnVariableMonitor;
         private UISymbolButton BtnPointDefine;
-
+        private DataGridViewTextBoxColumn ColStepNumber;
+        private DataGridViewTextBoxColumn ColStepName;
+        private DataGridViewTextBoxColumn ColStepType;
+        private DataGridViewTextBoxColumn ColStepDetails;
+        private DataGridViewTextBoxColumn ColStatus;
+        private DataGridViewTextBoxColumn ColExecutionTime;
     }
 }

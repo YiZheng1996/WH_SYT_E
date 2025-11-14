@@ -416,7 +416,6 @@
         private System.Windows.Forms.Panel panelBottom;
         private Sunny.UI.UIButton btnSave;
         private Sunny.UI.UIButton btnCancel;
-        private Sunny.UI.UIButton btnTest;
         private Sunny.UI.UIButton btnHelp;
     }
 }

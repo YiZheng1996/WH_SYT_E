@@ -26,13 +26,13 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 表达式验证器 - 用于验证和计算表达式的正确性
         /// 提供表达式语法检查和预期值计算功能
         /// </summary>
-        private readonly ExpressionEngine _engine;
+        private readonly ExpressionEngine _engine = null;
 
         /// <summary>
         /// 变量赋值引擎 - 负责执行实际的变量赋值操作
         /// 支持各种赋值方式的具体执行逻辑
         /// </summary>
-        private readonly VariableAssignmentEngine _assignmentEngine;
+        private readonly VariableAssignmentEngine _assignmentEngine = null;
 
         /// <summary>
         /// 验证定时器 - 延迟触发配置验证，避免用户输入时频繁验证
