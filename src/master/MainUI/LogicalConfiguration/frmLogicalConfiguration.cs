@@ -60,6 +60,9 @@ namespace MainUI.LogicalConfiguration
                 // 更新窗体标题
                 Text = $"产品类型：{modelType}，产品型号：{modelName}，项点名称：{processName}";
 
+                // 更新全局变量
+                TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelType, modelName); 
+
                 // 创建配置文件
                 CreateJsonFileAsync(modelType, modelName, processName).Wait();
 
@@ -275,48 +278,6 @@ namespace MainUI.LogicalConfiguration
             {
                 ProcessDataGridView.Rows[0].Selected = true;
                 UpdateStepDetails(0);
-            }
-        }
-
-        #endregion
-
-        #region 测试信息变量管理 (新增代码)
-        /// <summary>
-        /// 当产品类型或型号改变时调用（新增方法）
-        /// </summary>
-        private void OnProductInfoChanged(string modelTypeName, string modelName)
-        {
-            try
-            {
-                // 更新测试信息变量
-                TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelTypeName, modelName);
-
-                NlogHelper.Default.Info($"产品信息已更新: {modelTypeName} - {modelName}");
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("更新产品信息失败", ex);
-            }
-        }
-
-        /// <summary>
-        /// 开始测试前更新测试信息（新增方法）
-        /// </summary>
-        private void OnTestStarting()
-        {
-            try
-            {
-                // 刷新所有测试信息变量
-                TestInfoVariableHelper.UpdateTestInfoVariables(_variableManager);
-
-                // 特别更新测试时间为当前时间
-                //_workflowState.SetVariableValue("测试时间", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-
-                NlogHelper.Default.Info("测试信息已刷新");
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("更新测试信息失败", ex);
             }
         }
 

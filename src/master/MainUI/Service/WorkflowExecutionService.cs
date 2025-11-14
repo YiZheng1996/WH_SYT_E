@@ -153,7 +153,7 @@ namespace MainUI.Service
 
                         // 加载单个配置
                         var steps = await LoadSingleConfigurationAsync(jsonPath, modelType, modelName, itemName);
-
+                        TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelType, modelName);
                         if (steps != null && steps.Count > 0)
                         {
                             _workflowConfigurations[itemName] = steps;

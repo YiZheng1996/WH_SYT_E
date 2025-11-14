@@ -64,10 +64,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
             try
             {
-                //TestInfoVariableHelper.InitializeTestInfoVariables(_variableManager);
-
                 NlogHelper.Default.Info($"开始执行步骤序列，共 {_steps.Count} 个步骤");
 
+                // 初始化测试信息变量
+                TestInfoVariableHelper.UpdateTestInfoVariables(_globalVariableManager);
                 while (_isExecuting && _currentStepIndex < _steps.Count)
                 {
                     var step = _steps[_currentStepIndex];
