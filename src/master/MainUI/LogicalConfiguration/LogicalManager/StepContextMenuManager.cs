@@ -1,7 +1,6 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
-using Button = System.Windows.Forms.Button;
 using ContextMenuStrip = System.Windows.Forms.ContextMenuStrip;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Panel = System.Windows.Forms.Panel;
@@ -251,28 +250,62 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 int selectIndex = _gridManager.GetSelectedRowIndex();
                 if (selectIndex < 0)
                 {
-                    MessageHelper.MessageOK("请先选择要删除的步骤！", TType.Warn);
+                    MessageHelper.MessageOK("请先选择要删除的步骤!", TType.Warn);
                     return;
                 }
 
                 var selectedStep = _workflowState.GetStep(selectIndex);
                 string stepName = selectedStep?.StepName ?? "未知步骤";
 
-                if (MessageHelper.MessageYes(_ownerForm, $"确定要删除步骤 [{stepName}] 吗？") != DialogResult.OK)
+                if (MessageHelper.MessageYes(_ownerForm, $"确定要删除步骤 [{stepName}] 吗?") != DialogResult.OK)
                 {
                     return;
                 }
 
-                // 只操作数据层，UI刷新由 OnStepRemoved 事件自动触发
-                if (_workflowState.RemoveStepAt(selectIndex))
+                // 获取所有步骤
+                var steps = _workflowState.GetSteps();
+
+                // 验证索引
+                if (selectIndex < 0 || selectIndex >= steps.Count)
                 {
-                    _logger.LogInformation("步骤删除成功: {StepName}", stepName);
+                    _logger.LogWarning("删除索引超出范围: {Index}", selectIndex);
+                    MessageHelper.MessageOK("步骤索引无效!", TType.Error);
+                    return;
                 }
+
+                // 删除指定步骤
+                steps.RemoveAt(selectIndex);
+
+                // 重新编号 - 关键步骤!
+                for (int i = 0; i < steps.Count; i++)
+                {
+                    steps[i].StepNum = i + 1;
+                }
+
+                // 刷新工作流状态
+                _workflowState.ClearSteps();
+                foreach (var step in steps)
+                {
+                    _workflowState.AddStep(step);
+                }
+
+                // 可选: 重新选中合适的行
+                if (steps.Count > 0)
+                {
+                    int newSelectIndex = Math.Min(selectIndex, steps.Count - 1);
+                    if (newSelectIndex >= 0 && newSelectIndex < _grid.Rows.Count)
+                    {
+                        _grid.ClearSelection();
+                        _grid.Rows[newSelectIndex].Selected = true;
+                    }
+                }
+
+                _logger.LogInformation("步骤删除成功: {StepName}, 剩余步骤已重新编号", stepName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "删除步骤时发生错误");
-                MessageHelper.MessageOK($"删除步骤错误：{ex.Message}", TType.Error);
+                MessageHelper.MessageOK($"删除步骤错误: {ex.Message}", TType.Error);
             }
         }
 
@@ -523,7 +556,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// </summary>
         private string ShowStepSelectionDialog()
         {
-            using var form = new Form
+            var form = new UIForm
             {
                 Text = "选择步骤类型",
                 Width = 400,
@@ -531,41 +564,47 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
-                MinimizeBox = false
+                MinimizeBox = false,
+                ControlBox = false,
+                ShowIcon = false,
+                TitleColor = Color.FromArgb(65, 100, 204),
+                RectColor = Color.FromArgb(65, 100, 204),
             };
 
             var listBox = new ListBox
             {
                 Dock = DockStyle.Fill,
-                Font = new Font("微软雅黑", 12F)
+                Font = new Font("微软雅黑", 12F),
+                Height = 30,
+                ItemHeight = 30
             };
 
             listBox.Items.AddRange(
             [
                 "延时等待", "条件判断", "循环开始", "循环结束",
                 "变量赋值", "数据读取", "数据计算", "消息通知",
-                "读取PLC", "写入PLC"
+                "读取PLC", "写入PLC", "写入单元格", "读取单元格"
             ]);
 
             var btnPanel = new Panel { Dock = DockStyle.Bottom, Height = 50 };
-            var btnOK = new Button
+            var btnOK = new UIButton
             {
                 Text = "确定",
                 DialogResult = DialogResult.OK,
                 Width = 80,
                 Height = 35,
-                Location = new Point(150, 7)
+                Location = new Point(110, 1)
             };
-            var btnCancel = new Button
+            var btnCancel = new UIButton
             {
                 Text = "取消",
                 DialogResult = DialogResult.Cancel,
                 Width = 80,
                 Height = 35,
-                Location = new Point(240, 7)
+                Location = new Point(210, 1)
             };
 
-            btnPanel.Controls.AddRange(new Control[] { btnOK, btnCancel });
+            btnPanel.Controls.AddRange([btnOK, btnCancel]);
             form.Controls.Add(listBox);
             form.Controls.Add(btnPanel);
 
@@ -581,7 +620,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 }
             };
 
-            return form.ShowDialog(_ownerForm) == DialogResult.OK && listBox.SelectedItem != null
+            VarHelper.ShowDialogWithOverlay(_ownerForm, form);
+            return form.DialogResult == DialogResult.OK && listBox.SelectedItem != null
                 ? listBox.SelectedItem.ToString()
                 : null;
         }

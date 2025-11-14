@@ -8,8 +8,6 @@ using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Label = AntdUI.Label;
-using Panel = AntdUI.Panel;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -521,6 +519,12 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 var columnName = DataGridViewDefineVar.Columns[e.ColumnIndex].Name;
 
+                // ⭐ 添加这个判断: 如果是操作按钮列,直接返回
+                if (columnName == "ColOperation")
+                {
+                    return; // 操作按钮已经在 CellContentClick 中处理
+                }
+
                 // 如果双击的是类型列,显示完整帮助
                 if (columnName == "ColVarType")
                 {
@@ -612,7 +616,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     return;
                 }
 
-                using var selector = new VariableSelectionDialog(_variableManager)
+                 var selector = new VariableSelectionDialog(_variableManager)
                 {
                     StartPosition = FormStartPosition.CenterParent
                 };
@@ -703,22 +707,22 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
+                _logger?.LogDebug("开始更新预览面板");
+
                 // 直接查找预览面板中的控件
-                // uiGroupBox3 是预览面板的容器（不是 panelPreview）
-                var panelPreview = this.Controls.Find("uiGroupBox3", false).FirstOrDefault() as UIPanel;
-                if (panelPreview == null)
+                if (Controls.Find("panelPreview", false).FirstOrDefault() is not System.Windows.Forms.Panel panelPreview)
                 {
-                    _logger?.LogWarning("未找到预览面板 uiGroupBox3");
+                    _logger?.LogWarning("未找到预览面板 panelPreview");
                     return;
                 }
 
-                // uiLabel3 是预览标题（显示"实时预览"），lblPreviewContent 是预览内容
-                var lblPreviewTitle = panelPreview.Controls.Find("uiLabel3", false).FirstOrDefault() as UILabel;
-                var lblPreviewContent = panelPreview.Controls.Find("lblPreviewContent", false).FirstOrDefault() as UILabel;
+                // panelPreview 是预览标题,lblPreviewContent 是预览内容
+                var lblPreviewTitle = panelPreview.Controls.Find("lblPreviewTitle", false).FirstOrDefault() as System.Windows.Forms.Label;
+                var lblPreviewContent = panelPreview.Controls.Find("txtPreviewContent", false).FirstOrDefault() as RichTextBox;
 
                 if (lblPreviewTitle == null || lblPreviewContent == null)
                 {
-                    _logger?.LogWarning("预览面板控件未找到: lblPreviewTitle={0}, lblPreviewContent={1}",
+                    _logger?.LogWarning($"预览面板控件未找到: lblPreviewTitle={0}, lblPreviewContent={1}",
                         lblPreviewTitle != null, lblPreviewContent != null);
                     return;
                 }
@@ -726,21 +730,26 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 获取当前选中行
                 if (DataGridViewDefineVar.SelectedRows.Count == 0)
                 {
-                    lblPreviewTitle.Text = " 实时预览";
+                    lblPreviewTitle.Text = "📋 实时预览";
                     lblPreviewContent.Text = "请选择一行查看预览";
                     lblPreviewContent.ForeColor = Color.Gray;
+                    _logger?.LogDebug("无选中行,显示默认提示");
                     return;
                 }
 
                 var row = DataGridViewDefineVar.SelectedRows[0];
+                var cellAddress = row.Cells["ColVarName"].Value?.ToString() ?? "";
                 var sourceType = row.Cells["ColVarType"].Value?.ToString() ?? "固定值";
                 var content = row.Cells["ColVarText"].Value?.ToString() ?? "";
 
-                lblPreviewTitle.Text = $" 实时预览 - {sourceType}";
+                _logger?.LogDebug($"选中行: 单元格={{0}}, 类型={{1}}, 内容={{2}}",
+                    cellAddress, sourceType, content);
+
+                lblPreviewTitle.Text = $"📋 实时预览 - {sourceType}";
 
                 if (string.IsNullOrWhiteSpace(content))
                 {
-                    lblPreviewContent.Text = "(内容为空)";
+                    lblPreviewContent.Text = $"单元格 {cellAddress}: (内容为空)";
                     lblPreviewContent.ForeColor = Color.Gray;
                     return;
                 }
@@ -749,8 +758,9 @@ namespace MainUI.LogicalConfiguration.Forms
                 switch (sourceType)
                 {
                     case "固定值":
-                        lblPreviewContent.Text = $"将写入: {content}";
+                        lblPreviewContent.Text = $"单元格 {cellAddress} 将写入:\n{content}";
                         lblPreviewContent.ForeColor = Color.Black;
+                        _logger?.LogDebug("预览固定值: {0}", content);
                         break;
 
                     case "变量":
@@ -762,19 +772,36 @@ namespace MainUI.LogicalConfiguration.Forms
                         break;
 
                     case "系统属性":
-                        lblPreviewContent.Text = $"系统属性: {content}\n(运行时计算)";
+                        lblPreviewContent.Text = $"单元格 {cellAddress}:\n系统属性 {content}\n(运行时动态获取)";
                         lblPreviewContent.ForeColor = Color.DarkBlue;
                         break;
 
                     default:
-                        lblPreviewContent.Text = content;
+                        lblPreviewContent.Text = $"单元格 {cellAddress}:\n{content}";
                         lblPreviewContent.ForeColor = Color.Black;
                         break;
                 }
+
+                _logger?.LogDebug("预览面板更新完成");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "更新预览面板时发生错误");
+
+                // 可选: 在预览面板显示错误
+                try
+                {
+                    var panelPreview = this.Controls.Find("uiGroupBox3", false).FirstOrDefault() as UIPanel;
+                    if (panelPreview?.Controls.Find("lblPreviewContent", false).FirstOrDefault() is UILabel lblPreviewContent)
+                    {
+                        lblPreviewContent.Text = $"预览失败: {ex.Message}";
+                        lblPreviewContent.ForeColor = Color.Red;
+                    }
+                }
+                catch
+                {
+                    // 忽略二次错误
+                }
             }
         }
 
@@ -783,7 +810,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 配置时:允许变量未赋值,给出友好提示
         /// 运行时:期望变量已赋值
         /// </summary>
-        private void PreviewVariable(string varName, UILabel lblPreview)
+        private void PreviewVariable(string varName, RichTextBox lblPreview)
         {
             try
             {
@@ -844,7 +871,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 预览表达式计算结果
         /// </summary>
-        private void PreviewExpression(string expression, UILabel lblPreview)
+        private void PreviewExpression(string expression, RichTextBox lblPreview)
         {
             try
             {
@@ -1140,5 +1167,6 @@ namespace MainUI.LogicalConfiguration.Forms
         #endregion
 
         #endregion
+
     }
 }
