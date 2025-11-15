@@ -426,7 +426,7 @@ namespace MainUI.Procedure.Controls
                         }
                         catch (Exception)
                         {
-                            totalSeconds = stepControl.GetDelayTotalSeconds();
+                            //totalSeconds = stepControl.GetDelayTotalSeconds();
                         }
                     }
                 }

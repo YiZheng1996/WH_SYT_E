@@ -989,8 +989,8 @@ namespace MainUI
             // 
             tabs1.BackColor = Color.FromArgb(236, 236, 237);
             tabs1.Controls.Add(tabPage3);
-            tabs1.Controls.Add(tabPage1);
             tabs1.Controls.Add(tabPageTestDetails);
+            tabs1.Controls.Add(tabPage1);
             tabs1.Location = new Point(257, 33);
             tabs1.Name = "tabs1";
             tabs1.Pages.Add(tabPage3);

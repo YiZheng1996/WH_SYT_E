@@ -31,10 +31,10 @@ namespace MainUI.Procedure
         private void InitializeComponent()
         {
             uiPanel1 = new UIPanel();
-            uiLabel20 = new UILabel();
-            uiLabel1 = new UILabel();
             lstAllPoint = new UIListBox();
             lstTestPoint = new UIListBox();
+            uiLabel20 = new UILabel();
+            uiLabel1 = new UILabel();
             cboType = new UIComboBox();
             uiLabel9 = new UILabel();
             uiLabel2 = new UILabel();
@@ -75,32 +75,6 @@ namespace MainUI.Procedure
             uiPanel1.TabIndex = 1;
             uiPanel1.Text = null;
             uiPanel1.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // uiLabel20
-            // 
-            uiLabel20.AutoSize = true;
-            uiLabel20.BackColor = Color.Transparent;
-            uiLabel20.Font = new Font("思源黑体 CN Bold", 15F, FontStyle.Bold);
-            uiLabel20.ForeColor = Color.Black;
-            uiLabel20.Location = new Point(24, 76);
-            uiLabel20.Name = "uiLabel20";
-            uiLabel20.Size = new Size(93, 29);
-            uiLabel20.TabIndex = 432;
-            uiLabel20.Text = "试验项点";
-            uiLabel20.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // uiLabel1
-            // 
-            uiLabel1.AutoSize = true;
-            uiLabel1.BackColor = Color.Transparent;
-            uiLabel1.Font = new Font("思源黑体 CN Bold", 15F, FontStyle.Bold);
-            uiLabel1.ForeColor = Color.Black;
-            uiLabel1.Location = new Point(442, 76);
-            uiLabel1.Name = "uiLabel1";
-            uiLabel1.Size = new Size(133, 29);
-            uiLabel1.TabIndex = 433;
-            uiLabel1.Text = "可选试验项点";
-            uiLabel1.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // lstAllPoint
             // 
@@ -150,6 +124,32 @@ namespace MainUI.Procedure
             lstTestPoint.TabIndex = 0;
             lstTestPoint.Text = null;
             lstTestPoint.MouseDoubleClick += lstTestPoint_MouseDoubleClick;
+            // 
+            // uiLabel20
+            // 
+            uiLabel20.AutoSize = true;
+            uiLabel20.BackColor = Color.Transparent;
+            uiLabel20.Font = new Font("思源黑体 CN Bold", 15F, FontStyle.Bold);
+            uiLabel20.ForeColor = Color.Black;
+            uiLabel20.Location = new Point(24, 76);
+            uiLabel20.Name = "uiLabel20";
+            uiLabel20.Size = new Size(93, 29);
+            uiLabel20.TabIndex = 432;
+            uiLabel20.Text = "试验项点";
+            uiLabel20.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // uiLabel1
+            // 
+            uiLabel1.AutoSize = true;
+            uiLabel1.BackColor = Color.Transparent;
+            uiLabel1.Font = new Font("思源黑体 CN Bold", 15F, FontStyle.Bold);
+            uiLabel1.ForeColor = Color.Black;
+            uiLabel1.Location = new Point(442, 76);
+            uiLabel1.Name = "uiLabel1";
+            uiLabel1.Size = new Size(133, 29);
+            uiLabel1.TabIndex = 433;
+            uiLabel1.Text = "可选试验项点";
+            uiLabel1.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // cboType
             // 

@@ -1,4 +1,6 @@
 ﻿using MainUI.LogicalConfiguration;
+using MainUI.LogicalConfiguration.Parameter;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Label = AntdUI.Label;
 using Panel = Sunny.UI.UIPanel;
@@ -6,8 +8,8 @@ using Panel = Sunny.UI.UIPanel;
 namespace MainUI.Procedure.Controls
 {
     /// <summary>
-    /// 步骤状态控件
-    /// 支持根据步骤状态动态显示参数和结果信息
+    /// 步骤状态控件 - 完整可用版
+    /// 支持根据步骤类型动态显示参数和结果信息
     /// </summary>
     public class StepStatusControl : Panel
     {
@@ -20,33 +22,33 @@ namespace MainUI.Procedure.Controls
         private readonly Label lblStepStatus;          // 步骤状态
         private readonly Label lblStepTime;            // 执行时间
         private readonly Panel separatorLine;          // 分隔线
-        private readonly AntdUI.Progress progressBar;  // 进度条（延时步骤用）
+        private readonly AntdUI.Progress progressBar;  // 进度条(延时步骤用)
         private readonly Panel detailsPanel;           // 详情面板
-        private Label lblTitle = new();               // 详情面板标题
-
 
         private int stepNumber;
         private string currentStatus = "waiting";
         private ChildModel currentStepData;            // 当前步骤数据
 
-        // 状态颜色定义
+        #endregion
+
+        #region 颜色定义
+
         private static class StatusColors
         {
-            public static readonly Color Waiting = ColorTranslator.FromHtml("#C4C7CC");  // 灰色
-            public static readonly Color Running = ColorTranslator.FromHtml("#1890FF");  // 蓝色
-            public static readonly Color Success = ColorTranslator.FromHtml("#52C41A");  // 绿色
-            public static readonly Color Failed = ColorTranslator.FromHtml("#E73624");   // 红色
-            public static readonly Color Skipped = ColorTranslator.FromHtml("#FAAD14");  // 橙色
+            public static readonly Color Waiting = ColorTranslator.FromHtml("#C4C7CC");
+            public static readonly Color Running = ColorTranslator.FromHtml("#1890FF");
+            public static readonly Color Success = ColorTranslator.FromHtml("#52C41A");
+            public static readonly Color Failed = ColorTranslator.FromHtml("#E73624");
+            public static readonly Color Skipped = ColorTranslator.FromHtml("#FAAD14");
         }
 
-        // 背景颜色定义
         private static class BackgroundColors
         {
-            public static readonly Color Waiting = ColorTranslator.FromHtml("#FAFAFA");  // 灰色浅背景
-            public static readonly Color Running = ColorTranslator.FromHtml("#E6F4FF");  // 蓝色浅背景
-            public static readonly Color Success = ColorTranslator.FromHtml("#F0FFF4");  // 绿色浅背景
-            public static readonly Color Failed = ColorTranslator.FromHtml("#FFF1F0");   // 红色浅背景
-            public static readonly Color Skipped = ColorTranslator.FromHtml("#FFFBE6");  // 橙色浅背景
+            public static readonly Color Waiting = ColorTranslator.FromHtml("#FAFAFA");
+            public static readonly Color Running = ColorTranslator.FromHtml("#E6F4FF");
+            public static readonly Color Success = ColorTranslator.FromHtml("#F0FFF4");
+            public static readonly Color Failed = ColorTranslator.FromHtml("#FFF1F0");
+            public static readonly Color Skipped = ColorTranslator.FromHtml("#FFFBE6");
         }
 
         #endregion
@@ -57,13 +59,13 @@ namespace MainUI.Procedure.Controls
         {
             this.stepNumber = stepNumber;
 
-            // 主面板设置（简洁模式高度）
+            // 主面板设置
             Height = 85;
             Width = 860;
             BackColor = BackgroundColors.Waiting;
             Margin = new Padding(0, 0, 0, 12);
 
-            // 状态指示条（左侧5px）
+            // 状态指示条(左侧5px)
             statusIndicator = new Panel
             {
                 Width = 5,
@@ -118,11 +120,11 @@ namespace MainUI.Procedure.Controls
             };
             contentPanel.Controls.Add(lblStepStatus);
 
-            // 执行时间（右上角）
+            // 执行时间(右上角)
             lblStepTime = new Label
             {
                 Text = "⏱ 00:00:00",
-                Font = new Font("微软雅黑", 9F),
+                Font = new Font("微软雅黑", 10F),
                 ForeColor = Color.FromArgb(140, 140, 140),
                 AutoSize = true,
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
@@ -130,27 +132,29 @@ namespace MainUI.Procedure.Controls
             contentPanel.Controls.Add(lblStepTime);
             UpdateTimePosition();
 
-            // 分隔线（默认隐藏）
+            // 分隔线(默认隐藏)
             separatorLine = new Panel
             {
                 Height = 1,
-                BackColor = Color.FromArgb(232, 232, 232),
+                BackColor = StatusColors.Waiting,
                 Location = new Point(15, 65),
                 Visible = false
             };
             contentPanel.Controls.Add(separatorLine);
 
-            // 详情面板（默认隐藏）
+            // 详情面板(默认隐藏)
             detailsPanel = new Panel
             {
                 Location = new Point(15, 73),
                 BackColor = Color.Transparent,
+                //Margin = new Padding(5),
+                Padding = new Padding(5),
                 AutoSize = false,
                 Visible = false
             };
             contentPanel.Controls.Add(detailsPanel);
 
-            // 进度条（延时步骤用，默认隐藏）
+            // 进度条(延时步骤用,默认隐藏)
             progressBar = new AntdUI.Progress
             {
                 Location = new Point(15, 0),
@@ -161,7 +165,7 @@ namespace MainUI.Procedure.Controls
             };
             contentPanel.Controls.Add(progressBar);
 
-            // 监听尺寸变化以更新时间位置
+            // 监听尺寸变化
             contentPanel.Resize += (s, e) => UpdateTimePosition();
         }
 
@@ -183,12 +187,7 @@ namespace MainUI.Procedure.Controls
             currentStatus = status.ToLower();
             currentStepData = stepData;
 
-            // 添加调试输出
-            Debug.WriteLine($"🔍 UpdateStatus 调用 - Status: {status}, StepData: {stepData?.StepName}, Message: {message}");
-            if (stepData?.StepParameter != null)
-            {
-                Debug.WriteLine($"   StepParameter: {stepData.StepParameter}");
-            }
+            Debug.WriteLine($"🔍 UpdateStatus - Status: {status}, StepData: {stepData?.StepName}");
 
             Color statusColor;
             Color bgColor;
@@ -227,7 +226,7 @@ namespace MainUI.Procedure.Controls
                 case "跳过":
                     statusColor = StatusColors.Skipped;
                     bgColor = BackgroundColors.Skipped;
-                    statusText = string.IsNullOrEmpty(message) ? "⊘ 跳过" : $"⊘ 跳过 - {message}";
+                    statusText = string.IsNullOrEmpty(message) ? "⊘ 已跳过" : $"⊘ 已跳过 - {message}";
                     showDetails = true;
                     break;
 
@@ -239,17 +238,23 @@ namespace MainUI.Procedure.Controls
                     break;
             }
 
-            // 更新UI元素
-            lblStepTime.ForeColor = statusColor;
-            lblStepStatus.ForeColor = statusColor;
-            lblStepStatus.Text = statusText;
+
+            detailsPanel.RectColor = statusColor;
+            detailsPanel.FillColor = bgColor;
             SetPanelColor(statusIndicator, statusColor);
             SetPanelColor(separatorLine, statusColor);
             SetPanelColor(contentPanel, bgColor);
-            detailsPanel.RectColor = statusColor;
-            detailsPanel.FillColor = bgColor;
-            lblTitle.ForeColor = statusColor;  //暂时为空
-            circlePanel.Invalidate(); // 触发圆形重绘
+            // 更新UI
+            separatorLine.BackColor = statusColor;
+            statusIndicator.FillColor = statusColor;
+            statusIndicator.RectColor = statusColor;
+            statusIndicator.BackColor = statusColor;
+            BackColor = bgColor;
+            contentPanel.FillColor = bgColor;
+            contentPanel.RectColor = statusColor;
+            lblStepStatus.Text = statusText;
+            lblStepStatus.ForeColor = statusColor;
+            circlePanel.Invalidate();
 
             // 显示或隐藏详情
             if (showDetails && stepData != null)
@@ -262,6 +267,11 @@ namespace MainUI.Procedure.Controls
             }
         }
 
+        /// <summary>
+        /// 颜色状态更新
+        /// </summary>
+        /// <param name="panel"></param>
+        /// <param name="color"></param>
         private void SetPanelColor(UIPanel panel, Color color)
         {
             panel.BackColor = Color.Transparent;
@@ -287,7 +297,7 @@ namespace MainUI.Procedure.Controls
         }
 
         /// <summary>
-        /// 更新进度（延时步骤专用）
+        /// 更新进度(延时步骤专用)
         /// </summary>
         public void UpdateProgress(int current, int total)
         {
@@ -299,727 +309,774 @@ namespace MainUI.Procedure.Controls
 
             if (total > 0 && progressBar.Visible)
             {
-                // 将百分比转换为 0.0f - 1.0f 的浮点数
                 float percentage = Math.Min(1.0f, (float)current / total);
-                progressBar.Value = percentage;  // 设置为 0.0 到 1.0 之间的值
-
-                // 文字仍然显示百分比形式（0-100%）
+                progressBar.Value = percentage;
                 int percentageDisplay = (int)(percentage * 100);
                 progressBar.Text = $"{percentageDisplay}% ({current}/{total}秒)";
-
-                // 同时更新详情面板中的已等待时间
-                UpdateDelayDetailsInRealtime(current, total);
             }
-        }
-
-        /// <summary>
-        /// 实时更新延时详情显示
-        /// </summary>
-        private void UpdateDelayDetailsInRealtime(int current, int total)
-        {
-            try
-            {
-                // 查找并更新"已等待"和"剩余时间"标签
-                foreach (Control control in detailsPanel.Controls)
-                {
-                    if (control is Label label)
-                    {
-                        if (label.Text.StartsWith("已等待:"))
-                        {
-                            label.Text = $"已等待: {current}秒";
-                        }
-                        else if (label.Text.StartsWith("剩余时间:"))
-                        {
-                            int remaining = Math.Max(0, total - current);
-                            label.Text = $"剩余时间: {remaining}秒";
-                        }
-                    }
-                }
-            }
-            catch { }
         }
 
         #endregion
 
-        #region 私有方法 - 详情显示
+        #region 详情展示 - 核心方法
 
         /// <summary>
         /// 显示详情信息
         /// </summary>
         private void ShowDetails(ChildModel stepData)
         {
-            // 清空详情面板
             detailsPanel.Controls.Clear();
 
-            // 显示分隔线和详情面板
             separatorLine.Visible = true;
             separatorLine.Width = contentPanel.Width - 30;
             detailsPanel.Visible = true;
             detailsPanel.Width = contentPanel.Width - 30;
 
-            int yPosition = 0;
+            int yPosition = 10;
 
-            // 根据步骤类型显示不同的详情
-            string stepType = stepData.StepName ?? "未知";
+            // 配置参数
+            yPosition = ShowConfigurationParameters(stepData, yPosition);
+            yPosition += 8;
 
-            yPosition = stepType switch
+            // 运行时信息
+            if (currentStatus != "waiting")
             {
-                "读取PLC" => ShowReadPLCDetails(stepData, yPosition),
-                "写入PLC" => ShowWritePLCDetails(stepData, yPosition),
-                "延时等待" => ShowDelayDetails(stepData, yPosition),
-                "变量赋值" => ShowVariableAssignDetails(stepData, yPosition),
-                "条件判断" => ShowConditionDetails(stepData, yPosition),
-                "消息通知" => ShowMessageDetails(stepData, yPosition),
-                "读取单元格" or "写入单元格" => ShowCellOperationDetails(stepData, yPosition),
-                _ => ShowDefaultDetails(stepData, yPosition),
-            };
-
-            // 设置详情面板高度
-            detailsPanel.Height = yPosition;
-
-            // 调整整体卡片高度
-            int newHeight = 85 + yPosition + 15; // 基础高度 + 详情高度 + 底部边距
-
-            // 如果是延时步骤且正在执行，需要额外空间显示进度条
-            if (stepType == "延时等待" && currentStatus == "running" && progressBar.Visible)
-            {
-                newHeight += 20; // 进度条高度 + 间距
+                yPosition = ShowRuntimeInfo(stepData, yPosition);
             }
 
-            Height = newHeight;
+            detailsPanel.Height = yPosition + 10;
+            Height = 85 + detailsPanel.Height + 15;
 
-            // 更新进度条位置（如果显示）
+            // 调整进度条位置(如果有)
             if (progressBar.Visible)
             {
-                progressBar.Location = new Point(15, 73 + yPosition + 8);
+                Height += 25;
+                progressBar.Location = new Point(15, 73 + detailsPanel.Height + 8);
                 progressBar.Width = contentPanel.Width - 30;
             }
         }
 
         /// <summary>
-        /// 隐藏详情信息
+        /// 隐藏详情
         /// </summary>
         private void HideDetails()
         {
             separatorLine.Visible = false;
             detailsPanel.Visible = false;
             progressBar.Visible = false;
-            Height = 85; // 恢复简洁模式高度
-        }
-
-        /// <summary>
-        /// 显示读取PLC详情
-        /// </summary>
-        private int ShowReadPLCDetails(ChildModel stepData, int yPosition)
-        {
-            var parameters = ParseStepParameters(stepData);
-            var results = ParseStepResults(stepData);
-
-            // 计算双栏宽度
-            int leftWidth = (detailsPanel.Width - 20) / 2;
-
-            // 左栏：执行参数
-            int leftY = yPosition;
-            leftY = AddSectionTitle(" 执行参数", leftY, 0);
-            leftY = AddDetailLine("模块名称", parameters.GetValueOrDefault("ModuleName", "N/A"), leftY, 0, leftWidth);
-            leftY = AddDetailLine("点位地址", parameters.GetValueOrDefault("Address", "N/A"), leftY, 0, leftWidth);
-            leftY = AddDetailLine("目标变量", parameters.GetValueOrDefault("Variable", "N/A"), leftY, 0, leftWidth);
-
-            // 右栏：执行结果（仅完成或失败时显示）
-            int rightY = yPosition;
-            if (currentStatus == "success" || currentStatus == "failed")
-            {
-                rightY = AddSectionTitle(" 执行结果", rightY, leftWidth + 10);
-
-                if (currentStatus == "success")
-                {
-                    rightY = AddDetailLine("读取值", results.GetValueOrDefault("Value", "N/A"), rightY, leftWidth + 10, leftWidth);
-                    rightY = AddDetailLine("数据类型", results.GetValueOrDefault("DataType", "REAL"), rightY, leftWidth + 10, leftWidth);
-                    rightY = AddDetailLine("状态", "成功 ✓", rightY, leftWidth + 10, leftWidth, StatusColors.Success);
-                }
-                else
-                {
-                    rightY = AddDetailLine("错误码", results.GetValueOrDefault("ErrorCode", "E1001"), rightY, leftWidth + 10, leftWidth);
-                    rightY = AddDetailLine("错误描述", results.GetValueOrDefault("ErrorMessage", "通信超时"), rightY, leftWidth + 10, leftWidth, StatusColors.Failed);
-                }
-
-                return Math.Max(leftY, rightY);
-            }
-
-            return leftY;
-        }
-
-        /// <summary>
-        /// 显示写入PLC详情
-        /// </summary>
-        private int ShowWritePLCDetails(ChildModel stepData, int yPosition)
-        {
-            var parameters = ParseStepParameters(stepData);
-            var results = ParseStepResults(stepData);
-
-            int leftWidth = (detailsPanel.Width - 20) / 2;
-
-            // 左栏：执行参数
-            int leftY = yPosition;
-            leftY = AddSectionTitle(" 执行参数", leftY, 0);
-            leftY = AddDetailLine("模块名称", parameters.GetValueOrDefault("ModuleName", "N/A"), leftY, 0, leftWidth);
-            leftY = AddDetailLine("点位地址", parameters.GetValueOrDefault("Address", "N/A"), leftY, 0, leftWidth);
-
-            string writeValue = parameters.GetValueOrDefault("WriteValue", "N/A");
-            string valueSource = parameters.GetValueOrDefault("ValueSource", "");
-            if (!string.IsNullOrEmpty(valueSource))
-            {
-                writeValue = $"{writeValue} (来自: {valueSource})";
-            }
-            leftY = AddDetailLine("写入值", writeValue, leftY, 0, leftWidth);
-
-            // 右栏：执行结果
-            int rightY = yPosition;
-            if (currentStatus == "success" || currentStatus == "failed")
-            {
-                rightY = AddSectionTitle(" 写入结果", rightY, leftWidth + 10);
-
-                if (currentStatus == "success")
-                {
-                    rightY = AddDetailLine("写入值", results.GetValueOrDefault("WriteValue", writeValue), rightY, leftWidth + 10, leftWidth);
-                    rightY = AddDetailLine("确认值", results.GetValueOrDefault("ConfirmValue", writeValue) + " ✓", rightY, leftWidth + 10, leftWidth);
-                    rightY = AddDetailLine("状态", "成功", rightY, leftWidth + 10, leftWidth, StatusColors.Success);
-                }
-                else
-                {
-                    rightY = AddDetailLine("错误信息", results.GetValueOrDefault("ErrorMessage", "写入失败"), rightY, leftWidth + 10, leftWidth, StatusColors.Failed);
-                }
-
-                return Math.Max(leftY, rightY);
-            }
-
-            return leftY;
-        }
-
-        /// <summary>
-        /// 显示延时等待详情
-        /// </summary>
-        private int ShowDelayDetails(ChildModel stepData, int yPosition)
-        {
-            var parameters = ParseStepParameters(stepData);
-            var results = ParseStepResults(stepData);
-
-            int leftWidth = (detailsPanel.Width - 20) / 2;
-
-            int leftY = yPosition;
-            leftY = AddSectionTitle(" 等待参数", leftY, 0);
-
-            // 正确读取参数 T（毫秒），并转换为秒
-            string delayTimeMs = parameters.GetValueOrDefault("T", "30000");
-            double delayTimeSeconds = double.TryParse(delayTimeMs, out double ms) ? ms / 1000.0 : 30;
-
-            // 保存延时时间到字段，供进度更新使用
-            if (currentStatus == "running")
-            {
-                currentStepData = stepData;  // 保存当前步骤数据
-            }
-
-            leftY = AddDetailLine("延时时长", $"{delayTimeSeconds:F1}秒", leftY, 0, leftWidth);
-
-            if (currentStatus == "running")
-            {
-                string elapsed = results.GetValueOrDefault("Elapsed", "0");
-                string remaining = results.GetValueOrDefault("Remaining", delayTimeSeconds.ToString());
-                leftY = AddDetailLine("已等待", elapsed + "秒", leftY, 0, leftWidth);
-                leftY = AddDetailLine("剩余时间", remaining + "秒", leftY, 0, leftWidth);
-
-                // 初始化进度条为 0.0f
-                progressBar.Value = 0.0f;
-                progressBar.Text = "0% (0/30秒)";
-                progressBar.Visible = true;
-            }
-            else if (currentStatus == "success")
-            {
-                // 完成时将进度条设置为100%
-                if (progressBar.Visible)
-                {
-                    progressBar.Value = 1.0f;  // 100%
-                    progressBar.Text = $"100% ({delayTimeSeconds:F0}/{delayTimeSeconds:F0}秒)";
-                    Debug.WriteLine($"✅ 延时完成，进度条设置为100%");
-                }
-
-                string reason = parameters.GetValueOrDefault("Reason", "等待设备稳定");
-                leftY = AddDetailLine("等待原因", reason, leftY, 0, leftWidth);
-
-                // 右栏：执行结果
-                int rightY = yPosition;
-                rightY = AddSectionTitle(" 执行结果", rightY, leftWidth + 10);
-                string actualTime = results.GetValueOrDefault("ActualTime", delayTimeSeconds.ToString());
-                rightY = AddDetailLine("实际耗时", $"{actualTime}秒", rightY, leftWidth + 10, leftWidth);
-                rightY = AddDetailLine("状态", "正常完成", rightY, leftWidth + 10, leftWidth, StatusColors.Success);
-
-                return Math.Max(leftY, rightY);
-            }
-
-            return leftY;
-        }
-
-        /// <summary>
-        /// 获取延时步骤的总时间（秒）
-        /// </summary>
-        public int GetDelayTotalSeconds()
-        {
-            if (currentStepData?.StepParameter == null) return 30;
-
-            try
-            {
-                var parameters = ParseStepParameters(currentStepData);
-                string delayTimeMs = parameters.GetValueOrDefault("T", "30000");
-
-                if (double.TryParse(delayTimeMs, out double ms))
-                {
-                    return (int)(ms / 1000.0);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"解析延时参数失败: {ex.Message}");
-            }
-
-            return 30;
-        }
-
-        /// <summary>
-        /// 显示变量赋值详情
-        /// </summary>
-        private int ShowVariableAssignDetails(ChildModel stepData, int yPosition)
-        {
-            var parameters = ParseStepParameters(stepData);
-            var results = ParseStepResults(stepData);
-
-            int leftWidth = (detailsPanel.Width - 20) / 2;
-
-            // 左栏：赋值参数
-            int leftY = yPosition;
-            leftY = AddSectionTitle(" 赋值参数", leftY, 0);
-            leftY = AddDetailLine("目标变量", parameters.GetValueOrDefault("Variable", "N/A"), leftY, 0, leftWidth);
-            leftY = AddDetailLine("赋值方式", parameters.GetValueOrDefault("Method", "直接赋值"), leftY, 0, leftWidth);
-
-            string expression = parameters.GetValueOrDefault("Expression", "");
-            if (!string.IsNullOrEmpty(expression))
-            {
-                leftY = AddDetailLine("表达式", expression, leftY, 0, leftWidth);
-            }
-
-            // 右栏：赋值结果
-            int rightY = yPosition;
-            if (currentStatus == "success")
-            {
-                rightY = AddSectionTitle(" 赋值结果", rightY, leftWidth + 10);
-                rightY = AddDetailLine("赋值前", results.GetValueOrDefault("OldValue", "null"), rightY, leftWidth + 10, leftWidth);
-                rightY = AddDetailLine("赋值后", results.GetValueOrDefault("NewValue", "N/A"), rightY, leftWidth + 10, leftWidth);
-
-                string calculation = results.GetValueOrDefault("Calculation", "");
-                if (!string.IsNullOrEmpty(calculation))
-                {
-                    rightY = AddDetailLine("计算过程", calculation, rightY, leftWidth + 10, leftWidth);
-                }
-
-                return Math.Max(leftY, rightY);
-            }
-
-            return leftY;
-        }
-
-        /// <summary>
-        /// 显示条件判断详情
-        /// </summary>
-        private int ShowConditionDetails(ChildModel stepData, int yPosition)
-        {
-            var parameters = ParseStepParameters(stepData);
-            var results = ParseStepResults(stepData);
-
-            int leftWidth = (detailsPanel.Width - 20) / 2;
-
-            // 左栏：判断条件
-            int leftY = yPosition;
-            leftY = AddSectionTitle(" 判断条件", leftY, 0);
-            leftY = AddDetailLine("判断条件", parameters.GetValueOrDefault("Condition", "N/A"), leftY, 0, leftWidth);
-            leftY = AddDetailLine("真分支", parameters.GetValueOrDefault("TrueBranch", "继续执行"), leftY, 0, leftWidth);
-            leftY = AddDetailLine("假分支", parameters.GetValueOrDefault("FalseBranch", "继续执行"), leftY, 0, leftWidth);
-
-            // 右栏：判断结果
-            int rightY = yPosition;
-            if (currentStatus == "success" || currentStatus == "skipped")
-            {
-                rightY = AddSectionTitle(" 判断结果", rightY, leftWidth + 10);
-                rightY = AddDetailLine("变量值", results.GetValueOrDefault("Value", "N/A"), rightY, leftWidth + 10, leftWidth);
-
-                string result = results.GetValueOrDefault("Result", "N/A");
-                Color resultColor = result == "True" ? StatusColors.Success : StatusColors.Skipped;
-                rightY = AddDetailLine("结果", result, rightY, leftWidth + 10, leftWidth, resultColor);
-                rightY = AddDetailLine("执行", results.GetValueOrDefault("Action", "N/A"), rightY, leftWidth + 10, leftWidth);
-
-                return Math.Max(leftY, rightY);
-            }
-
-            return leftY;
-        }
-
-        /// <summary>
-        /// 显示消息通知详情
-        /// </summary>
-        private int ShowMessageDetails(ChildModel stepData, int yPosition)
-        {
-            var parameters = ParseStepParameters(stepData);
-
-            yPosition = AddSectionTitle(" 消息内容", yPosition, 0);
-            yPosition = AddDetailLine("消息类型", parameters.GetValueOrDefault("MessageType", "提示框"), yPosition, 0, detailsPanel.Width);
-            yPosition = AddDetailLine("标题", parameters.GetValueOrDefault("Title", "N/A"), yPosition, 0, detailsPanel.Width);
-            yPosition = AddDetailLine("内容", parameters.GetValueOrDefault("Content", "N/A"), yPosition, 0, detailsPanel.Width);
-
-            string buttons = parameters.GetValueOrDefault("Buttons", "");
-            if (!string.IsNullOrEmpty(buttons))
-            {
-                yPosition = AddDetailLine("按钮", buttons, yPosition, 0, detailsPanel.Width);
-            }
-
-            return yPosition;
-        }
-
-        /// <summary>
-        /// 显示单元格操作详情
-        /// </summary>
-        private int ShowCellOperationDetails(ChildModel stepData, int yPosition)
-        {
-            var parameters = ParseStepParameters(stepData);
-            var results = ParseStepResults(stepData);
-            string stepType = stepData.StepName ?? "未知";
-
-            int leftWidth = (detailsPanel.Width - 20) / 2;
-
-            // 左栏：操作参数
-            int leftY = yPosition;
-            leftY = AddSectionTitle(stepType == "读取单元格" ? " 读取参数" : " 写入参数", leftY, 0);
-            leftY = AddDetailLine("报表名称", parameters.GetValueOrDefault("ReportName", "N/A"), leftY, 0, leftWidth);
-            leftY = AddDetailLine("工作表", parameters.GetValueOrDefault("SheetName", "Sheet1"), leftY, 0, leftWidth);
-            leftY = AddDetailLine("单元格", parameters.GetValueOrDefault("Cell", "N/A"), leftY, 0, leftWidth);
-
-            if (stepType == "写入单元格")
-            {
-                leftY = AddDetailLine("写入来源", parameters.GetValueOrDefault("Source", "N/A"), leftY, 0, leftWidth);
-            }
-            else
-            {
-                leftY = AddDetailLine("目标变量", parameters.GetValueOrDefault("Variable", "N/A"), leftY, 0, leftWidth);
-            }
-
-            // 右栏：操作结果
-            int rightY = yPosition;
-            if (currentStatus == "success")
-            {
-                rightY = AddSectionTitle(stepType == "读取单元格" ? " 读取结果" : " 写入结果", rightY, leftWidth + 10);
-
-                if (stepType == "读取单元格")
-                {
-                    rightY = AddDetailLine("读取值", results.GetValueOrDefault("Value", "N/A"), rightY, leftWidth + 10, leftWidth);
-                }
-                else
-                {
-                    rightY = AddDetailLine("写入值", results.GetValueOrDefault("WriteValue", "N/A"), rightY, leftWidth + 10, leftWidth);
-                }
-
-                rightY = AddDetailLine("状态", "成功 ✓", rightY, leftWidth + 10, leftWidth, StatusColors.Success);
-
-                return Math.Max(leftY, rightY);
-            }
-
-            return leftY;
-        }
-
-        /// <summary>
-        /// 显示默认详情
-        /// </summary>
-        private int ShowDefaultDetails(ChildModel stepData, int yPosition)
-        {
-            var parameters = ParseStepParameters(stepData);
-
-            if (parameters.Count > 0)
-            {
-                yPosition = AddSectionTitle(" 执行参数", yPosition, 0);
-
-                int count = 0;
-                foreach (var kvp in parameters)
-                {
-                    if (count >= 5) break; // 最多显示5个参数
-                    yPosition = AddDetailLine(kvp.Key, kvp.Value, yPosition, 0, detailsPanel.Width);
-                    count++;
-                }
-            }
-
-            return yPosition;
-        }
-
-        /// <summary>
-        /// 添加区块标题
-        /// </summary>
-        private int AddSectionTitle(string title, int yPosition, int xPosition)
-        {
-            lblTitle = new Label
-            {
-                Text = title,
-                Font = new Font("微软雅黑", 9F, FontStyle.Bold),
-                ForeColor = StatusColors.Running,
-                AutoSize = true,
-                Location = new Point(xPosition, yPosition),
-                Padding = new Padding(10, 5, 5, 5)
-            };
-            detailsPanel.Controls.Add(lblTitle);
-
-            return yPosition + 22;
-        }
-
-        /// <summary>
-        /// 添加详情行
-        /// </summary>
-        private int AddDetailLine(string label, string value, int yPosition, int xPosition, int maxWidth, Color? valueColor = null)
-        {
-            var lblLine = new Label
-            {
-                Text = $"{label}: {value}",
-                Font = new Font("微软雅黑", 9F),
-                ForeColor = valueColor ?? Color.Black,
-                Location = new Point(xPosition, yPosition),
-                MaximumSize = new Size(maxWidth, 0),
-                AutoSize = true,
-                Padding = new Padding(10, 5, 5, 5)
-            };
-
-            detailsPanel.Controls.Add(lblLine);
-
-            return yPosition + Math.Max(lblLine.Height, 22);
+            Height = 85;
         }
 
         #endregion
 
-        #region 私有方法 - 辅助功能
+        #region 配置参数
+
+        private int ShowConfigurationParameters(ChildModel stepData, int yPosition)
+        {
+            yPosition = AddSectionTitle("配置参数", yPosition, 0);
+
+            if (stepData?.StepParameter == null)
+            {
+                yPosition = AddDetailLine("参数状态", "未配置参数", yPosition, 0,
+                    detailsPanel.Width, Color.FromArgb(150, 150, 150));
+                return yPosition;
+            }
+
+            try
+            {
+                //string stepType = stepData.StepType ?? stepData.StepName ?? "Unknown";
+                string stepType = stepData.StepName ?? stepData.StepName ?? "Unknown";
+                yPosition = ParseAndDisplayParameters(stepType, stepData.StepParameter, yPosition);
+            }
+            catch (Exception ex)
+            {
+                yPosition = AddDetailLine("参数解析", $"解析失败: {ex.Message}", yPosition,
+                    0, detailsPanel.Width, StatusColors.Failed);
+                Debug.WriteLine($"参数解析异常: {ex}");
+            }
+
+            return yPosition;
+        }
+
+        private int ParseAndDisplayParameters(string stepType, object stepParameter, int yPosition)
+        {
+            return stepType switch
+            {
+                "写入单元格" or "WriteCells" => DisplayWriteCellsParameters(stepParameter, yPosition),
+                "变量赋值" or "VariableAssignment" => DisplayVariableAssignmentParameters(stepParameter, yPosition),
+                "读取单元格" or "ReadCells" => DisplayReadCellsParameters(stepParameter, yPosition),
+                "条件判断" or "Condition" => DisplayConditionParameters(stepParameter, yPosition),
+                "延时等待" or "Delay" => DisplayDelayParameters(stepParameter, yPosition),
+                "写入PLC" or "WritePLC" => DisplayWritePLCParameters(stepParameter, yPosition),
+                _ => DisplayGenericParameters(stepParameter, yPosition)
+            };
+        }
+
+        #endregion
+
+        #region 表格式展示方法
 
         /// <summary>
-        /// 绘制圆形序号
+        /// 写入单元格参数展示 - 表格式
         /// </summary>
-        private void CirclePanel_Paint(object sender, PaintEventArgs e)
+        private int DisplayWriteCellsParameters(object stepParameter, int yPosition)
         {
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-            // 根据当前状态选择背景色
-            Color circleColor = currentStatus switch
+            try
             {
-                "running" => StatusColors.Running,
+                var param = ConvertToParameter<Parameter_WriteCells>(stepParameter);
+                if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
+
+                yPosition = AddSubSectionTitle("Excel 配置", yPosition);
+                yPosition = AddDetailLine("工作表", param.SheetName ?? "Sheet1", yPosition, 0, detailsPanel.Width);
+                yPosition += 10;
+
+                if (param.Items?.Count > 0)
+                {
+                    yPosition = AddSubSectionTitle("写入明细", yPosition);
+
+                    // 定义列宽
+                    int col1Width = 100;  // 单元格地址
+                    int col2Width = 100;  // 数据来源
+                    int col3Width = detailsPanel.Width - col1Width - col2Width - 20;
+
+                    // 表头
+                    AddTableCell("单元格地址", yPosition, 0, col1Width, true);
+                    AddTableCell("数据来源", yPosition, col1Width, col2Width, true);
+                    AddTableCell("内容(根据来源填写)", yPosition, col1Width + col2Width, col3Width, true);
+                    yPosition += 25;
+
+                    // 数据行
+                    foreach (var item in param.Items)
+                    {
+                        string sourceTypeName = item.SourceType switch
+                        {
+                            CellsDataSourceType.FixedValue => "固定值",
+                            CellsDataSourceType.Variable => "变量",
+                            CellsDataSourceType.Expression => "表达式",
+                            CellsDataSourceType.SystemProperty => "系统属性",
+                            _ => "未知"
+                        };
+
+                        string content = item.SourceType switch
+                        {
+                            CellsDataSourceType.FixedValue => item.FixedValue ?? "",
+                            CellsDataSourceType.Variable => item.VariableName ?? "",
+                            CellsDataSourceType.Expression => item.Expression ?? "",
+                            CellsDataSourceType.SystemProperty => item.PropertyPath ?? "",
+                            _ => ""
+                        };
+
+                        AddTableCell(item.CellAddress, yPosition, 0, col1Width, false);
+                        AddTableCell(sourceTypeName, yPosition, col1Width, col2Width, false);
+                        AddTableCell(content, yPosition, col1Width + col2Width, col3Width, false);
+                        yPosition += 22;
+                    }
+                }
+
+                return yPosition;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DisplayWriteCellsParameters 错误: {ex}");
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 变量赋值参数展示 - 表格式
+        /// </summary>
+        private int DisplayVariableAssignmentParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var param = ConvertToParameter<Parameter_VariableAssignment>(stepParameter);
+                if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
+
+                yPosition = AddSubSectionTitle("赋值配置", yPosition);
+
+                // 定义列宽
+                int col1Width = 120;  // 配置项
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 目标变量
+                AddTableCell("目标变量", yPosition, 0, col1Width, false);
+                AddTableCell(param.TargetVarName ?? "未指定", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 赋值方式
+                string assignmentTypeName = param.AssignmentType switch
+                {
+                    VariableAssignmentType.DirectAssignment => "直接赋值",
+                    VariableAssignmentType.ExpressionCalculation => "表达式计算",
+                    VariableAssignmentType.VariableCopy => "复制变量",
+                    VariableAssignmentType.PLCRead => "PLC读取",
+                    _ => "未知"
+                };
+                AddTableCell("赋值方式", yPosition, 0, col1Width, false);
+                AddTableCell(assignmentTypeName, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 表达式/值
+                if (!string.IsNullOrEmpty(param.Expression))
+                {
+                    AddTableCell("表达式/值", yPosition, 0, col1Width, false);
+                    AddTableCell(param.Expression, yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 执行条件
+                if (!string.IsNullOrEmpty(param.Condition))
+                {
+                    AddTableCell("执行条件", yPosition, 0, col1Width, false);
+                    AddTableCell(param.Condition, yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 是否启用
+                AddTableCell("是否启用", yPosition, 0, col1Width, false);
+                AddTableCell(param.IsAssignment ? "是" : "否", yPosition, col1Width, col2Width, false,
+                    param.IsAssignment ? StatusColors.Success : StatusColors.Waiting);
+                yPosition += 22;
+
+                return yPosition;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DisplayVariableAssignmentParameters 错误: {ex}");
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 读取单元格参数展示 - 表格式
+        /// </summary>
+        private int DisplayReadCellsParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                yPosition = AddSubSectionTitle("📊 读取配置", yPosition);
+
+                // 定义列宽
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 工作表
+                AddTableCell("工作表", yPosition, 0, col1Width, false);
+                AddTableCell(json["SheetName"]?.ToString() ?? "Sheet1", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 单元格地址
+                AddTableCell("单元格地址", yPosition, 0, col1Width, false);
+                AddTableCell(json["CellAddress"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 目标变量
+                AddTableCell("保存到变量", yPosition, 0, col1Width, false);
+                AddTableCell(json["TargetVariable"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 条件判断参数展示 - 表格式
+        /// </summary>
+        private int DisplayConditionParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                yPosition = AddSubSectionTitle("🔀 条件配置", yPosition);
+
+                // 定义列宽
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 条件表达式
+                string condition = json["Condition"]?.ToString() ?? "";
+                AddTableCell("条件表达式", yPosition, 0, col1Width, false);
+                AddTableCell(condition, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 条件为真时跳转
+                string trueStep = json["TrueStepIndex"]?.ToString();
+                if (!string.IsNullOrEmpty(trueStep))
+                {
+                    AddTableCell("条件为真", yPosition, 0, col1Width, false);
+                    AddTableCell($"跳转到步骤 {trueStep}", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 条件为假时跳转
+                string falseStep = json["FalseStepIndex"]?.ToString();
+                if (!string.IsNullOrEmpty(falseStep))
+                {
+                    AddTableCell("条件为假", yPosition, 0, col1Width, false);
+                    AddTableCell($"跳转到步骤 {falseStep}", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 延时等待参数展示 - 表格式
+        /// </summary>
+        private int DisplayDelayParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                yPosition = AddSubSectionTitle("延时配置", yPosition);
+
+                // 定义列宽
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 延时时长
+                string duration = json["T"]?.ToString() ?? "0";
+                AddTableCell("延时时长", yPosition, 0, col1Width, false);
+                AddTableCell($"{(duration.ToDouble() / 1000)} 秒", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 读取PLC参数展示 - 表格式
+        /// </summary>
+        private int DisplayReadPLCParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                yPosition = AddSubSectionTitle("🔌 PLC读取配置", yPosition);
+
+                // 检查是否有Items数组(多项读取)
+                var items = json["Items"];
+                if (items != null && items.Type == JTokenType.Array && items.HasValues)
+                {
+                    // 多项读取 - 表格展示
+                    int col1Width = 100;  // 模块名称
+                    int col2Width = 120;  // 点位地址
+                    int col3Width = detailsPanel.Width - col1Width - col2Width - 20;  // 目标变量
+
+                    // 表头
+                    AddTableCell("模块名称", yPosition, 0, col1Width, true);
+                    AddTableCell("点位地址", yPosition, col1Width, col2Width, true);
+                    AddTableCell("目标变量", yPosition, col1Width + col2Width, col3Width, true);
+                    yPosition += 25;
+
+                    // 数据行
+                    foreach (var item in items)
+                    {
+                        string moduleName = item["ModuleName"]?.ToString() ?? "";
+                        string address = item["Address"]?.ToString() ?? "";
+                        string variable = item["TargetVariable"]?.ToString() ?? "";
+
+                        AddTableCell(moduleName, yPosition, 0, col1Width, false);
+                        AddTableCell(address, yPosition, col1Width, col2Width, false);
+                        AddTableCell(variable, yPosition, col1Width + col2Width, col3Width, false);
+                        yPosition += 22;
+                    }
+                }
+                else
+                {
+                    // 单项读取 - 键值对展示
+                    int col1Width = 120;
+                    int col2Width = detailsPanel.Width - col1Width - 10;
+
+                    AddTableCell("配置项", yPosition, 0, col1Width, true);
+                    AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                    yPosition += 25;
+
+                    AddTableCell("模块名称", yPosition, 0, col1Width, false);
+                    AddTableCell(json["ModuleName"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    AddTableCell("点位地址", yPosition, 0, col1Width, false);
+                    AddTableCell(json["Address"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    AddTableCell("目标变量", yPosition, 0, col1Width, false);
+                    AddTableCell(json["TargetVariable"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 写入PLC参数展示 - 表格式
+        /// </summary>
+        private int DisplayWritePLCParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                yPosition = AddSubSectionTitle("🔌 PLC写入配置", yPosition);
+
+                // 检查是否有Items数组
+                var items = json["Items"];
+                if (items != null && items.Type == JTokenType.Array && items.HasValues)
+                {
+                    // 多项写入
+                    int col1Width = 100;  // 模块名称
+                    int col2Width = 120;  // 点位地址
+                    int col3Width = detailsPanel.Width - col1Width - col2Width - 20;  // 写入值
+
+                    AddTableCell("模块名称", yPosition, 0, col1Width, true);
+                    AddTableCell("点位地址", yPosition, col1Width, col2Width, true);
+                    AddTableCell("写入值", yPosition, col1Width + col2Width, col3Width, true);
+                    yPosition += 25;
+
+                    foreach (var item in items)
+                    {
+                        string moduleName = item["PlcModuleName"]?.ToString() ?? "";
+                        string address = item["PlcKeyName"]?.ToString() ?? "";
+                        string value = item["PlcValue"]?.ToString() ?? "";
+
+                        AddTableCell(moduleName, yPosition, 0, col1Width, false);
+                        AddTableCell(address, yPosition, col1Width, col2Width, false);
+                        AddTableCell(value, yPosition, col1Width + col2Width, col3Width, false);
+                        yPosition += 22;
+                    }
+                }
+                else
+                {
+                    // 单项写入
+                    int col1Width = 120;
+                    int col2Width = detailsPanel.Width - col1Width - 10;
+
+                    AddTableCell("配置项", yPosition, 0, col1Width, true);
+                    AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                    yPosition += 25;
+
+                    AddTableCell("模块名称", yPosition, 0, col1Width, false);
+                    AddTableCell(json["ModuleName"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    AddTableCell("点位地址", yPosition, 0, col1Width, false);
+                    AddTableCell(json["Address"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    AddTableCell("写入值", yPosition, 0, col1Width, false);
+                    AddTableCell(json["Value"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 通用参数展示 - 表格式
+        /// </summary>
+        private int DisplayGenericParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                yPosition = AddSubSectionTitle("参数详情", yPosition);
+
+                string jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                // 定义列宽
+                int col1Width = 150;  // 参数名
+                int col2Width = detailsPanel.Width - col1Width - 10;  // 参数值
+
+                // 表头
+                AddTableCell("参数名", yPosition, 0, col1Width, true);
+                AddTableCell("参数值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 数据行 - 将英文键名转为中文
+                foreach (var property in json.Properties())
+                {
+                    string chineseName = GetChinesePropertyName(property.Name);
+                    string value = property.Value?.ToString() ?? "";
+
+                    AddTableCell(chineseName, yPosition, 0, col1Width, false);
+                    AddTableCell(value, yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                if (json.Properties().Count() == 0)
+                {
+                    AddTableCell("", yPosition, 0, col1Width, false);
+                    AddTableCell("空参数", yPosition, col1Width, col2Width, false, Color.FromArgb(150, 150, 150));
+                    yPosition += 22;
+                }
+
+                return yPosition;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DisplayGenericParameters 错误: {ex}");
+                return AddDetailLine("解析错误", ex.Message, yPosition, 0, detailsPanel.Width, StatusColors.Failed);
+            }
+        }
+
+        /// <summary>
+        /// 表格单元格
+        /// </summary>
+        private void AddTableCell(string text, int y, int x, int width, bool isHeader, Color? textColor = null)
+        {
+            var lbl = new Label
+            {
+                Text = text,
+                Font = new Font("微软雅黑", isHeader ? 9F : 8.5F, isHeader ? FontStyle.Bold : FontStyle.Regular),
+                ForeColor = textColor ?? (isHeader ? Color.FromArgb(24, 144, 255) : Color.FromArgb(80, 80, 80)),
+                Location = new Point(x, y),
+                Size = new Size(width, isHeader ? 22 : 20),
+                BackColor = Color.Transparent, //Color.FromArgb(24, 144, 255),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(8, 0, 5, 0),
+                AutoEllipsis = true  // 超长文本显示省略号
+            };
+            detailsPanel.Controls.Add(lbl);
+        }
+
+        /// <summary>
+        /// 英文参数名转中文
+        /// </summary>
+        private string GetChinesePropertyName(string englishName)
+        {
+            return englishName switch
+            {
+                // Excel相关
+                "SheetName" => "工作表",
+                "CellAddress" => "单元格地址",
+                "Cell" => "单元格",
+                "ReportName" => "报表名称",
+
+                // 变量相关
+                "TargetVariable" => "目标变量",
+                "TargetVarName" => "目标变量",
+                "VariableName" => "变量名",
+                "Variable" => "变量",
+                "VarName" => "变量名",
+
+                // 赋值相关
+                "AssignmentType" => "赋值方式",
+                "Expression" => "表达式",
+                "Value" => "值",
+                "FixedValue" => "固定值",
+
+                // 条件相关
+                "Condition" => "条件",
+                "TrueStepIndex" => "为真跳转",
+                "FalseStepIndex" => "为假跳转",
+
+                // PLC相关
+                "ModuleName" => "模块名称",
+                "Address" => "点位地址",
+
+                // 其他
+                "Duration" => "时长",
+                "Timeout" => "超时时间",
+                "Description" => "说明",
+                "IsEnabled" => "是否启用",
+                "Source" => "数据源",
+                "SourceType" => "数据源类型",
+
+                _ => englishName  // 找不到对应翻译就用英文
+            };
+        }
+
+        #endregion
+
+        #region 第三层: 运行时信息
+
+        private int ShowRuntimeInfo(ChildModel stepData, int yPosition)
+        {
+            yPosition = AddSectionTitle("运行时信息", yPosition, 0);
+
+            string statusInfo = currentStatus switch
+            {
+                "running" => "步骤正在执行中...",
+                "success" => "执行成功",
+                "failed" => "执行失败",
+                _ => "等待执行"
+            };
+
+            Color statusColor = currentStatus switch
+            {
                 "success" => StatusColors.Success,
                 "failed" => StatusColors.Failed,
+                _ => Color.FromArgb(96, 96, 96)
+            };
+
+            yPosition = AddDetailLine("状态", statusInfo, yPosition, 0, detailsPanel.Width, statusColor);
+
+            return yPosition;
+        }
+
+        #endregion
+
+        #region 辅助方法
+
+        // 大表头参数配置等
+        private int AddSectionTitle(string title, int yPosition, int xPosition)
+        {
+            var lblTitle = new Label
+            {
+                Text = title,
+                Font = new Font("微软雅黑", 9.5F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(24, 144, 255),
+                AutoSize = true,
+                Location = new Point(xPosition, yPosition),
+                Padding = new Padding(5, 5, 0, 5),
+                //BackColor = Color.Black
+            };
+            detailsPanel.Controls.Add(lblTitle);
+            return yPosition + 26;
+        }
+
+        /// <summary>
+        /// 表头
+        /// </summary>
+        /// <returns></returns>
+        private int AddSubSectionTitle(string title, int yPosition)
+        {
+            var lblTitle = new Label
+            {
+                Text = title,
+                Font = new Font("微软雅黑", 8.5F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(64, 64, 64),
+                AutoSize = true,
+                Location = new Point(0, yPosition),
+                Padding = new Padding(5, 3, 0, 3),
+            };
+            detailsPanel.Controls.Add(lblTitle);
+            return yPosition + 22;
+        }
+
+        // 内容及运行状态
+        private int AddDetailLine(string label, string value, int yPosition, int xPosition,
+            int maxWidth, Color? valueColor = null)
+        {
+            var lblLine = new Label
+            {
+                Text = string.IsNullOrEmpty(label) ? value : $"{label}: {value}",
+                Font = new Font("微软雅黑", 8.5F),
+                ForeColor = valueColor ?? Color.FromArgb(96, 96, 96),
+                Location = new Point(xPosition, yPosition),
+                MaximumSize = new Size(maxWidth, 0),
+                AutoSize = true,
+                Padding = new Padding(5, 2, 0, 2),
+            };
+            detailsPanel.Controls.Add(lblLine);
+            return yPosition + lblLine.Height + 2;
+        }
+
+        private T ConvertToParameter<T>(object stepParameter) where T : class
+        {
+            if (stepParameter == null) return null;
+            if (stepParameter is T directParam) return directParam;
+
+            try
+            {
+                string jsonString = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                return JsonConvert.DeserializeObject<T>(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"参数转换失败: {typeof(T).Name}, {ex.Message}");
+                return null;
+            }
+        }
+
+        private void UpdateTimePosition()
+        {
+            if (lblStepTime != null && lblStepTime.Width > 0)
+            {
+                lblStepTime.Location = new Point(contentPanel.Width - lblStepTime.Width - 15, 10);
+            }
+        }
+
+        private void CirclePanel_Paint(object sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            Color circleColor = currentStatus switch
+            {
+                "success" => StatusColors.Success,
+                "failed" => StatusColors.Failed,
+                "running" => StatusColors.Running,
                 "skipped" => StatusColors.Skipped,
                 _ => StatusColors.Waiting
             };
 
             using (var brush = new SolidBrush(circleColor))
             {
-                e.Graphics.FillEllipse(brush, 0, 0, 31, 31);
+                g.FillEllipse(brush, 0, 0, 32, 32);
             }
 
-            TextRenderer.DrawText(e.Graphics, stepNumber.ToString(),
-                new Font("微软雅黑", 10F, FontStyle.Bold),
-                new Rectangle(0, 0, 32, 32), Color.White,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-        }
-
-        /// <summary>
-        /// 更新时间标签位置
-        /// </summary>
-        private void UpdateTimePosition()
-        {
-            if (lblStepTime != null && contentPanel != null && lblStepTime.Width > 0)
+            string numberText = stepNumber.ToString();
+            using (var font = new Font("微软雅黑", 10F, FontStyle.Bold))
+            using (var brush = new SolidBrush(Color.White))
             {
-                lblStepTime.Location = new Point(contentPanel.Width - lblStepTime.Width - 15, 10);
-            }
-        }
-
-        /// <summary>
-        /// 解析步骤参数
-        /// </summary>
-        private Dictionary<string, string> ParseStepParameters(ChildModel stepData)
-        {
-            var parameters = new Dictionary<string, string>();
-
-            if (stepData?.StepParameter == null) return parameters;
-
-            try
-            {
-                // 尝试解析 JSON 格式的参数
-                string paramStr = stepData.StepParameter.ToString();
-
-                if (paramStr.StartsWith('{'))
-                {
-                    var json = JObject.Parse(paramStr);
-                    foreach (var prop in json.Properties())
-                    {
-                        parameters[prop.Name] = prop.Value.ToString();
-                    }
-                }
-                else
-                {
-                    // 如果不是JSON，提供默认示例数据
-                    FillDefaultParameters(stepData.StepName, parameters);
-                }
-            }
-            catch
-            {
-                // 解析失败，使用默认数据
-                FillDefaultParameters(stepData.StepName, parameters);
-            }
-
-            return parameters;
-        }
-
-        /// <summary>
-        /// 填充默认参数（示例数据）
-        /// </summary>
-        private void FillDefaultParameters(string stepName, Dictionary<string, string> parameters)
-        {
-            switch (stepName)
-            {
-                case "读取PLC":
-                case "写入PLC":
-                    parameters["ModuleName"] = "PLC_Module_1";
-                    parameters["Address"] = "DB1.DBW100";
-                    if (stepName == "读取PLC")
-                    {
-                        parameters["Variable"] = "Temperature";
-                    }
-                    else
-                    {
-                        parameters["WriteValue"] = "100";
-                        parameters["ValueSource"] = "SetPoint";
-                    }
-                    break;
-
-                case "延时等待":
-                    parameters["DelayTime"] = "30";
-                    parameters["Reason"] = "等待设备稳定";
-                    break;
-
-                case "变量赋值":
-                    parameters["Variable"] = "TestResult";
-                    parameters["Method"] = "表达式计算";
-                    parameters["Expression"] = "{ValueA} * 2 + 10";
-                    break;
-
-                case "条件判断":
-                    parameters["Condition"] = "{Temperature} > 30";
-                    parameters["TrueBranch"] = "继续执行";
-                    parameters["FalseBranch"] = "跳转到步骤8";
-                    break;
-
-                case "消息通知":
-                    parameters["MessageType"] = "确认对话框";
-                    parameters["Title"] = "请确认";
-                    parameters["Content"] = "请确认设备已准备就绪";
-                    parameters["Buttons"] = "[确定] [取消]";
-                    break;
-
-                case "读取单元格":
-                case "写入单元格":
-                    parameters["ReportName"] = "测试报告";
-                    parameters["SheetName"] = "Sheet1";
-                    parameters["Cell"] = stepName == "读取单元格" ? "B5" : "C10";
-                    if (stepName == "读取单元格")
-                    {
-                        parameters["Variable"] = "Score";
-                    }
-                    else
-                    {
-                        parameters["Source"] = "{Result}";
-                    }
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// 解析步骤结果
-        /// </summary>
-        private Dictionary<string, string> ParseStepResults(ChildModel stepData)
-        {
-            var results = new Dictionary<string, string>();
-
-            if (stepData == null) return results;
-
-            try
-            {
-                // 这里应该从stepData中获取实际的执行结果
-                // 如果有ExecutionResult字段，可以解析它
-                // 目前提供示例数据
-
-                if (currentStatus == "success")
-                {
-                    FillDefaultResults(stepData.StepName, results);
-                }
-                else if (currentStatus == "failed")
-                {
-                    results["ErrorCode"] = "E1001";
-                    results["ErrorMessage"] = "通信超时";
-                }
-                else if (currentStatus == "running")
-                {
-                    // 对于延时步骤，可以提供实时进度
-                    if (stepData.StepName == "延时等待")
-                    {
-                        results["Elapsed"] = "15";
-                        results["Remaining"] = "15";
-                    }
-                }
-            }
-            catch
-            {
-                // 忽略错误
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// 填充默认结果（示例数据）
-        /// </summary>
-        private void FillDefaultResults(string stepName, Dictionary<string, string> results)
-        {
-            switch (stepName)
-            {
-                case "读取PLC":
-                    results["Value"] = "25.6°C";
-                    results["DataType"] = "REAL";
-                    break;
-
-                case "写入PLC":
-                    results["WriteValue"] = "100";
-                    results["ConfirmValue"] = "100";
-                    break;
-
-                case "延时等待":
-                    results["ActualTime"] = "30";
-                    break;
-
-                case "变量赋值":
-                    results["OldValue"] = "null";
-                    results["NewValue"] = "30";
-                    results["Calculation"] = "10 * 2 + 10 = 30";
-                    break;
-
-                case "条件判断":
-                    results["Value"] = "35.2°C";
-                    results["Result"] = "True";
-                    results["Action"] = "继续执行";
-                    break;
-
-                case "读取单元格":
-                    results["Value"] = "98.5";
-                    break;
-
-                case "写入单元格":
-                    results["WriteValue"] = "合格";
-                    break;
+                var size = g.MeasureString(numberText, font);
+                var x = (32 - size.Width) / 2;
+                var y = (32 - size.Height) / 2;
+                g.DrawString(numberText, font, brush, x, y);
             }
         }
 
