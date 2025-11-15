@@ -35,6 +35,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         private bool _isExecuting;
         private int _currentStepIndex;
+
+        // 取消令牌源
+        private CancellationTokenSource _cancellationTokenSource;
+
         /// <summary>
         /// 当前步骤索引
         /// </summary>
@@ -62,14 +66,26 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             _isExecuting = true;
             _currentStepIndex = 0;
 
+            // 创建新的取消令牌源
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
+
             try
             {
-                NlogHelper.Default.Info($"开始执行步骤序列，共 {_steps.Count} 个步骤");
+                NlogHelper.Default.Info($"开始执行步骤序列,共 {_steps.Count} 个步骤");
 
                 // 初始化测试信息变量
                 TestInfoVariableHelper.UpdateTestInfoVariables(_globalVariableManager);
+
                 while (_isExecuting && _currentStepIndex < _steps.Count)
                 {
+                    // 检查是否已取消
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        NlogHelper.Default.Info("步骤执行已被取消");
+                        break;
+                    }
+
                     var step = _steps[_currentStepIndex];
 
                     // 更新步骤状态为执行中
@@ -80,8 +96,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     {
                         NlogHelper.Default.Info($"执行步骤 [{_currentStepIndex + 1}/{_steps.Count}]: {step.StepName}");
 
-                        // 执行步骤
-                        var result = await ExecuteStepAsync(step);
+                        // 执行步骤,传递取消令牌
+                        var result = await ExecuteStepAsync(step, _cancellationTokenSource.Token);
 
                         if (result.Succes)
                         {
@@ -103,6 +119,13 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                             break;
                         }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        // 操作被取消
+                        step.Status = 3; // 标记为失败
+                        NlogHelper.Default.Info($"步骤 {step.StepName} 执行被取消");
+                        break;
+                    }
                     catch (Exception ex)
                     {
                         step.Status = 3; // 失败
@@ -116,10 +139,18 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
                     _currentStepIndex++;
 
-                    // 步骤间延时（可选）
+                    // 步骤间延时(可选),使用取消令牌
                     if (_isExecuting)
                     {
-                        await Task.Delay(50); // 50ms延时
+                        try
+                        {
+                            await Task.Delay(50, _cancellationTokenSource.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // 延时被取消,直接退出
+                            break;
+                        }
                     }
                 }
 
@@ -128,16 +159,22 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             finally
             {
                 _isExecuting = false;
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
             }
         }
 
         /// <summary>
-        /// 停止执行
+        /// 停止执行 - 立即取消正在执行的步骤
         /// </summary>
         public void Stop()
         {
             _isExecuting = false;
-            NlogHelper.Default.Info("步骤执行已停止");
+
+            // 请求取消正在执行的操作
+            _cancellationTokenSource?.Cancel();
+
+            NlogHelper.Default.Info("步骤执行已请求停止");
         }
 
         #endregion
@@ -147,35 +184,42 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// <summary>
         /// 执行单个步骤 - 使用 switch-case 替代策略模式
         /// </summary>
-        private async Task<ExecutionResult> ExecuteStepAsync(ChildModel step)
+        private async Task<ExecutionResult> ExecuteStepAsync(ChildModel step, CancellationToken cancellationToken)
         {
+            // 在执行前检查取消
+            cancellationToken.ThrowIfCancellationRequested();
+
             try
             {
                 return step.StepName switch
                 {
                     // 系统工具
-                    "延时等待" => await ExecuteDelayTime(step),
-                    "消息通知" => await ExecuteSystemPrompt(step),
+                    "延时等待" => await ExecuteDelayTime(step, cancellationToken),
+                    "消息通知" => await ExecuteSystemPrompt(step, cancellationToken),
 
                     // 变量管理
-                    "变量定义" or "试验参数" => await ExecuteDefineVar(step),
-                    "变量赋值" => await ExecuteVariableAssignment(step),
+                    "变量定义" or "试验参数" => await ExecuteDefineVar(step, cancellationToken),
+                    "变量赋值" => await ExecuteVariableAssignment(step, cancellationToken),
 
                     // PLC通信
-                    "读取PLC" => await ExecuteReadPLC(step),
-                    "写入PLC" => await ExecuteWritePLC(step),
+                    "读取PLC" => await ExecuteReadPLC(step, cancellationToken),
+                    "写入PLC" => await ExecuteWritePLC(step, cancellationToken),
 
                     // 检测工具
-                    "条件判断" => await ExecuteDetection(step),
+                    "条件判断" => await ExecuteDetection(step, cancellationToken),
 
                     // 报表工具
-                    //"保存报表" => await ExecuteSaveReport(step),
-                    "读取单元格" => await ExecuteReadCells(step),
-                    "写入单元格" => await ExecuteWriteCells(step),
+                    "读取单元格" => await ExecuteReadCells(step, cancellationToken),
+                    "写入单元格" => await ExecuteWriteCells(step, cancellationToken),
 
                     // 未知步骤类型
                     _ => ExecutionResult.Failed($"不支持的步骤类型: {step.StepName}")
                 };
+            }
+            catch (OperationCanceledException)
+            {
+                NlogHelper.Default.Info($"步骤 {step.StepName} 被取消");
+                throw; // 向上传播取消异常
             }
             catch (Exception ex)
             {
@@ -192,12 +236,13 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// </summary>
         /// <param name="step">当前步骤信息</param>
         /// <returns></returns>
-        private async Task<ExecutionResult> ExecuteDelayTime(ChildModel step)
+        private async Task<ExecutionResult> ExecuteDelayTime(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_DelayTime>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
 
-            var result = await _systemMethods.DelayTime(param);
+            // 将取消令牌传递给延时方法
+            var result = await _systemMethods.DelayTime(param, cancellationToken);
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("延时执行失败");
         }
 
@@ -205,24 +250,25 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// 
         /// </summary>
         /// <param name="step">当前步骤信息</param>
-        private async Task<ExecutionResult> ExecuteSystemPrompt(ChildModel step)
+        private async Task<ExecutionResult> ExecuteSystemPrompt(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_SystemPrompt>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
+            cancellationToken.ThrowIfCancellationRequested();
 
             var result = await _systemMethods.SystemPrompt(param);
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("提示执行失败");
         }
 
         /// <summary>
-        /// 
+        /// 变量定义
         /// </summary>
-        /// <param name="step">当前步骤信息</param>
-        private async Task<ExecutionResult> ExecuteDefineVar(ChildModel step)
+        private async Task<ExecutionResult> ExecuteDefineVar(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_DefineVar>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
 
+            cancellationToken.ThrowIfCancellationRequested();
             var result = await _variableMethods.DefineVar(param);
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("变量定义失败");
         }
@@ -230,47 +276,47 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// <summary>
         /// 变量赋值
         /// </summary>
-        /// <param name="step">当前步骤信息</param>
-        private async Task<ExecutionResult> ExecuteVariableAssignment(ChildModel step)
+        private async Task<ExecutionResult> ExecuteVariableAssignment(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_VariableAssignment>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
 
+            cancellationToken.ThrowIfCancellationRequested();
             var result = await _variableMethods.VariableAssignment(param);
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("变量赋值失败");
         }
 
         /// <summary>
-        /// 
+        /// 读取PLC
         /// </summary>
-        /// <param name="step">当前步骤信息</param>
-        private async Task<ExecutionResult> ExecuteReadPLC(ChildModel step)
+        private async Task<ExecutionResult> ExecuteReadPLC(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_ReadPLC>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
 
+            cancellationToken.ThrowIfCancellationRequested();
             var result = await _plcMethods.ReadPLC(param);
-            return result ? ExecutionResult.Success() : ExecutionResult.Failed("PLC读取失败");
+            return result ? ExecutionResult.Success() : ExecutionResult.Failed("读取PLC失败");
         }
 
         /// <summary>
-        /// 
+        /// 写入PLC
         /// </summary>
-        /// <param name="step">当前步骤信息</param>
-        private async Task<ExecutionResult> ExecuteWritePLC(ChildModel step)
+        private async Task<ExecutionResult> ExecuteWritePLC(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_WritePLC>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
 
+            cancellationToken.ThrowIfCancellationRequested();
             var result = await _plcMethods.WritePLC(param);
-            return result ? ExecutionResult.Success() : ExecutionResult.Failed("PLC写入失败");
+            return result ? ExecutionResult.Success() : ExecutionResult.Failed("写入PLC失败");
         }
 
         /// <summary>
-        /// 
+        /// 条件判断 - 支持跳转逻辑
         /// </summary>
         /// <param name="step">当前步骤信息</param>
-        private async Task<ExecutionResult> ExecuteDetection(ChildModel step)
+        private async Task<ExecutionResult> ExecuteDetection(ChildModel step, CancellationToken cancellationToken)
         {
             try
             {
@@ -280,6 +326,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     NlogHelper.Default.Error("检测/条件判断参数转换失败");
                     return ExecutionResult.Failed("参数转换失败");
                 }
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // 记录数据源信息
                 string dataSourceInfo = param.DataSource.SourceType == DataSourceType.PLC
@@ -370,13 +417,14 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         
 
         /// <summary>
-        /// 
+        /// 保存报表
         /// </summary>
         /// <param name="step">当前步骤信息</param>
-        private async Task<ExecutionResult> ExecuteSaveReport(ChildModel step)
+        private async Task<ExecutionResult> ExecuteSaveReport(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_SaveReport>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
+            cancellationToken.ThrowIfCancellationRequested();
 
             var result = await _reportMethods.SaveReport(param);
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("报表保存失败");
@@ -385,10 +433,11 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// <summary>
         /// 读取报表单元格
         /// </summary>
-        private async Task<ExecutionResult> ExecuteReadCells(ChildModel step)
+        private async Task<ExecutionResult> ExecuteReadCells(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_ReadCells>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
+            cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
@@ -457,7 +506,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// 写报表单元格
         /// </summary>
         /// <param name="step">当前步骤信息</param>
-        private async Task<ExecutionResult> ExecuteWriteCells(ChildModel step)
+        private async Task<ExecutionResult> ExecuteWriteCells(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_WriteCells>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");

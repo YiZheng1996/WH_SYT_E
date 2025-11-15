@@ -66,6 +66,9 @@ namespace MainUI.Procedure.Controls
                 _stepDataDict.Clear();
                 panelStepList.Controls.Clear();
 
+                // 重置并启动定时器
+                testStartTime = DateTime.Now;
+
                 // 创建步骤控件
                 for (int i = 0; i < steps.Count; i++)
                 {
@@ -75,9 +78,8 @@ namespace MainUI.Procedure.Controls
                     _stepControls[i] = stepControl;
                     _stepDataDict[i] = steps[i]; // 保存步骤数据
                 }
-
-                // 重置并启动定时器
-                testStartTime = DateTime.Now;
+                // 滚动到顶部
+                ScrollToTop();
             }
             catch (Exception ex)
             {
@@ -111,16 +113,10 @@ namespace MainUI.Procedure.Controls
         }
 
         /// <summary>
-        /// 更新步骤时间（由外部定时器触发）
+        /// 更新步骤时间
         /// </summary>
         public void UpdateStepTimes()
         {
-            if (InvokeRequired)
-            {
-                Invoke(new Action(UpdateStepTimes));
-                return;
-            }
-
             try
             {
                 foreach (var kvp in _stepStartTimes.ToList())
@@ -205,6 +201,10 @@ namespace MainUI.Procedure.Controls
                             {
                                 Debug.WriteLine($"⚠️ 步骤 {stepIndex} 已有开始时间，不重复记录");
                             }
+
+                            // 自动滚动到当前执行的步骤
+                            ScrollToStep(stepIndex);
+
                             break;
 
                         case 2:
@@ -213,9 +213,9 @@ namespace MainUI.Procedure.Controls
                             if (_stepStartTimes.ContainsKey(stepIndex))
                             {
                                 var elapsed = DateTime.Now - _stepStartTimes[stepIndex];
-                                Debug.WriteLine($"✅ 步骤 {stepIndex} 完成，用时: {elapsed:hh\\:mm\\:ss}");
+                                Debug.WriteLine($"步骤 {stepIndex} 完成，用时: {elapsed:hh\\:mm\\:ss}");
                                 _stepStartTimes.Remove(stepIndex);
-                                Debug.WriteLine($"✅ 步骤 {stepIndex} 开始时间已清除");
+                                Debug.WriteLine($"步骤 {stepIndex} 开始时间已清除");
                             }
                             break;
 
@@ -226,9 +226,9 @@ namespace MainUI.Procedure.Controls
                             if (_stepStartTimes.ContainsKey(stepIndex))
                             {
                                 var elapsed = DateTime.Now - _stepStartTimes[stepIndex];
-                                Debug.WriteLine($"❌ 步骤 {stepIndex} 失败，用时: {elapsed:hh\\:mm\\:ss}");
+                                Debug.WriteLine($"步骤 {stepIndex} 失败，用时: {elapsed:hh\\:mm\\:ss}");
                                 _stepStartTimes.Remove(stepIndex);
-                                Debug.WriteLine($"✅ 步骤 {stepIndex} 开始时间已清除");
+                                Debug.WriteLine($"步骤 {stepIndex} 开始时间已清除");
                             }
                             break;
 
@@ -452,6 +452,110 @@ namespace MainUI.Procedure.Controls
                 NlogHelper.Default.Error("更新延时进度失败", ex);
             }
         }
+        #endregion
+
+        #region 自动滚动功能
+
+        /// <summary>
+        /// 滚动到指定步骤，使其在可视区域内
+        /// </summary>
+        /// <param name="stepIndex">步骤索引</param>
+        private void ScrollToStep(int stepIndex)
+        {
+            try
+            {
+                if (!_stepControls.TryGetValue(stepIndex, out var stepControl))
+                {
+                    return;
+                }
+
+                // 确保控件可见
+                if (!stepControl.Visible)
+                {
+                    return;
+                }
+
+                // 方法1: 使用 ScrollControlIntoView (推荐)
+                // 这个方法会自动将控件滚动到可视区域
+                panelStepList.ScrollControlIntoView(stepControl);
+
+                // 可选：添加一些额外的偏移，让当前步骤显示在更合适的位置
+                // 例如，让它显示在视口的上部 1/3 处
+                AdjustScrollPosition(stepControl);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"滚动到步骤失败: {ex.Message}");
+                NlogHelper.Default.Error($"滚动到步骤 {stepIndex} 失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 调整滚动位置，使当前步骤显示在更合适的位置
+        /// </summary>
+        /// <param name="stepControl">步骤控件</param>
+        private void AdjustScrollPosition(StepStatusControl stepControl)
+        {
+            try
+            {
+                // 获取步骤控件在 FlowLayoutPanel 中的位置
+                int stepTop = stepControl.Top;
+                int stepHeight = stepControl.Height;
+
+                // 获取可视区域的高度
+                int visibleHeight = panelStepList.ClientSize.Height;
+
+                // 计算理想的滚动位置：让当前步骤显示在视口上部 1/4 处
+                int targetOffset = visibleHeight / 4;
+                int idealScrollPosition = stepTop - targetOffset;
+
+                // 确保滚动位置在有效范围内
+                int maxScroll = panelStepList.VerticalScroll.Maximum - visibleHeight + 1;
+                idealScrollPosition = Math.Max(0, Math.Min(idealScrollPosition, maxScroll));
+
+                // 设置滚动位置
+                if (panelStepList.AutoScrollPosition.Y != -idealScrollPosition)
+                {
+                    panelStepList.AutoScrollPosition = new Point(0, idealScrollPosition);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"调整滚动位置失败: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 滚动到顶部
+        /// </summary>
+        private void ScrollToTop()
+        {
+            try
+            {
+                panelStepList.AutoScrollPosition = new Point(0, 0);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"滚动到顶部失败: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 滚动到底部
+        /// </summary>
+        private void ScrollToBottom()
+        {
+            try
+            {
+                int maxScroll = panelStepList.VerticalScroll.Maximum;
+                panelStepList.AutoScrollPosition = new Point(0, maxScroll);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"滚动到底部失败: {ex.Message}");
+            }
+        }
+
         #endregion
     }
 }

@@ -31,6 +31,9 @@ namespace MainUI.Service
             Program.ServiceProvider?.GetService<GlobalVariableManager>();
         private bool _disposed = false;
 
+        // 全局批量执行的取消令牌源（用于控制整个批量执行过程）
+        private CancellationTokenSource _batchExecutionCancellationTokenSource;
+
         #endregion
 
         #region 事件
@@ -85,9 +88,11 @@ namespace MainUI.Service
         public int ConfigurationCount => _workflowConfigurations.Count;
 
         /// <summary>
-        /// 是否正在执行
+        /// 是否正在执行（包括批量执行）
         /// </summary>
-        public bool IsExecuting => _currentExecutionManager?.IsExecuting ?? false;
+        public bool IsExecuting =>
+            (_currentExecutionManager?.IsExecuting ?? false) ||
+            (_batchExecutionCancellationTokenSource != null && !_batchExecutionCancellationTokenSource.IsCancellationRequested);
 
         #endregion
 
@@ -96,9 +101,6 @@ namespace MainUI.Service
         /// <summary>
         /// 加载指定产品的所有工作流配置
         /// </summary>
-        /// <param name="modelType">产品类型</param>
-        /// <param name="modelName">产品型号</param>
-        /// <returns>加载的配置数量</returns>
         public async Task<int> LoadConfigurationsAsync(string modelType, string modelName)
         {
             try
@@ -123,7 +125,6 @@ namespace MainUI.Service
                     modelName
                 );
 
-                // 检查目录是否存在
                 if (!Directory.Exists(configDir))
                 {
                     _logger.LogInformation("工作流配置目录不存在: {ConfigDir}", configDir);
@@ -131,7 +132,6 @@ namespace MainUI.Service
                     return 0;
                 }
 
-                // 扫描所有 JSON 配置文件
                 var jsonFiles = Directory.GetFiles(configDir, "*.json");
 
                 if (jsonFiles.Length == 0)
@@ -148,12 +148,10 @@ namespace MainUI.Service
                 {
                     try
                     {
-                        // 从文件名获取项目名称
                         string itemName = Path.GetFileNameWithoutExtension(jsonPath);
-
-                        // 加载单个配置
                         var steps = await LoadSingleConfigurationAsync(jsonPath, modelType, modelName, itemName);
                         TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelType, modelName);
+
                         if (steps != null && steps.Count > 0)
                         {
                             _workflowConfigurations[itemName] = steps;
@@ -197,6 +195,7 @@ namespace MainUI.Service
             }
         }
 
+
         /// <summary>
         /// 加载单个配置文件
         /// </summary>
@@ -208,13 +207,9 @@ namespace MainUI.Service
         {
             try
             {
-                // 设置 JsonManager 的文件路径
                 JsonManager.FilePath = jsonPath;
-
-                // 加载配置
                 var config = await JsonManager.GetOrCreateConfigAsync();
 
-                // 查找匹配的配置
                 var parent = config.Form.FirstOrDefault(p =>
                     p.ModelTypeName == modelType &&
                     p.ModelName == modelName &&
@@ -222,7 +217,6 @@ namespace MainUI.Service
 
                 if (parent?.ChildSteps != null && parent.ChildSteps.Count > 0)
                 {
-                    // 创建步骤副本
                     return [.. parent.ChildSteps.Select(s => new ChildModel
                     {
                         StepName = s.StepName,
@@ -240,7 +234,6 @@ namespace MainUI.Service
                 throw;
             }
         }
-
         #endregion
 
         #region 配置查询
@@ -294,11 +287,19 @@ namespace MainUI.Service
         /// <param name="itemName">项目名称</param>
         /// <param name="modelType">产品类型</param>
         /// <param name="modelName">产品型号</param>
+        /// <param name="cancellationToken">可选的外部取消令牌（用于批量执行控制）</param>
         /// <returns>是否执行成功</returns>
-        public async Task<bool> ExecuteWorkflowAsync(string itemName, string modelType, string modelName)
+        public async Task<bool> ExecuteWorkflowAsync(
+            string itemName,
+            string modelType,
+            string modelName,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                // 检查是否已被取消
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // 检查配置是否存在
                 var steps = GetConfiguration(itemName);
                 if (steps == null || steps.Count == 0)
@@ -317,9 +318,6 @@ namespace MainUI.Service
 
                 // 配置路径
                 string TestPath = $"{Application.StartupPath}Procedure\\{modelType}\\{modelName}\\{itemName}.json";
-
-                // 测试前刷新测试信息变量
-                //TestInfoVariableHelper.UpdateTestInfoVariables(_workflowState);
 
                 // 在工作流执行前调用
                 await EnsureVariablesLoadedAsync(TestPath);
@@ -348,8 +346,17 @@ namespace MainUI.Service
 
                 try
                 {
-                    // 开始执行工作流
+                    // 开始执行工作流（这里会检查取消令牌）
                     await _currentExecutionManager.StartExecutionAsync();
+
+                    // 检查是否在执行过程中被取消
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        _logger.LogInformation("工作流执行被取消: {ItemName}", itemName);
+                        ProgressMessage?.Invoke($"工作流执行被取消: {itemName}");
+                        WorkflowCompleted?.Invoke(itemName, false);
+                        return false;
+                    }
 
                     _logger.LogInformation("工作流执行完成: {ItemName}", itemName);
                     ProgressMessage?.Invoke($"✓ 工作流执行完成: {itemName}");
@@ -358,6 +365,14 @@ namespace MainUI.Service
                     WorkflowCompleted?.Invoke(itemName, true);
 
                     return true;
+                }
+                catch (OperationCanceledException)
+                {
+                    // 被取消
+                    _logger.LogInformation("工作流执行被取消: {ItemName}", itemName);
+                    ProgressMessage?.Invoke($"工作流执行被取消: {itemName}");
+                    WorkflowCompleted?.Invoke(itemName, false);
+                    return false;
                 }
                 catch (Exception ex)
                 {
@@ -380,6 +395,14 @@ namespace MainUI.Service
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // 外部取消（批量执行被停止）
+                _logger.LogInformation("批量执行被取消,跳过工作流: {ItemName}", itemName);
+                ProgressMessage?.Invoke($"跳过工作流: {itemName}");
+                WorkflowCompleted?.Invoke(itemName, false);
+                return false;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "执行工作流时发生错误: {ItemName}", itemName);
@@ -389,8 +412,9 @@ namespace MainUI.Service
             }
         }
 
+
         /// <summary>
-        /// 批量执行多个项目的工作流
+        /// 批量执行多个项目的工作流（支持统一取消）
         /// </summary>
         /// <param name="itemNames">项目名称列表</param>
         /// <param name="modelType">产品类型</param>
@@ -403,47 +427,110 @@ namespace MainUI.Service
         {
             var results = new Dictionary<string, bool>();
 
-            foreach (var itemName in itemNames)
+            // 创建批量执行的取消令牌源
+            _batchExecutionCancellationTokenSource?.Dispose();
+            _batchExecutionCancellationTokenSource = new CancellationTokenSource();
+
+            try
             {
-                try
+                _logger.LogInformation("开始批量执行 {Count} 个工作流", itemNames.Count);
+
+                foreach (var itemName in itemNames)
                 {
-                    ProgressMessage?.Invoke($"\n========== 开始测试项: {itemName} ==========");
-
-                    bool success = await ExecuteWorkflowAsync(itemName, modelType, modelName);
-                    results[itemName] = success;
-
-                    if (success)
+                    try
                     {
-                        ProgressMessage?.Invoke($"✓ 完成测试项: {itemName}");
+                        // 在每个工作流执行前检查取消状态
+                        _batchExecutionCancellationTokenSource.Token.ThrowIfCancellationRequested();
+
+                        ProgressMessage?.Invoke($"\n========== 开始测试项: {itemName} ==========");
+
+                        // 将批量执行的取消令牌传递给单个工作流
+                        bool success = await ExecuteWorkflowAsync(
+                            itemName,
+                            modelType,
+                            modelName,
+                            _batchExecutionCancellationTokenSource.Token);
+
+                        results[itemName] = success;
+
+                        if (success)
+                        {
+                            ProgressMessage?.Invoke($"✓ 完成测试项: {itemName}");
+                        }
+                        else
+                        {
+                            ProgressMessage?.Invoke($"✗ 测试项执行失败: {itemName}");
+                        }
                     }
-                    else
+                    catch (OperationCanceledException)
                     {
-                        ProgressMessage?.Invoke($"✗ 测试项执行失败: {itemName}");
+                        // 批量执行被取消
+                        _logger.LogInformation("批量执行被取消,停止后续工作流");
+                        results[itemName] = false;
+                        ProgressMessage?.Invoke($"批量执行已停止");
+                        break; // 跳出循环,不再执行后续工作流
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "执行测试项失败: {ItemName}", itemName);
+                        results[itemName] = false;
+                        ProgressMessage?.Invoke($"✗ 测试项 {itemName} 执行异常");
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "执行测试项失败: {ItemName}", itemName);
-                    results[itemName] = false;
-                    ProgressMessage?.Invoke($"✗ 测试项 {itemName} 执行异常");
-                }
+
+                return results;
             }
-
-            return results;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "批量执行工作流时发生错误");
+                ErrorOccurred?.Invoke("批量执行失败", ex);
+                return results;
+            }
+            finally
+            {
+                // 清理批量执行的取消令牌
+                _batchExecutionCancellationTokenSource?.Dispose();
+                _batchExecutionCancellationTokenSource = null;
+            }
         }
 
+
         /// <summary>
-        /// 停止当前正在执行的工作流
+        /// 停止当前正在执行的工作流（包括批量执行）
         /// </summary>
         public void StopExecution()
         {
             try
             {
+                bool hasStopped = false;
+
+                // 1. 停止批量执行循环
+                if (_batchExecutionCancellationTokenSource != null &&
+                    !_batchExecutionCancellationTokenSource.IsCancellationRequested)
+                {
+                    _logger.LogInformation("正在停止批量执行...");
+                    _batchExecutionCancellationTokenSource.Cancel();
+                    ProgressMessage?.Invoke("批量执行正在停止...");
+                    hasStopped = true;
+                }
+
+                // 2. 停止当前正在执行的单个工作流
                 if (_currentExecutionManager != null && _currentExecutionManager.IsExecuting)
                 {
-                    _logger.LogInformation("停止工作流执行");
+                    _logger.LogInformation("正在停止当前工作流执行...");
                     _currentExecutionManager.Stop();
-                    ProgressMessage?.Invoke("⏹ 工作流执行已停止");
+
+                    if (!hasStopped)
+                    {
+                        ProgressMessage?.Invoke("工作流执行正在停止...");
+                    }
+
+                    hasStopped = true;
+                }
+
+                if (!hasStopped)
+                {
+                    _logger.LogInformation("没有正在执行的工作流");
                 }
             }
             catch (Exception ex)
@@ -451,6 +538,7 @@ namespace MainUI.Service
                 _logger.LogError(ex, "停止工作流执行时发生错误");
             }
         }
+
 
         #endregion
 
@@ -484,11 +572,9 @@ namespace MainUI.Service
                 _logger.LogError(ex, "处理步骤状态变化时发生错误");
             }
         }
-
         /// <summary>
         /// 在工作流执行前调用,否则无法获取变量集合
         /// </summary>
-        /// <returns></returns>
         public async Task EnsureVariablesLoadedAsync(string TestPath)
         {
             try
@@ -499,9 +585,6 @@ namespace MainUI.Service
 
                 // 清空并重新加载
                 workflowState.ClearUserVariables();
-
-                // 初始化测试信息相关的全局变量
-                //TestInfoVariableHelper.InitializeTestInfoVariables(_variableManager);
 
                 foreach (var varItem in config.Variable)
                 {
@@ -549,6 +632,10 @@ namespace MainUI.Service
             {
                 StopExecution();
                 ClearConfigurations();
+
+                _batchExecutionCancellationTokenSource?.Dispose();
+                _batchExecutionCancellationTokenSource = null;
+
                 _disposed = true;
             }
         }

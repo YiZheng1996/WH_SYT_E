@@ -611,7 +611,7 @@ namespace MainUI
                 // 5. 获取要执行的测试项
                 var checkedItems = GetCheckedTestItemNames();
 
-                // 6. 批量执行工作流（只需一行）
+                // 6. 批量执行工作流
                 if (_workflowService != null && checkedItems.Count > 0)
                 {
                     var results = await _workflowService.ExecuteMultipleWorkflowsAsync(

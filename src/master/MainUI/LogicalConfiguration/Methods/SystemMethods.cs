@@ -12,15 +12,32 @@ namespace MainUI.LogicalConfiguration.Methods
         public override string Description => "提供延时、提示等系统级工具方法";
 
         /// <summary>
-        /// 延时方法
+        /// 延时等待 - 支持取消
         /// </summary>
-        public async Task<bool> DelayTime(Parameter_DelayTime param)
+        public async Task<bool> DelayTime(Parameter_DelayTime param, CancellationToken cancellationToken = default)
         {
-            return await ExecuteWithLogging(param, async () =>
+            try
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(param.T));
+                NlogHelper.Default.Info($"开始延时: {param.T} 秒");
+
+                int delayMilliseconds = (int)(param.T /** 1000*/);
+
+                // 使用支持取消的延时
+                await Task.Delay(delayMilliseconds, cancellationToken);
+
+                NlogHelper.Default.Info("延时完成");
                 return true;
-            }, false); // 默认返回false
+            }
+            catch (OperationCanceledException)
+            {
+                NlogHelper.Default.Info("延时被取消");
+                throw; // 向上传播取消异常
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("延时执行失败", ex);
+                return false;
+            }
         }
 
         public Task<bool> SystemPrompt(Parameter_SystemPrompt param)
