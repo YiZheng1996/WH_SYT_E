@@ -454,10 +454,11 @@ namespace MainUI.Procedure.Controls
         }
         #endregion
 
-        #region 自动滚动功能
+        #region 自动滚动功能 - 改进版本
 
         /// <summary>
-        /// 滚动到指定步骤，使其在可视区域内
+        /// 滚动到指定步骤,使其在可视区域内
+        /// 改进版本:准确处理动态高度的步骤控件
         /// </summary>
         /// <param name="stepIndex">步骤索引</param>
         private void ScrollToStep(int stepIndex)
@@ -475,12 +476,12 @@ namespace MainUI.Procedure.Controls
                     return;
                 }
 
-                // 方法1: 使用 ScrollControlIntoView (推荐)
-                // 这个方法会自动将控件滚动到可视区域
-                panelStepList.ScrollControlIntoView(stepControl);
+                // 强制刷新布局,确保所有控件的位置和大小都是最新的
+                // 这对于动态高度的控件非常重要
+                panelStepList.PerformLayout();
+                Application.DoEvents(); // 确保布局完全完成
 
-                // 可选：添加一些额外的偏移，让当前步骤显示在更合适的位置
-                // 例如，让它显示在视口的上部 1/3 处
+                // 使用改进的滚动位置调整方法
                 AdjustScrollPosition(stepControl);
             }
             catch (Exception ex)
@@ -491,38 +492,103 @@ namespace MainUI.Procedure.Controls
         }
 
         /// <summary>
-        /// 调整滚动位置，使当前步骤显示在更合适的位置
+        /// 调整滚动位置,使当前步骤显示在更合适的位置，准确处理动态高度的步骤控件
         /// </summary>
         /// <param name="stepControl">步骤控件</param>
         private void AdjustScrollPosition(StepStatusControl stepControl)
         {
             try
             {
-                // 获取步骤控件在 FlowLayoutPanel 中的位置
-                int stepTop = stepControl.Top;
+                // 强制更新控件的实际高度
+                stepControl.PerformLayout();
+
+                // 计算控件相对于 FlowLayoutPanel 顶部的累积位置
+                // 这比直接使用 Top 属性更可靠,因为考虑了所有前面控件的实际高度
+                int accumulatedTop = CalculateControlPosition(stepControl);
                 int stepHeight = stepControl.Height;
 
                 // 获取可视区域的高度
                 int visibleHeight = panelStepList.ClientSize.Height;
 
-                // 计算理想的滚动位置：让当前步骤显示在视口上部 1/4 处
-                int targetOffset = visibleHeight / 4;
-                int idealScrollPosition = stepTop - targetOffset;
+                // 动态计算目标偏移量
+                // 如果步骤高度很大,使用较小的偏移量;如果步骤高度小,使用较大的偏移量
+                int targetOffset;
+                if (stepHeight > visibleHeight * 0.6)
+                {
+                    // 大型步骤:显示在顶部
+                    targetOffset = 20;
+                }
+                else if (stepHeight > visibleHeight * 0.3)
+                {
+                    // 中型步骤:显示在视口上部 1/5 处
+                    targetOffset = visibleHeight / 5;
+                }
+                else
+                {
+                    // 小型步骤:显示在视口上部 1/4 处
+                    targetOffset = visibleHeight / 4;
+                }
+
+                // 计算理想的滚动位置
+                int idealScrollPosition = accumulatedTop - targetOffset;
 
                 // 确保滚动位置在有效范围内
                 int maxScroll = panelStepList.VerticalScroll.Maximum - visibleHeight + 1;
                 idealScrollPosition = Math.Max(0, Math.Min(idealScrollPosition, maxScroll));
 
-                // 设置滚动位置
-                if (panelStepList.AutoScrollPosition.Y != -idealScrollPosition)
+                // 获取当前滚动位置
+                int currentScrollPosition = Math.Abs(panelStepList.AutoScrollPosition.Y);
+
+                // 只有当目标位置与当前位置差异较大时才滚动(避免不必要的闪烁)
+                if (Math.Abs(idealScrollPosition - currentScrollPosition) > 10)
                 {
                     panelStepList.AutoScrollPosition = new Point(0, idealScrollPosition);
                 }
+
+                Debug.WriteLine($"滚动详情 - 步骤高度:{stepHeight}px, 累积位置:{accumulatedTop}px, " +
+                              $"目标偏移:{targetOffset}px, 理想位置:{idealScrollPosition}px");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"调整滚动位置失败: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 计算控件在 FlowLayoutPanel 中的实际累积位置
+        /// 通过遍历所有前面的控件来获取准确的位置
+        /// </summary>
+        /// <param name="targetControl">目标控件</param>
+        /// <returns>控件相对于 FlowLayoutPanel 顶部的位置</returns>
+        private int CalculateControlPosition(Control targetControl)
+        {
+            int position = 0;
+            bool found = false;
+
+            // 遍历 FlowLayoutPanel 中的所有控件
+            foreach (Control control in panelStepList.Controls)
+            {
+                if (control == targetControl)
+                {
+                    found = true;
+                    break;
+                }
+
+                // 累加前面所有控件的高度和边距
+                if (control.Visible)
+                {
+                    position += control.Height;
+                    position += control.Margin.Top + control.Margin.Bottom;
+                }
+            }
+
+            // 如果找到了目标控件,还需要加上目标控件的上边距
+            if (found)
+            {
+                position += targetControl.Margin.Top;
+            }
+
+            return position;
         }
 
         /// <summary>
@@ -557,5 +623,8 @@ namespace MainUI.Procedure.Controls
         }
 
         #endregion
+
+
+
     }
 }

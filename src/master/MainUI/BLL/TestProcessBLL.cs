@@ -4,7 +4,7 @@ namespace MainUI.BLL
 {
     internal class TestProcessBLL
     {
-        private readonly TestClassFileManager _fileManager = new();
+        //private readonly TestClassFileManager _fileManager = new();
 
         /// <summary>
         /// 获取所有测试流程 - 根据当前试验台过滤
@@ -41,14 +41,14 @@ namespace MainUI.BLL
 
                 bool result = VarHelper.fsql.Insert(model).ExecuteAffrows() > 0;
 
-                if (result && !string.IsNullOrEmpty(model.EntityClassName))
-                {
-                    _fileManager.CreateTestClassByEntityClassName(
-                        model.EntityClassName,
-                        model.ModelTypeID,
-                        model.ProcessName
-                    );
-                }
+                //if (result && !string.IsNullOrEmpty(model.EntityClassName))
+                //{
+                //    _fileManager.CreateTestClassByEntityClassName(
+                //        model.EntityClassName,
+                //        model.ModelTypeID,
+                //        model.ProcessName
+                //    );
+                //}
                 return result;
             }
             catch (Exception ex)
@@ -72,10 +72,10 @@ namespace MainUI.BLL
                     .Where(a => a.ID == ID)
                     .ExecuteAffrows() > 0;
 
-                if (result && !string.IsNullOrEmpty(model.EntityClassName))
-                {
-                    _fileManager.DeleteTestClassByEntityClassName(model.EntityClassName, model.ModelTypeID);
-                }
+                //if (result && !string.IsNullOrEmpty(model.EntityClassName))
+                //{
+                //    _fileManager.DeleteTestClassByEntityClassName(model.EntityClassName, model.ModelTypeID);
+                //}
                 return result;
             }
             catch (Exception ex)
@@ -142,8 +142,8 @@ namespace MainUI.BLL
                     oldEntityClassName != newEntityClassName &&
                     oldModelTypeID == newModelTypeID)
                 {
-                    _fileManager.RenameTestClassByEntityClassName(oldEntityClassName, newEntityClassName, newModelTypeID);
-                    NlogHelper.Default.Info($"重命名测试文件：{oldEntityClassName} -> {newEntityClassName}");
+                    //_fileManager.RenameTestClassByEntityClassName(oldEntityClassName, newEntityClassName, newModelTypeID);
+                    //NlogHelper.Default.Info($"重命名测试文件：{oldEntityClassName} -> {newEntityClassName}");
                 }
                 // 情况3：ModelTypeID发生变化（可能EntityClassName也变了）
                 else if (oldModelTypeID != newModelTypeID)
@@ -151,12 +151,12 @@ namespace MainUI.BLL
                     if (!string.IsNullOrEmpty(oldEntityClassName))
                     {
                         // 先移动文件到新的ModelType目录
-                        _fileManager.MoveTestClassToNewModelType(oldEntityClassName, oldModelTypeID, newModelTypeID);
+                        //_fileManager.MoveTestClassToNewModelType(oldEntityClassName, oldModelTypeID, newModelTypeID);
 
                         // 如果EntityClassName也发生了变化，再进行重命名
                         if (!string.IsNullOrEmpty(newEntityClassName) && oldEntityClassName != newEntityClassName)
                         {
-                            _fileManager.RenameTestClassByEntityClassName(oldEntityClassName, newEntityClassName, newModelTypeID);
+                            //_fileManager.RenameTestClassByEntityClassName(oldEntityClassName, newEntityClassName, newModelTypeID);
                         }
 
                         NlogHelper.Default.Info($"移动测试文件到新ModelType：{oldModelTypeID} -> {newModelTypeID}");
@@ -164,14 +164,14 @@ namespace MainUI.BLL
                     else if (!string.IsNullOrEmpty(newEntityClassName))
                     {
                         // 直接在新ModelType目录创建文件
-                        _fileManager.CreateTestClassByEntityClassName(newEntityClassName, newModelTypeID);
+                        //_fileManager.CreateTestClassByEntityClassName(newEntityClassName, newModelTypeID);
                     }
                 }
                 // 情况4：只是新增了EntityClassName
                 else if (string.IsNullOrEmpty(oldEntityClassName) && !string.IsNullOrEmpty(newEntityClassName))
                 {
-                    _fileManager.CreateTestClassByEntityClassName(newEntityClassName, newModelTypeID);
-                    NlogHelper.Default.Info($"创建新测试文件：{newEntityClassName}");
+                    //_fileManager.CreateTestClassByEntityClassName(newEntityClassName, newModelTypeID);
+                    //NlogHelper.Default.Info($"创建新测试文件：{newEntityClassName}");
                 }
             }
             catch (Exception ex)

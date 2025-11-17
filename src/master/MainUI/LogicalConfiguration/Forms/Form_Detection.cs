@@ -118,6 +118,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
                 // 注意：不在这里调用LoadParameterToForm()
                 // 因为基类的OnLoad事件会自动处理参数加载
+                LoadParameterToForm();
 
                 _isInitializing = false;
                 Logger?.LogInformation("检测工具窗体初始化完成");
@@ -729,7 +730,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         /// </summary>
         protected void LoadParameterToForm()
         {
-            if (_parameter == null || _isInitializing) return;
+            if (_parameter == null) return;
 
             try
             {
@@ -1001,6 +1002,17 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 MessageHelper.MessageOK($"验证失败：{ex.Message}", TType.Error);
                 return false;
             }
+        }
+
+        #endregion
+
+        #region 重写基类方法
+        protected override void LoadParameterFromStep(object stepParameter)
+        {
+            if (!IsServiceAvailable) return;
+
+            Parameter = ConvertParameter(stepParameter);
+            PopulateControls(Parameter);
         }
 
         #endregion
