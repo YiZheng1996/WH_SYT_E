@@ -37,8 +37,9 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             set
             {
                 _parameter = value ?? new Parameter_Detection();
-                // 只有在窗体完全加载且不处于基类的加载状态时才更新界面
-                if (!DesignMode && !IsLoading && IsHandleCreated)
+
+                // 只在设计模式或窗体未创建时跳过加载
+                if (!DesignMode && IsHandleCreated)
                 {
                     LoadParameterToForm();
                 }
@@ -110,6 +111,9 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 // 初始化变量下拉框
                 InitializeVariableComboBoxes();
 
+                // 初始化PLC下拉框
+                InitializePlcComboBoxes();
+
                 // 设置事件处理器
                 SetupEventHandlers();
 
@@ -118,7 +122,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
                 // 注意：不在这里调用LoadParameterToForm()
                 // 因为基类的OnLoad事件会自动处理参数加载
-                LoadParameterToForm();
 
                 _isInitializing = false;
                 Logger?.LogInformation("检测工具窗体初始化完成");
@@ -1011,8 +1014,9 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         {
             if (!IsServiceAvailable) return;
 
-            Parameter = ConvertParameter(stepParameter);
-            PopulateControls(Parameter);
+            // 只转换参数并调用PopulateControls,不要直接设置Parameter属性
+            var parameter = ConvertParameter(stepParameter);
+            PopulateControls(parameter);  // 内部会处理参数设置和加载
         }
 
         #endregion
@@ -1021,7 +1025,11 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
         public void PopulateControls(Parameter_Detection parameter)
         {
-            Parameter = parameter;
+            // 直接赋值给私有字段,避免触发属性的set访问器
+            _parameter = parameter ?? new Parameter_Detection();
+
+            // 直接调用加载方法,不依赖属性的条件判断
+            LoadParameterToForm();
         }
 
         void IParameterForm<Parameter_Detection>.SetDefaultValues()
@@ -1042,22 +1050,69 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
         public Parameter_Detection ConvertParameter(object stepParameter)
         {
-            if (stepParameter is Parameter_Detection detectionParam)
-                return detectionParam;
-
-            if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
+            try
             {
+                Logger?.LogDebug("开始转换参数,类型: {Type}", stepParameter?.GetType().Name ?? "null");
+
+                // 参数为空
+                if (stepParameter == null)
+                {
+                    Logger?.LogWarning("步骤参数为空,使用默认参数");
+                    return new Parameter_Detection();
+                }
+
+                // 已经是正确的类型
+                if (stepParameter is Parameter_Detection detectionParam)
+                {
+                    Logger?.LogDebug("参数已经是 Parameter_Detection 类型");
+                    return detectionParam;
+                }
+
+                // 是JSON字符串
+                if (stepParameter is string jsonStr && !string.IsNullOrWhiteSpace(jsonStr))
+                {
+                    try
+                    {
+                        Logger?.LogDebug("尝试从JSON字符串反序列化");
+                        var param = JsonConvert.DeserializeObject<Parameter_Detection>(jsonStr);
+                        if (param != null)
+                        {
+                            Logger?.LogInformation("JSON字符串反序列化成功");
+                            return param;
+                        }
+                    }
+                    catch (JsonException ex)
+                    {
+                        Logger?.LogWarning(ex, "JSON字符串反序列化失败");
+                    }
+                }
+
+                // 是其他对象类型(比如 JObject、匿名类型等)
                 try
                 {
-                    return JsonConvert.DeserializeObject<Parameter_Detection>(jsonStr);
+                    Logger?.LogDebug("尝试先序列化再反序列化");
+                    string jsonString = JsonConvert.SerializeObject(stepParameter);
+                    var param = JsonConvert.DeserializeObject<Parameter_Detection>(jsonString);
+                    if (param != null)
+                    {
+                        //Logger?.LogInformation("对象序列化转换成功");
+                        return param;
+                    }
                 }
-                catch (JsonException ex)
+                catch (Exception ex)
                 {
-                    Logger?.LogWarning(ex, "JSON反序列化失败");
+                    Logger?.LogError(ex, "对象序列化转换失败");
                 }
-            }
 
-            return new Parameter_Detection();
+                // 所有方法都失败,返回默认参数
+                Logger?.LogWarning("所有转换方法都失败,使用默认参数");
+                return new Parameter_Detection();
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "ConvertParameter 发生异常");
+                return new Parameter_Detection();
+            }
         }
 
         #endregion

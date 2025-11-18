@@ -110,6 +110,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                     new("DateTime.Now.Hour", "", "获取当前小时", "DateTime.Now.Hour → 14"),
                     new("DateTime.Now.Minute", "", "获取当前分钟", "DateTime.Now.Minute → 30"),
                     new("DateTime.Now.Second", "", "获取当前秒数", "DateTime.Now.Second → 25"),
+                    new("DateTime.Now.Millisecond", "", "获取当前毫秒数", "DateTime.Now.Millisecond → 25"),
                     new("DateTime.Now.DayOfWeek", "", "获取星期几（0=周日）", "DateTime.Now.DayOfWeek → 2"),
                     
                     // 格式化和运算

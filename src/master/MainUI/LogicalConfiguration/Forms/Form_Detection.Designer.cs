@@ -406,7 +406,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             // 
             // CboPlcModule
             // 
-            CboPlcModule.DataSource = null;
+            //CboPlcModule.DataSource = null;
             CboPlcModule.DropDownStyle = UIDropDownStyle.DropDownList;
             CboPlcModule.FillColor = Color.White;
             CboPlcModule.Font = new Font("微软雅黑", 10F);

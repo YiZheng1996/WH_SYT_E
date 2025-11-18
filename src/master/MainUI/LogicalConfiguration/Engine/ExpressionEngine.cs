@@ -1888,11 +1888,23 @@ namespace MainUI.LogicalConfiguration.Engine
             functions["DateTime.Now.Hour"] = args => DateTime.Now.Hour;
             functions["DateTime.Now.Minute"] = args => DateTime.Now.Minute;
             functions["DateTime.Now.Second"] = args => DateTime.Now.Second;
+            functions["DateTime.Now.Millisecond"] = args => DateTime.Now.Millisecond;
             functions["DateTime.Now.DayOfWeek"] = args => (int)DateTime.Now.DayOfWeek;
             functions["DateTime.Today.Year"] = args => DateTime.Today.Year;
             functions["DateTime.Today.Month"] = args => DateTime.Today.Month;
             functions["DateTime.Today.Day"] = args => DateTime.Today.Day;
             functions["DateTime.Today.DayOfWeek"] = args => (int)DateTime.Today.DayOfWeek;
+
+            // 添加毫秒属性
+            functions["DateTime.Now.Millisecond"] = args => DateTime.Now.Millisecond;
+
+            // 添加时间戳相关
+            functions["DateTime.Now.Ticks"] = args => DateTime.Now.Ticks;
+            functions["DateTime.Now.TimeOfDay"] = args => DateTime.Now.TimeOfDay;
+
+            // 添加 Unix 时间戳（毫秒）
+            functions["TIMESTAMP"] = args => (long)(DateTime.Now - new DateTime(1970, 1, 1)).TotalMilliseconds;
+            functions["TIMESTAMP_SECONDS"] = args => (long)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
 
             // 格式化函数
             functions["FORMAT"] = args =>
@@ -1931,6 +1943,28 @@ namespace MainUI.LogicalConfiguration.Engine
                 {
                     var minutes = Convert.ToInt32(args[1]);
                     return dt.AddMinutes(minutes);
+                }
+                return args[0];
+            };
+
+            // ADDSECONDS - 增加秒数
+            functions["ADDSECONDS"] = args =>
+            {
+                if (args[0] is DateTime dt)
+                {
+                    var seconds = Convert.ToInt32(args[1]);
+                    return dt.AddSeconds(seconds);
+                }
+                return args[0];
+            };
+
+            // ADDMILLISECONDS - 增加毫秒数
+            functions["ADDMILLISECONDS"] = args =>
+            {
+                if (args[0] is DateTime dt)
+                {
+                    var milliseconds = Convert.ToInt32(args[1]);
+                    return dt.AddMilliseconds(milliseconds);
                 }
                 return args[0];
             };
@@ -2036,6 +2070,20 @@ namespace MainUI.LogicalConfiguration.Engine
                 {
                     var startTime = ConvertToDateTime(args[0]);
                     return (DateTime.Now - startTime).TotalMilliseconds;
+                }
+                catch
+                {
+                    return 0;
+                }
+            };
+
+            // ELAPSED_MINUTES - 计算从某个时间到现在经过的分钟数
+            functions["ELAPSED_MINUTES"] = args =>
+            {
+                try
+                {
+                    var startTime = ConvertToDateTime(args[0]);
+                    return (DateTime.Now - startTime).TotalMinutes;
                 }
                 catch
                 {

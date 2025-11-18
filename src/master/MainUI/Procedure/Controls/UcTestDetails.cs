@@ -195,11 +195,11 @@ namespace MainUI.Procedure.Controls
                             if (!_stepStartTimes.ContainsKey(stepIndex))
                             {
                                 _stepStartTimes[stepIndex] = DateTime.Now;
-                                Debug.WriteLine($"✅ 步骤 {stepIndex} 开始计时: {DateTime.Now:HH:mm:ss.fff}");
+                                Debug.WriteLine($"步骤 {stepIndex} 开始计时: {DateTime.Now:HH:mm:ss.fff}");
                             }
                             else
                             {
-                                Debug.WriteLine($"⚠️ 步骤 {stepIndex} 已有开始时间，不重复记录");
+                                Debug.WriteLine($"步骤 {stepIndex} 已有开始时间，不重复记录");
                             }
 
                             // 自动滚动到当前执行的步骤
@@ -544,9 +544,6 @@ namespace MainUI.Procedure.Controls
                 {
                     panelStepList.AutoScrollPosition = new Point(0, idealScrollPosition);
                 }
-
-                Debug.WriteLine($"滚动详情 - 步骤高度:{stepHeight}px, 累积位置:{accumulatedTop}px, " +
-                              $"目标偏移:{targetOffset}px, 理想位置:{idealScrollPosition}px");
             }
             catch (Exception ex)
             {
