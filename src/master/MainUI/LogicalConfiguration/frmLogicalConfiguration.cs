@@ -124,6 +124,9 @@ namespace MainUI.LogicalConfiguration
                 ProcessDataGridView.DragEnter += ProcessDataGridView_DragEnter;
                 ProcessDataGridView.CellDoubleClick += ProcessDataGridView_CellDoubleClick;
                 ProcessDataGridView.SelectionChanged += DgvProcess_SelectionChanged;
+                // 编辑DataGridView备注列
+                ProcessDataGridView.CellEndEdit += ProcessDataGridView_CellEndEdit;
+                ProcessDataGridView.CellBeginEdit += ProcessDataGridView_CellBeginEdit;
 
                 // 按钮事件
                 btnSave.Click += BtnSave_Click;
@@ -169,7 +172,8 @@ namespace MainUI.LogicalConfiguration
                             StepName = step.StepName,
                             Status = step.Status,
                             StepNum = step.StepNum,
-                            StepParameter = step.StepParameter
+                            StepParameter = step.StepParameter,
+                            Remark = step.Remark ?? ""
                         });
                     }
 
@@ -211,8 +215,8 @@ namespace MainUI.LogicalConfiguration
             // 数据操作组
             TreeNode dataNode = new("数据操作") { Tag = "DataOperation", ImageKey = "文件夹.png" };
             dataNode.Nodes.Add(new TreeNode("变量赋值") { Tag = "VariableAssign", ImageKey = "变量赋值.png" });
-            dataNode.Nodes.Add(new TreeNode("数据读取") { Tag = "DataRead", ImageKey = "数据读取.png" });
-            dataNode.Nodes.Add(new TreeNode("数据计算") { Tag = "DataCalculate", ImageKey = "数据计算.png" });
+            //dataNode.Nodes.Add(new TreeNode("数据读取") { Tag = "DataRead", ImageKey = "数据读取.png" });
+            //dataNode.Nodes.Add(new TreeNode("数据计算") { Tag = "DataCalculate", ImageKey = "数据计算.png" });
             dataNode.Nodes.Add(new TreeNode("消息通知") { Tag = "", ImageKey = "消息通知.png" });
             ToolTreeView.Nodes.Add(dataNode);
 
@@ -235,50 +239,6 @@ namespace MainUI.LogicalConfiguration
 
             // 展开所有节点
             ToolTreeView.ExpandAll();
-        }
-
-        /// <summary>
-        /// 加载DataGridView数据
-        /// </summary>
-        private void LoadDataGridViewData()
-        {
-            ProcessDataGridView.Rows.Clear();
-
-            // 添加示例数据
-            ProcessDataGridView.Rows.Add("1", "初始化变量", "变量赋值", "✓ 完成", "0.05s");
-            ProcessDataGridView.Rows.Add("2", "读取传感器数据", "PLC读取", "▶ 执行中", "1.23s");
-            ProcessDataGridView.Rows.Add("3", "条件判断", "逻辑判断", "⏳ 待执行", "-");
-            ProcessDataGridView.Rows.Add("4", "输出控制信号", "PLC写入", "⏳ 待执行", "-");
-            ProcessDataGridView.Rows.Add("5", "记录测试结果", "数据记录", "⏳ 待执行", "-");
-
-            // 设置行颜色
-            for (int i = 0; i < ProcessDataGridView.Rows.Count; i++)
-            {
-                DataGridViewRow row = ProcessDataGridView.Rows[i];
-                string status = row.Cells["ColStatus"].Value?.ToString();
-
-                if (status?.Contains("完成") == true)
-                {
-                    //row.DefaultCellStyle.BackColor = Color.FromArgb(240, 255, 240);
-                    row.Cells["ColStatus"].Style.ForeColor = SuccessGreen;
-                }
-                else if (status?.Contains("执行中") == true)
-                {
-                    //row.DefaultCellStyle.BackColor = Color.FromArgb(227, 242, 253);
-                    row.Cells["ColStatus"].Style.ForeColor = PrimaryBlue;
-                }
-                else if (status?.Contains("待执行") == true)
-                {
-                    row.Cells["ColStatus"].Style.ForeColor = Color.FromArgb(108, 117, 125);
-                }
-            }
-
-            // 默认选中第一行
-            if (ProcessDataGridView.Rows.Count > 0)
-            {
-                ProcessDataGridView.Rows[0].Selected = true;
-                UpdateStepDetails(0);
-            }
         }
 
         #endregion
@@ -474,7 +434,8 @@ namespace MainUI.LogicalConfiguration
                     StepName = stepName,
                     Status = 0,
                     StepNum = stepNumber,
-                    StepParameter = 0
+                    StepParameter = 0,
+                    Remark = ""
                 };
 
                 // 只操作数据层，UI更新由事件触发
@@ -734,6 +695,46 @@ namespace MainUI.LogicalConfiguration
         #region 点击事件处理
 
         /// <summary>
+        /// 单元格开始编辑事件 - 只允许编辑备注列
+        /// </summary>
+        private void ProcessDataGridView_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
+        {
+            // 只允许编辑备注列
+            if (ProcessDataGridView.Columns[e.ColumnIndex].Name != "ColRemark")
+            {
+                e.Cancel = true;
+            }
+        }
+
+        /// <summary>
+        /// 单元格编辑完成事件 - 保存备注到数据源
+        /// </summary>
+        private void ProcessDataGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            try
+            {
+                // 确保是备注列
+                if (ProcessDataGridView.Columns[e.ColumnIndex].Name != "ColRemark")
+                    return;
+
+                var row = ProcessDataGridView.Rows[e.RowIndex];
+                string newRemark = row.Cells["ColRemark"].Value?.ToString() ?? "";
+
+                // 更新数据源
+                var step = _workflowState.GetStep(e.RowIndex);
+                if (step != null)
+                {
+                    step.Remark = newRemark;
+                    _logger.LogDebug("步骤 {StepNum} 备注已更新: {Remark}", step.StepNum, newRemark);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新备注时发生错误");
+            }
+        }
+
+        /// <summary>
         /// DataGridView选择改变事件
         /// </summary>
         private void DgvProcess_SelectionChanged(object sender, EventArgs e)
@@ -791,6 +792,9 @@ namespace MainUI.LogicalConfiguration
 
                     await Task.CompletedTask;
                 });
+
+                // 保存后刷新表格显示,更新步骤详情列
+                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
 
                 _logger.LogInformation("工作流配置保存成功");
                 MessageHelper.MessageOK(this, "保存成功！", TType.Success);

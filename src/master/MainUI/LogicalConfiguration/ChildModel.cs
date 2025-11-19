@@ -24,6 +24,11 @@
         /// 步骤参数
         /// </summary>
         public object StepParameter { get; set; }
+
+        /// <summary>
+        /// 步骤备注 - 用户自定义说明
+        /// </summary>
+        public string Remark { get; set; }
     }
 
 }

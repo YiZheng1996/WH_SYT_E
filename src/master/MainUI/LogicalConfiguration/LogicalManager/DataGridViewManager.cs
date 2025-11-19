@@ -48,12 +48,13 @@
             foreach (var step in steps)
             {
                 _grid.Rows.Add(
-                    step.StepNum,                           // 步骤号
-                    step.StepName,                          // 步骤名称
-                    GetStepTypeName(step),                  // 步骤类型
+                    step.StepNum,                                  // 步骤号
+                    step.StepName,                                 // 步骤名称
+                    GetStepTypeName(step),                         // 步骤类型
                     _detailsProvider.GetStepDetailsPreview(step),  // 步骤详情
-                    GetStatusText(step.Status),             // 状态
-                    "-"                                     // 执行时间
+                    step.Remark ?? "",                             // 备注 - 新增
+                    GetStatusText(step.Status),                    // 状态
+                    "-"                                            // 执行时间
                 );
             }
         }
