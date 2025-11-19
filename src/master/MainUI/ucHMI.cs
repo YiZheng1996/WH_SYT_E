@@ -1,10 +1,13 @@
 ﻿using AntdUI;
+using Google.Protobuf.WellKnownTypes;
 using MainUI.LogicalConfiguration;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
 using MainUI.Procedure.Controls;
 using MainUI.Service;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 using Label = System.Windows.Forms.Label;
 
 namespace MainUI
@@ -614,6 +617,9 @@ namespace MainUI
                 // 6. 批量执行工作流
                 if (_workflowService != null && checkedItems.Count > 0)
                 {
+                    // 试验前排空所有气压
+                    bool exhaustSuccess = await ExhaustkPaAsync(_cancellationTokenSource.Token);
+
                     var results = await _workflowService.ExecuteMultipleWorkflowsAsync(
                         checkedItems,
                         VarHelper.TestViewModel.ModelTypeName,
@@ -635,6 +641,110 @@ namespace MainUI
                 IsTestEnd();
             }
         }
+
+        #region 试验排空气压
+        // 开启或关闭所有阀门
+        private void ValveType(bool value)
+        {
+            OPCHelper.AOgrp.CA00 = 0.0;
+            OPCHelper.DOgrp[1] = value;
+            OPCHelper.DOgrp[2] = value;
+            OPCHelper.DOgrp[3] = value;
+            OPCHelper.DOgrp[4] = value;
+            OPCHelper.DOgrp[5] = value;
+            OPCHelper.DOgrp[8] = value;
+            OPCHelper.DOgrp[9] = value;
+            OPCHelper.DOgrp[10] = value;
+            OPCHelper.DOgrp[11] = value;
+            OPCHelper.DOgrp[12] = value;
+            OPCHelper.DOgrp[13] = value;
+        }
+
+        /// <summary>
+        /// 异步排空所有气压 - 不阻塞UI线程
+        /// </summary>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <returns>true=排空成功, false=超时或取消</returns>
+        private async Task<bool> ExhaustkPaAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                // 打开所有阀门
+                ValveType(true);
+
+                AppendText("正在排空气压,请稍候...");
+
+                // 使用异步等待,不阻塞UI线程
+                bool isTimeout = await DelayAsync(
+                    seconds: 30,
+                    interval: 100,
+                    wait: () =>
+                    {
+                        // 等待所有气压排空完成
+                        return (
+                            OPCHelper.AIgrp[1] < 5 &&
+                            OPCHelper.AIgrp[2] < 5 &&
+                            OPCHelper.AIgrp[3] < 5 &&
+                            OPCHelper.AIgrp[4] < 5 &&
+                            OPCHelper.AIgrp[5] < 5 &&
+                            OPCHelper.AIgrp[6] < 5
+                        );
+                    },
+                    cancellationToken
+                );
+
+                // 关闭所有阀门
+                ValveType(false);
+
+                if (isTimeout)
+                {
+                    AppendText("气压排空超时(30秒),但已关闭阀门");
+                    return false;
+                }
+                else
+                {
+                    AppendText("✓ 气压排空完成");
+                    return true;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 取消操作时也要关闭阀门
+                ValveType(false);
+                AppendText("气压排空被取消");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // 异常时确保关闭阀门
+                ValveType(false);
+                AppendText($"排空气压异常:{ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 异步延时方法 - 带条件检查,不阻塞UI线程
+        /// </summary>
+        /// <param name="seconds">延时秒数</param>
+        /// <param name="interval">检查间隔(毫秒)</param>
+        /// <param name="wait">等待条件(返回false时继续等待,返回true时退出)</param>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <returns>是否超时(true=超时,false=条件满足提前退出)</returns>
+        private async Task<bool> DelayAsync(double seconds, int interval, Func<bool> wait, CancellationToken cancellationToken)
+        {
+            var elapsed = 0;
+            var timeout = seconds * 1000;
+
+            while (elapsed <= timeout && !wait() && !cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(interval, cancellationToken);
+                elapsed += interval;
+            }
+
+            return elapsed > timeout; // true=超时, false=条件满足
+        }
+        #endregion
 
         /// <summary>
         /// 获取选中的测试项名称列表
@@ -674,18 +784,7 @@ namespace MainUI
             }
         }
 
-        /// <summary>
-        /// 扩展TableColor方法，支持更多状态
-        /// </summary>
-        /// <param name="itemPoint">项点</param>
-        /// <param name="state">状态：0-默认，1-执行中，2-成功，3-失败/错误</param>
-        private void TableColor(ItemPointModel itemPoint, int state)
-        {
-            itemPoint.ColorState = state;
-            TableItemPoint.Invalidate();
-        }
-
-        private void btnStopTest_Click(object sender, EventArgs e) => IsTestEnd();
+        private  void btnStopTest_Click(object sender, EventArgs e) =>  IsTestEnd();
 
         private (bool Result, string txt) FrmText()
         {
@@ -709,17 +808,18 @@ namespace MainUI
         }
 
         // 结束试验操作
-        private void IsTestEnd()
+        private async void IsTestEnd()
         {
             try
             {
-                Disable(false);
                 AppendText("试验结束");
-                TestStateChanged?.Invoke(false, false);
                 // 停止工作流执行
+                _cancellationTokenSource.Cancel();
                 _workflowService?.StopExecution();
                 _countdownService.StopCountdown();
-                _cancellationTokenSource.Cancel();
+                await ExhaustkPaAsync(_cancellationTokenSource.Token);
+                Disable(false);
+                TestStateChanged?.Invoke(false, false);
             }
             catch (OperationCanceledException ex)
             {
