@@ -262,6 +262,7 @@ namespace MainUI
             services.AddSingleton<PLCMethods>();
             services.AddSingleton<DetectionMethods>();
             services.AddSingleton<ReportMethods>();
+            services.AddSingleton<WaitForStableMethods>();
 
             services.AddSingleton<ExpressionEngine>();
             services.AddSingleton<VariableAssignmentEngine>();

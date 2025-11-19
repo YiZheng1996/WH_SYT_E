@@ -94,6 +94,9 @@ namespace MainUI.LogicalConfiguration.Services
                     case "点位定义":
                         form = CreateForm<Form_DefinePoint>();
                         break;
+                    case "等待稳定":
+                        form = CreateForm<Form_WaitForStable>();
+                        break;
                     default:
                         _logger.LogWarning("未知的窗体类型: {FormName}", formName);
                         MessageBox.Show($"未知的窗体类型: {formName}", "错误",
@@ -211,8 +214,13 @@ namespace MainUI.LogicalConfiguration.Services
                     _plcConfigService,
                     GetSpecificLogger<Form_DefinePoint>()),
 
-                // 未知窗体类型
-                _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")
+                // 等待稳定
+                nameof(Form_WaitForStable) => (T)(object)new Form_WaitForStable(
+                    _workflowState,
+                    GetSpecificLogger<Form_WaitForStable>()),
+
+            // 未知窗体类型
+            _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")
             };
         }
 

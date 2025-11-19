@@ -18,6 +18,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     PLCMethods plcMethods,
     DetectionMethods detectionMethods,
     ReportMethods reportMethods,
+    WaitForStableMethods waitForStableMethods,
     GlobalVariableManager globalVariableManager)
     {
         #region 字段和属性
@@ -28,6 +29,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private readonly PLCMethods _plcMethods = plcMethods ?? throw new ArgumentNullException(nameof(plcMethods));
         private readonly DetectionMethods _detectionMethods = detectionMethods ?? throw new ArgumentNullException(nameof(detectionMethods));
         private readonly ReportMethods _reportMethods = reportMethods ?? throw new ArgumentNullException(nameof(reportMethods));
+        private readonly WaitForStableMethods _waitForStableMethods = waitForStableMethods ?? throw new ArgumentNullException(nameof(waitForStableMethods));
         private readonly GlobalVariableManager _globalVariableManager = globalVariableManager
        ?? throw new ArgumentNullException(nameof(globalVariableManager));
 
@@ -207,6 +209,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
                     // 检测工具
                     "条件判断" => await ExecuteDetection(step, cancellationToken),
+                    "等待稳定" => await ExecuteWaitForStable(step, cancellationToken),
 
                     // 报表工具
                     "读取单元格" => await ExecuteReadCells(step, cancellationToken),
@@ -414,7 +417,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 return ExecutionResult.Failed($"执行异常: {ex.Message}");
             }
         }
-        
+
 
         /// <summary>
         /// 保存报表
@@ -511,8 +514,23 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             var param = ConvertParameter<Parameter_WriteCells>(step.StepParameter);
             if (param == null) return ExecutionResult.Failed("参数转换失败");
 
+            cancellationToken.ThrowIfCancellationRequested();
             var result = await _reportMethods.WriteCells(param);
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("单元格写入失败");
+        }
+
+        /// <summary>
+        /// 等待稳定
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
+        private async Task<ExecutionResult> ExecuteWaitForStable(ChildModel step, CancellationToken cancellationToken)
+        {
+            var param = ConvertParameter<Parameter_WaitForStable>(step.StepParameter);
+            if (param == null) return ExecutionResult.Failed("参数转换失败");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await _waitForStableMethods.ExecuteWaitForStable(param, cancellationToken);
+            return result.IsSuccess ? ExecutionResult.Success() : ExecutionResult.Failed("等待稳定失败");
         }
 
         #endregion

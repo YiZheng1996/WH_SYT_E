@@ -2,7 +2,7 @@
 {
     /// <summary>
     /// 等待变量稳定步骤的参数类
-    /// 用于监测变量值的变化，当变化率小于阈值且持续一定次数后认为稳定
+    /// 用于监测变量或PLC地址的值变化,当变化率小于阈值且持续一定次数后认为稳定
     /// </summary>
     public class Parameter_WaitForStable
     {
@@ -12,9 +12,24 @@
         public string Description { get; set; } = "等待变量稳定";
 
         /// <summary>
-        /// 监测的变量名
+        /// 监测源类型
+        /// </summary>
+        public MonitorSourceType MonitorSourceType { get; set; } = MonitorSourceType.Variable;
+
+        /// <summary>
+        /// 监测的变量名（当MonitorSourceType为Variable时使用）
         /// </summary>
         public string MonitorVariable { get; set; } = string.Empty;
+
+        /// <summary>
+        /// PLC模块名（当MonitorSourceType为PLC时使用）
+        /// </summary>
+        public string PlcModuleName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// PLC地址（当MonitorSourceType为PLC时使用）
+        /// </summary>
+        public string PlcAddress { get; set; } = string.Empty;
 
         /// <summary>
         /// 稳定判据:变化率阈值(单位:变量单位/秒)
@@ -57,6 +72,22 @@
         /// 仅当OnTimeout为JumpToStep时有效
         /// </summary>
         public int TimeoutJumpToStep { get; set; } = -1;
+    }
+
+    /// <summary>
+    /// 监测源类型枚举
+    /// </summary>
+    public enum MonitorSourceType
+    {
+        /// <summary>
+        /// 监测全局变量
+        /// </summary>
+        Variable = 0,
+
+        /// <summary>
+        /// 监测PLC地址
+        /// </summary>
+        PLC = 1
     }
 
     /// <summary>

@@ -48,6 +48,13 @@
             splitContainerRight = new SplitContainer();
             palProcess = new UIPanel();
             ProcessDataGridView = new UIDataGridView();
+            ColStepNumber = new DataGridViewTextBoxColumn();
+            ColStepName = new DataGridViewTextBoxColumn();
+            ColStepType = new DataGridViewTextBoxColumn();
+            ColStepDetails = new DataGridViewTextBoxColumn();
+            ColRemark = new DataGridViewTextBoxColumn();
+            ColStatus = new DataGridViewTextBoxColumn();
+            ColExecutionTime = new DataGridViewTextBoxColumn();
             palProcessTop = new UIPanel();
             splitContainerBottom = new SplitContainer();
             palStepDetails = new UIPanel();
@@ -74,13 +81,6 @@
             btnClose = new UISymbolButton();
             btnExecute = new UISymbolButton();
             btnSave = new UISymbolButton();
-            ColStepNumber = new DataGridViewTextBoxColumn();
-            ColStepName = new DataGridViewTextBoxColumn();
-            ColStepType = new DataGridViewTextBoxColumn();
-            ColStepDetails = new DataGridViewTextBoxColumn();
-            ColRemark = new DataGridViewTextBoxColumn();
-            ColStatus = new DataGridViewTextBoxColumn();
-            ColExecutionTime = new DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)splitContainerMain).BeginInit();
             splitContainerMain.Panel1.SuspendLayout();
             splitContainerMain.Panel2.SuspendLayout();
@@ -193,6 +193,7 @@
             imageList1.Images.SetKeyName(10, "报表写入.png");
             imageList1.Images.SetKeyName(11, "读取PLC.png");
             imageList1.Images.SetKeyName(12, "写入PLC.png");
+            imageList1.Images.SetKeyName(13, "等待稳定.png");
             // 
             // pnlToolsTop
             // 
@@ -316,6 +317,58 @@
             ProcessDataGridView.Size = new Size(983, 588);
             ProcessDataGridView.StripeOddColor = Color.White;
             ProcessDataGridView.TabIndex = 0;
+            // 
+            // ColStepNumber
+            // 
+            ColStepNumber.HeaderText = "步骤";
+            ColStepNumber.Name = "ColStepNumber";
+            ColStepNumber.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStepNumber.Width = 60;
+            // 
+            // ColStepName
+            // 
+            ColStepName.HeaderText = "操作名称";
+            ColStepName.Name = "ColStepName";
+            ColStepName.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStepName.Width = 140;
+            // 
+            // ColStepType
+            // 
+            ColStepType.HeaderText = "操作类型";
+            ColStepType.Name = "ColStepType";
+            ColStepType.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStepType.Width = 120;
+            // 
+            // ColStepDetails
+            // 
+            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.True;
+            ColStepDetails.DefaultCellStyle = dataGridViewCellStyle3;
+            ColStepDetails.HeaderText = "步骤详情";
+            ColStepDetails.Name = "ColStepDetails";
+            ColStepDetails.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStepDetails.Width = 380;
+            // 
+            // ColRemark
+            // 
+            ColRemark.HeaderText = "备注说明";
+            ColRemark.Name = "ColRemark";
+            ColRemark.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColRemark.Width = 280;
+            // 
+            // ColStatus
+            // 
+            ColStatus.HeaderText = "状态";
+            ColStatus.Name = "ColStatus";
+            ColStatus.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColStatus.Visible = false;
+            ColStatus.Width = 120;
+            // 
+            // ColExecutionTime
+            // 
+            ColExecutionTime.HeaderText = "执行时间";
+            ColExecutionTime.Name = "ColExecutionTime";
+            ColExecutionTime.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColExecutionTime.Visible = false;
             // 
             // palProcessTop
             // 
@@ -814,58 +867,6 @@
             btnSave.TabIndex = 0;
             btnSave.Text = "保存配置";
             btnSave.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            // 
-            // ColStepNumber
-            // 
-            ColStepNumber.HeaderText = "步骤";
-            ColStepNumber.Name = "ColStepNumber";
-            ColStepNumber.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepNumber.Width = 60;
-            // 
-            // ColStepName
-            // 
-            ColStepName.HeaderText = "操作名称";
-            ColStepName.Name = "ColStepName";
-            ColStepName.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepName.Width = 140;
-            // 
-            // ColStepType
-            // 
-            ColStepType.HeaderText = "操作类型";
-            ColStepType.Name = "ColStepType";
-            ColStepType.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepType.Width = 120;
-            // 
-            // ColStepDetails
-            // 
-            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.True;
-            ColStepDetails.DefaultCellStyle = dataGridViewCellStyle3;
-            ColStepDetails.HeaderText = "步骤详情";
-            ColStepDetails.Name = "ColStepDetails";
-            ColStepDetails.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepDetails.Width = 380;
-            // 
-            // ColRemark
-            // 
-            ColRemark.HeaderText = "备注说明";
-            ColRemark.Name = "ColRemark";
-            ColRemark.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColRemark.Width = 280;
-            // 
-            // ColStatus
-            // 
-            ColStatus.HeaderText = "状态";
-            ColStatus.Name = "ColStatus";
-            ColStatus.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStatus.Visible = false;
-            ColStatus.Width = 120;
-            // 
-            // ColExecutionTime
-            // 
-            ColExecutionTime.HeaderText = "执行时间";
-            ColExecutionTime.Name = "ColExecutionTime";
-            ColExecutionTime.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColExecutionTime.Visible = false;
             // 
             // FrmLogicalConfiguration
             // 
