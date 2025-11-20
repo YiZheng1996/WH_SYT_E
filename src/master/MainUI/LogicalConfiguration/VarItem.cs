@@ -100,7 +100,7 @@ namespace MainUI.LogicalConfiguration
     {
         [Description("未赋值")]
         None,           // 未赋值
-                      
+
         /// <summary>
         /// 直接赋值 - 将固定值直接赋给目标变量
         /// </summary>

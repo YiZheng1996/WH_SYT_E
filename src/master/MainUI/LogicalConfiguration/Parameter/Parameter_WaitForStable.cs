@@ -9,7 +9,7 @@
         /// <summary>
         /// 步骤描述
         /// </summary>
-        public string Description { get; set; } = "等待变量稳定";
+        public string Description { get; set; } = "等待稳定";
 
         /// <summary>
         /// 监测源类型

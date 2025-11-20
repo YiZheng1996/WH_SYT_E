@@ -410,9 +410,12 @@ namespace MainUI.LogicalConfiguration
                 // 初始化默认变量列表
                 Variable =
                 [
-                    new VarItem { VarName = "a", VarType = "int", VarText = "变量a" },
-                    new VarItem { VarName = "b", VarType = "double", VarText = "变量b" },
-                    new VarItem { VarName = "c", VarType = "int", VarText = "变量c" }
+                    new VarItem { VarName = "开始气压", VarType = "double", VarText = "开始气压" },
+                    new VarItem { VarName = "结束气压", VarType = "double", VarText = "结束气压" },
+                    new VarItem { VarName = "泄漏量", VarType = "double", VarText = "泄漏量" },
+                    new VarItem { VarName = "开始时间", VarType = "string", VarText = "开始时间" },
+                    new VarItem { VarName = "结束时间", VarType = "string", VarText = "结束时间" },
+                    new VarItem { VarName = "总用时", VarType = "double", VarText = "总用时" }
                 ]
             };
         }

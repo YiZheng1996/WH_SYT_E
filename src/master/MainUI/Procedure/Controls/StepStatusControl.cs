@@ -408,6 +408,7 @@ namespace MainUI.Procedure.Controls
                 "条件判断" or "Condition" => DisplayConditionParameters(stepParameter, yPosition),
                 "延时等待" or "Delay" => DisplayDelayParameters(stepParameter, yPosition),
                 "写入PLC" or "WritePLC" => DisplayWritePLCParameters(stepParameter, yPosition),
+                "等待稳定" or "WaitForStable" => DisplayWaitForStableParameters(stepParameter, yPosition),
                 _ => DisplayGenericParameters(stepParameter, yPosition)
             };
         }
@@ -1121,6 +1122,158 @@ namespace MainUI.Procedure.Controls
         }
 
         /// <summary>
+        /// 等待稳定参数展示 - 表格式
+        /// </summary>
+        private int DisplayWaitForStableParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var param = ConvertToParameter<Parameter_WaitForStable>(stepParameter);
+                if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
+
+                yPosition = AddSubSectionTitle("等待稳定配置", yPosition);
+
+                // 定义列宽
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 步骤描述
+                if (!string.IsNullOrEmpty(param.Description))
+                {
+                    AddTableCell("步骤描述", yPosition, 0, col1Width, false);
+                    AddTableCell(param.Description, yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 监测源类型
+                string monitorSourceType = param.MonitorSourceType == MonitorSourceType.Variable
+                    ? "全局变量"
+                    : "PLC点位";
+                AddTableCell("监测源类型", yPosition, 0, col1Width, false);
+                AddTableCell(monitorSourceType, yPosition, col1Width, col2Width, false,
+                    param.MonitorSourceType == MonitorSourceType.Variable ? StatusColors.Success : StatusColors.Running);
+                yPosition += 22;
+
+                // 监测源详情
+                if (param.MonitorSourceType == MonitorSourceType.Variable)
+                {
+                    // 显示变量名
+                    AddTableCell("监测变量", yPosition, 0, col1Width, false);
+                    AddTableCell(param.MonitorVariable ?? "(未指定)", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+                else
+                {
+                    // 显示PLC模块和地址
+                    AddTableCell("PLC模块", yPosition, 0, col1Width, false);
+                    AddTableCell(param.PlcModuleName ?? "(未指定)", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    AddTableCell("PLC地址", yPosition, 0, col1Width, false);
+                    AddTableCell(param.PlcAddress ?? "(未指定)", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 分隔线
+                yPosition = AddSeparatorLine(yPosition);
+
+                // 稳定判据小标题
+                yPosition = AddSubSectionTitle("稳定判据", yPosition);
+
+                // 稳定阈值
+                AddTableCell("稳定阈值", yPosition, 0, col1Width, false);
+                AddTableCell($"{param.StabilityThreshold:F4} (单位/秒)", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 采样间隔
+                AddTableCell("采样间隔", yPosition, 0, col1Width, false);
+                AddTableCell($"{param.SamplingInterval} 秒", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 连续稳定次数
+                AddTableCell("连续稳定次数", yPosition, 0, col1Width, false);
+                AddTableCell($"{param.StableCount} 次", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 分隔线
+                yPosition = AddSeparatorLine(yPosition);
+
+                // 超时配置小标题
+                yPosition = AddSubSectionTitle("超时配置", yPosition);
+
+                // 超时时间
+                string timeoutDisplay = param.TimeoutSeconds > 0
+                    ? $"{param.TimeoutSeconds} 秒"
+                    : "无限等待";
+                AddTableCell("超时时间", yPosition, 0, col1Width, false);
+                AddTableCell(timeoutDisplay, yPosition, col1Width, col2Width, false,
+                    param.TimeoutSeconds > 0 ? Color.FromArgb(100, 100, 100) : StatusColors.Waiting);
+                yPosition += 22;
+
+                // 超时动作
+                string timeoutAction = param.OnTimeout switch
+                {
+                    TimeoutAction.ContinueAndLog => "继续执行并记录日志",
+                    TimeoutAction.StopProcedure => "停止整个流程",
+                    TimeoutAction.JumpToStep => $"跳转到步骤 {param.TimeoutJumpToStep}",
+                    _ => "未知"
+                };
+                AddTableCell("超时动作", yPosition, 0, col1Width, false);
+                Color actionColor = param.OnTimeout switch
+                {
+                    TimeoutAction.ContinueAndLog => StatusColors.Success,
+                    TimeoutAction.StopProcedure => StatusColors.Failed,
+                    TimeoutAction.JumpToStep => StatusColors.Skipped,
+                    _ => StatusColors.Waiting
+                };
+                AddTableCell(timeoutAction, yPosition, col1Width, col2Width, false, actionColor);
+                yPosition += 22;
+
+                // 结果处理
+                if (!string.IsNullOrEmpty(param.AssignToVariable))
+                {
+                    yPosition = AddSeparatorLine(yPosition);
+                    yPosition = AddSubSectionTitle("结果处理", yPosition);
+
+                    AddTableCell("赋值目标变量", yPosition, 0, col1Width, false);
+                    AddTableCell(param.AssignToVariable, yPosition, col1Width, col2Width, false, StatusColors.Success);
+                    yPosition += 22;
+                }
+
+                return yPosition;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DisplayWaitForStableParameters 错误: {ex}");
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 添加分隔线（辅助方法）
+        /// </summary>
+        private int AddSeparatorLine(int yPosition)
+        {
+            yPosition += 5; // 上边距
+
+            var separator = new Panel
+            {
+                Location = new Point(10, yPosition),
+                Size = new Size(detailsPanel.Width - 20, 1),
+                BackColor = Color.FromArgb(230, 230, 230)
+            };
+            detailsPanel.Controls.Add(separator);
+
+            yPosition += 6; // 下边距
+            return yPosition;
+        }
+
+        /// <summary>
         /// 通用参数展示 - 表格式
         /// </summary>
         private int DisplayGenericParameters(object stepParameter, int yPosition)
@@ -1152,7 +1305,7 @@ namespace MainUI.Procedure.Controls
                     yPosition += 22;
                 }
 
-                if (json.Properties().Count() == 0)
+                if (!json.Properties().Any())
                 {
                     AddTableCell("", yPosition, 0, col1Width, false);
                     AddTableCell("空参数", yPosition, col1Width, col2Width, false, Color.FromArgb(150, 150, 150));
