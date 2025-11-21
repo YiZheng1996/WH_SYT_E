@@ -263,6 +263,7 @@ namespace MainUI
             services.AddSingleton<DetectionMethods>();
             services.AddSingleton<ReportMethods>();
             services.AddSingleton<WaitForStableMethods>();
+            services.AddScoped<RealtimeMonitorPromptMethods>();
 
             services.AddSingleton<ExpressionEngine>();
             services.AddSingleton<VariableAssignmentEngine>();

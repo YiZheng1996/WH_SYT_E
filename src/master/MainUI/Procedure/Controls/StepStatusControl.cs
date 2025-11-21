@@ -409,6 +409,7 @@ namespace MainUI.Procedure.Controls
                 "延时等待" or "Delay" => DisplayDelayParameters(stepParameter, yPosition),
                 "写入PLC" or "WritePLC" => DisplayWritePLCParameters(stepParameter, yPosition),
                 "等待稳定" or "WaitForStable" => DisplayWaitForStableParameters(stepParameter, yPosition),
+                "实时监控提示" => DisplayRealtimeMonitorPromptParameters(stepParameter, yPosition),
                 _ => DisplayGenericParameters(stepParameter, yPosition)
             };
         }
@@ -1250,6 +1251,54 @@ namespace MainUI.Procedure.Controls
             catch (Exception ex)
             {
                 Debug.WriteLine($"DisplayWaitForStableParameters 错误: {ex}");
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 实时监控提示参数展示
+        /// </summary>
+        private int DisplayRealtimeMonitorPromptParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var param = ConvertToParameter<Parameter_RealtimeMonitorPrompt>(stepParameter);
+                if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
+
+                yPosition = AddSubSectionTitle("📺 实时监控提示配置", yPosition);
+
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                AddTableCell("窗体标题", yPosition, 0, col1Width, false);
+                AddTableCell(param.Title, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                string sourceType = param.MonitorSourceType == MonitorSourceType.Variable ? "全局变量" : "PLC点位";
+                AddTableCell("监测源类型", yPosition, 0, col1Width, false);
+                AddTableCell(sourceType, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                string source = param.MonitorSourceType == MonitorSourceType.Variable
+                    ? param.MonitorVariable
+                    : $"{param.PlcModuleName}.{param.PlcAddress}";
+                AddTableCell("监测源", yPosition, 0, col1Width, false);
+                AddTableCell(source, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                AddTableCell("提示信息", yPosition, 0, col1Width, false);
+                AddTableCell(param.PromptMessage.Replace("\n", " "), yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                return yPosition;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DisplayRealtimeMonitorPromptParameters 错误: {ex}");
                 return DisplayGenericParameters(stepParameter, yPosition);
             }
         }

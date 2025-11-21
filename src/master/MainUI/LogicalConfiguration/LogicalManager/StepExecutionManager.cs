@@ -19,6 +19,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     DetectionMethods detectionMethods,
     ReportMethods reportMethods,
     WaitForStableMethods waitForStableMethods,
+    RealtimeMonitorPromptMethods realtimeMonitorPromptMethods,
     GlobalVariableManager globalVariableManager)
     {
         #region 字段和属性
@@ -30,6 +31,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private readonly DetectionMethods _detectionMethods = detectionMethods ?? throw new ArgumentNullException(nameof(detectionMethods));
         private readonly ReportMethods _reportMethods = reportMethods ?? throw new ArgumentNullException(nameof(reportMethods));
         private readonly WaitForStableMethods _waitForStableMethods = waitForStableMethods ?? throw new ArgumentNullException(nameof(waitForStableMethods));
+        private readonly RealtimeMonitorPromptMethods _realtimeMonitorPromptMethods =
+       realtimeMonitorPromptMethods ?? throw new ArgumentNullException(nameof(realtimeMonitorPromptMethods));
         private readonly GlobalVariableManager _globalVariableManager = globalVariableManager
        ?? throw new ArgumentNullException(nameof(globalVariableManager));
 
@@ -210,6 +213,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     // 检测工具
                     "条件判断" => await ExecuteDetection(step, cancellationToken),
                     "等待稳定" => await ExecuteWaitForStable(step, cancellationToken),
+                    "实时监控提示" => await ExecuteRealtimeMonitorPrompt(step, cancellationToken),
 
                     // 报表工具
                     "读取单元格" => await ExecuteReadCells(step, cancellationToken),
@@ -531,6 +535,19 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             cancellationToken.ThrowIfCancellationRequested();
             var result = await _waitForStableMethods.ExecuteWaitForStable(param, cancellationToken);
             return result.IsSuccess ? ExecutionResult.Success() : ExecutionResult.Failed("等待稳定失败");
+        }
+
+        /// <summary>
+        /// 实时监控提示
+        /// </summary>
+        private async Task<ExecutionResult> ExecuteRealtimeMonitorPrompt(ChildModel step, CancellationToken cancellationToken)
+        {
+            var param = ConvertParameter<Parameter_RealtimeMonitorPrompt>(step.StepParameter);
+            if (param == null) return ExecutionResult.Failed("参数转换失败");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await _realtimeMonitorPromptMethods.ShowRealtimeMonitorPrompt(param, cancellationToken);
+            return result ? ExecutionResult.Success() : ExecutionResult.Failed("用户取消操作");
         }
 
         #endregion
