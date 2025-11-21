@@ -406,7 +406,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             // 
             // CboPlcModule
             // 
-            //CboPlcModule.DataSource = null;
+            CboPlcModule.DataSource = null;
             CboPlcModule.DropDownStyle = UIDropDownStyle.DropDownList;
             CboPlcModule.FillColor = Color.White;
             CboPlcModule.Font = new Font("微软雅黑", 10F);
@@ -1195,7 +1195,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             StartPosition = FormStartPosition.CenterParent;
             Style = UIStyle.Custom;
             StyleCustomMode = true;
-            Text = "检测工具配置";
+            Text = "条件判断配置";
             TitleColor = Color.FromArgb(65, 100, 204);
             TitleFont = new Font("微软雅黑", 12F, FontStyle.Bold);
             ZoomScaleRect = new Rectangle(15, 15, 900, 820);

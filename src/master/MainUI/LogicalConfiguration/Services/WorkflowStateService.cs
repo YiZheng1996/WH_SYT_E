@@ -40,6 +40,9 @@ namespace MainUI.LogicalConfiguration.Services
         private volatile int _t;
         private volatile bool _status;
         private volatile int _stepNum;
+        private volatile bool _shouldBreakLoop;
+        private volatile bool _shouldContinueLoop;
+
 
         // 数据集合，使用 List 因为需要保持顺序
         // 注意：List<T> 不是线程安全的，所以需要锁保护
@@ -217,6 +220,24 @@ namespace MainUI.LogicalConfiguration.Services
         }
 
         /// <summary>
+        /// 是否应该跳出循环（Break）
+        /// </summary>
+        public bool ShouldBreakLoop
+        {
+            get => _shouldBreakLoop;
+            set => _shouldBreakLoop = value;
+        }
+
+        /// <summary>
+        /// 是否应该继续下一次循环（Continue）
+        /// </summary>
+        public bool ShouldContinueLoop
+        {
+            get => _shouldContinueLoop;
+            set => _shouldContinueLoop = value;
+        }
+
+        /// <summary>
         /// 批量更新配置的原子操作
         /// 
         /// 优势：
@@ -239,7 +260,6 @@ namespace MainUI.LogicalConfiguration.Services
                 _configLock.ExitWriteLock();
             }
         }
-
         #endregion
 
         #region 步骤管理实现

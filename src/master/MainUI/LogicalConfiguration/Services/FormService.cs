@@ -100,6 +100,12 @@ namespace MainUI.LogicalConfiguration.Services
                     case "实时监控":
                         form = CreateForm<Form_RealtimeMonitorPromptConfig>();
                         break;
+                    case "检测工具":
+                        form = _serviceProvider.GetService<Form_Condition>();
+                        break;
+                    case "循环工具":
+                        form = _serviceProvider.GetService<Form_Loop>();
+                        break;
                     default:
                         _logger.LogWarning("未知的窗体类型: {FormName}", formName);
                         MessageBox.Show($"未知的窗体类型: {formName}", "错误",
@@ -226,6 +232,16 @@ namespace MainUI.LogicalConfiguration.Services
                 nameof(Form_RealtimeMonitorPromptConfig) => (T)(object)new Form_RealtimeMonitorPromptConfig(
                     _workflowState,
                     GetSpecificLogger<Form_RealtimeMonitorPromptConfig>()),
+
+                // 等待稳定
+                nameof(Form_Condition) => (T)(object)new Form_Condition(
+                    _workflowState,
+                    GetSpecificLogger<Form_Condition>()),
+
+                // 等待稳定
+                nameof(Form_Loop) => (T)(object)new Form_Loop(
+                    _workflowState,
+                    GetSpecificLogger<Form_Loop>()),
 
                 // 未知窗体类型
                 _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")

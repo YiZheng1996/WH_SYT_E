@@ -58,6 +58,15 @@ namespace MainUI.LogicalConfiguration.Services
         /// </summary>
         int StepNum { get; set; }
 
+        /// <summary>
+        /// 是否应该跳出循环（Break）
+        /// </summary>
+        bool ShouldBreakLoop { get; set; }
+
+        /// <summary>
+        /// 是否应该继续下一次循环（Continue）
+        /// </summary>
+        bool ShouldContinueLoop { get; set; }
         #endregion
 
         #region 配置管理方法
