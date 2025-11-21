@@ -38,6 +38,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 {
                     "变量赋值" => GetVariableAssignmentPreview(step),
                     "延时等待" => GetDelayPreview(step),
+                    "等待稳定" => GetWaitForStablePreview(step),
                     "条件判断" => GetConditionPreview(step),
                     "循环开始" => GetLoopStartPreview(step),
                     "循环结束" => "结束循环",
@@ -105,6 +106,62 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 return $"等待 {param.T / 1000:F1} 秒";
             else
                 return $"等待 {param.T / 60000:F1} 分钟";
+        }
+
+        /// <summary>
+        /// 获取等待稳定步骤的预览
+        /// </summary>
+        private string GetWaitForStablePreview(ChildModel step)
+        {
+            if (!TryGetParameter<Parameter_WaitForStable>(step.StepParameter, out var param))
+                return "未配置";
+
+            // 构建监测源描述
+            string monitorSource;
+            if (param.MonitorSourceType == MonitorSourceType.Variable)
+            {
+                monitorSource = string.IsNullOrEmpty(param.MonitorVariable)
+                    ? "未指定变量"
+                    : $"@{param.MonitorVariable}";
+            }
+            else // PLC
+            {
+                if (string.IsNullOrEmpty(param.PlcModuleName) || string.IsNullOrEmpty(param.PlcAddress))
+                {
+                    monitorSource = "未指定PLC点位";
+                }
+                else
+                {
+                    monitorSource = $"PLC[{param.PlcModuleName}.{param.PlcAddress}]";
+                }
+            }
+
+            // 构建稳定条件描述
+            string stabilityCondition = $"阈值≤{param.StabilityThreshold:F2}, 连续{param.StableCount}次";
+
+            // 构建超时描述
+            string timeoutDesc = param.TimeoutSeconds == 0
+                ? "无限等待"
+                : $"{param.TimeoutSeconds}秒超时";
+
+            // 构建完整预览文本
+            var previewParts = new List<string>
+            {
+                $"监测 {monitorSource}",
+                stabilityCondition,
+                $"间隔{param.SamplingInterval}秒"
+            };
+
+            // 添加赋值信息
+            if (!string.IsNullOrWhiteSpace(param.AssignToVariable))
+            {
+                previewParts.Add($"→ @{param.AssignToVariable}");
+            }
+
+            // 添加超时信息
+            previewParts.Add($"[{timeoutDesc}]");
+
+            return string.Join(", ", previewParts);
         }
 
         /// <summary>

@@ -97,6 +97,9 @@ namespace MainUI.LogicalConfiguration.Services
                     case "等待稳定":
                         form = CreateForm<Form_WaitForStable>();
                         break;
+                    case "实时监控":
+                        form = CreateForm<Form_RealtimeMonitorPromptConfig>();
+                        break;
                     default:
                         _logger.LogWarning("未知的窗体类型: {FormName}", formName);
                         MessageBox.Show($"未知的窗体类型: {formName}", "错误",
@@ -219,8 +222,13 @@ namespace MainUI.LogicalConfiguration.Services
                     _workflowState,
                     GetSpecificLogger<Form_WaitForStable>()),
 
-            // 未知窗体类型
-            _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")
+                // 等待稳定
+                nameof(Form_RealtimeMonitorPromptConfig) => (T)(object)new Form_RealtimeMonitorPromptConfig(
+                    _workflowState,
+                    GetSpecificLogger<Form_RealtimeMonitorPromptConfig>()),
+
+                // 未知窗体类型
+                _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")
             };
         }
 
