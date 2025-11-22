@@ -5,6 +5,7 @@ using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Sunny.UI;
 using System.Threading.Tasks;
 
 namespace MainUI.LogicalConfiguration.Forms
@@ -275,7 +276,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 LoopCountExpression = "10",
                 CounterVariableName = "LoopIndex",
                 EnableCounter = true,
-                ChildSteps = new List<Parent>(),
+                ChildSteps = [],
                 Description = $"循环步骤 {_workflowState?.StepNum + 1}"
             };
 
@@ -412,18 +413,49 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // 这里打开子步骤配置对话框
-                // TODO:由于子步骤配置比较复杂，这里简化处理
-                // 实际项目中应该有专门的子步骤配置对话框
-                MessageHelper.MessageOK($"循环体子步骤配置功能待实现\n当前步骤数: {_parameter.ChildSteps?.Count ?? 0}", TType.Info);
-                _hasUnsavedChanges = true;
+                _logger?.LogInformation("打开循环体子步骤配置对话框");
 
-                // 更新显示
-                lblChildStepsCount.Text = $"循环体步骤 ({_parameter.ChildSteps?.Count ?? 0} 个)";
+                // 确保 ChildSteps 列表已初始化
+                if (_parameter.ChildSteps == null)
+                {
+                    _parameter.ChildSteps = [];
+                    _logger?.LogDebug("初始化空的子步骤列表");
+                }
+
+                // 打开子步骤配置窗体
+                using var configForm = new Form_ChildStepsConfig(
+                    _parameter.ChildSteps);
+                // 设置窗体为模态对话框
+                var result = configForm.ShowDialog(this);
+
+                if (result == DialogResult.OK)
+                {
+                    // 获取配置好的子步骤列表
+                    _parameter.ChildSteps = configForm.GetChildSteps();
+
+                    // 更新显示
+                    int stepCount = _parameter.ChildSteps?.Count ?? 0;
+                    lblChildStepsCount.Text = $"循环体步骤 ({stepCount} 个)";
+
+                    // 标记为有未保存的更改
+                    _hasUnsavedChanges = true;
+
+                    _logger?.LogInformation("循环体子步骤配置完成,共 {Count} 个步骤", stepCount);
+
+                    // 可选: 显示成功提示
+                    if (stepCount > 0)
+                    {
+                        MessageHelper.MessageOK($"已配置 {stepCount} 个循环体步骤", TType.Success);
+                    }
+                }
+                else
+                {
+                    _logger?.LogDebug("用户取消了子步骤配置");
+                }
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "配置子步骤失败");
+                _logger?.LogError(ex, "配置子步骤失败");
                 MessageHelper.MessageOK($"配置子步骤失败：{ex.Message}", TType.Error);
             }
         }

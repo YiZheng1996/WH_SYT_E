@@ -194,6 +194,7 @@
             imageList1.Images.SetKeyName(11, "读取PLC.png");
             imageList1.Images.SetKeyName(12, "写入PLC.png");
             imageList1.Images.SetKeyName(13, "等待稳定.png");
+            imageList1.Images.SetKeyName(14, "检测工具.png");
             // 
             // pnlToolsTop
             // 

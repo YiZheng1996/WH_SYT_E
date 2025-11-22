@@ -147,7 +147,7 @@ namespace MainUI.LogicalConfiguration.Methods
         /// <summary>
         /// 子步骤列表
         /// </summary>
-        public List<Parent> ChildSteps { get; set; }
+        public List<ChildModel> ChildSteps { get; set; }
 
         /// <summary>
         /// 描述

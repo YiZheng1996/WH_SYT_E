@@ -673,48 +673,46 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     bool shouldBreak = false;
                     if (loopInfo.ChildSteps != null && loopInfo.ChildSteps.Count > 0)
                     {
-                        foreach (var parentStep in loopInfo.ChildSteps)
+                        foreach (var childSteps in loopInfo.ChildSteps)
                         {
                             cancellationToken.ThrowIfCancellationRequested();
 
-                            if (parentStep.ChildSteps != null && parentStep.ChildSteps.Count > 0)
+                            if (childSteps != null)
                             {
-                                foreach (var childStep in parentStep.ChildSteps)
+                                cancellationToken.ThrowIfCancellationRequested();
+
+                                try
                                 {
-                                    cancellationToken.ThrowIfCancellationRequested();
+                                    // 递归调用执行子步骤
+                                    var childResult = await ExecuteStepAsync(childSteps, cancellationToken);
 
-                                    try
+                                    if (!childResult.Succes)
                                     {
-                                        // 递归调用执行子步骤
-                                        var childResult = await ExecuteStepAsync(childStep, cancellationToken);
-
-                                        if (!childResult.Succes)
-                                        {
-                                            NlogHelper.Default.Warn($"循环子步骤执行失败: {childStep.StepName}, 原因: {childResult.Message}");
-                                        }
-
-                                        // 检查循环控制指令
-                                        if (_workflowStateService.ShouldBreakLoop)
-                                        {
-                                            NlogHelper.Default.Info("收到 Break 指令，跳出循环");
-                                            shouldBreak = true;
-                                            _workflowStateService.ShouldBreakLoop = false;
-                                            break;
-                                        }
-
-                                        if (_workflowStateService.ShouldContinueLoop)
-                                        {
-                                            NlogHelper.Default.Info("收到 Continue 指令，跳过本次循环剩余步骤");
-                                            _workflowStateService.ShouldContinueLoop = false;
-                                            break;
-                                        }
+                                        NlogHelper.Default.Warn($"循环子步骤执行失败: {childSteps.StepName}, 原因: {childResult.Message}");
                                     }
-                                    catch (Exception ex)
+
+                                    // 检查循环控制指令
+                                    if (_workflowStateService.ShouldBreakLoop)
                                     {
-                                        NlogHelper.Default.Error($"循环子步骤执行异常: {childStep.StepName}", ex);
-                                        throw;
+                                        NlogHelper.Default.Info("收到 Break 指令，跳出循环");
+                                        shouldBreak = true;
+                                        _workflowStateService.ShouldBreakLoop = false;
+                                        break;
+                                    }
+
+                                    if (_workflowStateService.ShouldContinueLoop)
+                                    {
+                                        NlogHelper.Default.Info("收到 Continue 指令，跳过本次循环剩余步骤");
+                                        _workflowStateService.ShouldContinueLoop = false;
+                                        break;
                                     }
                                 }
+                                catch (Exception ex)
+                                {
+                                    NlogHelper.Default.Error($"循环子步骤执行异常: {childSteps.StepName}", ex);
+                                    throw;
+                                }
+
                             }
 
                             if (shouldBreak || _workflowStateService.ShouldContinueLoop) break;
