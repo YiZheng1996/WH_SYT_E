@@ -39,9 +39,9 @@
             this.splitContainer = new System.Windows.Forms.SplitContainer();
             this.pnlToolBox = new Sunny.UI.UIPanel();
             this.lblToolBoxTitle = new Sunny.UI.UILabel();
-            this.treeViewTools = new System.Windows.Forms.TreeView();
+            //this.treeViewTools = new System.Windows.Forms.TreeView();
             this.pnlStepList = new Sunny.UI.UIPanel();
-            this.dgvSteps = new Sunny.UI.UIDataGridView();
+            //this.dgvSteps = new Sunny.UI.UIDataGridView();
             this.ColIndex = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ColStepName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ColRemark = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -53,8 +53,6 @@
             this.btnAdd = new Sunny.UI.UISymbolButton();
             this.lblStepListTitle = new Sunny.UI.UILabel();
             this.pnlButtons = new Sunny.UI.UIPanel();
-            this.btnCancel = new Sunny.UI.UISymbolButton();
-            this.btnSave = new Sunny.UI.UISymbolButton();
 
             this.pnlMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -151,7 +149,6 @@
             this.treeViewTools.Name = "treeViewTools";
             this.treeViewTools.Size = new System.Drawing.Size(270, 520);
             this.treeViewTools.TabIndex = 1;
-            this.treeViewTools.ItemDrag += new System.Windows.Forms.ItemDragEventHandler(this.TreeViewTools_ItemDrag);
 
             // 
             // pnlStepList
@@ -208,10 +205,6 @@
             this.dgvSteps.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             this.dgvSteps.ColumnHeadersHeight = 35;
             this.dgvSteps.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            this.dgvSteps.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.ColIndex,
-            this.ColStepName,
-            this.ColRemark});
             dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle3.BackColor = System.Drawing.Color.White;
             dataGridViewCellStyle3.Font = new System.Drawing.Font("微软雅黑", 12F);
@@ -248,11 +241,6 @@
             this.dgvSteps.Size = new System.Drawing.Size(886, 465);
             this.dgvSteps.TabIndex = 1;
             this.dgvSteps.AllowDrop = true;
-            this.dgvSteps.DragDrop += new System.Windows.Forms.DragEventHandler(this.DgvSteps_DragDrop);
-            this.dgvSteps.DragEnter += new System.Windows.Forms.DragEventHandler(this.DgvSteps_DragEnter);
-            this.dgvSteps.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DgvSteps_CellDoubleClick);
-            this.dgvSteps.CellBeginEdit += new System.Windows.Forms.DataGridViewCellCancelEventHandler(this.DgvSteps_CellBeginEdit);
-            this.dgvSteps.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.DgvSteps_CellEndEdit);
 
             // 
             // ColIndex
@@ -343,7 +331,6 @@
             this.btnEdit.TabIndex = 1;
             this.btnEdit.Text = "编辑";
             this.btnEdit.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnEdit.Click += new System.EventHandler(this.BtnEdit_Click);
 
             // 
             // btnMoveUp
@@ -365,7 +352,6 @@
             this.btnMoveUp.TabIndex = 2;
             this.btnMoveUp.Text = "上移";
             this.btnMoveUp.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnMoveUp.Click += new System.EventHandler(this.BtnMoveUp_Click);
 
             // 
             // btnMoveDown
@@ -387,7 +373,6 @@
             this.btnMoveDown.TabIndex = 3;
             this.btnMoveDown.Text = "下移";
             this.btnMoveDown.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnMoveDown.Click += new System.EventHandler(this.BtnMoveDown_Click);
 
             // 
             // btnDelete
@@ -409,13 +394,10 @@
             this.btnDelete.TabIndex = 4;
             this.btnDelete.Text = "删除";
             this.btnDelete.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnDelete.Click += new System.EventHandler(this.BtnDelete_Click);
 
             // 
             // pnlButtons
             // 
-            this.pnlButtons.Controls.Add(this.btnCancel);
-            this.pnlButtons.Controls.Add(this.btnSave);
             this.pnlButtons.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.pnlButtons.Font = new System.Drawing.Font("微软雅黑", 12F);
             this.pnlButtons.Location = new System.Drawing.Point(0, 620);
@@ -429,51 +411,6 @@
             this.pnlButtons.TabIndex = 1;
             this.pnlButtons.Text = null;
             this.pnlButtons.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
-
-            // 
-            // btnSave
-            // 
-            this.btnSave.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnSave.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(65)))), ((int)(((byte)(100)))), ((int)(((byte)(204)))));
-            this.btnSave.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(85)))), ((int)(((byte)(120)))), ((int)(((byte)(224)))));
-            this.btnSave.FillPressColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(80)))), ((int)(((byte)(184)))));
-            this.btnSave.Font = new System.Drawing.Font("微软雅黑", 12F);
-            this.btnSave.Location = new System.Drawing.Point(820, 12);
-            this.btnSave.MinimumSize = new System.Drawing.Size(1, 1);
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Radius = 5;
-            this.btnSave.RectColor = System.Drawing.Color.FromArgb(((int)(((byte)(65)))), ((int)(((byte)(100)))), ((int)(((byte)(204)))));
-            this.btnSave.RectHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(85)))), ((int)(((byte)(120)))), ((int)(((byte)(224)))));
-            this.btnSave.RectPressColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(80)))), ((int)(((byte)(184)))));
-            this.btnSave.Size = new System.Drawing.Size(150, 36);
-            this.btnSave.Symbol = 61639;
-            this.btnSave.TabIndex = 0;
-            this.btnSave.Text = "确定";
-            this.btnSave.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnSave.Click += new System.EventHandler(this.BtnSave_Click);
-
-            // 
-            // btnCancel
-            // 
-            this.btnCancel.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnCancel.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
-            this.btnCancel.FillHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(243)))), ((int)(((byte)(255)))));
-            this.btnCancel.FillPressColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(200)))), ((int)(((byte)(200)))));
-            this.btnCancel.Font = new System.Drawing.Font("微软雅黑", 12F);
-            this.btnCancel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(48)))), ((int)(((byte)(48)))), ((int)(((byte)(48)))));
-            this.btnCancel.Location = new System.Drawing.Point(1020, 12);
-            this.btnCancel.MinimumSize = new System.Drawing.Size(1, 1);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Radius = 5;
-            this.btnCancel.RectColor = System.Drawing.Color.FromArgb(((int)(((byte)(216)))), ((int)(((byte)(216)))), ((int)(((byte)(216)))));
-            this.btnCancel.RectHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(197)))), ((int)(((byte)(222)))), ((int)(((byte)(255)))));
-            this.btnCancel.Size = new System.Drawing.Size(150, 36);
-            this.btnCancel.Symbol = 61453;
-            this.btnCancel.TabIndex = 1;
-            this.btnCancel.Text = "取消";
-            this.btnCancel.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnCancel.Click += new System.EventHandler(this.BtnCancel_Click);
-
             // 
             // Form_ChildStepsConfig
             // 
@@ -515,10 +452,8 @@
         private System.Windows.Forms.SplitContainer splitContainer;
         private Sunny.UI.UIPanel pnlToolBox;
         private Sunny.UI.UILabel lblToolBoxTitle;
-        private System.Windows.Forms.TreeView treeViewTools;
         private Sunny.UI.UIPanel pnlStepList;
         private Sunny.UI.UILabel lblStepListTitle;
-        private Sunny.UI.UIDataGridView dgvSteps;
         private System.Windows.Forms.DataGridViewTextBoxColumn ColIndex;
         private System.Windows.Forms.DataGridViewTextBoxColumn ColStepName;
         private System.Windows.Forms.DataGridViewTextBoxColumn ColRemark;
@@ -529,8 +464,6 @@
         private Sunny.UI.UISymbolButton btnMoveDown;
         private Sunny.UI.UISymbolButton btnDelete;
         private Sunny.UI.UIPanel pnlButtons;
-        private Sunny.UI.UISymbolButton btnSave;
-        private Sunny.UI.UISymbolButton btnCancel;
 
         #endregion
     }
