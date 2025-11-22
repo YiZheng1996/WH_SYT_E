@@ -17,7 +17,6 @@ namespace MainUI.LogicalConfiguration.Forms
     {
         private Parameter_RealtimeMonitorPrompt _parameter;
         private bool _isInitializing = true;
-        private IPLCManager _plcManager;
 
         public Parameter_RealtimeMonitorPrompt Parameter
         {
@@ -203,7 +202,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void InitializeForm()
         {
-            _plcManager = Program.ServiceProvider?.GetService<IPLCManager>();
 
             // 初始化下拉框数据
             InitializeComboBoxes();

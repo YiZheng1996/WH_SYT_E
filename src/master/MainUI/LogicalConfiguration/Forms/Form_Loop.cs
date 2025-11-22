@@ -5,6 +5,7 @@ using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -219,9 +220,9 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 var currentStep = GetCurrentStepSafely();
-                if (currentStep != null && currentStep.ChildSteps != null)
+                if (currentStep != null && currentStep.StepParameter != null)
                 {
-                    var parameter = ConvertParameter(currentStep.ChildSteps);
+                    var parameter = ConvertParameter(currentStep.StepParameter);
                     Parameter = parameter;
                 }
                 else
@@ -237,23 +238,24 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 获取当前步骤（线程安全）
+        /// 获取当前步骤(线程安全)
         /// </summary>
-        private Parent GetCurrentStepSafely()
+        private ChildModel GetCurrentStepSafely()
         {
             try
             {
                 if (_workflowState == null) return null;
 
                 int stepNum = _workflowState.StepNum;
-                var allSteps = _workflowState.GetSteps();
+                var steps = _workflowState.GetSteps();
 
-                if (allSteps != null && stepNum >= 0 && stepNum < allSteps.Count)
+                if (steps != null && stepNum >= 0 && stepNum < steps.Count)
                 {
-                    return allSteps[allSteps];
+                    return steps[stepNum];  // 之前这里写错了: allSteps[allSteps]
                 }
 
-                Logger?.LogWarning("获取当前步骤失败，步骤索引: {StepNum}", stepNum);
+                Logger?.LogWarning("获取当前步骤失败,步骤索引: {StepNum}, 总数: {Count}",
+                    stepNum, steps?.Count ?? 0);
                 return null;
             }
             catch (Exception ex)
@@ -373,10 +375,10 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
 
                 // 创建变量选择对话框
-                var dialog = new VariableSelectionDialog(variables);
+                var dialog = new VariableSelectionDialog(globalVariableManager);
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
-                    string selectedVar = dialog.SelectedVariable;
+                    string selectedVar = dialog.SelectedVariable.Name;
                     if (!string.IsNullOrEmpty(selectedVar))
                     {
                         // 在当前光标位置插入变量引用

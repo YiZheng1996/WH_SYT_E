@@ -1,13 +1,6 @@
-﻿using AntdUI;
-using MainUI.LogicalConfiguration.LogicalManager;
+﻿using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
-using Sunny.UI;
-using System;
-using System.Drawing;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace MainUI.LogicalConfiguration.Forms
 {

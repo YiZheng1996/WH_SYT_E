@@ -1,80 +1,63 @@
 ﻿using MainUI.LogicalConfiguration.Engine;
-using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
-using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
 
 namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
-    /// 条件判断执行方法
+    /// 条件判断执行方法 - 只负责条件逻辑判断
     /// </summary>
     public class ConditionMethods(
-        IWorkflowStateService workflowStateService,
         ExpressionEngine expressionEngine,
-        StepExecutionManager stepExecutionManager,
         ILogger<ConditionMethods> logger) : DSLMethodBase
     {
-        private readonly IWorkflowStateService _workflowStateService = workflowStateService;
         private readonly ExpressionEngine _expressionEngine = expressionEngine;
-        private readonly StepExecutionManager _stepExecutionManager = stepExecutionManager;
         private readonly ILogger<ConditionMethods> _logger = logger;
 
-        public override string Category => "条件判断执行工具";
-
-        public override string Description => "检测";
+        public override string Category => "条件判断工具";
+        public override string Description => "条件判断";
 
         /// <summary>
-        /// 执行条件判断
+        /// 执行条件判断 - 返回判断结果和需要执行的步骤列表
         /// </summary>
-        public async Task ExecuteCondition(Parameter_Condition parameter, CancellationToken cancellationToken)
+        public ConditionEvaluationResult EvaluateCondition(Parameter_Condition parameter)
         {
             try
             {
                 _logger.LogInformation("开始条件判断: {Description}", parameter.Description);
 
-                // 1. 计算条件结果
-                bool conditionResult = EvaluateCondition(parameter);
+                // 计算条件结果
+                bool conditionResult = EvaluateConditionLogic(parameter);
 
                 _logger.LogInformation($"条件判断结果: {(conditionResult ? "满足条件" : "不满足条件")}");
 
-                // 2. 根据结果选择执行分支
+                // 根据结果选择执行分支
                 var stepsToExecute = conditionResult ? parameter.TrueSteps : parameter.FalseSteps;
 
-                if (stepsToExecute != null && stepsToExecute.Count > 0)
+                return new ConditionEvaluationResult
                 {
-                    _logger.LogInformation($"执行{(conditionResult ? "满足" : "不满足")}条件的步骤，共 {stepsToExecute.Count} 个");
-
-                    foreach (var step in stepsToExecute)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        await _stepExecutionManager.ExecuteStepAsync(step, cancellationToken);
-                    }
-
-                    _logger.LogInformation($"{(conditionResult ? "满足" : "不满足")}条件的步骤执行完成");
-                }
-                else
-                {
-                    _logger.LogInformation($"{(conditionResult ? "满足" : "不满足")}条件时无需执行子步骤");
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogInformation("条件判断被取消");
-                throw;
+                    ConditionMet = conditionResult,
+                    StepsToExecute = stepsToExecute,
+                    Description = parameter.Description
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError($"条件判断执行异常: {ex.Message}");
-                throw;
+                _logger.LogError(ex, "条件判断异常: {Message}", ex.Message);
+                return new ConditionEvaluationResult
+                {
+                    ConditionMet = false,
+                    StepsToExecute = null,
+                    ErrorMessage = ex.Message
+                };
             }
         }
 
         /// <summary>
         /// 计算条件结果
         /// </summary>
-        private bool EvaluateCondition(Parameter_Condition parameter)
+        private bool EvaluateConditionLogic(Parameter_Condition parameter)
         {
             try
             {
@@ -156,8 +139,8 @@ namespace MainUI.LogicalConfiguration.Methods
                 ConditionOperator.等于 => Math.Abs(leftValue - rightValue) < 0.0001,
                 ConditionOperator.不等于 => Math.Abs(leftValue - rightValue) >= 0.0001,
                 ConditionOperator.大于 => leftValue > rightValue,
-                ConditionOperator.小于 => leftValue < rightValue,
                 ConditionOperator.大于等于 => leftValue >= rightValue,
+                ConditionOperator.小于 => leftValue < rightValue,
                 ConditionOperator.小于等于 => leftValue <= rightValue,
                 _ => false
             };
@@ -166,5 +149,36 @@ namespace MainUI.LogicalConfiguration.Methods
 
             return result;
         }
+    }
+
+    /// <summary>
+    /// 条件判断结果
+    /// </summary>
+    public class ConditionEvaluationResult
+    {
+        /// <summary>
+        /// 条件是否满足
+        /// </summary>
+        public bool ConditionMet { get; set; }
+
+        /// <summary>
+        /// 需要执行的步骤列表
+        /// </summary>
+        public List<Parent> StepsToExecute { get; set; }
+
+        /// <summary>
+        /// 描述信息
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
+        /// 错误信息（如果有）
+        /// </summary>
+        public string ErrorMessage { get; set; }
+
+        /// <summary>
+        /// 是否成功
+        /// </summary>
+        public bool IsSuccess => string.IsNullOrEmpty(ErrorMessage);
     }
 }

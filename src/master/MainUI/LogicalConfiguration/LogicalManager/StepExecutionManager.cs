@@ -20,6 +20,9 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     ReportMethods reportMethods,
     WaitForStableMethods waitForStableMethods,
     RealtimeMonitorPromptMethods realtimeMonitorPromptMethods,
+    ConditionMethods conditionMethods,
+    LoopMethods loopMethods,
+    IWorkflowStateService workflowState,
     GlobalVariableManager globalVariableManager)
     {
         #region 字段和属性
@@ -33,8 +36,11 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private readonly WaitForStableMethods _waitForStableMethods = waitForStableMethods ?? throw new ArgumentNullException(nameof(waitForStableMethods));
         private readonly RealtimeMonitorPromptMethods _realtimeMonitorPromptMethods =
        realtimeMonitorPromptMethods ?? throw new ArgumentNullException(nameof(realtimeMonitorPromptMethods));
+        private readonly ConditionMethods _conditionMethods = conditionMethods;
+        private readonly LoopMethods _loopMethods = loopMethods;
         private readonly GlobalVariableManager _globalVariableManager = globalVariableManager
        ?? throw new ArgumentNullException(nameof(globalVariableManager));
+        private readonly IWorkflowStateService _workflowStateService = workflowState;
 
         public event Action<ChildModel, int> StepStatusChanged;
 
@@ -214,6 +220,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "条件判断" => await ExecuteDetection(step, cancellationToken),
                     "等待稳定" => await ExecuteWaitForStable(step, cancellationToken),
                     "实时监控提示" => await ExecuteRealtimeMonitorPrompt(step, cancellationToken),
+                    "检测工具" => await ExecuteCondition(step, cancellationToken),
+                    "循环工具" => await ExecuteLoop(step, cancellationToken),
 
                     // 报表工具
                     "读取单元格" => await ExecuteReadCells(step, cancellationToken),
@@ -548,6 +556,189 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             cancellationToken.ThrowIfCancellationRequested();
             var result = await _realtimeMonitorPromptMethods.ShowRealtimeMonitorPrompt(param, cancellationToken);
             return result ? ExecutionResult.Success() : ExecutionResult.Failed("用户取消操作");
+        }
+
+        /// <summary>
+        /// 执行条件判断
+        /// </summary>
+        private async Task<ExecutionResult> ExecuteCondition(ChildModel step, CancellationToken cancellationToken)
+        {
+            var param = ConvertParameter<Parameter_Condition>(step.StepParameter);
+            if (param == null) return ExecutionResult.Failed("参数转换失败");
+
+            try
+            {
+                // 调用 ConditionMethods 进行条件判断
+                var result = _conditionMethods.EvaluateCondition(param);
+
+                if (!result.IsSuccess)
+                {
+                    return ExecutionResult.Failed($"条件判断失败: {result.ErrorMessage}");
+                }
+
+                if (result.StepsToExecute != null && result.StepsToExecute.Count > 0)
+                {
+                    NlogHelper.Default.Info($"执行{(result.ConditionMet ? "满足" : "不满足")}条件的步骤，共 {result.StepsToExecute.Count} 个分支");
+
+                    // 执行子步骤
+                    foreach (var parentStep in result.StepsToExecute)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (parentStep.ChildSteps != null && parentStep.ChildSteps.Count > 0)
+                        {
+                            NlogHelper.Default.Info($"执行分支 [{parentStep.ItemName}] 中的 {parentStep.ChildSteps.Count} 个步骤");
+
+                            foreach (var childStep in parentStep.ChildSteps)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+
+                                // 递归调用执行子步骤
+                                var childResult = await ExecuteStepAsync(childStep, cancellationToken);
+
+                                if (!childResult.Succes)
+                                {
+                                    NlogHelper.Default.Warn($"条件分支子步骤执行失败: {childStep.StepName}, 原因: {childResult.Message}");
+                                    // 根据策略决定是否继续（这里选择继续）
+                                }
+                            }
+                        }
+                    }
+
+                    NlogHelper.Default.Info($"{(result.ConditionMet ? "满足" : "不满足")}条件的步骤执行完成");
+                }
+                else
+                {
+                    NlogHelper.Default.Info($"{(result.ConditionMet ? "满足" : "不满足")}条件时无需执行子步骤");
+                }
+
+                return ExecutionResult.Success();
+            }
+            catch (OperationCanceledException)
+            {
+                NlogHelper.Default.Info("条件判断被取消");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"条件判断执行异常", ex);
+                return ExecutionResult.Failed($"条件判断异常: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 执行循环
+        /// </summary>
+        private async Task<ExecutionResult> ExecuteLoop(ChildModel step, CancellationToken cancellationToken)
+        {
+            var param = ConvertParameter<Parameter_Loop>(step.StepParameter);
+            if (param == null) return ExecutionResult.Failed("参数转换失败");
+
+            try
+            {
+                // 调用 LoopMethods 计算循环参数
+                var loopInfo = _loopMethods.EvaluateLoop(param);
+
+                if (!loopInfo.IsSuccess)
+                {
+                    return ExecutionResult.Failed($"循环参数计算失败: {loopInfo.ErrorMessage}");
+                }
+
+                if (loopInfo.LoopCount <= 0)
+                {
+                    NlogHelper.Default.Info("循环次数为 0，跳过循环");
+                    return ExecutionResult.Success();
+                }
+
+                NlogHelper.Default.Info($"开始循环执行，共 {loopInfo.LoopCount} 次 - {loopInfo.Description}");
+
+                // 执行循环
+                for (int i = 1; i <= loopInfo.LoopCount; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    NlogHelper.Default.Info($"========== 第 {i}/{loopInfo.LoopCount} 次循环 ==========");
+
+                    // 更新计数器变量
+                    if (loopInfo.EnableCounter && !string.IsNullOrWhiteSpace(loopInfo.CounterVariableName))
+                    {
+                        _loopMethods.UpdateLoopCounter(loopInfo.CounterVariableName, i);
+                    }
+
+                    // 重置循环控制标志
+                    _workflowStateService.ShouldBreakLoop = false;
+                    _workflowStateService.ShouldContinueLoop = false;
+
+                    // 执行循环体子步骤
+                    bool shouldBreak = false;
+                    if (loopInfo.ChildSteps != null && loopInfo.ChildSteps.Count > 0)
+                    {
+                        foreach (var parentStep in loopInfo.ChildSteps)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+
+                            if (parentStep.ChildSteps != null && parentStep.ChildSteps.Count > 0)
+                            {
+                                foreach (var childStep in parentStep.ChildSteps)
+                                {
+                                    cancellationToken.ThrowIfCancellationRequested();
+
+                                    try
+                                    {
+                                        // 递归调用执行子步骤
+                                        var childResult = await ExecuteStepAsync(childStep, cancellationToken);
+
+                                        if (!childResult.Succes)
+                                        {
+                                            NlogHelper.Default.Warn($"循环子步骤执行失败: {childStep.StepName}, 原因: {childResult.Message}");
+                                        }
+
+                                        // 检查循环控制指令
+                                        if (_workflowStateService.ShouldBreakLoop)
+                                        {
+                                            NlogHelper.Default.Info("收到 Break 指令，跳出循环");
+                                            shouldBreak = true;
+                                            _workflowStateService.ShouldBreakLoop = false;
+                                            break;
+                                        }
+
+                                        if (_workflowStateService.ShouldContinueLoop)
+                                        {
+                                            NlogHelper.Default.Info("收到 Continue 指令，跳过本次循环剩余步骤");
+                                            _workflowStateService.ShouldContinueLoop = false;
+                                            break;
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        NlogHelper.Default.Error($"循环子步骤执行异常: {childStep.StepName}", ex);
+                                        throw;
+                                    }
+                                }
+                            }
+
+                            if (shouldBreak || _workflowStateService.ShouldContinueLoop) break;
+                        }
+                    }
+
+                    if (shouldBreak) break;
+
+                    NlogHelper.Default.Info($"完成第 {i}/{loopInfo.LoopCount} 次循环");
+                }
+
+                NlogHelper.Default.Info("循环执行完成");
+                return ExecutionResult.Success();
+            }
+            catch (OperationCanceledException)
+            {
+                NlogHelper.Default.Info("循环被取消");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"循环执行异常", ex);
+                return ExecutionResult.Failed($"循环执行异常: {ex.Message}");
+            }
         }
 
         #endregion

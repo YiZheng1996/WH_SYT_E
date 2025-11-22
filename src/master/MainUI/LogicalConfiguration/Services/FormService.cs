@@ -101,10 +101,10 @@ namespace MainUI.LogicalConfiguration.Services
                         form = CreateForm<Form_RealtimeMonitorPromptConfig>();
                         break;
                     case "检测工具":
-                        form = _serviceProvider.GetService<Form_Condition>();
+                        form = CreateForm<Form_Condition>();
                         break;
                     case "循环工具":
-                        form = _serviceProvider.GetService<Form_Loop>();
+                        form = CreateForm<Form_Loop>();
                         break;
                     default:
                         _logger.LogWarning("未知的窗体类型: {FormName}", formName);

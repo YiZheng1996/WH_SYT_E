@@ -49,7 +49,7 @@
         /// <summary>
         /// 满足条件时执行的子步骤
         /// </summary>
-        public List<Parent> TrueSteps { get; set; } = new List<Parent>();
+        public List<Parent> TrueSteps { get; set; } = [];
 
         /// <summary>
         /// 不满足条件时执行的子步骤
