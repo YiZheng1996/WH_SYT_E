@@ -1,13 +1,6 @@
 ﻿using AntdUI;
-using MainUI.LogicalConfiguration.LogicalManager;
-using MainUI.LogicalConfiguration.Parameter;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Sunny.UI;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Windows.Forms;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -31,7 +24,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 底部按钮面板
         /// </summary>
-        private UIPanel panelButtons;
+        //private UIPanel panelButtons;
 
         /// <summary>
         /// 保存按钮
@@ -87,7 +80,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 深拷贝子步骤列表，避免直接修改原始数据
             _childSteps = childSteps != null
                 ? JsonConvert.DeserializeObject<List<ChildModel>>(
-                    JsonConvert.SerializeObject(childSteps)): [];
+                    JsonConvert.SerializeObject(childSteps)) : [];
 
             InitializeComponent();
             InitializeCustomUI();
@@ -139,7 +132,7 @@ namespace MainUI.LogicalConfiguration.Forms
             btnCancel.Click += BtnCancel_Click;
 
             pnlButtons.Controls.AddRange([btnSave, btnCancel]);
-            
+
             // 设置右键菜单
             dgvSteps.ContextMenuStrip = CreateContextMenu();
         }

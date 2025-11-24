@@ -297,12 +297,14 @@ namespace MainUI.LogicalConfiguration.Forms
                 txtCounterVariable.Text = _parameter.CounterVariableName ?? "LoopIndex";
                 chkEnableCounter.Checked = _parameter.EnableCounter;
                 txtDescription.Text = _parameter.Description ?? "";
-                chkEnabled.Checked = true; // 默认启用
+                chkEnabled.Checked = true;
 
                 // 更新子步骤计数
-                lblChildStepsCount.Text = $"循环体步骤 ({_parameter.ChildSteps?.Count ?? 0} 个)";
+                int childStepCount = _parameter.ChildSteps?.Count ?? 0;
+                lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
 
-                // 更新控件状态
+                Debug.WriteLine("LoadParameterToForm - 子步骤数量: {Count}", childStepCount);
+
                 UpdateCounterControls();
 
                 _hasUnsavedChanges = false;
@@ -322,10 +324,33 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void SaveFormToParameter()
         {
-            _parameter.LoopCountExpression = txtLoopCount.Text?.Trim() ?? "10";
-            _parameter.CounterVariableName = txtCounterVariable.Text?.Trim() ?? "LoopIndex";
-            _parameter.EnableCounter = chkEnableCounter.Checked;
-            _parameter.Description = txtDescription.Text?.Trim() ?? "";
+            try
+            {
+                // 只更新界面控件对应的属性
+                _parameter.LoopCountExpression = txtLoopCount.Text?.Trim() ?? "10";
+                _parameter.CounterVariableName = txtCounterVariable.Text?.Trim() ?? "LoopIndex";
+                _parameter.EnableCounter = chkEnableCounter.Checked;
+                _parameter.Description = txtDescription.Text?.Trim() ?? "";
+
+                // 添加日志记录子步骤信息
+                Logger?.LogDebug("SaveFormToParameter - 子步骤数量: {Count}",
+                    _parameter.ChildSteps?.Count ?? 0);
+
+                if (_parameter.ChildSteps != null)
+                {
+                    foreach (var child in _parameter.ChildSteps)
+                    {
+                        var paramLength = child.StepParameter?.ToString()?.Length ?? 0;
+                        Logger?.LogDebug("  子步骤: {StepName}, 参数长度: {Length}",
+                            child.StepName, paramLength);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "保存界面数据到参数对象失败");
+                throw;
+            }
         }
 
         #endregion
@@ -413,36 +438,65 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                _logger?.LogInformation("打开循环体子步骤配置对话框");
+                Debug.WriteLine("========== 开始配置子步骤 ==========");
 
                 // 确保 ChildSteps 列表已初始化
                 if (_parameter.ChildSteps == null)
                 {
                     _parameter.ChildSteps = [];
-                    _logger?.LogDebug("初始化空的子步骤列表");
+                    Logger?.LogDebug("初始化空的子步骤列表");
+                }
+
+                // ⭐ 诊断日志1: 配置前的状态
+                Debug.WriteLine($"配置前子步骤数量: {_parameter.ChildSteps.Count}");
+                if (_parameter.ChildSteps.Count > 0)
+                {
+                    for (int i = 0; i < _parameter.ChildSteps.Count; i++)
+                    {
+                        var child = _parameter.ChildSteps[i];
+                        Debug.WriteLine($"  [{i}] {child.StepName}: 参数={child.StepParameter}");
+                    }
                 }
 
                 // 打开子步骤配置窗体
-                using var configForm = new Form_ChildStepsConfig(
-                    _parameter.ChildSteps);
-                // 设置窗体为模态对话框
+                using var configForm = new Form_ChildStepsConfig(_parameter.ChildSteps);
                 var result = configForm.ShowDialog(this);
 
                 if (result == DialogResult.OK)
                 {
                     // 获取配置好的子步骤列表
-                    _parameter.ChildSteps = configForm.GetChildSteps();
+                    var updatedSteps = configForm.GetChildSteps();
+
+                    // ⭐ 诊断日志2: 配置对话框返回的数据
+                    Debug.WriteLine("配置对话框返回:");
+                    Debug.WriteLine($"  返回的子步骤数量: {updatedSteps?.Count ?? 0}");
+                    if (updatedSteps != null && updatedSteps.Count > 0)
+                    {
+                        for (int i = 0; i < updatedSteps.Count; i++)
+                        {
+                            var child = updatedSteps[i];
+                            var hasParam = !string.IsNullOrEmpty(child.StepParameter?.ToString());
+                            Debug.WriteLine($"    [{i}] {child.StepName}: 参数={hasParam}, 长度={child.StepParameter?.ToString()?.Length ?? 0}");
+                        }
+                    }
+
+                    // ⭐ 关键: 更新参数对象的子步骤列表
+                    _parameter.ChildSteps = updatedSteps;
+
+                    // ⭐ 诊断日志3: 更新后的状态
+                    Debug.WriteLine("更新_parameter.ChildSteps后:");
+                    Debug.WriteLine($"  _parameter.ChildSteps 数量: {_parameter.ChildSteps?.Count ?? 0}"
+                        );
+                    Debug.WriteLine("  引用是否相同: {ReferenceEquals(_parameter.ChildSteps, updatedSteps)}");
 
                     // 更新显示
                     int stepCount = _parameter.ChildSteps?.Count ?? 0;
                     lblChildStepsCount.Text = $"循环体步骤 ({stepCount} 个)";
 
-                    // 标记为有未保存的更改
                     _hasUnsavedChanges = true;
 
-                    _logger?.LogInformation("循环体子步骤配置完成,共 {Count} 个步骤", stepCount);
+                    Debug.WriteLine("========== 子步骤配置完成 ==========");
 
-                    // 可选: 显示成功提示
                     if (stepCount > 0)
                     {
                         MessageHelper.MessageOK($"已配置 {stepCount} 个循环体步骤", TType.Success);
@@ -450,12 +504,12 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
                 else
                 {
-                    _logger?.LogDebug("用户取消了子步骤配置");
+                    Logger?.LogDebug("用户取消了子步骤配置");
                 }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "配置子步骤失败");
+                Logger?.LogError(ex, "配置子步骤失败");
                 MessageHelper.MessageOK($"配置子步骤失败：{ex.Message}", TType.Error);
             }
         }
@@ -471,6 +525,8 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
+                Debug.WriteLine("========== 开始保存循环配置 ==========");
+
                 // 验证输入
                 if (!ValidateInput())
                 {
@@ -481,19 +537,45 @@ namespace MainUI.LogicalConfiguration.Forms
                 var currentStep = GetCurrentStepSafely();
                 if (currentStep == null)
                 {
-                    MessageHelper.MessageOK("当前步骤无效，无法保存数据。", TType.Warn);
+                    MessageHelper.MessageOK("当前步骤无效,无法保存数据。", TType.Warn);
                     return;
+                }
+
+                // ⭐ 诊断日志1: 保存前的状态
+                Debug.WriteLine("保存前状态:");
+                Debug.WriteLine("  循环次数: {Count}", txtLoopCount.Text);
+                Debug.WriteLine("  计数器变量: {Var}", txtCounterVariable.Text);
+                Debug.WriteLine($"  子步骤数量: { _parameter.ChildSteps?.Count ?? 0}");
+
+                if (_parameter.ChildSteps != null && _parameter.ChildSteps.Count > 0)
+                {
+                    for (int i = 0; i < _parameter.ChildSteps.Count; i++)
+                    {
+                        var child = _parameter.ChildSteps[i];
+                        var hasParam = !string.IsNullOrEmpty(child.StepParameter?.ToString());
+                        Debug.WriteLine($"    [{i}] {child.StepName}: 参数={hasParam}, 长度={child.StepParameter?.ToString()?.Length ?? 0}");
+                    }
                 }
 
                 // 保存界面数据到参数对象
                 SaveFormToParameter();
 
-                // 序列化参数对象并保存到步骤
-                currentStep.StepParameter = JsonConvert.SerializeObject(_parameter);
+                // ⭐ 诊断日志2: 保存后的状态
+                Debug.WriteLine("SaveFormToParameter 后状态:");
+                Debug.WriteLine($"  子步骤数量: {_parameter.ChildSteps?.Count ?? 0}");
+
+                // 序列化参数对象
+                var json = JsonConvert.SerializeObject(_parameter, Formatting.None);
+
+                // ⭐ 诊断日志3: 序列化后的JSON
+                Logger?.LogDebug("序列化后的JSON: {Json}", json);
+        
+                // 保存到步骤
+                currentStep.StepParameter = json;
 
                 _hasUnsavedChanges = false;
 
-                Logger?.LogInformation("循环参数保存成功");
+                Debug.WriteLine("========== 循环配置保存成功 ==========");
                 MessageHelper.MessageOK("保存成功！循环配置将在主界面保存时写入配置文件。", TType.Success);
 
                 this.DialogResult = DialogResult.OK;
@@ -579,34 +661,54 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // 收集当前数据
-                SaveFormToParameter();
-
-                // 验证循环次数表达式
-                if (string.IsNullOrWhiteSpace(_parameter.LoopCountExpression))
+                // 验证循环次数
+                if (string.IsNullOrWhiteSpace(txtLoopCount.Text))
                 {
-                    MessageHelper.MessageOK("请输入循环次数表达式！", TType.Warn);
+                    MessageHelper.MessageOK("请输入循环次数！", TType.Warn);
                     txtLoopCount.Focus();
                     return false;
                 }
 
-                // 如果启用计数器，验证计数器变量名
-                if (_parameter.EnableCounter)
+                // 验证计数器变量名(如果启用)
+                if (chkEnableCounter.Checked && string.IsNullOrWhiteSpace(txtCounterVariable.Text))
                 {
-                    if (string.IsNullOrWhiteSpace(_parameter.CounterVariableName))
+                    MessageHelper.MessageOK("启用计数器时必须指定变量名！", TType.Warn);
+                    txtCounterVariable.Focus();
+                    return false;
+                }
+
+                // ⭐ 新增: 验证子步骤
+                if (_parameter.ChildSteps == null || _parameter.ChildSteps.Count == 0)
+                {
+                    var result = MessageHelper.MessageYes(
+                        "尚未配置循环体步骤,是否继续保存?\n(建议至少配置一个步骤)",
+                        TType.Warn);
+
+                    if (result != DialogResult.OK)
                     {
-                        MessageHelper.MessageOK("请输入计数器变量名！", TType.Warn);
-                        txtCounterVariable.Focus();
                         return false;
                     }
-
-                    // 检查变量名是否合法（只允许字母、数字和下划线）
-                    string varName = _parameter.CounterVariableName;
-                    if (!System.Text.RegularExpressions.Regex.IsMatch(varName, @"^[a-zA-Z_][a-zA-Z0-9_]*$"))
+                }
+                else
+                {
+                    // 检查子步骤是否都有参数
+                    int emptyParamCount = 0;
+                    foreach (var child in _parameter.ChildSteps)
                     {
-                        MessageHelper.MessageOK("计数器变量名只能包含字母、数字和下划线，且不能以数字开头！", TType.Warn);
-                        txtCounterVariable.Focus();
-                        return false;
+                        if (string.IsNullOrEmpty(child.StepParameter?.ToString()))
+                        {
+                            emptyParamCount++;
+                        }
+                    }
+
+                    if (emptyParamCount > 0)
+                    {
+                        Logger?.LogWarning("发现 {Count} 个子步骤的参数为空", emptyParamCount);
+
+                        // 可选: 提示用户但允许继续
+                        MessageHelper.MessageOK(
+                            $"警告: 有 {emptyParamCount} 个子步骤尚未配置参数",
+                            TType.Warn);
                     }
                 }
 
@@ -615,7 +717,6 @@ namespace MainUI.LogicalConfiguration.Forms
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "验证输入失败");
-                MessageHelper.MessageOK($"验证失败：{ex.Message}", TType.Error);
                 return false;
             }
         }

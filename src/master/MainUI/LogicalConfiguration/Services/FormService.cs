@@ -286,5 +286,177 @@ namespace MainUI.LogicalConfiguration.Services
         {
             return _serviceProvider.GetRequiredService<ILogger<T>>();
         }
+
+        /// <summary>
+        /// 根据名称打开窗体并返回配置结果(用于BaseStepConfigForm内部打开子步骤配置)
+        /// </summary>
+        public (DialogResult result, object parameter) OpenFormByNameWithResult(
+            Form parentForm, string formName, object currentParameter)
+        {
+            try
+            {
+                _logger.LogDebug("打开配置窗体: {FormName}", formName);
+
+                Form form = null;
+
+                // 根据窗体名称创建对应的窗体
+                switch (formName.ToUpperInvariant())
+                {
+                    case "变量定义":
+                        form = CreateForm<Form_DefineVar>();
+                        break;
+                    case "变量赋值":
+                        form = CreateForm<Form_VariableAssignment>();
+                        break;
+                    case "读取PLC":
+                        form = CreateForm<Form_ReadPLC>();
+                        break;
+                    case "写入PLC":
+                        form = CreateForm<Form_WritePLC>();
+                        break;
+                    case "延时等待":
+                        form = CreateForm<Form_DelayTime>();
+                        break;
+                    case "读取单元格":
+                        form = CreateForm<Form_ReadCells>();
+                        break;
+                    case "写入单元格":
+                        form = CreateForm<Form_WriteCells>();
+                        break;
+                    case "保存报表":
+                        form = CreateForm<Form_SaveReport>();
+                        break;
+                    case "消息通知":
+                        form = CreateForm<Form_SystemPrompt>();
+                        break;
+                    case "条件判断":
+                        form = CreateForm<Form_Detection>();
+                        break;
+                    case "变量监控":
+                        form = CreateForm<Form_VariableMonitor>();
+                        break;
+                    case "点位定义":
+                        form = CreateForm<Form_DefinePoint>();
+                        break;
+                    case "等待稳定":
+                        form = CreateForm<Form_WaitForStable>();
+                        break;
+                    case "实时监控":
+                        form = CreateForm<Form_RealtimeMonitorPromptConfig>();
+                        break;
+                    case "检测工具":
+                        form = CreateForm<Form_Condition>();
+                        break;
+                    case "循环工具":
+                        form = CreateForm<Form_Loop>();
+                        break;
+                    default:
+                        _logger.LogWarning("未知的窗体类型: {FormName}", formName);
+                        return (DialogResult.Cancel, null);
+                }
+
+                if (form == null)
+                {
+                    _logger.LogWarning("无法创建窗体: {FormName}", formName);
+                    return (DialogResult.Cancel, null);
+                }
+
+                // 加载参数到窗体
+                LoadParameterToForm(form, currentParameter);
+
+                // 设置父窗体关系
+                if (parentForm != null && !parentForm.IsDisposed)
+                {
+                    form.Owner = parentForm;
+                    form.StartPosition = FormStartPosition.CenterParent;
+                }
+
+                // 显示窗体并获取结果
+                DialogResult result = form.ShowDialog(parentForm);
+
+                // 获取参数
+                object parameter = null;
+                if (result == DialogResult.OK)
+                {
+                    parameter = GetParameterFromForm(form);
+                }
+
+                // 释放窗体资源
+                form.Dispose();
+
+                _logger.LogInformation("窗体配置完成: {FormName}, Result: {Result}", formName, result);
+                return (result, parameter);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "打开配置窗体时发生错误: {FormName}", formName);
+                return (DialogResult.Cancel, null);
+            }
+        }
+
+        /// <summary>
+        /// 加载参数到配置窗体
+        /// </summary>
+        private void LoadParameterToForm(Form form, object stepParameter)
+        {
+            try
+            {
+                if (stepParameter == null) return;
+
+                var parameterProperty = form.GetType().GetProperty("Parameter");
+                if (parameterProperty == null || !parameterProperty.CanWrite)
+                {
+                    _logger?.LogWarning("窗体没有可写的Parameter属性");
+                    return;
+                }
+
+                // 如果是JSON字符串,反序列化
+                if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
+                {
+                    var paramType = parameterProperty.PropertyType;
+                    var deserializedParam = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonStr, paramType);
+                    parameterProperty.SetValue(form, deserializedParam);
+                }
+                else
+                {
+                    parameterProperty.SetValue(form, stepParameter);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "加载参数到窗体失败");
+            }
+        }
+
+        /// <summary>
+        /// 从配置窗体获取参数
+        /// </summary>
+        private object GetParameterFromForm(Form form)
+        {
+            try
+            {
+                // 1. 查找Parameter属性
+                var paramProp = form.GetType().GetProperty("Parameter");
+                if (paramProp != null && paramProp.CanRead)
+                {
+                    return paramProp.GetValue(form);
+                }
+
+                // 2. 查找GetParameter方法
+                var getParamMethod = form.GetType().GetMethod("GetParameter");
+                if (getParamMethod != null)
+                {
+                    return getParamMethod.Invoke(form, null);
+                }
+
+                _logger?.LogWarning("无法从窗体获取参数: {FormType}", form.GetType().Name);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "从窗体获取参数失败");
+                return null;
+            }
+        }
     }
 }

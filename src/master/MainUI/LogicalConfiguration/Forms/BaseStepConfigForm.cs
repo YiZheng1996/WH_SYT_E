@@ -1,5 +1,7 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Reflection;
@@ -40,6 +42,10 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         protected DataGridViewManager _gridManager;
 
+        /// <summary>
+        /// 窗体服务 - 用于创建和管理窗体
+        /// </summary>
+        protected IFormService _formService;
         #endregion
 
         #region 属性和方法
@@ -92,6 +98,17 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             InitializeBaseComponents();
             InitializeCommonUI();
+
+            if (!DesignMode)
+            {
+                // 从服务容器获取依赖
+                _formService = Program.ServiceProvider?.GetService<IFormService>();
+
+                if (_formService == null)
+                {
+                    _logger?.LogWarning("无法获取IFormService,双击配置功能可能不可用");
+                }
+            }
         }
 
         #endregion
@@ -469,10 +486,8 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         protected virtual void DgvSteps_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
-            {
-                ConfigureStep(e.RowIndex);
-            }
+            if (e.RowIndex < 0) return;
+            ConfigureStep(e.RowIndex);
         }
 
         /// <summary>
@@ -493,173 +508,59 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                if (rowIndex < 0 || rowIndex >= dgvSteps.Rows.Count)
-                    return;
-
-                if (dgvSteps.Rows[rowIndex].Tag is not ChildModel step)
+                var stepsList = GetStepsList();
+                if (stepsList == null || rowIndex >= stepsList.Count)
                 {
-                    _logger?.LogWarning("步骤数据为空，无法配置");
+                    _logger?.LogWarning("无效的行索引: {RowIndex}", rowIndex);
                     return;
                 }
 
-                // 创建配置窗体
-                var configForm = CreateStepConfigForm(step);
-                if (configForm == null)
+                var step = stepsList[rowIndex];
+
+                _logger?.LogInformation("双击打开步骤配置: {StepName}, 行索引: {RowIndex}",
+                    step.StepName, rowIndex);
+
+                // 检查FormService是否可用
+                if (_formService == null)
                 {
-                    MessageHelper.MessageOK($"步骤 {step.StepName} 暂不支持配置", TType.Warn);
+                    _logger?.LogError("FormService未初始化,无法打开配置窗体");
+                    MessageHelper.MessageOK("窗体服务未初始化,请重启应用程序", TType.Error);
                     return;
                 }
 
-                // 加载现有参数
-                LoadParameterToForm(configForm, step.StepParameter);
+                // 使用FormService打开窗体并获取结果
+                var (result, parameter) = _formService.OpenFormByNameWithResult(
+                    this,
+                    step.StepName,
+                    step.StepParameter);
 
-                // 显示配置窗体
-                if (configForm.ShowDialog(this) == DialogResult.OK)
+                // 处理返回结果
+                if (result == DialogResult.OK && parameter != null)
                 {
-                    // 获取并保存参数
-                    var updatedParameter = GetParameterFromForm(configForm);
-                    if (updatedParameter != null)
-                    {
-                        step.StepParameter = JsonConvert.SerializeObject(updatedParameter);
-                        _logger?.LogDebug("步骤 {StepName} 参数已更新", step.StepName);
-                    }
+                    // 序列化参数并保存
+                    step.StepParameter = JsonConvert.SerializeObject(parameter, Formatting.None);
 
+                    _logger?.LogDebug("步骤 {StepName} 参数已更新", step.StepName);
+
+                    // TODO:暂时将parameter改为this
                     // 更新备注
-                    UpdateStepRemark(configForm, step, rowIndex);
+                    UpdateStepRemark(this, step, rowIndex);
+
+                    // 刷新显示
+                    RefreshStepDisplay(rowIndex);
 
                     _hasUnsavedChanges = true;
                     _logger?.LogInformation("步骤 {StepName} 配置完成", step.StepName);
                 }
-
-                configForm.Dispose();
+                else
+                {
+                    _logger?.LogDebug("用户取消了步骤配置或参数为空");
+                }
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "配置步骤失败");
-                MessageHelper.MessageOK($"配置步骤失败：{ex.Message}", TType.Error);
-            }
-        }
-
-        /// <summary>
-        /// 创建步骤配置窗体
-        /// </summary>
-        protected virtual Form CreateStepConfigForm(ChildModel step)
-        {
-            try
-            {
-                string formName = $"Form_{step.StepName}";
-
-                var formType = Assembly.GetExecutingAssembly()
-                    .GetTypes()
-                    .FirstOrDefault(t => t.Name == formName && t.IsSubclassOf(typeof(Form)));
-
-                if (formType == null)
-                {
-                    _logger?.LogWarning("未找到窗体类型: {FormName}", formName);
-                    return null;
-                }
-
-                // 尝试创建实例
-                Form form = null;
-
-                // 尝试无参构造函数
-                var constructor = formType.GetConstructor(Type.EmptyTypes);
-                if (constructor != null)
-                {
-                    form = (Form)Activator.CreateInstance(formType);
-                }
-                else
-                {
-                    // 尝试通过DI容器
-                    form = Program.ServiceProvider?.GetService(formType) as Form;
-                }
-
-                return form;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "创建配置窗体失败");
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// 加载参数到配置窗体
-        /// </summary>
-        protected virtual void LoadParameterToForm(Form form, object stepParameter)
-        {
-            try
-            {
-                if (stepParameter == null) return;
-
-                var parameterProperty = form.GetType().GetProperty("Parameter");
-                if (parameterProperty == null || !parameterProperty.CanWrite)
-                {
-                    _logger?.LogWarning("窗体没有可写的Parameter属性");
-                    return;
-                }
-
-                // 如果是JSON字符串，反序列化
-                if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
-                {
-                    var paramType = parameterProperty.PropertyType;
-                    var deserializedParam = JsonConvert.DeserializeObject(jsonStr, paramType);
-                    parameterProperty.SetValue(form, deserializedParam);
-                }
-                else
-                {
-                    parameterProperty.SetValue(form, stepParameter);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "加载参数到窗体失败");
-            }
-        }
-
-        /// <summary>
-        /// 从配置窗体获取参数
-        /// </summary>
-        protected virtual object GetParameterFromForm(Form form)
-        {
-            try
-            {
-                // 尝试多种方式获取参数
-
-                // 1. 查找Parameter属性
-                var paramProp = form.GetType().GetProperty("Parameter");
-                if (paramProp != null && paramProp.CanRead)
-                {
-                    return paramProp.GetValue(form);
-                }
-
-                // 2. 查找GetParameter方法
-                var getParamMethod = form.GetType().GetMethod("GetParameter");
-                if (getParamMethod != null)
-                {
-                    return getParamMethod.Invoke(form, null);
-                }
-
-                // 3. 查找带下划线的私有字段
-                var fields = form.GetType().GetFields(
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-                var paramField = fields.FirstOrDefault(f =>
-                    f.Name.Contains("parameter", StringComparison.OrdinalIgnoreCase) ||
-                    f.Name.Contains("_param", StringComparison.OrdinalIgnoreCase));
-
-                if (paramField != null)
-                {
-                    return paramField.GetValue(form);
-                }
-
-                _logger?.LogWarning("无法从窗体获取参数");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "从窗体获取参数失败");
-                return null;
+                MessageHelper.MessageOK($"配置步骤失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -670,16 +571,26 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                var remarkProperty = form.GetType().GetProperty("Remark");
-                if (remarkProperty != null)
+                // 尝试从参数对象获取Remark属性
+                var remarkProp = step.StepParameter?.GetType().GetProperty("Remark");
+                if (remarkProp != null && remarkProp.CanRead)
                 {
-                    step.Remark = remarkProperty.GetValue(form)?.ToString() ?? step.Remark;
-                    dgvSteps.Rows[rowIndex].Cells["ColRemark"].Value = step.Remark ?? "";
+                    var remarkValue = remarkProp.GetValue(step.StepParameter)?.ToString();
+                    if (!string.IsNullOrEmpty(remarkValue))
+                    {
+                        step.Remark = remarkValue;
+
+                        // 更新DataGridView显示
+                        if (dgvSteps != null && rowIndex >= 0 && rowIndex < dgvSteps.Rows.Count)
+                        {
+                            dgvSteps.Rows[rowIndex].Cells["ColRemark"].Value = remarkValue;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "更新备注失败");
+                _logger?.LogWarning(ex, "更新步骤备注失败");
             }
         }
 
@@ -696,8 +607,7 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 if (e.RowIndex >= 0 && dgvSteps.Columns[e.ColumnIndex].Name == "ColRemark")
                 {
-                    var step = dgvSteps.Rows[e.RowIndex].Tag as ChildModel;
-                    if (step != null)
+                    if (dgvSteps.Rows[e.RowIndex].Tag is ChildModel step)
                     {
                         step.Remark = dgvSteps.Rows[e.RowIndex].Cells["ColRemark"].Value?.ToString() ?? "";
                         _hasUnsavedChanges = true;
@@ -777,6 +687,24 @@ namespace MainUI.LogicalConfiguration.Forms
         #endregion
 
         #region 辅助方法
+
+        /// <summary>
+        /// 刷新步骤显示
+        /// </summary>
+        protected virtual void RefreshStepDisplay(int rowIndex)
+        {
+            try
+            {
+                if (dgvSteps != null && rowIndex >= 0 && rowIndex < dgvSteps.Rows.Count)
+                {
+                    dgvSteps.InvalidateRow(rowIndex);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "刷新步骤显示失败");
+            }
+        }
 
         /// <summary>
         /// 显示日志信息（供子类使用）
