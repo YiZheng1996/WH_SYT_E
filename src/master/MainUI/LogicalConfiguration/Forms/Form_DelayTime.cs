@@ -15,9 +15,27 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         private const double DEFAULT_DELAY_TIME = 1000.0;
 
         /// <summary>
+        /// 当前参数对象缓存
+        /// </summary>
+        private Parameter_DelayTime _parameter;
+
+        /// <summary>
         /// 参数对象
         /// </summary>
-        public Parameter_DelayTime Parameter { get; set; }
+        public Parameter_DelayTime Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_DelayTime();
+
+                // 设置参数时自动加载到界面
+                if (!DesignMode)
+                {
+                    PopulateControls(_parameter);
+                }
+            }
+        }
 
         #region 构造函数
 
@@ -78,14 +96,14 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         {
             if (!IsServiceAvailable) return;
 
-            Parameter = ConvertParameter(stepParameter);
-            PopulateControls(Parameter);
+            _parameter = ConvertParameter(stepParameter);
+            PopulateControls(_parameter);
         }
 
         protected override void SetDefaultValues()
         {
-            Parameter = new Parameter_DelayTime { T = DEFAULT_DELAY_TIME };
-            PopulateControls(Parameter);
+            _parameter = new Parameter_DelayTime { T = DEFAULT_DELAY_TIME };
+            PopulateControls(_parameter);
         }
 
         protected override bool ValidateParameters()

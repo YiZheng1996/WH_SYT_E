@@ -1,9 +1,10 @@
-﻿using MainUI.LogicalConfiguration.LogicalManager;
+﻿using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
-using MainUI.LogicalConfiguration.Forms;
+using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
+using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.Services
 {
@@ -355,42 +356,69 @@ namespace MainUI.LogicalConfiguration.Services
                         return (DialogResult.Cancel, null);
                 }
 
-                if (form == null)
+                // 订阅 Shown 事件，在窗体显示后再加载参数
+                void shownHandler(object s, EventArgs e)
                 {
-                    _logger.LogWarning("无法创建窗体: {FormName}", formName);
-                    return (DialogResult.Cancel, null);
+                    form.Shown -= shownHandler;  // 取消订阅
+                    if (currentParameter != null)
+                    {
+                        SetFormParameter(form, currentParameter);
+                    }
                 }
 
-                // 加载参数到窗体
-                LoadParameterToForm(form, currentParameter);
+                form.Shown += shownHandler;
 
-                // 设置父窗体关系
-                if (parentForm != null && !parentForm.IsDisposed)
-                {
-                    form.Owner = parentForm;
-                    form.StartPosition = FormStartPosition.CenterParent;
-                }
-
-                // 显示窗体并获取结果
+                // 显示窗体
                 DialogResult result = form.ShowDialog(parentForm);
 
-                // 获取参数
-                object parameter = null;
+                // 获取返回参数
+                object returnParameter = null;
                 if (result == DialogResult.OK)
                 {
-                    parameter = GetParameterFromForm(form);
+                    returnParameter = GetParameterFrom(form);
                 }
 
-                // 释放窗体资源
                 form.Dispose();
-
-                _logger.LogInformation("窗体配置完成: {FormName}, Result: {Result}", formName, result);
-                return (result, parameter);
+                return (result, returnParameter);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "打开配置窗体时发生错误: {FormName}", formName);
+                _logger.LogError(ex, "打开配置窗体失败");
                 return (DialogResult.Cancel, null);
+            }
+        }
+
+        /// <summary>
+        /// 设置窗体的 Parameter 属性
+        /// </summary>
+        private void SetFormParameter(Form form, object parameter)
+        {
+            try
+            {
+                var paramProp = form.GetType().GetProperty("Parameter");
+                if (paramProp != null && paramProp.CanWrite)
+                {
+                    // 如果参数是 JSON 字符串，需要反序列化
+                    object paramValue = parameter;
+                    if (parameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
+                    {
+                        try
+                        {
+                            paramValue = JsonConvert.DeserializeObject(jsonStr, paramProp.PropertyType);
+                        }
+                        catch
+                        {
+                            _logger?.LogWarning("JSON 反序列化失败，使用原始参数");
+                        }
+                    }
+
+                    paramProp.SetValue(form, paramValue);
+                    _logger?.LogDebug("成功设置窗体参数: {FormType}", form.GetType().Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "设置窗体参数失败");
             }
         }
 
@@ -431,7 +459,7 @@ namespace MainUI.LogicalConfiguration.Services
         /// <summary>
         /// 从配置窗体获取参数
         /// </summary>
-        private object GetParameterFromForm(Form form)
+        private object GetParameterFrom(Form form)
         {
             try
             {
