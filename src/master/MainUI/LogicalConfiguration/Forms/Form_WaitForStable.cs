@@ -22,14 +22,9 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 4. 超时处理（继续/停止/跳转）
     /// 5. 稳定值自动赋值到变量
     /// </summary>
-    public partial class Form_WaitForStable : BaseParameterForm, IParameterForm<Parameter_WaitForStable>
+    public partial class Form_WaitForStable : BaseParameterForm<Parameter_WaitForStable>
     {
         #region 私有字段
-
-        /// <summary>
-        /// 当前的参数对象 - 存储窗体的所有配置数据
-        /// </summary>
-        private Parameter_WaitForStable _parameter;
 
         /// <summary>
         /// 初始化状态标志 - 防止在窗体初始化过程中触发不必要的事件
@@ -45,27 +40,6 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 验证定时器 - 延迟触发配置验证
         /// </summary>
         private System.Windows.Forms.Timer _validationTimer;
-
-        #endregion
-
-        #region 属性
-
-        /// <summary>
-        /// 参数对象属性
-        /// </summary>
-        public Parameter_WaitForStable Parameter
-        {
-            get => _parameter;
-            set
-            {
-                _parameter = value ?? new Parameter_WaitForStable();
-                // 只有在窗体完全加载且不处于基类的加载状态时才更新界面
-                if (!DesignMode && !IsLoading && IsHandleCreated)
-                {
-                    LoadParameterToForm();
-                }
-            }
-        }
 
         #endregion
 
@@ -124,9 +98,6 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 _isInitializing = true;
-
-                // 初始化参数
-                _parameter ??= new Parameter_WaitForStable();
 
                 // 初始化窗体样式
                 InitializeFormStyle();
@@ -464,28 +435,28 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         public void LoadParameter(Parameter_WaitForStable parameter)
         {
-            _parameter = parameter ?? new Parameter_WaitForStable();
+            Parameter = parameter ?? new Parameter_WaitForStable();
             LoadParameterToForm();
         }
 
         /// <summary>
         /// 加载参数到表单控件
         /// </summary>
-        private async void LoadParameterToForm()
+        protected override async void LoadParameterToForm()
         {
             try
             {
                 _isInitializing = true;
 
                 // 基本信息
-                txtDescription.Text = _parameter.Description ?? "";
+                txtDescription.Text = Parameter.Description ?? "";
 
                 // 监测源配置
-                if (_parameter.MonitorSourceType == MonitorSourceType.Variable)
+                if (Parameter.MonitorSourceType == MonitorSourceType.Variable)
                 {
                     // 确保选中"全局变量"
                     SetComboBoxValue(cmbMonitorSourceType, "Variable");
-                    cmbMonitorVariable.Text = _parameter.MonitorVariable ?? "";
+                    cmbMonitorVariable.Text = Parameter.MonitorVariable ?? "";
                 }
                 else // MonitorSourceType.PLC
                 {
@@ -493,13 +464,13 @@ namespace MainUI.LogicalConfiguration.Forms
 
                     // 先等待PLC模块列表加载完成
                     await EnsurePlcModulesLoaded();
-                    cmbPlcModule.Text = _parameter.PlcModuleName ?? "";
+                    cmbPlcModule.Text = Parameter.PlcModuleName ?? "";
 
                     // 如果有模块名，加载对应地址列表
-                    if (!string.IsNullOrEmpty(_parameter.PlcModuleName))
+                    if (!string.IsNullOrEmpty(Parameter.PlcModuleName))
                     {
-                        await LoadPlcAddresses(_parameter.PlcModuleName);
-                        cmbPlcAddress.Text = _parameter.PlcAddress ?? "";
+                        await LoadPlcAddresses(Parameter.PlcModuleName);
+                        cmbPlcAddress.Text = Parameter.PlcAddress ?? "";
                     }
                 }
 
@@ -507,17 +478,17 @@ namespace MainUI.LogicalConfiguration.Forms
                 UpdateMonitorSourceVisibility();
 
                 // 稳定判据
-                numStabilityThreshold.Value = (decimal)_parameter.StabilityThreshold;
-                numSamplingInterval.Value = _parameter.SamplingInterval;
-                numStableCount.Value = _parameter.StableCount;
+                numStabilityThreshold.Value = (decimal)Parameter.StabilityThreshold;
+                numSamplingInterval.Value = Parameter.SamplingInterval;
+                numStableCount.Value = Parameter.StableCount;
 
                 // 超时配置
-                numTimeout.Value = _parameter.TimeoutSeconds;
-                SetComboBoxValue(cmbTimeoutAction, _parameter.OnTimeout.ToString());
-                numTimeoutJumpStep.Value = _parameter.TimeoutJumpToStep;
+                numTimeout.Value = Parameter.TimeoutSeconds;
+                SetComboBoxValue(cmbTimeoutAction, Parameter.OnTimeout.ToString());
+                numTimeoutJumpStep.Value = Parameter.TimeoutJumpToStep;
 
                 // 结果处理
-                cmbAssignToVariable.Text = _parameter.AssignToVariable ?? "";
+                cmbAssignToVariable.Text = Parameter.AssignToVariable ?? "";
 
                 // 更新界面显示
                 UpdateMonitorSourceVisibility();
@@ -554,7 +525,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     var plcManager = _plcManager ?? Program.ServiceProvider?.GetService<IPLCManager>();
                     if (plcManager != null)
                     {
-                        var modules = await  plcManager.GetModuleTagsAsync();
+                        var modules = await plcManager.GetModuleTagsAsync();
                         if (modules != null && modules.Count != 0)
                         {
                             cmbPlcModule.Items.Clear();
@@ -596,7 +567,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 解析参数
                 if (paramObj is Parameter_WaitForStable directParam)
                 {
-                    _parameter = directParam;
+                    Parameter = directParam;
                     Logger?.LogDebug("直接获取Parameter_WaitForStable参数");
                 }
                 else if (paramObj != null)
@@ -604,22 +575,22 @@ namespace MainUI.LogicalConfiguration.Forms
                     try
                     {
                         string jsonString = paramObj is string s ? s : JsonConvert.SerializeObject(paramObj);
-                        _parameter = JsonConvert.DeserializeObject<Parameter_WaitForStable>(jsonString);
+                        Parameter = JsonConvert.DeserializeObject<Parameter_WaitForStable>(jsonString);
                         Logger?.LogDebug("JSON反序列化获取Parameter_WritePLC参数");
                     }
                     catch (JsonException jsonEx)
                     {
                         Logger?.LogWarning(jsonEx, "JSON反序列化失败，使用默认参数");
-                        _parameter = new Parameter_WaitForStable();
+                        Parameter = new Parameter_WaitForStable();
                     }
                 }
                 else
                 {
-                    _parameter = new Parameter_WaitForStable();
+                    Parameter = new Parameter_WaitForStable();
                     Logger?.LogDebug("参数为空，创建默认Parameter_WritePLC参数");
                 }
 
-                _parameter ??= new Parameter_WaitForStable();
+                Parameter ??= new Parameter_WaitForStable();
 
                 // 加载到界面
                 LoadParameterToForm();
@@ -628,7 +599,7 @@ namespace MainUI.LogicalConfiguration.Forms
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "加载PLC写入参数时发生异常");
-                _parameter = new Parameter_WaitForStable();
+                Parameter = new Parameter_WaitForStable();
                 MessageHelper.MessageOK($"加载PLC参数失败：{ex.Message}", TType.Error);
             }
         }
@@ -636,55 +607,53 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 保存表单到参数
         /// </summary>
-        private bool SaveFormToParameter()
+        protected override void SaveFormToParameter()
         {
             try
             {
                 // 基本信息
-                _parameter.Description = txtDescription.Text;
+                Parameter.Description = txtDescription.Text;
 
                 // 监测源配置
                 var selectedSourceType = cmbMonitorSourceType.SelectedItem as ComboItem;
                 if (selectedSourceType?.Value?.ToString() == "Variable")
                 {
-                    _parameter.MonitorSourceType = MonitorSourceType.Variable;
-                    _parameter.MonitorVariable = cmbMonitorVariable.Text;
-                    _parameter.PlcModuleName = "";
-                    _parameter.PlcAddress = "";
+                    Parameter.MonitorSourceType = MonitorSourceType.Variable;
+                    Parameter.MonitorVariable = cmbMonitorVariable.Text;
+                    Parameter.PlcModuleName = "";
+                    Parameter.PlcAddress = "";
                 }
                 else
                 {
-                    _parameter.MonitorSourceType = MonitorSourceType.PLC;
-                    _parameter.MonitorVariable = "";
-                    _parameter.PlcModuleName = cmbPlcModule.Text;
-                    _parameter.PlcAddress = cmbPlcAddress.Text;
+                    Parameter.MonitorSourceType = MonitorSourceType.PLC;
+                    Parameter.MonitorVariable = "";
+                    Parameter.PlcModuleName = cmbPlcModule.Text;
+                    Parameter.PlcAddress = cmbPlcAddress.Text;
                 }
 
                 // 稳定判据
-                _parameter.StabilityThreshold = (double)numStabilityThreshold.Value;
-                _parameter.SamplingInterval = (int)numSamplingInterval.Value;
-                _parameter.StableCount = (int)numStableCount.Value;
+                Parameter.StabilityThreshold = (double)numStabilityThreshold.Value;
+                Parameter.SamplingInterval = (int)numSamplingInterval.Value;
+                Parameter.StableCount = (int)numStableCount.Value;
 
                 // 超时配置
-                _parameter.TimeoutSeconds = (int)numTimeout.Value;
+                Parameter.TimeoutSeconds = (int)numTimeout.Value;
                 var selectedAction = cmbTimeoutAction.SelectedItem as ComboItem;
                 if (selectedAction?.Value is TimeoutAction action)
                 {
-                    _parameter.OnTimeout = action;
+                    Parameter.OnTimeout = action;
                 }
-                _parameter.TimeoutJumpToStep = (int)numTimeoutJumpStep.Value;
+                Parameter.TimeoutJumpToStep = (int)numTimeoutJumpStep.Value;
 
                 // 结果处理
-                _parameter.AssignToVariable = cmbAssignToVariable.Text;
+                Parameter.AssignToVariable = cmbAssignToVariable.Text;
 
                 _hasUnsavedChanges = false;
-                return true;
             }
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "保存参数时发生错误");
                 MessageHelper.MessageOK(this, $"保存参数失败：{ex.Message}", TType.Error);
-                return false;
             }
         }
 
@@ -824,16 +793,13 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
 
                 // 保存参数
-                if (!SaveFormToParameter())
-                {
-                    return;
-                }
+                SaveFormToParameter();
 
                 // 通知基类保存成功
                 SaveParameters();
 
-                this.DialogResult = DialogResult.OK;
-                this.Close();
+                DialogResult = DialogResult.OK;
+                Close();
             }
             catch (Exception ex)
             {
@@ -885,7 +851,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 {
                     // 从变量获取值
                     var variableManager = _globalVariable ?? Program.ServiceProvider?.GetService<GlobalVariableManager>();
-                    var variable = variableManager?.FindVariableByName(_parameter.MonitorVariable);
+                    var variable = variableManager?.FindVariableByName(Parameter.MonitorVariable);
                     if (variable != null)
                     {
                         currentValue = Convert.ToDouble(variable.VarValue);
@@ -898,18 +864,18 @@ namespace MainUI.LogicalConfiguration.Forms
                     if (plcManager != null)
                     {
                         var plcValue = await Task.Run(() =>
-                            plcManager.ReadPLCValueAsync(_parameter.PlcModuleName, _parameter.PlcAddress));
+                            plcManager.ReadPLCValueAsync(Parameter.PlcModuleName, Parameter.PlcAddress));
                         currentValue = Convert.ToDouble(plcValue);
                     }
                 }
 
                 var info = $"当前监测值: {currentValue:F4}\n\n" +
                           $"稳定判据:\n" +
-                          $"- 阈值: {_parameter.StabilityThreshold:F4} (变化率)\n" +
-                          $"- 采样间隔: {_parameter.SamplingInterval} 秒\n" +
-                          $"- 连续次数: {_parameter.StableCount} 次\n\n" +
+                          $"- 阈值: {Parameter.StabilityThreshold:F4} (变化率)\n" +
+                          $"- 采样间隔: {Parameter.SamplingInterval} 秒\n" +
+                          $"- 连续次数: {Parameter.StableCount} 次\n\n" +
                           $"超时配置:\n" +
-                          $"- 超时时间: {_parameter.TimeoutSeconds} 秒\n" +
+                          $"- 超时时间: {Parameter.TimeoutSeconds} 秒\n" +
                           $"- 超时动作: {cmbTimeoutAction.Text}";
 
                 MessageHelper.MessageOK(this, info, TType.Info);
@@ -1025,57 +991,6 @@ namespace MainUI.LogicalConfiguration.Forms
         }
         #endregion
 
-        #region IParameterForm 接口实现
-
-        /// <summary>
-        /// 填充控件
-        /// </summary>
-        public void PopulateControls(Parameter_WaitForStable parameter) => Parameter = parameter;
-
-        /// <summary>
-        /// 设置默认值
-        /// </summary>
-        void IParameterForm<Parameter_WaitForStable>.SetDefaultValues() => SetDefaultValues();
-
-        /// <summary>
-        /// 验证类型化参数
-        /// </summary>
-        public bool ValidateTypedParameters() => ValidateConfiguration();
-
-        /// <summary>
-        /// 收集类型化参数
-        /// </summary>
-        public Parameter_WaitForStable CollectTypedParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        /// <summary>
-        /// 转换参数对象
-        /// </summary>
-        public Parameter_WaitForStable ConvertParameter(object stepParameter)
-        {
-            if (stepParameter is Parameter_WaitForStable paramObj)
-                return paramObj;
-
-            if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
-            {
-                try
-                {
-                    return JsonConvert.DeserializeObject<Parameter_WaitForStable>(jsonStr)
-                        ?? new Parameter_WaitForStable();
-                }
-                catch (Exception ex)
-                {
-                    Logger?.LogError(ex, "反序列化参数失败");
-                }
-            }
-
-            return new Parameter_WaitForStable();
-        }
-
-        #endregion
 
         #region 基类方法重写
 
@@ -1084,7 +999,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         protected override void SetDefaultValues()
         {
-            _parameter = new Parameter_WaitForStable
+            Parameter = new Parameter_WaitForStable
             {
                 Description = $"等待变量稳定步骤 {_workflowState?.StepNum + 1}",
                 MonitorSourceType = MonitorSourceType.Variable,
@@ -1107,18 +1022,9 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 验证输入（基类方法）
         /// </summary>
-        protected bool ValidateInput()
+        protected override bool ValidateInput()
         {
             return ValidateConfiguration();
-        }
-
-        /// <summary>
-        /// 收集参数（基类方法）
-        /// </summary>
-        protected override object CollectParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
         }
 
         #endregion

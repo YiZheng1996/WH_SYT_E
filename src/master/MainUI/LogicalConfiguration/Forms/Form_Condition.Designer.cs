@@ -1,8 +1,9 @@
-﻿using Sunny.UI;
+﻿using MainUI.LogicalConfiguration.Parameter;
+using Sunny.UI;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
-    partial class Form_Condition
+    partial class Form_Condition : BaseParameterForm<Parameter_Condition>
     {
         /// <summary>
         /// Required designer variable.

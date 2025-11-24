@@ -9,14 +9,12 @@ using static MainUI.LogicalConfiguration.LogicalManager.GlobalVariableManager;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
-    public partial class Form_ReadPLC : UIForm
+    public partial class Form_ReadPLC : BaseParameterForm<Parameter_ReadPLC>
     {
         #region 私有字段
 
         // 通过依赖注入获取的服务
-        private readonly IWorkflowStateService _workflowState;
         private readonly GlobalVariableManager _variableManager;
-        private readonly ILogger<Form_ReadPLC> _logger;
         private readonly IPLCManager _pLCManager;
 
         // 窗体私有字段
@@ -39,9 +37,7 @@ namespace MainUI.LogicalConfiguration.Forms
             ILogger<Form_ReadPLC> logger,
             IPLCManager pLCManager)
         {
-            _workflowState = workflowState ?? throw new ArgumentNullException(nameof(workflowState));
             _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _pLCManager = pLCManager ?? throw new ArgumentNullException(nameof(pLCManager));
             InitializeComponent();
             InitializeForm();
@@ -495,21 +491,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 // 检查变量冲突
                 CheckAllVariableConflicts();
-
-                //// 如果有冲突，询问用户是否继续
-                //var conflicts = _variableManager.CheckVariableConflicts(
-                //    GetAllSelectedVariableNames(),
-                //    _currentStepIndex,
-                //    VariableAssignmentType.PLCRead);
-
-                //if (conflicts.Any(c => c.HasConflict))
-                //{
-                //    var result = MessageHelper.MessageYes(this, "检测到变量冲突，是否仍要保存？");
-                //    if (result != DialogResult.OK)
-                //    {
-                //        return;
-                //    }
-                //}
 
                 // 更新步骤参数
                 await UpdateStepParameter();

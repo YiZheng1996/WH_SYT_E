@@ -4,7 +4,6 @@ using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -12,14 +11,9 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 条件判断参数配置表单
     /// 用于配置和管理工作流步骤中的条件判断操作
     /// </summary>
-    public partial class Form_Condition : Sunny.UI.UIForm, IParameterForm<Parameter_Condition>
+    public partial class Form_Condition
     {
         #region 私有字段
-
-        /// <summary>
-        /// 当前参数对象缓存
-        /// </summary>
-        private Parameter_Condition _parameter;
 
         /// <summary>
         /// 初始化状态标志
@@ -31,53 +25,8 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private bool _hasUnsavedChanges = false;
 
-        /// <summary>
-        /// 全局变量管理器
-        /// </summary>
-        private GlobalVariableManager _globalVariable;
-
-        /// <summary>
-        /// 工作流状态服务
-        /// </summary>
-        private readonly IWorkflowStateService _workflowState;
-
-        /// <summary>
-        /// 日志服务
-        /// </summary>
-        private readonly ILogger<Form_Condition> _logger;
-
         #endregion
 
-        #region 属性
-
-        /// <summary>
-        /// 参数对象属性（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_Condition Parameter
-        {
-            get => _parameter;
-            set
-            {
-                _parameter = value ?? new Parameter_Condition();
-
-                if (!DesignMode && IsHandleCreated)
-                {
-                    LoadParameterToForm();
-                }
-            }
-        }
-
-        /// <summary>
-        /// 日志服务
-        /// </summary>
-        protected ILogger<Form_Condition> Logger => _logger;
-
-        /// <summary>
-        /// 服务是否可用
-        /// </summary>
-        private bool IsServiceAvailable => _workflowState != null;
-
-        #endregion
 
         #region 构造函数
 
@@ -101,9 +50,6 @@ namespace MainUI.LogicalConfiguration.Forms
             IWorkflowStateService workflowState,
             ILogger<Form_Condition> logger)
         {
-            _workflowState = workflowState;
-            _logger = logger;
-
             InitializeComponent();
             InitializeForm();
 
@@ -128,17 +74,11 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 初始化运算符下拉框
                 InitializeOperatorComboBox();
 
-                // 获取服务实例
-                _globalVariable = Program.ServiceProvider?.GetService<GlobalVariableManager>();
-
                 // 加载可用变量
                 LoadAvailableVariables();
 
                 // 绑定事件
                 BindEvents();
-
-                // 从工作流状态加载参数
-                LoadParameterFromWorkflowState();
             }
             catch (Exception ex)
             {
@@ -225,74 +165,19 @@ namespace MainUI.LogicalConfiguration.Forms
         #region 参数处理
 
         /// <summary>
-        /// 从工作流状态加载参数
-        /// </summary>
-        private void LoadParameterFromWorkflowState()
-        {
-            if (!IsServiceAvailable) return;
-
-            try
-            {
-                var currentStep = GetCurrentStepSafely();
-                if (currentStep != null && currentStep.StepParameter != null)
-                {
-                    var parameter = ConvertParameter(currentStep.StepParameter);
-                    Parameter = parameter;
-                }
-                else
-                {
-                    SetDefaultValues();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "从工作流状态加载参数失败");
-                SetDefaultValues();
-            }
-        }
-
-        /// <summary>
-        /// 获取当前步骤（线程安全）
-        /// </summary>
-        private ChildModel GetCurrentStepSafely()
-        {
-            try
-            {
-                if (_workflowState == null) return null;
-
-                int stepNum = _workflowState.StepNum;
-                var steps = _workflowState.GetSteps();
-
-                if (steps != null && stepNum >= 0 && stepNum < steps.Count)
-                {
-                    return steps[stepNum];
-                }
-
-                Logger?.LogWarning("获取当前步骤失败,步骤索引: {StepNum}, 总数: {Count}",
-                    stepNum, steps?.Count ?? 0);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "获取当前步骤异常");
-                return null;
-            }
-        }
-
-        /// <summary>
         /// 设置默认值
         /// </summary>
-        private void SetDefaultValues()
+        protected override void SetDefaultValues()
         {
-            _parameter = new Parameter_Condition
+            Parameter = new Parameter_Condition
             {
                 LeftExpression = "",
                 Operator = ConditionOperator.等于,
                 RightExpression = "",
                 RangeMin = "",
                 RangeMax = "",
-                TrueSteps = new List<Parent>(),
-                FalseSteps = new List<Parent>(),
+                TrueSteps = [],
+                FalseSteps = [],
                 Description = $"条件判断步骤 {_workflowState?.StepNum + 1}"
             };
 
@@ -303,23 +188,23 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 加载参数到界面
         /// </summary>
-        private void LoadParameterToForm()
+        protected override void LoadParameterToForm()
         {
             try
             {
                 _isInitializing = true;
 
-                txtLeftExpression.Text = _parameter.LeftExpression ?? "";
-                cmbOperator.SelectedItem = _parameter.Operator.ToString();
-                txtRightExpression.Text = _parameter.RightExpression ?? "";
-                txtRangeMin.Text = _parameter.RangeMin ?? "";
-                txtRangeMax.Text = _parameter.RangeMax ?? "";
-                txtDescription.Text = _parameter.Description ?? "";
+                txtLeftExpression.Text = Parameter.LeftExpression ?? "";
+                cmbOperator.SelectedItem = Parameter.Operator.ToString();
+                txtRightExpression.Text = Parameter.RightExpression ?? "";
+                txtRangeMin.Text = Parameter.RangeMin ?? "";
+                txtRangeMax.Text = Parameter.RangeMax ?? "";
+                txtDescription.Text = Parameter.Description ?? "";
                 chkEnabled.Checked = true; // 默认启用
 
                 // 更新子步骤计数
-                lblTrueStepsCount.Text = $"满足条件时执行的步骤 ({_parameter.TrueSteps?.Count ?? 0} 个)";
-                lblFalseStepsCount.Text = $"不满足条件时执行的步骤 ({_parameter.FalseSteps?.Count ?? 0} 个)";
+                lblTrueStepsCount.Text = $"满足条件时执行的步骤 ({Parameter.TrueSteps?.Count ?? 0} 个)";
+                lblFalseStepsCount.Text = $"不满足条件时执行的步骤 ({Parameter.FalseSteps?.Count ?? 0} 个)";
 
                 // 根据运算符更新界面
                 UpdateUIForOperator();
@@ -339,14 +224,14 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 保存界面数据到参数对象
         /// </summary>
-        private void SaveFormToParameter()
+        protected override void SaveFormToParameter()
         {
-            _parameter.LeftExpression = txtLeftExpression.Text?.Trim() ?? "";
-            _parameter.Operator = (ConditionOperator)Enum.Parse(typeof(ConditionOperator), cmbOperator.SelectedItem?.ToString() ?? "等于");
-            _parameter.RightExpression = txtRightExpression.Text?.Trim() ?? "";
-            _parameter.RangeMin = txtRangeMin.Text?.Trim() ?? "";
-            _parameter.RangeMax = txtRangeMax.Text?.Trim() ?? "";
-            _parameter.Description = txtDescription.Text?.Trim() ?? "";
+            Parameter.LeftExpression = txtLeftExpression.Text?.Trim() ?? "";
+            Parameter.Operator = (ConditionOperator)Enum.Parse(typeof(ConditionOperator), cmbOperator.SelectedItem?.ToString() ?? "等于");
+            Parameter.RightExpression = txtRightExpression.Text?.Trim() ?? "";
+            Parameter.RangeMin = txtRangeMin.Text?.Trim() ?? "";
+            Parameter.RangeMax = txtRangeMax.Text?.Trim() ?? "";
+            Parameter.Description = txtDescription.Text?.Trim() ?? "";
         }
 
         #endregion
@@ -472,7 +357,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void BtnConfigTrueSteps_Click(object sender, EventArgs e)
         {
-            var TrueSteps = _parameter.TrueSteps;
+            var TrueSteps = Parameter.TrueSteps;
             ConfigureChildSteps(ref TrueSteps, "满足条件时执行");
             lblTrueStepsCount.Text = $"满足条件时执行的步骤 ({TrueSteps?.Count ?? 0} 个)";
         }
@@ -482,7 +367,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void BtnConfigFalseSteps_Click(object sender, EventArgs e)
         {
-            var FalseSteps = _parameter.FalseSteps;
+            var FalseSteps = Parameter.FalseSteps;
             ConfigureChildSteps(ref FalseSteps, "不满足条件时执行");
             lblFalseStepsCount.Text = $"不满足条件时执行的步骤 ({FalseSteps?.Count ?? 0} 个)";
         }
@@ -518,33 +403,8 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // 验证输入
-                if (!ValidateInput())
-                {
-                    return;
-                }
-
-                // 获取当前步骤
-                var currentStep = GetCurrentStepSafely();
-                if (currentStep == null)
-                {
-                    MessageHelper.MessageOK("当前步骤无效，无法保存数据。", TType.Warn);
-                    return;
-                }
-
-                // 保存界面数据到参数对象
-                SaveFormToParameter();
-
-                // 序列化参数对象并保存到步骤
-                currentStep.StepParameter = JsonConvert.SerializeObject(_parameter);
-
-                _hasUnsavedChanges = false;
-
-                Logger?.LogInformation("条件判断参数保存成功");
-                MessageHelper.MessageOK("保存成功！条件判断配置将在主界面保存时写入配置文件。", TType.Success);
-
-                this.DialogResult = DialogResult.OK;
-                this.Close();
+                // 统一保存方法
+                SaveParameters();
             }
             catch (Exception ex)
             {
@@ -617,7 +477,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 验证输入数据的有效性
         /// </summary>
-        private bool ValidateInput()
+        protected override bool ValidateInput()
         {
             try
             {
@@ -625,27 +485,27 @@ namespace MainUI.LogicalConfiguration.Forms
                 SaveFormToParameter();
 
                 // 验证左值表达式
-                if (string.IsNullOrWhiteSpace(_parameter.LeftExpression))
+                if (string.IsNullOrWhiteSpace(Parameter.LeftExpression))
                 {
                     MessageHelper.MessageOK("请输入左值表达式！", TType.Warn);
                     txtLeftExpression.Focus();
                     return false;
                 }
 
-                var selectedOperator = _parameter.Operator;
+                var selectedOperator = Parameter.Operator;
                 bool isRangeOperator = selectedOperator == ConditionOperator.在范围内 || selectedOperator == ConditionOperator.不在范围内;
 
                 if (isRangeOperator)
                 {
                     // 验证范围值
-                    if (string.IsNullOrWhiteSpace(_parameter.RangeMin))
+                    if (string.IsNullOrWhiteSpace(Parameter.RangeMin))
                     {
                         MessageHelper.MessageOK("请输入范围最小值！", TType.Warn);
                         txtRangeMin.Focus();
                         return false;
                     }
 
-                    if (string.IsNullOrWhiteSpace(_parameter.RangeMax))
+                    if (string.IsNullOrWhiteSpace(Parameter.RangeMax))
                     {
                         MessageHelper.MessageOK("请输入范围最大值！", TType.Warn);
                         txtRangeMax.Focus();
@@ -655,7 +515,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 else
                 {
                     // 验证右值表达式
-                    if (string.IsNullOrWhiteSpace(_parameter.RightExpression))
+                    if (string.IsNullOrWhiteSpace(Parameter.RightExpression))
                     {
                         MessageHelper.MessageOK("请输入右值表达式！", TType.Warn);
                         txtRightExpression.Focus();
@@ -693,66 +553,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
             }
         }
-
         #endregion
 
-        #region 接口实现
-
-        /// <summary>
-        /// 填充控件（IParameterForm接口实现）
-        /// </summary>
-        public void PopulateControls(Parameter_Condition parameter)
-        {
-            Parameter = parameter;
-        }
-
-        /// <summary>
-        /// 验证类型化参数（IParameterForm接口实现）
-        /// </summary>
-        public bool ValidateTypedParameters()
-        {
-            return ValidateInput();
-        }
-
-        /// <summary>
-        /// 收集类型化参数（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_Condition CollectTypedParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        /// <summary>
-        /// 转换参数对象（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_Condition ConvertParameter(object stepParameter)
-        {
-            if (stepParameter is Parameter_Condition paramObj)
-                return paramObj;
-
-            if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
-            {
-                try
-                {
-                    return JsonConvert.DeserializeObject<Parameter_Condition>(jsonStr)
-                        ?? new Parameter_Condition();
-                }
-                catch (JsonException ex)
-                {
-                    Logger?.LogWarning(ex, "转换参数失败");
-                    return new Parameter_Condition();
-                }
-            }
-
-            return new Parameter_Condition();
-        }
-
-        void IParameterForm<Parameter_Condition>.SetDefaultValues()
-        {
-            SetDefaultValues();
-        }
-
-        #endregion
     }
 }

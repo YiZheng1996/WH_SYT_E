@@ -33,7 +33,7 @@ namespace MainUI.LogicalConfiguration.Methods
             Parameter_RealtimeMonitorPrompt param,
             CancellationToken cancellationToken = default)
         {
-            return await ExecuteWithLogging(param, async () =>
+            return await ExecuteWithLogging(param, () =>
             {
                 _logger.LogInformation("显示实时监控提示: {Title}", param.Title);
 
@@ -72,7 +72,7 @@ namespace MainUI.LogicalConfiguration.Methods
                 bool success = result == DialogResult.OK;
                 _logger.LogInformation("实时监控提示关闭，结果: {Result}", success ? "确定" : "取消");
 
-                return success;
+                return Task.FromResult(success);
             }, false);
         }
 

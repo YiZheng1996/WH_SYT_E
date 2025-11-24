@@ -2,10 +2,8 @@
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
-using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -14,13 +12,9 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 用于配置和管理工作流步骤中的PLC写入操作
     /// 参考 Form_DefinePoint 的设计模式进行UI优化
     /// </summary>
-    public partial class Form_WritePLC : Sunny.UI.UIForm, IParameterForm<Parameter_WritePLC>
+    public partial class Form_WritePLC : BaseParameterForm<Parameter_WritePLC>
     {
         #region 私有字段
-        /// <summary>
-        /// 当前参数对象缓存
-        /// </summary>
-        private Parameter_WritePLC _parameter;
 
         /// <summary>
         /// 初始化状态标志 - 防止在窗体初始化过程中触发不必要的事件
@@ -36,58 +30,6 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 验证定时器 - 延迟触发配置验证
         /// </summary>
         private System.Windows.Forms.Timer _validationTimer;
-
-        /// <summary>
-        /// PLC管理器服务
-        /// </summary>
-        private IPLCManager _plcManager;
-
-        /// <summary>
-        /// 全局变量管理器
-        /// </summary>
-        private GlobalVariableManager _globalVariable;
-
-        /// <summary>
-        /// 工作流状态服务
-        /// </summary>
-        private readonly IWorkflowStateService _workflowState;
-
-        /// <summary>
-        /// 日志服务
-        /// </summary>
-        private readonly ILogger<Form_WritePLC> _logger;
-
-        #endregion
-
-        #region 属性
-
-        /// <summary>
-        /// 参数对象属性（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_WritePLC Parameter
-        {
-            get => _parameter;
-            set
-            {
-                _parameter = value ?? new Parameter_WritePLC();
-
-                // 只有在非设计模式、非基类加载状态且窗体句柄已创建时才加载到界面
-                if (!DesignMode && IsHandleCreated)
-                {
-                    LoadParameterToForm();
-                }
-            }
-        }
-
-        /// <summary>
-        /// 日志服务（兼容BaseParameterForm的Logger属性）
-        /// </summary>
-        protected ILogger<Form_WritePLC> Logger => _logger;
-
-        /// <summary>
-        /// 服务是否可用
-        /// </summary>
-        private bool IsServiceAvailable => _workflowState != null;
 
         #endregion
 
@@ -116,8 +58,6 @@ namespace MainUI.LogicalConfiguration.Forms
             IWorkflowStateService workflowState,
             ILogger<Form_WritePLC> logger)
         {
-            _workflowState = workflowState;
-            _logger = logger;
 
             InitializeComponent();
             InitializeForm();
@@ -150,10 +90,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 初始化DataGridView额外配置
                 InitializeDataGridViewExtras();
 
-                // 获取服务实例
-                _plcManager = Program.ServiceProvider?.GetService<IPLCManager>();
-                _globalVariable = Program.ServiceProvider?.GetService<GlobalVariableManager>();
-
                 // 加载PLC模块和点位
                 await LoadPLCModulesAndAddresses();
 
@@ -162,9 +98,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 // 绑定事件
                 BindEvents();
-
-                // 从工作流状态加载参数
-                LoadParameterFromWorkflowState();
             }
             catch (Exception ex)
             {
@@ -320,81 +253,13 @@ namespace MainUI.LogicalConfiguration.Forms
         #region 参数加载和保存
 
         /// <summary>
-        /// 从工作流状态加载参数
-        /// </summary>
-        private void LoadParameterFromWorkflowState()
-        {
-            try
-            {
-                if (!IsServiceAvailable)
-                {
-                    Logger?.LogWarning("服务不可用，无法加载PLC参数");
-                    SetDefaultValues();
-                    return;
-                }
-
-                var steps = _workflowState.GetSteps();
-                int idx = _workflowState.StepNum;
-
-                if (steps == null || idx < 0 || idx >= steps.Count)
-                {
-                    Logger?.LogWarning("步骤索引无效: Index={Index}, Count={Count}", idx, steps?.Count ?? 0);
-                    SetDefaultValues();
-                    return;
-                }
-
-                var currentStep = steps[idx];
-                var paramObj = currentStep.StepParameter;
-
-                // 解析参数
-                if (paramObj is Parameter_WritePLC directParam)
-                {
-                    _parameter = directParam;
-                    Logger?.LogDebug("直接获取Parameter_WritePLC参数");
-                }
-                else if (paramObj != null)
-                {
-                    try
-                    {
-                        string jsonString = paramObj is string s ? s : JsonConvert.SerializeObject(paramObj);
-                        _parameter = JsonConvert.DeserializeObject<Parameter_WritePLC>(jsonString);
-                        Logger?.LogDebug("JSON反序列化获取Parameter_WritePLC参数");
-                    }
-                    catch (JsonException jsonEx)
-                    {
-                        Logger?.LogWarning(jsonEx, "JSON反序列化失败，使用默认参数");
-                        _parameter = new Parameter_WritePLC();
-                    }
-                }
-                else
-                {
-                    _parameter = new Parameter_WritePLC();
-                    Logger?.LogDebug("参数为空，创建默认Parameter_WritePLC参数");
-                }
-
-                _parameter ??= new Parameter_WritePLC();
-
-                // 加载到界面
-                _ = LoadParameterToForm();
-
-                Logger?.LogInformation("成功加载PLC写入参数，包含{Count}个项目", _parameter.Items?.Count ?? 0);
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "加载PLC写入参数时发生异常");
-                _parameter = new Parameter_WritePLC();
-                MessageHelper.MessageOK($"加载PLC参数失败：{ex.Message}", TType.Error);
-            }
-        }
-
-        /// <summary>
         /// 加载参数到界面（从参数对象到UI控件）
         /// </summary>
-        private async Task LoadParameterToForm()
+        protected override async void LoadParameterToForm()
         {
             try
             {
-                _parameter ??= new Parameter_WritePLC();
+                Parameter ??= new Parameter_WritePLC();
 
                 _isInitializing = true;
 
@@ -404,21 +269,21 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 加载描述信息
                 if (txtDescription != null)
                 {
-                    txtDescription.Text = _parameter.Description ?? "";
+                    txtDescription.Text = Parameter.Description ?? "";
                 }
 
                 if (chkEnabled != null)
                 {
-                    chkEnabled.Checked = _parameter.IsEnabled;
+                    chkEnabled.Checked = Parameter.IsEnabled;
                 }
 
                 // 加载写入项
-                if (_parameter.Items != null && _parameter.Items.Count > 0)
+                if (Parameter.Items != null && Parameter.Items.Count > 0)
                 {
                     // 获取所有PLC模块的地址信息（用于填充下拉框）
                     var moduleTagsDict = _plcManager != null ? await _plcManager.GetModuleTagsAsync() : null;
 
-                    foreach (var item in _parameter.Items)
+                    foreach (var item in Parameter.Items)
                     {
                         int rowIndex = DataGridViewPLCList.Rows.Add();
                         var row = DataGridViewPLCList.Rows[rowIndex];
@@ -482,18 +347,18 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 保存界面数据到参数对象
         /// </summary>
-        private void SaveFormToParameter()
+        protected override void SaveFormToParameter()
         {
             try
             {
-                if (_parameter == null)
+                if (Parameter == null)
                 {
-                    _parameter = new Parameter_WritePLC();
+                    Parameter = new Parameter_WritePLC();
                 }
 
                 // 保存基本信息
-                _parameter.Description = txtDescription?.Text ?? "";
-                _parameter.IsEnabled = chkEnabled?.Checked ?? true;
+                Parameter.Description = txtDescription?.Text ?? "";
+                Parameter.IsEnabled = chkEnabled?.Checked ?? true;
 
                 // 收集DataGridView中的数据
                 var items = new List<Parameter_WritePLC.PLCWriteItem>();
@@ -522,7 +387,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     });
                 }
 
-                _parameter.Items = items;
+                Parameter.Items = items;
 
                 Logger?.LogDebug("界面数据已保存到参数对象，共{Count}个项目", items.Count);
             }
@@ -536,18 +401,18 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 设置默认值
         /// </summary>
-        protected void SetDefaultValues()
+        protected override void SetDefaultValues()
         {
             try
             {
-                _parameter = new Parameter_WritePLC
+                Parameter = new Parameter_WritePLC
                 {
                     Description = $"PLC写入步骤 {(_workflowState?.StepNum ?? 0) + 1}",
                     IsEnabled = true,
                     Items = []
                 };
 
-                _ = LoadParameterToForm();
+                LoadParameterToForm();
 
                 Logger?.LogDebug("已设置默认值");
             }
@@ -557,31 +422,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 获取当前步骤（安全方式）
-        /// </summary>
-        private ChildModel GetCurrentStepSafely()
-        {
-            try
-            {
-                if (!IsServiceAvailable) return null;
-
-                var steps = _workflowState.GetSteps();
-                int idx = _workflowState.StepNum;
-
-                if (steps == null || idx < 0 || idx >= steps.Count)
-                {
-                    return null;
-                }
-
-                return steps[idx];
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "获取当前步骤失败");
-                return null;
-            }
-        }
 
         /// <summary>
         /// 为指定行加载PLC地址列表
@@ -892,41 +732,8 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void BtnSave_Click(object sender, EventArgs e)
         {
-            try
-            {
-                // 验证输入
-                if (!ValidateInput())
-                {
-                    return;
-                }
-
-                // 获取当前步骤
-                var currentStep = GetCurrentStepSafely();
-                if (currentStep == null)
-                {
-                    MessageHelper.MessageOK("当前步骤无效，无法保存PLC数据。", TType.Warn);
-                    return;
-                }
-
-                // 保存界面数据到参数对象
-                SaveFormToParameter();
-
-                // 序列化参数对象并保存到步骤
-                currentStep.StepParameter = JsonConvert.SerializeObject(_parameter);
-
-                _hasUnsavedChanges = false;
-
-                Logger?.LogInformation("PLC写入参数保存成功，共{Count}个项目", _parameter.Items?.Count ?? 0);
-                MessageHelper.MessageOK("保存成功！PLC操作将在主界面保存时写入配置文件。", TType.Success);
-
-                this.DialogResult = DialogResult.OK;
-                this.Close();
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "保存PLC写入参数失败");
-                MessageHelper.MessageOK($"保存失败：{ex.Message}", TType.Error);
-            }
+            // 基类统一处理
+            SaveParameters();
         }
 
         /// <summary>
@@ -994,7 +801,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 验证输入数据的有效性
         /// </summary>
-        private bool ValidateInput()
+        protected override bool ValidateInput()
         {
             try
             {
@@ -1002,16 +809,16 @@ namespace MainUI.LogicalConfiguration.Forms
                 SaveFormToParameter();
 
                 // 检查是否有有效数据
-                if (_parameter.Items == null || _parameter.Items.Count == 0)
+                if (Parameter.Items == null || Parameter.Items.Count == 0)
                 {
                     MessageHelper.MessageOK("请至少添加一个PLC写入项！", TType.Warn);
                     return false;
                 }
 
                 // 验证每一项
-                for (int i = 0; i < _parameter.Items.Count; i++)
+                for (int i = 0; i < Parameter.Items.Count; i++)
                 {
-                    var item = _parameter.Items[i];
+                    var item = Parameter.Items[i];
 
                     if (string.IsNullOrWhiteSpace(item.PlcModuleName))
                     {
@@ -1073,74 +880,6 @@ namespace MainUI.LogicalConfiguration.Forms
                     e.Cancel = true;
                 }
             }
-        }
-
-        #endregion
-
-        #region BaseParameterForm重写和接口实现
-
-
-        /// <summary>
-        /// 验证参数（基类方法重写）
-        /// </summary>
-        protected bool ValidateParameters()
-        {
-            return ValidateInput();
-        }
-
-        /// <summary>
-        /// 填充控件（IParameterForm接口实现）
-        /// </summary>
-        public void PopulateControls(Parameter_WritePLC parameter)
-        {
-            Parameter = parameter;
-        }
-
-        /// <summary>
-        /// 验证类型化参数（IParameterForm接口实现）
-        /// </summary>
-        public bool ValidateTypedParameters()
-        {
-            return ValidateInput();
-        }
-
-        /// <summary>
-        /// 收集类型化参数（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_WritePLC CollectTypedParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        /// <summary>
-        /// 转换参数对象（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_WritePLC ConvertParameter(object stepParameter)
-        {
-            if (stepParameter is Parameter_WritePLC paramObj)
-                return paramObj;
-
-            if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
-            {
-                try
-                {
-                    return JsonConvert.DeserializeObject<Parameter_WritePLC>(jsonStr)
-                        ?? new Parameter_WritePLC();
-                }
-                catch (JsonException ex)
-                {
-                    Logger?.LogWarning(ex, "转换参数失败");
-                    return new Parameter_WritePLC();
-                }
-            }
-
-            return new Parameter_WritePLC();
-        }
-
-        void IParameterForm<Parameter_WritePLC>.SetDefaultValues()
-        {
-            SetDefaultValues();
         }
 
         #endregion

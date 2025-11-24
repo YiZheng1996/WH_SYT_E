@@ -5,8 +5,6 @@ using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Sunny.UI;
-using System.Threading.Tasks;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -14,14 +12,9 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 循环参数配置表单
     /// 用于配置和管理工作流步骤中的循环操作
     /// </summary>
-    public partial class Form_Loop : Sunny.UI.UIForm, IParameterForm<Parameter_Loop>
+    public partial class Form_Loop : BaseParameterForm<Parameter_Loop>
     {
         #region 私有字段
-
-        /// <summary>
-        /// 当前参数对象缓存
-        /// </summary>
-        private Parameter_Loop _parameter;
 
         /// <summary>
         /// 初始化状态标志
@@ -32,53 +25,6 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 未保存更改标志
         /// </summary>
         private bool _hasUnsavedChanges = false;
-
-        /// <summary>
-        /// 全局变量管理器
-        /// </summary>
-        private GlobalVariableManager _globalVariable;
-
-        /// <summary>
-        /// 工作流状态服务
-        /// </summary>
-        private readonly IWorkflowStateService _workflowState;
-
-        /// <summary>
-        /// 日志服务
-        /// </summary>
-        private readonly ILogger<Form_Loop> _logger;
-
-        #endregion
-
-        #region 属性
-
-        /// <summary>
-        /// 参数对象属性（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_Loop Parameter
-        {
-            get => _parameter;
-            set
-            {
-                _parameter = value ?? new Parameter_Loop();
-
-                if (!DesignMode && IsHandleCreated)
-                {
-                    LoadParameterToForm();
-                }
-            }
-        }
-
-        /// <summary>
-        /// 日志服务
-        /// </summary>
-        protected ILogger<Form_Loop> Logger => _logger;
-
-        /// <summary>
-        /// 服务是否可用
-        /// </summary>
-        private bool IsServiceAvailable => _workflowState != null;
-
         #endregion
 
         #region 构造函数
@@ -103,9 +49,6 @@ namespace MainUI.LogicalConfiguration.Forms
             IWorkflowStateService workflowState,
             ILogger<Form_Loop> logger)
         {
-            _workflowState = workflowState;
-            _logger = logger;
-
             InitializeComponent();
             InitializeForm();
 
@@ -126,9 +69,6 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 _isInitializing = true;
-
-                // 获取服务实例
-                _globalVariable = Program.ServiceProvider?.GetService<GlobalVariableManager>();
 
                 // 加载可用变量
                 LoadAvailableVariables();
@@ -239,39 +179,11 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 获取当前步骤(线程安全)
-        /// </summary>
-        private ChildModel GetCurrentStepSafely()
-        {
-            try
-            {
-                if (_workflowState == null) return null;
-
-                int stepNum = _workflowState.StepNum;
-                var steps = _workflowState.GetSteps();
-
-                if (steps != null && stepNum >= 0 && stepNum < steps.Count)
-                {
-                    return steps[stepNum];  // 之前这里写错了: allSteps[allSteps]
-                }
-
-                Logger?.LogWarning("获取当前步骤失败,步骤索引: {StepNum}, 总数: {Count}",
-                    stepNum, steps?.Count ?? 0);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "获取当前步骤异常");
-                return null;
-            }
-        }
-
-        /// <summary>
         /// 设置默认值
         /// </summary>
-        private void SetDefaultValues()
+        protected override void SetDefaultValues()
         {
-            _parameter = new Parameter_Loop
+            Parameter = new Parameter_Loop
             {
                 LoopCountExpression = "10",
                 CounterVariableName = "LoopIndex",
@@ -287,20 +199,20 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 加载参数到界面
         /// </summary>
-        private void LoadParameterToForm()
+        protected override void LoadParameterToForm()
         {
             try
             {
                 _isInitializing = true;
 
-                txtLoopCount.Text = _parameter.LoopCountExpression ?? "10";
-                txtCounterVariable.Text = _parameter.CounterVariableName ?? "LoopIndex";
-                chkEnableCounter.Checked = _parameter.EnableCounter;
-                txtDescription.Text = _parameter.Description ?? "";
+                txtLoopCount.Text = Parameter.LoopCountExpression ?? "10";
+                txtCounterVariable.Text = Parameter.CounterVariableName ?? "LoopIndex";
+                chkEnableCounter.Checked = Parameter.EnableCounter;
+                txtDescription.Text = Parameter.Description ?? "";
                 chkEnabled.Checked = true;
 
                 // 更新子步骤计数
-                int childStepCount = _parameter.ChildSteps?.Count ?? 0;
+                int childStepCount = Parameter.ChildSteps?.Count ?? 0;
                 lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
 
                 Debug.WriteLine("LoadParameterToForm - 子步骤数量: {Count}", childStepCount);
@@ -322,23 +234,23 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 保存界面数据到参数对象
         /// </summary>
-        private void SaveFormToParameter()
+        protected override void SaveFormToParameter()
         {
             try
             {
                 // 只更新界面控件对应的属性
-                _parameter.LoopCountExpression = txtLoopCount.Text?.Trim() ?? "10";
-                _parameter.CounterVariableName = txtCounterVariable.Text?.Trim() ?? "LoopIndex";
-                _parameter.EnableCounter = chkEnableCounter.Checked;
-                _parameter.Description = txtDescription.Text?.Trim() ?? "";
+                Parameter.LoopCountExpression = txtLoopCount.Text?.Trim() ?? "10";
+                Parameter.CounterVariableName = txtCounterVariable.Text?.Trim() ?? "LoopIndex";
+                Parameter.EnableCounter = chkEnableCounter.Checked;
+                Parameter.Description = txtDescription.Text?.Trim() ?? "";
 
                 // 添加日志记录子步骤信息
                 Logger?.LogDebug("SaveFormToParameter - 子步骤数量: {Count}",
-                    _parameter.ChildSteps?.Count ?? 0);
+                    Parameter.ChildSteps?.Count ?? 0);
 
-                if (_parameter.ChildSteps != null)
+                if (Parameter.ChildSteps != null)
                 {
-                    foreach (var child in _parameter.ChildSteps)
+                    foreach (var child in Parameter.ChildSteps)
                     {
                         var paramLength = child.StepParameter?.ToString()?.Length ?? 0;
                         Logger?.LogDebug("  子步骤: {StepName}, 参数长度: {Length}",
@@ -441,25 +353,25 @@ namespace MainUI.LogicalConfiguration.Forms
                 Debug.WriteLine("========== 开始配置子步骤 ==========");
 
                 // 确保 ChildSteps 列表已初始化
-                if (_parameter.ChildSteps == null)
+                if (Parameter.ChildSteps == null)
                 {
-                    _parameter.ChildSteps = [];
+                    Parameter.ChildSteps = [];
                     Logger?.LogDebug("初始化空的子步骤列表");
                 }
 
                 // ⭐ 诊断日志1: 配置前的状态
-                Debug.WriteLine($"配置前子步骤数量: {_parameter.ChildSteps.Count}");
-                if (_parameter.ChildSteps.Count > 0)
+                Debug.WriteLine($"配置前子步骤数量: {Parameter.ChildSteps.Count}");
+                if (Parameter.ChildSteps.Count > 0)
                 {
-                    for (int i = 0; i < _parameter.ChildSteps.Count; i++)
+                    for (int i = 0; i < Parameter.ChildSteps.Count; i++)
                     {
-                        var child = _parameter.ChildSteps[i];
+                        var child = Parameter.ChildSteps[i];
                         Debug.WriteLine($"  [{i}] {child.StepName}: 参数={child.StepParameter}");
                     }
                 }
 
                 // 打开子步骤配置窗体
-                using var configForm = new Form_ChildStepsConfig(_parameter.ChildSteps);
+                using var configForm = new Form_ChildStepsConfig(Parameter.ChildSteps);
                 var result = configForm.ShowDialog(this);
 
                 if (result == DialogResult.OK)
@@ -481,16 +393,16 @@ namespace MainUI.LogicalConfiguration.Forms
                     }
 
                     // ⭐ 关键: 更新参数对象的子步骤列表
-                    _parameter.ChildSteps = updatedSteps;
+                    Parameter.ChildSteps = updatedSteps;
 
                     // ⭐ 诊断日志3: 更新后的状态
-                    Debug.WriteLine("更新_parameter.ChildSteps后:");
-                    Debug.WriteLine($"  _parameter.ChildSteps 数量: {_parameter.ChildSteps?.Count ?? 0}"
+                    Debug.WriteLine("更新Parameter.ChildSteps后:");
+                    Debug.WriteLine($"  Parameter.ChildSteps 数量: {Parameter.ChildSteps?.Count ?? 0}"
                         );
-                    Debug.WriteLine("  引用是否相同: {ReferenceEquals(_parameter.ChildSteps, updatedSteps)}");
+                    Debug.WriteLine("  引用是否相同: {ReferenceEquals(Parameter.ChildSteps, updatedSteps)}");
 
                     // 更新显示
-                    int stepCount = _parameter.ChildSteps?.Count ?? 0;
+                    int stepCount = Parameter.ChildSteps?.Count ?? 0;
                     lblChildStepsCount.Text = $"循环体步骤 ({stepCount} 个)";
 
                     _hasUnsavedChanges = true;
@@ -545,13 +457,13 @@ namespace MainUI.LogicalConfiguration.Forms
                 Debug.WriteLine("保存前状态:");
                 Debug.WriteLine("  循环次数: {Count}", txtLoopCount.Text);
                 Debug.WriteLine("  计数器变量: {Var}", txtCounterVariable.Text);
-                Debug.WriteLine($"  子步骤数量: { _parameter.ChildSteps?.Count ?? 0}");
+                Debug.WriteLine($"  子步骤数量: {Parameter.ChildSteps?.Count ?? 0}");
 
-                if (_parameter.ChildSteps != null && _parameter.ChildSteps.Count > 0)
+                if (Parameter.ChildSteps != null && Parameter.ChildSteps.Count > 0)
                 {
-                    for (int i = 0; i < _parameter.ChildSteps.Count; i++)
+                    for (int i = 0; i < Parameter.ChildSteps.Count; i++)
                     {
-                        var child = _parameter.ChildSteps[i];
+                        var child = Parameter.ChildSteps[i];
                         var hasParam = !string.IsNullOrEmpty(child.StepParameter?.ToString());
                         Debug.WriteLine($"    [{i}] {child.StepName}: 参数={hasParam}, 长度={child.StepParameter?.ToString()?.Length ?? 0}");
                     }
@@ -562,14 +474,14 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 // ⭐ 诊断日志2: 保存后的状态
                 Debug.WriteLine("SaveFormToParameter 后状态:");
-                Debug.WriteLine($"  子步骤数量: {_parameter.ChildSteps?.Count ?? 0}");
+                Debug.WriteLine($"  子步骤数量: {Parameter.ChildSteps?.Count ?? 0}");
 
                 // 序列化参数对象
-                var json = JsonConvert.SerializeObject(_parameter, Formatting.None);
+                var json = JsonConvert.SerializeObject(Parameter, Formatting.None);
 
                 // ⭐ 诊断日志3: 序列化后的JSON
                 Logger?.LogDebug("序列化后的JSON: {Json}", json);
-        
+
                 // 保存到步骤
                 currentStep.StepParameter = json;
 
@@ -657,7 +569,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 验证输入数据的有效性
         /// </summary>
-        private bool ValidateInput()
+        protected override bool ValidateInput()
         {
             try
             {
@@ -678,7 +590,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
 
                 // ⭐ 新增: 验证子步骤
-                if (_parameter.ChildSteps == null || _parameter.ChildSteps.Count == 0)
+                if (Parameter.ChildSteps == null || Parameter.ChildSteps.Count == 0)
                 {
                     var result = MessageHelper.MessageYes(
                         "尚未配置循环体步骤,是否继续保存?\n(建议至少配置一个步骤)",
@@ -693,7 +605,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 {
                     // 检查子步骤是否都有参数
                     int emptyParamCount = 0;
-                    foreach (var child in _parameter.ChildSteps)
+                    foreach (var child in Parameter.ChildSteps)
                     {
                         if (string.IsNullOrEmpty(child.StepParameter?.ToString()))
                         {
@@ -744,63 +656,5 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 接口实现
-
-        /// <summary>
-        /// 填充控件（IParameterForm接口实现）
-        /// </summary>
-        public void PopulateControls(Parameter_Loop parameter)
-        {
-            Parameter = parameter;
-        }
-
-        /// <summary>
-        /// 验证类型化参数（IParameterForm接口实现）
-        /// </summary>
-        public bool ValidateTypedParameters()
-        {
-            return ValidateInput();
-        }
-
-        /// <summary>
-        /// 收集类型化参数（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_Loop CollectTypedParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        /// <summary>
-        /// 转换参数对象（IParameterForm接口实现）
-        /// </summary>
-        public Parameter_Loop ConvertParameter(object stepParameter)
-        {
-            if (stepParameter is Parameter_Loop paramObj)
-                return paramObj;
-
-            if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
-            {
-                try
-                {
-                    return JsonConvert.DeserializeObject<Parameter_Loop>(jsonStr)
-                        ?? new Parameter_Loop();
-                }
-                catch (JsonException ex)
-                {
-                    Logger?.LogWarning(ex, "转换参数失败");
-                    return new Parameter_Loop();
-                }
-            }
-
-            return new Parameter_Loop();
-        }
-
-        void IParameterForm<Parameter_Loop>.SetDefaultValues()
-        {
-            SetDefaultValues();
-        }
-
-        #endregion
     }
 }

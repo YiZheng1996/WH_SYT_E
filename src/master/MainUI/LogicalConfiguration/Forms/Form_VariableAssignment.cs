@@ -19,7 +19,7 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 3. 变量复制 - 从其他变量复制值
     /// 4. PLC读取 - 从PLC设备读取值
     /// </summary>
-    public partial class Form_VariableAssignment : BaseParameterForm, IParameterForm<Parameter_VariableAssignment>
+    public partial class Form_VariableAssignment : BaseParameterForm<Parameter_VariableAssignment>
     {
         #region 私有字段
         /// <summary>
@@ -63,32 +63,6 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 包含目标变量、赋值方式、表达式等所有必要信息
         /// </summary>
         private Parameter_VariableAssignment _parameter;
-
-        #endregion
-
-        #region 属性
-
-        /// <summary>
-        /// 参数对象属性
-        /// 获取或设置当前的变量赋值参数
-        /// 设置时会自动加载参数到界面控件（仅在窗体完全加载后）
-        /// </summary>
-        public Parameter_VariableAssignment Parameter
-        {
-            get => _parameter;
-            set
-            {
-                // 确保参数不为null，提供默认值
-                _parameter = value ?? new Parameter_VariableAssignment();
-
-                // 只有在非设计模式、非基类加载状态且窗体句柄已创建时才加载到界面
-                // 这样避免在窗体初始化过程中的无效操作
-                if (!DesignMode && !IsLoading && IsHandleCreated)
-                {
-                    LoadParameterToForm();
-                }
-            }
-        }
 
         #endregion
 
@@ -395,16 +369,12 @@ namespace MainUI.LogicalConfiguration.Forms
             LoadParameterToForm();
         }
 
+   
         /// <summary>
-        /// 加载参数到界面
-        /// 根据参数的赋值类型显示相应的配置界面
-        /// 包含异步的PLC模块和地址加载
+        /// 从 Parameter 加载到界面控件
         /// </summary>
-        /// <param name="parameter">要加载的参数对象</param>
-        public async void LoadParameter(Parameter_VariableAssignment parameter)
+        protected override async void LoadParameterToForm()
         {
-            _parameter = parameter ?? new Parameter_VariableAssignment();
-
             try
             {
                 // 基本信息加载
@@ -461,15 +431,6 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 从表单加载到Parameter属性（基类兼容）
-        /// 调用LoadParameter方法，保持与基类的兼容性
-        /// </summary>
-        private void LoadParameterToForm()
-        {
-            LoadParameter(_parameter);
-        }
-
-        /// <summary>
         /// 获取当前配置的参数对象
         /// 根据界面当前状态创建一个新的参数对象，不修改内部_parameter
         /// 主要用于验证和测试场景
@@ -510,7 +471,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 将界面控件的值保存到参数对象
         /// 在用户点击确定或需要获取当前配置时调用
         /// </summary>
-        private void SaveFormToParameter()
+        protected override void SaveFormToParameter()
         {
             // 确保 _parameter 存在
             if (_parameter == null)
@@ -534,9 +495,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 _parameter.Description = txtDescription?.Text ?? "";
                 _parameter.IsAssignment = chkEnabled?.Checked ?? false;
 
-                // 添加日志以便调试
-                Logger?.LogDebug($"保存参数 - 类型: {_parameter.AssignmentType}, 目标变量: {_parameter.TargetVarName}");
-
                 // 根据赋值类型保存数据
                 switch (_parameter.AssignmentType)
                 {
@@ -552,7 +510,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         string expression = txtAssignmentContent?.Text ?? "";
                         _parameter.Expression = txtAssignmentContent?.Text ?? "";
                         _parameter.DataSource.SourceType = DataSourceType.Variable; // 默认
-                        // ✅ 验证是否真的获取到了值
+                        // 验证是否真的获取到了值
                         if (string.IsNullOrEmpty(expression) && _parameter.AssignmentType != VariableAssignmentType.PLCRead)
                         {
                             Logger?.LogWarning($"⚠️ 警告: Expression 为空! 控件值: '{txtAssignmentContent?.Text}'");
@@ -676,20 +634,12 @@ namespace MainUI.LogicalConfiguration.Forms
         #endregion
 
         #region 验证逻辑
-
-        /// <summary>
-        /// 验证参数（基类方法实现）
-        /// 调用内部的验证逻辑，供基类框架使用
-        /// </summary>
-        /// <returns>true: 验证通过; false: 验证失败</returns>
-        protected override bool ValidateParameters() => ValidateInput();
-
         /// <summary>
         /// 验证用户输入的完整性和正确性
         /// 执行全面的输入验证，包括必填项检查和业务逻辑验证
         /// </summary>
         /// <returns>true: 所有验证通过; false: 存在验证错误</returns>
-        private bool ValidateInput()
+        protected override bool ValidateInput()
         {
             try
             {
@@ -812,52 +762,6 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 Logger?.LogError(ex, "验证配置时发生错误");
             }
-        }
-
-        /// <summary>
-        /// 生成验证消息
-        /// 根据验证结果创建格式化的消息文本
-        /// </summary>
-        /// <param name="result">验证结果</param>
-        /// <returns>格式化的验证消息</returns>
-        private string GenerateValidationMessage(ValidationResult result)
-        {
-            var messages = new List<string>();
-
-            if (result.IsValid)
-            {
-                messages.Add("✓ 配置验证通过");
-
-                // 根据赋值类型添加特定提示
-                var parameter = GetParameter();
-                switch (parameter.AssignmentType)
-                {
-                    case VariableAssignmentType.PLCRead:
-                        messages.Add($"  PLC模块: {parameter.DataSource.PlcConfig.ModuleName}");
-                        messages.Add($"  PLC地址: {parameter.DataSource.PlcConfig.Address}");
-                        break;
-                    case VariableAssignmentType.ExpressionCalculation:
-                        messages.Add("  表达式语法正确");
-                        break;
-                    case VariableAssignmentType.VariableCopy:
-                        messages.Add("  源变量存在且可访问");
-                        break;
-                }
-            }
-
-            if (result.Errors?.Any() == true)
-            {
-                messages.Add("❌ 发现错误：");
-                messages.AddRange(result.Errors.Select(e => $"  • {e}"));
-            }
-
-            if (result.Warnings?.Any() == true)
-            {
-                messages.Add("⚠️ 警告信息：");
-                messages.AddRange(result.Warnings.Select(w => $"  • {w}"));
-            }
-
-            return string.Join("\n", messages);
         }
 
         /// <summary>
@@ -1501,137 +1405,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 基类重写和接口实现
-
-        /// <summary>
-        /// 从步骤参数加载（基类方法重写）
-        /// 处理从工作流步骤中加载参数的逻辑
-        /// </summary>
-        /// <param name="stepParameter">步骤参数对象</param>
-        protected override void LoadParameterFromStep(object stepParameter)
-        {
-            try
-            {
-                Parameter_VariableAssignment loadedParameter = null;
-
-                // 尝试直接类型转换
-                if (stepParameter is Parameter_VariableAssignment directParam)
-                {
-                    loadedParameter = directParam;
-                    Logger?.LogDebug("直接获取Parameter_VariableAssignment参数");
-                }
-                // 尝试JSON反序列化
-                else if (stepParameter != null)
-                {
-                    try
-                    {
-                        string jsonString = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
-                        loadedParameter = JsonConvert.DeserializeObject<Parameter_VariableAssignment>(jsonString);
-                        Logger?.LogDebug("JSON反序列化获取Parameter_VariableAssignment参数");
-                    }
-                    catch (JsonException jsonEx)
-                    {
-                        Logger?.LogWarning(jsonEx, "JSON反序列化失败，使用默认参数");
-                        loadedParameter = null;
-                    }
-                }
-
-                // 如果加载成功，设置参数并加载到界面
-                if (loadedParameter != null)
-                {
-                    _parameter = loadedParameter;
-                    Logger?.LogInformation("成功加载变量赋值参数: {Description}", _parameter.Description);
-                }
-                else
-                {
-                    // 加载失败，使用默认值
-                    Logger?.LogWarning("加载参数失败，使用默认参数");
-                    SetDefaultValues();
-                    return;
-                }
-
-                // 加载参数到表单控件
-                LoadParameterToForm();
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "加载参数时发生错误");
-                MessageHelper.MessageOK($"加载参数失败：{ex.Message}", TType.Error);
-            }
-        }
-
-        /// <summary>
-        /// 收集参数（基类方法重写）
-        /// 供基类框架调用，返回通用的参数对象
-        /// </summary>
-        /// <returns>当前配置的参数对象</returns>
-        protected override object CollectParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        /// <summary>
-        /// 填充控件（IParameterForm接口实现）
-        /// 将参数对象的值填充到界面控件中
-        /// </summary>
-        /// <param name="parameter">要填充的参数对象</param>
-        public void PopulateControls(Parameter_VariableAssignment parameter) => Parameter = parameter;
-
-        /// <summary>
-        /// 设置默认值（IParameterForm接口实现）
-        /// 调用内部的默认值设置方法
-        /// </summary>
-        void IParameterForm<Parameter_VariableAssignment>.SetDefaultValues() => SetDefaultValues();
-
-        /// <summary>
-        /// 验证类型化参数（IParameterForm接口实现）
-        /// 验证当前参数配置的有效性
-        /// </summary>
-        /// <returns>true: 验证通过; false: 验证失败</returns>
-        public bool ValidateTypedParameters() => ValidateInput();
-
-        /// <summary>
-        /// 收集类型化参数（IParameterForm接口实现）
-        /// 从界面控件收集数据并返回参数对象
-        /// </summary>
-        /// <returns>当前配置的参数对象</returns>
-        public Parameter_VariableAssignment CollectTypedParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        /// <summary>
-        /// 转换参数对象（IParameterForm接口实现）
-        /// 将通用对象转换为特定的参数类型
-        /// 支持直接转换和JSON反序列化两种方式
-        /// </summary>
-        /// <param name="stepParameter">要转换的参数对象</param>
-        /// <returns>转换后的Parameter_VariableAssignment对象</returns>
-        public Parameter_VariableAssignment ConvertParameter(object stepParameter)
-        {
-            if (stepParameter is Parameter_VariableAssignment paramObj)
-                return paramObj;
-
-            if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
-            {
-                try
-                {
-                    return JsonConvert.DeserializeObject<Parameter_VariableAssignment>(jsonStr)
-                        ?? new Parameter_VariableAssignment();
-                }
-                catch (Exception ex)
-                {
-                    Logger?.LogError(ex, "反序列化参数失败");
-                    return new Parameter_VariableAssignment();
-                }
-            }
-
-            return new Parameter_VariableAssignment();
-        }
-
-        #endregion
 
         #region 窗体生命周期
 

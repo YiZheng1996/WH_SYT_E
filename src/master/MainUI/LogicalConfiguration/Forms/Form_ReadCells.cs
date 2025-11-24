@@ -4,7 +4,6 @@ using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using System.Windows.Forms;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -16,7 +15,7 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 3. 支持指定工作表
     /// 4. 单元格地址验证
     /// </summary>
-    public partial class Form_ReadCells : BaseParameterForm, IParameterForm<Parameter_ReadCells>
+    public partial class Form_ReadCells : BaseParameterForm<Parameter_ReadCells>
     {
         #region 私有字段
 
@@ -27,26 +26,6 @@ namespace MainUI.LogicalConfiguration.Forms
         // 单元格地址格式正则
         private readonly System.Text.RegularExpressions.Regex _cellAddressRegex =
             new(@"^[A-Z]+[0-9]+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        #endregion
-
-        #region 属性
-
-        /// <summary>
-        /// 参数对象属性
-        /// </summary>
-        public Parameter_ReadCells Parameter
-        {
-            get => GetCurrentParameters();
-            set
-            {
-                _currentParameter = value ?? new Parameter_ReadCells();
-                if (!DesignMode && !_isLoading && IsHandleCreated)
-                {
-                    LoadParametersToForm();
-                }
-            }
-        }
 
         #endregion
 
@@ -97,7 +76,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 LoadVariables();
 
                 // 加载参数到界面
-                LoadParametersToForm();
+                LoadParametersFromWorkflow();
             }
             finally
             {
@@ -162,7 +141,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 从参数对象加载到表单
         /// </summary>
-        private void LoadParametersToForm()
+        protected override void LoadParametersFromWorkflow()
         {
             if (_currentParameter == null) return;
 
@@ -284,7 +263,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private async void BtnPreview_Click(object sender, EventArgs e)
         {
-            if (!ValidateParameters())
+            if (!ValidateInput())
             {
                 return;
             }
@@ -348,7 +327,7 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                if (!ValidateParameters())
+                if (!ValidateInput())
                 {
                     return;
                 }
@@ -440,7 +419,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 验证参数
         /// </summary>
-        protected override bool ValidateParameters()
+        protected override bool ValidateInput()
         {
             // 检查是否有读取项
             if (DataGridViewDefineVar.Rows.Count == 0 ||
@@ -517,118 +496,7 @@ namespace MainUI.LogicalConfiguration.Forms
             };
         }
 
-        /// <summary>
-        /// 重写基类的 CollectParameters 方法
-        /// 这个方法会被基类的 SaveParameters() 调用
-        /// </summary>
-        protected override object CollectParameters()
-        {
-            return _currentParameter ?? GetCurrentParameters();
-        }
-
         #endregion
 
-        #region 重写基类方法
-        /// <summary>
-        /// 重写基类方法 - 从步骤参数加载
-        /// </summary>
-        protected override void LoadParameterFromStep(object stepParameter)
-        {
-            try
-            {
-                Parameter_ReadCells loadedParameter = null;
-
-                // 尝试直接类型转换
-                if (stepParameter is Parameter_ReadCells directParam)
-                {
-                    loadedParameter = directParam;
-                }
-                // 尝试JSON反序列化
-                else if (stepParameter != null)
-                {
-                    try
-                    {
-                        string jsonString = stepParameter is string s
-                            ? s
-                            : JsonConvert.SerializeObject(stepParameter);
-                        loadedParameter = JsonConvert.DeserializeObject<Parameter_ReadCells>(jsonString);
-                    }
-                    catch (JsonException)
-                    {
-                        loadedParameter = null;
-                    }
-                }
-
-                // 加载成功则更新参数并刷新界面
-                if (loadedParameter != null)
-                {
-                    _currentParameter = loadedParameter;
-                    LoadParametersToForm();  // 刷新界面控件
-                }
-                else
-                {
-                    SetDefaultValues();
-                }
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error("加载参数失败", ex);
-                SetDefaultValues();
-            }
-        }
-
-        #endregion
-
-        #region IParameterForm<Parameter_ReadCells> 接口实现
-
-        public void PopulateControls(Parameter_ReadCells parameter)
-        {
-            Parameter = parameter;
-        }
-
-        protected override void SetDefaultValues()
-        {
-            _currentParameter = new Parameter_ReadCells();
-            LoadParametersToForm();
-        }
-
-        public bool ValidateTypedParameters()
-        {
-            return ValidateParameters();
-        }
-
-        public Parameter_ReadCells CollectTypedParameters()
-        {
-            return GetCurrentParameters();
-        }
-
-        public Parameter_ReadCells ConvertParameter(object stepParameter)
-        {
-            if (stepParameter is Parameter_ReadCells param)
-            {
-                return param;
-            }
-
-            if (stepParameter is string json)
-            {
-                try
-                {
-                    return JsonConvert.DeserializeObject<Parameter_ReadCells>(json);
-                }
-                catch
-                {
-                    return new Parameter_ReadCells();
-                }
-            }
-
-            return new Parameter_ReadCells();
-        }
-
-        void IParameterForm<Parameter_ReadCells>.SetDefaultValues()
-        {
-            SetDefaultValues();
-        }
-
-        #endregion
     }
 }

@@ -4,16 +4,10 @@ using MainUI.LogicalConfiguration.LogicalManager;
 using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Forms
 {
-    public partial class Form_DefineVar : BaseParameterForm, IParameterForm<Parameter_DefineVar>
+    public partial class Form_DefineVar : BaseParameterForm<Parameter_DefineVar>
     {
         #region 构造函数
         private readonly GlobalVariableManager _variableManager;
-
-        public Parameter_DefineVar Parameter
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
 
         /// <summary>
         /// 使用依赖注入的构造函数
@@ -208,31 +202,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 _logger.LogError(ex, "保存变量时发生错误");
                 MessageHelper.MessageOK($"保存失败：{ex.Message}", TType.Error);
             }
-        }
-
-        public void PopulateControls(Parameter_DefineVar parameter)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IParameterForm<Parameter_DefineVar>.SetDefaultValues()
-        {
-            SetDefaultValues();
-        }
-
-        public bool ValidateTypedParameters()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Parameter_DefineVar CollectTypedParameters()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Parameter_DefineVar ConvertParameter(object stepParameter)
-        {
-            throw new NotImplementedException();
         }
 
         #endregion

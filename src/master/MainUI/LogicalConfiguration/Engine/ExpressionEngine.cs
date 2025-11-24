@@ -1232,7 +1232,7 @@ namespace MainUI.LogicalConfiguration.Engine
                     // 如果内容是数字，去掉引号
                     if (double.TryParse(content, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
                     {
-                        _logger?.LogDebug("移除数值引号: \"{0}\" -> {0}", content);
+                        _logger?.LogDebug($"移除数值引号: \"{content}\" -> {content}");
                         return content; // 返回不带引号的数字
                     }
 

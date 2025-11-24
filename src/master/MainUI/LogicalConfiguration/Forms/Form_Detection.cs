@@ -15,36 +15,13 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
     /// 提供清晰、美观的界面进行检测项配置
     /// 支持多种检测类型和数据源
     /// </summary>
-    public partial class Form_Detection : BaseParameterForm, IParameterForm<Parameter_Detection>
+    public partial class Form_Detection : BaseParameterForm<Parameter_Detection>
     {
         #region 私有字段
 
-        private Parameter_Detection _parameter;
         private bool _isInitializing = true;
         private bool _hasUnsavedChanges = false;
         private System.Windows.Forms.Timer _validationTimer;
-
-        #endregion
-
-        #region 属性
-
-        /// <summary>
-        /// 参数对象
-        /// </summary>
-        public Parameter_Detection Parameter
-        {
-            get => _parameter;
-            set
-            {
-                _parameter = value ?? new Parameter_Detection();
-
-                // 只在设计模式或窗体未创建时跳过加载
-                if (!DesignMode && IsHandleCreated)
-                {
-                    LoadParameterToForm();
-                }
-            }
-        }
 
         #endregion
 
@@ -100,7 +77,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 _isInitializing = true;
 
                 // 初始化参数
-                _parameter ??= new Parameter_Detection();
+                Parameter ??= new Parameter_Detection();
 
                 // 初始化验证定时器
                 InitializeValidationTimer();
@@ -680,22 +657,11 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         #region 参数处理
 
         /// <summary>
-        /// 收集参数（基类方法重写）
-        /// 供基类框架调用，返回通用的参数对象
-        /// </summary>
-        /// <returns>当前配置的参数对象</returns>
-        protected override object CollectParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        /// <summary>
         /// 设置默认值
         /// </summary>
         protected override void SetDefaultValues()
         {
-            _parameter = new Parameter_Detection
+            Parameter = new Parameter_Detection
             {
                 DetectionName = $"检测项 {_workflowState?.StepNum + 1}",
                 //Description = "",
@@ -731,48 +697,48 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         /// <summary>
         /// 从参数加载到界面
         /// </summary>
-        protected void LoadParameterToForm()
+        protected override void LoadParameterToForm()
         {
-            if (_parameter == null) return;
+            if (Parameter == null) return;
 
             try
             {
                 _isInitializing = true;
 
                 // 基本信息
-                txtDetectionName.Text = _parameter.DetectionName ?? "";
-                //txtDescription.Text = _parameter.Description ?? "";
-                cmbDetectionType.SelectedValue = _parameter.Type;
-                //chkEnabled.Checked = _parameter.Enabled;
+                txtDetectionName.Text = Parameter.DetectionName ?? "";
+                //txtDescription.Text = Parameter.Description ?? "";
+                cmbDetectionType.SelectedValue = Parameter.Type;
+                //chkEnabled.Checked = Parameter.Enabled;
 
                 // 数据源
-                cmbDataSourceType.SelectedValue = _parameter.DataSource?.SourceType ?? DataSourceType.Variable;
-                CboVariableName.Text = _parameter.DataSource?.VariableName ?? "";
-                CboPlcModule.Text = _parameter.DataSource?.PlcConfig?.ModuleName ?? "";
-                CboPlcAddress.Text = _parameter.DataSource?.PlcConfig?.Address ?? "";
+                cmbDataSourceType.SelectedValue = Parameter.DataSource?.SourceType ?? DataSourceType.Variable;
+                CboVariableName.Text = Parameter.DataSource?.VariableName ?? "";
+                CboPlcModule.Text = Parameter.DataSource?.PlcConfig?.ModuleName ?? "";
+                CboPlcAddress.Text = Parameter.DataSource?.PlcConfig?.Address ?? "";
 
                 // 检测条件
-                numMinValue.Value = _parameter.Condition?.MinValue ?? 0;
-                numMaxValue.Value = _parameter.Condition?.MaxValue ?? 100;
-                txtTargetValue.Text = _parameter.Condition?.TargetValue ?? "";
-                numTolerance.Value = _parameter.Condition?.Tolerance ?? 0;
-                numThreshold.Value = _parameter.Condition?.ThresholdValue ?? 0;
-                cmbOperator.SelectedValue = _parameter.Condition?.Operator ?? ComparisonOperator.GreaterThan;
+                numMinValue.Value = Parameter.Condition?.MinValue ?? 0;
+                numMaxValue.Value = Parameter.Condition?.MaxValue ?? 100;
+                txtTargetValue.Text = Parameter.Condition?.TargetValue ?? "";
+                numTolerance.Value = Parameter.Condition?.Tolerance ?? 0;
+                numThreshold.Value = Parameter.Condition?.ThresholdValue ?? 0;
+                cmbOperator.SelectedValue = Parameter.Condition?.Operator ?? ComparisonOperator.GreaterThan;
 
                 // 超时和重试
-                numTimeoutMs.Value = _parameter.TimeoutMs;
-                numRetryCount.Value = _parameter.RetryCount;
-                numRetryIntervalMs.Value = _parameter.RetryIntervalMs;
+                numTimeoutMs.Value = Parameter.TimeoutMs;
+                numRetryCount.Value = Parameter.RetryCount;
+                numRetryIntervalMs.Value = Parameter.RetryIntervalMs;
 
                 // 结果处理
-                chkSaveResult.Checked = _parameter.ResultHandling?.SaveToVariable ?? false;
-                CboResultVariable.Text = _parameter.ResultHandling?.ResultVariableName ?? "";
-                chkSaveValue.Checked = _parameter.ResultHandling?.SaveValueToVariable ?? false;
-                CboValueVariable.Text = _parameter.ResultHandling?.ValueVariableName ?? "";
-                cmbFailureAction.SelectedValue = _parameter.ResultHandling?.OnFailure ?? FailureAction.Continue;
-                numFailureStep.Value = _parameter.ResultHandling?.FailureStepIndex ?? -1;
-                numSuccessStep.Value = _parameter.ResultHandling?.SuccessStepIndex ?? -1;
-                chkShowResult.Checked = _parameter.ResultHandling?.ShowResult ?? true;
+                chkSaveResult.Checked = Parameter.ResultHandling?.SaveToVariable ?? false;
+                CboResultVariable.Text = Parameter.ResultHandling?.ResultVariableName ?? "";
+                chkSaveValue.Checked = Parameter.ResultHandling?.SaveValueToVariable ?? false;
+                CboValueVariable.Text = Parameter.ResultHandling?.ValueVariableName ?? "";
+                cmbFailureAction.SelectedValue = Parameter.ResultHandling?.OnFailure ?? FailureAction.Continue;
+                numFailureStep.Value = Parameter.ResultHandling?.FailureStepIndex ?? -1;
+                numSuccessStep.Value = Parameter.ResultHandling?.SuccessStepIndex ?? -1;
+                chkShowResult.Checked = Parameter.ResultHandling?.ShowResult ?? true;
 
                 // 更新UI状态
                 UpdateUIBasedOnDetectionType();
@@ -795,50 +761,50 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         /// <summary>
         /// 从界面保存到参数
         /// </summary>
-        private void SaveFormToParameter()
+        protected override void SaveFormToParameter()
         {
-            if (_parameter == null) return;
+            if (Parameter == null) return;
 
             try
             {
                 // 基本信息
-                _parameter.DetectionName = txtDetectionName.Text?.Trim() ?? "";
-                //_parameter.Description = txtDescription.Text?.Trim() ?? "";
-                _parameter.Type = (DetectionType)(cmbDetectionType.SelectedValue ?? DetectionType.ValueRange);
-                //_parameter.Enabled = chkEnabled.Checked;
+                Parameter.DetectionName = txtDetectionName.Text?.Trim() ?? "";
+                //Parameter.Description = txtDescription.Text?.Trim() ?? "";
+                Parameter.Type = (DetectionType)(cmbDetectionType.SelectedValue ?? DetectionType.ValueRange);
+                //Parameter.Enabled = chkEnabled.Checked;
 
                 // 数据源
-                _parameter.DataSource ??= new DataSourceConfig();
-                _parameter.DataSource.SourceType = (DataSourceType)(cmbDataSourceType.SelectedValue ?? DataSourceType.Variable);
-                _parameter.DataSource.VariableName = CboVariableName.Text?.Trim() ?? "";
-                _parameter.DataSource.PlcConfig ??= new PlcAddressConfig();
-                _parameter.DataSource.PlcConfig.ModuleName = CboPlcModule.Text?.Trim() ?? "";
-                _parameter.DataSource.PlcConfig.Address = CboPlcAddress.Text?.Trim() ?? "";
+                Parameter.DataSource ??= new DataSourceConfig();
+                Parameter.DataSource.SourceType = (DataSourceType)(cmbDataSourceType.SelectedValue ?? DataSourceType.Variable);
+                Parameter.DataSource.VariableName = CboVariableName.Text?.Trim() ?? "";
+                Parameter.DataSource.PlcConfig ??= new PlcAddressConfig();
+                Parameter.DataSource.PlcConfig.ModuleName = CboPlcModule.Text?.Trim() ?? "";
+                Parameter.DataSource.PlcConfig.Address = CboPlcAddress.Text?.Trim() ?? "";
 
                 // 检测条件
-                _parameter.Condition ??= new DetectionCondition();
-                _parameter.Condition.MinValue = (double)numMinValue.Value;
-                _parameter.Condition.MaxValue = (double)numMaxValue.Value;
-                _parameter.Condition.TargetValue = txtTargetValue.Text?.Trim() ?? "";
-                _parameter.Condition.ThresholdValue = (double)numThreshold.Value;
-                _parameter.Condition.Operator = (ComparisonOperator)(cmbOperator.SelectedValue ?? ComparisonOperator.GreaterThan);
-                _parameter.Condition.Tolerance = (double)numTolerance.Value;
+                Parameter.Condition ??= new DetectionCondition();
+                Parameter.Condition.MinValue = (double)numMinValue.Value;
+                Parameter.Condition.MaxValue = (double)numMaxValue.Value;
+                Parameter.Condition.TargetValue = txtTargetValue.Text?.Trim() ?? "";
+                Parameter.Condition.ThresholdValue = (double)numThreshold.Value;
+                Parameter.Condition.Operator = (ComparisonOperator)(cmbOperator.SelectedValue ?? ComparisonOperator.GreaterThan);
+                Parameter.Condition.Tolerance = (double)numTolerance.Value;
 
                 // 超时和重试
-                _parameter.TimeoutMs = numTimeoutMs.Value;
-                _parameter.RetryCount = numRetryCount.Value;
-                _parameter.RetryIntervalMs = numRetryIntervalMs.Value;
+                Parameter.TimeoutMs = numTimeoutMs.Value;
+                Parameter.RetryCount = numRetryCount.Value;
+                Parameter.RetryIntervalMs = numRetryIntervalMs.Value;
 
                 // 结果处理
-                _parameter.ResultHandling ??= new ResultHandling();
-                _parameter.ResultHandling.SaveToVariable = chkSaveResult.Checked;
-                _parameter.ResultHandling.ResultVariableName = CboResultVariable.Text?.Trim() ?? "";
-                _parameter.ResultHandling.SaveValueToVariable = chkSaveValue.Checked;
-                _parameter.ResultHandling.ValueVariableName = CboValueVariable.Text?.Trim() ?? "";
-                _parameter.ResultHandling.OnFailure = (FailureAction)(cmbFailureAction.SelectedValue ?? FailureAction.Continue);
-                _parameter.ResultHandling.FailureStepIndex = numFailureStep.Value;
-                _parameter.ResultHandling.SuccessStepIndex = numSuccessStep.Value;
-                _parameter.ResultHandling.ShowResult = chkShowResult.Checked;
+                Parameter.ResultHandling ??= new ResultHandling();
+                Parameter.ResultHandling.SaveToVariable = chkSaveResult.Checked;
+                Parameter.ResultHandling.ResultVariableName = CboResultVariable.Text?.Trim() ?? "";
+                Parameter.ResultHandling.SaveValueToVariable = chkSaveValue.Checked;
+                Parameter.ResultHandling.ValueVariableName = CboValueVariable.Text?.Trim() ?? "";
+                Parameter.ResultHandling.OnFailure = (FailureAction)(cmbFailureAction.SelectedValue ?? FailureAction.Continue);
+                Parameter.ResultHandling.FailureStepIndex = numFailureStep.Value;
+                Parameter.ResultHandling.SuccessStepIndex = numSuccessStep.Value;
+                Parameter.ResultHandling.ShowResult = chkShowResult.Checked;
 
                 _hasUnsavedChanges = false;
                 Logger?.LogDebug("界面参数保存完成");
@@ -925,7 +891,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         /// <summary>
         /// 验证输入
         /// </summary>
-        protected bool ValidateInput()
+        protected override bool ValidateInput()
         {
             try
             {
@@ -1006,115 +972,8 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                 return false;
             }
         }
-
         #endregion
 
-        #region 重写基类方法
-        protected override void LoadParameterFromStep(object stepParameter)
-        {
-            if (!IsServiceAvailable) return;
 
-            // 只转换参数并调用PopulateControls,不要直接设置Parameter属性
-            var parameter = ConvertParameter(stepParameter);
-            PopulateControls(parameter);  // 内部会处理参数设置和加载
-        }
-
-        #endregion
-
-        #region IParameterForm<Parameter_Detection> 接口实现
-
-        public void PopulateControls(Parameter_Detection parameter)
-        {
-            // 直接赋值给私有字段,避免触发属性的set访问器
-            _parameter = parameter ?? new Parameter_Detection();
-
-            // 直接调用加载方法,不依赖属性的条件判断
-            LoadParameterToForm();
-        }
-
-        void IParameterForm<Parameter_Detection>.SetDefaultValues()
-        {
-            SetDefaultValues();
-        }
-
-        public bool ValidateTypedParameters()
-        {
-            return ValidateInput();
-        }
-
-        public Parameter_Detection CollectTypedParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        public Parameter_Detection ConvertParameter(object stepParameter)
-        {
-            try
-            {
-                Logger?.LogDebug("开始转换参数,类型: {Type}", stepParameter?.GetType().Name ?? "null");
-
-                // 参数为空
-                if (stepParameter == null)
-                {
-                    Logger?.LogWarning("步骤参数为空,使用默认参数");
-                    return new Parameter_Detection();
-                }
-
-                // 已经是正确的类型
-                if (stepParameter is Parameter_Detection detectionParam)
-                {
-                    Logger?.LogDebug("参数已经是 Parameter_Detection 类型");
-                    return detectionParam;
-                }
-
-                // 是JSON字符串
-                if (stepParameter is string jsonStr && !string.IsNullOrWhiteSpace(jsonStr))
-                {
-                    try
-                    {
-                        Logger?.LogDebug("尝试从JSON字符串反序列化");
-                        var param = JsonConvert.DeserializeObject<Parameter_Detection>(jsonStr);
-                        if (param != null)
-                        {
-                            Logger?.LogInformation("JSON字符串反序列化成功");
-                            return param;
-                        }
-                    }
-                    catch (JsonException ex)
-                    {
-                        Logger?.LogWarning(ex, "JSON字符串反序列化失败");
-                    }
-                }
-
-                // 是其他对象类型(比如 JObject、匿名类型等)
-                try
-                {
-                    Logger?.LogDebug("尝试先序列化再反序列化");
-                    string jsonString = JsonConvert.SerializeObject(stepParameter);
-                    var param = JsonConvert.DeserializeObject<Parameter_Detection>(jsonString);
-                    if (param != null)
-                    {
-                        //Logger?.LogInformation("对象序列化转换成功");
-                        return param;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger?.LogError(ex, "对象序列化转换失败");
-                }
-
-                // 所有方法都失败,返回默认参数
-                Logger?.LogWarning("所有转换方法都失败,使用默认参数");
-                return new Parameter_Detection();
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "ConvertParameter 发生异常");
-                return new Parameter_Detection();
-            }
-        }
-
-        #endregion
     }
 }

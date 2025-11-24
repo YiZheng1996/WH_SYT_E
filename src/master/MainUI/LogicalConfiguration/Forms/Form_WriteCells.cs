@@ -20,7 +20,7 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 4. 智能提示
     /// 5. 操作按钮列
     /// </summary>
-    public partial class Form_WriteCells : BaseParameterForm, IParameterForm<Parameter_WriteCells>
+    public partial class Form_WriteCells : BaseParameterForm<Parameter_WriteCells>
     {
         #region 私有字段
 
@@ -76,23 +76,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 "  • BaseTest - 测试基类"
             }
         };
-
-        #endregion
-
-        #region 属性
-
-        public Parameter_WriteCells Parameter
-        {
-            get => GetCurrentParameters();
-            set
-            {
-                _currentParameter = value ?? new Parameter_WriteCells();
-                if (!DesignMode && !_isLoading && IsHandleCreated)
-                {
-                    LoadParametersToForm();
-                }
-            }
-        }
 
         #endregion
 
@@ -913,12 +896,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #region 验证和保存
 
-        protected override object CollectParameters()
-        {
-            return GetCurrentParameters();
-        }
-
-        protected override bool ValidateParameters()
+        protected override bool ValidateInput()
         {
             try
             {
@@ -1057,40 +1035,17 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         #region 重写基类方法
+
         /// <summary>
         /// 从步骤参数加载 - 重写基类方法实现自动加载
         /// </summary>
-        protected override void LoadParameterFromStep(object stepParameter)
+        protected override void LoadParametersFromWorkflow()
         {
             try
             {
-                Parameter_WriteCells loadedParameter = null;
-
-                // 尝试直接类型转换
-                if (stepParameter is Parameter_WriteCells directParam)
-                {
-                    loadedParameter = directParam;
-                }
-                // 尝试JSON反序列化
-                else if (stepParameter != null)
-                {
-                    try
-                    {
-                        string jsonString = stepParameter is string s
-                            ? s
-                            : JsonConvert.SerializeObject(stepParameter);
-                        loadedParameter = JsonConvert.DeserializeObject<Parameter_WriteCells>(jsonString);
-                    }
-                    catch (JsonException)
-                    {
-                        loadedParameter = null;
-                    }
-                }
-
                 // 加载成功则更新参数并刷新界面
-                if (loadedParameter != null)
+                if (Parameter != null)
                 {
-                    _currentParameter = loadedParameter;
                     LoadParametersToForm();  // 刷新界面控件
                 }
                 else
@@ -1121,51 +1076,6 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 _logger?.LogError(ex, "设置默认值失败");
             }
-        }
-        #endregion
-
-        #region IParameterForm<Parameter_WriteCells> 接口实现
-        public void PopulateControls(Parameter_WriteCells parameter)
-        {
-            Parameter = parameter;
-        }
-
-        void IParameterForm<Parameter_WriteCells>.SetDefaultValues()
-        {
-            SetDefaultValues();
-        }
-
-        public bool ValidateTypedParameters()
-        {
-            return ValidateParameters();
-        }
-
-        public Parameter_WriteCells CollectTypedParameters()
-        {
-            return GetCurrentParameters();
-        }
-
-        public Parameter_WriteCells ConvertParameter(object stepParameter)
-        {
-
-            if (stepParameter is Parameter_WriteCells param)
-            {
-                return param;
-            }
-
-            if (stepParameter is string json)
-            {
-                try
-                {
-                    return JsonConvert.DeserializeObject<Parameter_WriteCells>(json);
-                }
-                catch
-                {
-                    return new Parameter_WriteCells();
-                }
-            }
-
-            return new Parameter_WriteCells();
         }
         #endregion
 

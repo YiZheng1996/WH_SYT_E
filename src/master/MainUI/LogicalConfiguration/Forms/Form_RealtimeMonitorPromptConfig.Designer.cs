@@ -684,7 +684,7 @@
         }
 
         #endregion
-        private UIButton btnOK;
+        //private UIButton btnOK;
         private Sunny.UI.UIPanel panelMain;
         private Sunny.UI.UIGroupBox grpBasicConfig;
         private Sunny.UI.UITextBox txtDescription;

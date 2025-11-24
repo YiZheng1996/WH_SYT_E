@@ -3,39 +3,15 @@ using MainUI.LogicalConfiguration.Forms;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 {
     /// <summary>
     /// 延时参数配置表单
     /// </summary>
-    public partial class Form_DelayTime : BaseParameterForm, IParameterForm<Parameter_DelayTime>
+    public partial class Form_DelayTime : BaseParameterForm<Parameter_DelayTime>
     {
         private const double DEFAULT_DELAY_TIME = 1000.0;
-
-        /// <summary>
-        /// 当前参数对象缓存
-        /// </summary>
-        private Parameter_DelayTime _parameter;
-
-        /// <summary>
-        /// 参数对象
-        /// </summary>
-        public Parameter_DelayTime Parameter
-        {
-            get => _parameter;
-            set
-            {
-                _parameter = value ?? new Parameter_DelayTime();
-
-                // 设置参数时自动加载到界面
-                if (!DesignMode)
-                {
-                    PopulateControls(_parameter);
-                }
-            }
-        }
 
         #region 构造函数
 
@@ -59,21 +35,12 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             InitializeForm();
         }
 
-        // 支持带参数的构造函数
-        public Form_DelayTime(IWorkflowStateService workflowState, ILogger<Form_DelayTime> logger, Parameter_DelayTime parameter)
-            : base(workflowState, logger)
-        {
-            InitializeComponent();
-            Parameter = parameter ?? new Parameter_DelayTime();
-            InitializeForm();
-        }
-
         private void InitializeForm()
         {
             if (DesignMode) return;
 
-            Parameter ??= new Parameter_DelayTime();
             BindEvents();
+            LoadParameterToForm();
         }
 
         private void BindEvents()
@@ -92,122 +59,52 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
         #region 重写基类方法
 
-        protected override void LoadParameterFromStep(object stepParameter)
+        /// <summary>
+        /// 加载参数到界面
+        /// </summary>
+        protected override void LoadParameterToForm()
         {
-            if (!IsServiceAvailable) return;
-
-            _parameter = ConvertParameter(stepParameter);
-            PopulateControls(_parameter);
-        }
-
-        protected override void SetDefaultValues()
-        {
-            _parameter = new Parameter_DelayTime { T = DEFAULT_DELAY_TIME };
-            PopulateControls(_parameter);
-        }
-
-        protected override bool ValidateParameters()
-        {
-            return ValidateTypedParameters();
-        }
-
-        protected override object CollectParameters()
-        {
-            return CollectTypedParameters();
-        }
-
-        #endregion
-
-        #region IParameterForm<Parameter_DelayTime> 实现
-
-        public void PopulateControls(Parameter_DelayTime parameter)
-        {
-            if (parameter == null || DesignMode) return;
-
             try
             {
-                if (txtTime != null)
-                {
-                    txtTime.Text = parameter.T.ToString();
-                }
+                Parameter ??= new Parameter_DelayTime();
 
-                Logger?.LogDebug("控件填充完成: DelayTime={DelayTime}", parameter.T);
+                txtTime.Text = Parameter.T.ToString();
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "填充控件失败");
-                if (!DesignMode)
-                {
-                    MessageHelper.MessageOK("填充控件失败：" + ex.Message, TType.Error);
-                }
+                Logger?.LogError(ex, "加载参数到界面失败");
             }
-        }
-
-        public bool ValidateTypedParameters()
-        {
-            if (DesignMode) return true;
-
-            if (txtTime == null || string.IsNullOrWhiteSpace(txtTime.Text))
-            {
-                MessageHelper.MessageOK("请输入延时时间", TType.Warn);
-                return false;
-            }
-
-            if (!double.TryParse(txtTime.Text, out double delayTime) || delayTime <= 0)
-            {
-                MessageHelper.MessageOK("延时时间必须是大于0的数字", TType.Warn);
-                return false;
-            }
-
-            return true;
         }
 
         /// <summary>
-        /// 收集的类型参数
+        /// 验证输入数据的有效性
         /// </summary>
-        /// <returns></returns>
-        public Parameter_DelayTime CollectTypedParameters()
+        protected override bool ValidateInput()
         {
-            if (DesignMode) return new Parameter_DelayTime();
-
             try
             {
-                var parameter = new Parameter_DelayTime
+                // 延时时间
+                if (string.IsNullOrWhiteSpace(txtTime.Text))
                 {
-                    T = txtTime != null ? double.Parse(txtTime.Text) : DEFAULT_DELAY_TIME
-                };
+                    MessageHelper.MessageOK("请输入需要延时的时间！", TType.Warn);
+                    txtTime.Focus();
+                    return false;
+                }
 
-                Logger?.LogDebug("参数收集完成: DelayTime={DelayTime}", parameter.T);
-                return parameter;
+                return true;
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "收集参数失败");
-                return new Parameter_DelayTime { T = DEFAULT_DELAY_TIME };
+                Logger?.LogError(ex, "验证输入失败");
+                return false;
             }
         }
 
-        public Parameter_DelayTime ConvertParameter(object stepParameter)
-        {
-            try
-            {
-                if (stepParameter is Parameter_DelayTime param)
-                {
-                    return param;
-                }
-                else if (stepParameter != null)
-                {
-                    var jsonObject = JObject.Parse(stepParameter.ToString());
-                    return jsonObject.ToObject<Parameter_DelayTime>() ?? new Parameter_DelayTime();
-                }
+        // 设置默认值
 
-                return new Parameter_DelayTime();
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "参数转换失败");
-                return new Parameter_DelayTime();
-            }
+        protected override void SetDefaultValues()
+        {
+            Parameter = new Parameter_DelayTime { T = DEFAULT_DELAY_TIME };
         }
 
         #endregion
@@ -249,14 +146,9 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
         private void BtnSave_Click(object sender, EventArgs e)
         {
-
+            SaveParameters();
         }
-
-        void IParameterForm<Parameter_DelayTime>.SetDefaultValues()
-        {
-            SetDefaultValues();
-        }
-
+     
         #endregion
     }
 }
