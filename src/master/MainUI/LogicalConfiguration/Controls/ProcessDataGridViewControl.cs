@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Controls
 {
     /// <summary>
-    /// 流程配置表格用户控件 - 封装DataGridView流程步骤管理功能
+    /// 流程配置表格用户控件
     /// </summary>
     public partial class ProcessDataGridViewControl : UserControl
     {
@@ -80,7 +80,6 @@ namespace MainUI.LogicalConfiguration.Controls
         public ProcessDataGridViewControl()
         {
             InitializeComponent();
-            InitializeComponent2();
             InitializeDataGridView();
         }
 
@@ -103,18 +102,12 @@ namespace MainUI.LogicalConfiguration.Controls
         #endregion
 
         #region 初始化
-
-        private void InitializeComponent2()
-        {
-
-        }
-
         /// <summary>
-        /// 初始化DataGridView控件 - 与原始样式完全一致
+        /// 初始化DataGridView控件
         /// </summary>
         private void InitializeDataGridView()
         {
-            _dataGridView = new Sunny.UI.UIDataGridView  // 或 AntdUI.DataGridView
+            _dataGridView = new UIDataGridView
             {
                 Name = "ProcessDataGridView",
                 Dock = DockStyle.Fill,
@@ -155,61 +148,60 @@ namespace MainUI.LogicalConfiguration.Controls
                 StripeOddColor = Color.White,
 
                 // 禁用系统样式
-                EnableHeadersVisualStyles = false
+                EnableHeadersVisualStyles = false,
+                // 交替行样式
+                AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle
+                {
+                    BackColor = Color.White
+                },
+
+                // 列头样式 - 蓝色背景,白色粗体文字
+                ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Alignment = DataGridViewContentAlignment.MiddleCenter,
+                    BackColor = Color.FromArgb(80, 160, 255),         // ← 蓝色!
+                    Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134), // ← 12F 粗体!
+                    ForeColor = Color.White,
+                    SelectionBackColor = Color.FromArgb(80, 160, 255),
+                    SelectionForeColor = Color.White,
+                    WrapMode = DataGridViewTriState.True
+                },
+                ColumnHeadersHeight = 40,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+
+                // 默认单元格样式
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Alignment = DataGridViewContentAlignment.MiddleCenter,
+                    BackColor = Color.White,
+                    Font = new Font("微软雅黑", 9F),                  // ← 9F!
+                    ForeColor = Color.FromArgb(48, 48, 48),
+                    SelectionBackColor = Color.FromArgb(227, 242, 253), // ← 淡蓝色!
+                    SelectionForeColor = Color.Black,                  // ← 黑色!
+                    WrapMode = DataGridViewTriState.False
+                },
+
+                // 行头样式
+                RowHeadersDefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Alignment = DataGridViewContentAlignment.MiddleLeft,
+                    BackColor = SystemColors.Control,
+                    Font = new Font("微软雅黑", 12F),
+                    ForeColor = SystemColors.WindowText,
+                    SelectionBackColor = SystemColors.Highlight,
+                    SelectionForeColor = SystemColors.HighlightText,
+                    WrapMode = DataGridViewTriState.True
+                },
+
+                // 行样式
+                RowsDefaultCellStyle = new DataGridViewCellStyle
+                {
+                    BackColor = Color.White,
+                    Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134)
+                }
             };
 
-            // ★★★ 交替行样式
-            _dataGridView.AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle
-            {
-                BackColor = Color.White
-            };
-
-            // ★★★ 列头样式 - 蓝色背景,白色粗体文字
-            _dataGridView.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
-            {
-                Alignment = DataGridViewContentAlignment.MiddleCenter,
-                BackColor = Color.FromArgb(80, 160, 255),         // ← 蓝色!
-                Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134), // ← 12F 粗体!
-                ForeColor = Color.White,
-                SelectionBackColor = Color.FromArgb(80, 160, 255),
-                SelectionForeColor = Color.White,
-                WrapMode = DataGridViewTriState.True
-            };
-            _dataGridView.ColumnHeadersHeight = 40;
-            _dataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-
-            // ★★★ 默认单元格样式
-            _dataGridView.DefaultCellStyle = new DataGridViewCellStyle
-            {
-                Alignment = DataGridViewContentAlignment.MiddleCenter,
-                BackColor = Color.White,
-                Font = new Font("微软雅黑", 9F),                  // ← 9F!
-                ForeColor = Color.FromArgb(48, 48, 48),
-                SelectionBackColor = Color.FromArgb(227, 242, 253), // ← 淡蓝色!
-                SelectionForeColor = Color.Black,                  // ← 黑色!
-                WrapMode = DataGridViewTriState.False
-            };
-
-            // ★★★ 行头样式
-            _dataGridView.RowHeadersDefaultCellStyle = new DataGridViewCellStyle
-            {
-                Alignment = DataGridViewContentAlignment.MiddleLeft,
-                BackColor = SystemColors.Control,
-                Font = new Font("微软雅黑", 12F),
-                ForeColor = SystemColors.WindowText,
-                SelectionBackColor = SystemColors.Highlight,
-                SelectionForeColor = SystemColors.HighlightText,
-                WrapMode = DataGridViewTriState.True
-            };
-
-            // ★★★ 行样式
-            _dataGridView.RowsDefaultCellStyle = new DataGridViewCellStyle
-            {
-                BackColor = Color.White,
-                Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134)
-            };
-
-            // ★★★ 行模板
+            // 行模板
             _dataGridView.RowTemplate.Height = 35;
             _dataGridView.RowTemplate.DefaultCellStyle.Font = new Font("微软雅黑", 12F);
 
@@ -228,13 +220,13 @@ namespace MainUI.LogicalConfiguration.Controls
         }
 
         /// <summary>
-        /// 初始化列 - 与DataGridViewManager.RefreshFromDataSource()的数据顺序完全匹配
+        /// 初始化列
         /// </summary>
         private void InitializeColumns()
         {
             _dataGridView.Columns.Clear();
 
-            // ★ 第1列: StepNum - 步骤号
+            // 第1列: StepNum - 步骤号
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStepNumber",
@@ -244,7 +236,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 SortMode = DataGridViewColumnSortMode.NotSortable
             });
 
-            // ★ 第2列: StepName - 步骤名称
+            // 第2列: StepName - 步骤名称
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStepName",
@@ -254,7 +246,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 SortMode = DataGridViewColumnSortMode.NotSortable
             });
 
-            // ★ 第3列: StepType - 步骤类型 (由GetStepTypeName生成)
+            // 第3列: StepType - 步骤类型 (由GetStepTypeName生成)
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStepType",
@@ -264,7 +256,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 SortMode = DataGridViewColumnSortMode.NotSortable
             });
 
-            // ★ 第4列: StepDetails - 步骤详情 (由StepDetailsProvider生成) ← 关键!
+            // 第4列: StepDetails - 步骤详情 (由StepDetailsProvider生成) ← 关键!
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStepDetails",
@@ -274,7 +266,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 SortMode = DataGridViewColumnSortMode.NotSortable
             });
 
-            // ★ 第5列: Remark - 备注 (可编辑)
+            // 第5列: Remark - 备注 (可编辑)
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColRemark",
@@ -284,7 +276,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 SortMode = DataGridViewColumnSortMode.NotSortable
             });
 
-            // ★ 第6列: Status - 状态
+            // 第6列: Status - 状态
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStatus",
@@ -299,7 +291,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 Visible = false
             });
 
-            // ★ 第7列: ExecutionTime - 执行时间
+            // 第7列: ExecutionTime - 执行时间
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColExecutionTime",
@@ -517,7 +509,7 @@ namespace MainUI.LogicalConfiguration.Controls
         /// </summary>
         private void DataGridView_DragDrop(object sender, DragEventArgs e)
         {
-            //DragDropEvent?.Invoke(sender, e);
+            DragDropEvent?.Invoke(sender, e);
         }
 
         /// <summary>

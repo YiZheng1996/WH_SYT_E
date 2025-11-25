@@ -67,19 +67,19 @@ namespace MainUI.LogicalConfiguration.Controls
                 Dock = DockStyle.Fill,
                 Name = "ToolTreeView",
 
-                // ★ 背景填充色
+                // 背景填充色
                 FillColor = Color.FromArgb(248, 249, 250),
                 FillColor2 = Color.FromArgb(248, 249, 250),
 
-                // ★ 字体
+                // 字体
                 Font = new Font("微软雅黑", 12F),
 
-                // ★ 交互颜色
+                // 交互颜色
                 HoverColor = Color.FromArgb(227, 242, 253),      // 鼠标悬停颜色 - 淡蓝色
                 SelectedColor = Color.FromArgb(25, 118, 210),    // 选中颜色 - 深蓝色
                 LineColor = Color.White,                          // 连接线颜色
 
-                // ★ 图片列表
+                // 图片列表
                 ImageKey = "文件夹.png",
                 SelectedImageIndex = 0,
 
@@ -87,33 +87,32 @@ namespace MainUI.LogicalConfiguration.Controls
                 Indent = 23,
                 ItemHeight = 35,
 
-                // ★ 显示设置
+                // 显示设置
                 ShowPlusMinus = false,
                 ShowText = false,
 
-                // ★ 边框颜色
+                // 边框颜色
                 RectColor = Color.FromArgb(248, 249, 250),
                 RectDisableColor = Color.FromArgb(248, 249, 250),
 
-                // ★ 滚动条样式
+                // 滚动条样式
                 ScrollBarStyleInherited = false,
 
-                // ★ 其他属性
+                // 其他属性
                 Location = new Point(8, 8),
                 MinimumSize = new Size(1, 1),
                 TabIndex = 0,
                 Text = null,
-                TextAlignment = ContentAlignment.MiddleCenter
+                TextAlignment = ContentAlignment.MiddleCenter,
+                ImageList = imageList1
             };
-
-            _treeView.ImageList = imageList1;
 
             // 注册事件
             _treeView.ItemDrag += TreeView_ItemDrag;
             _treeView.AfterSelect += TreeView_AfterSelect;
             _treeView.NodeMouseDoubleClick += TreeView_NodeMouseDoubleClick;
 
-            this.Controls.Add(_treeView);
+            Controls.Add(_treeView);
 
             // 加载默认工具
             LoadDefaultTools();
@@ -160,8 +159,6 @@ namespace MainUI.LogicalConfiguration.Controls
                 };
                 logicNode.Nodes.Add(new TreeNode("延时等待") { Tag = "DelayWait", ImageKey = "延时等待.png" });
                 logicNode.Nodes.Add(new TreeNode("条件判断") { Tag = "ConditionJudge", ImageKey = "条件判断.png" });
-                //logicNode.Nodes.Add(new TreeNode("循环开始") { Tag = "LoopControlStart", ImageKey = "循环开始.png" });
-                //logicNode.Nodes.Add(new TreeNode("循环结束") { Tag = "LoopControlStop", ImageKey = "循环结束.png" });
                 logicNode.Nodes.Add(new TreeNode("等待稳定") { Tag = "Waitingforstability", ImageKey = "等待稳定.png" });
                 logicNode.Nodes.Add(new TreeNode("检测工具") { Tag = "DetectionTool", ImageKey = "检测工具.png" });
                 logicNode.Nodes.Add(new TreeNode("循环工具") { Tag = "RealTimeMonitoring", ImageKey = "循环开始.png" });

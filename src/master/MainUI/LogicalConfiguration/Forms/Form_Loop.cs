@@ -312,9 +312,9 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (result == DialogResult.OK)
                 {
                     // 获取配置好的子步骤列表
-                    var updatedSteps = configForm.GetChildSteps();
+                    var updatedSteps = configForm._childSteps;
 
-                    // ⭐ 诊断日志2: 配置对话框返回的数据
+                    // 诊断日志2: 配置对话框返回的数据
                     Debug.WriteLine("配置对话框返回:");
                     Debug.WriteLine($"  返回的子步骤数量: {updatedSteps?.Count ?? 0}");
                     if (updatedSteps != null && updatedSteps.Count > 0)
@@ -327,10 +327,10 @@ namespace MainUI.LogicalConfiguration.Forms
                         }
                     }
 
-                    // ⭐ 关键: 更新参数对象的子步骤列表
+                    // 更新参数对象的子步骤列表
                     Parameter.ChildSteps = updatedSteps;
 
-                    // ⭐ 诊断日志3: 更新后的状态
+                    // 诊断日志3: 更新后的状态
                     Debug.WriteLine("更新Parameter.ChildSteps后:");
                     Debug.WriteLine($"  Parameter.ChildSteps 数量: {Parameter.ChildSteps?.Count ?? 0}"
                         );

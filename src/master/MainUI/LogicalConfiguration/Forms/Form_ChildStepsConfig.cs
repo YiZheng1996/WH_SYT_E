@@ -1,66 +1,41 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Controls;
+using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// 循环体子步骤配置窗体 - 继承自基类
+    /// 循环体子步骤配置窗体
     /// </summary>
-    public partial class Form_ChildStepsConfig : BaseStepConfigForm
+    public partial class Form_ChildStepsConfig : UIForm
     {
-        #region 私有字段
+        #region 字段
 
-        /// <summary>
-        /// 子步骤列表（深拷贝）
-        /// </summary>
-        private List<ChildModel> _childSteps;
-
-        /// <summary>
-        /// 原始步骤列表引用（用于保存）
-        /// </summary>
-        private readonly List<ChildModel> _originalSteps;
-
-        /// <summary>
-        /// 底部按钮面板
-        /// </summary>
-        //private UIPanel panelButtons;
-
-        /// <summary>
-        /// 保存按钮
-        /// </summary>
+        // UI控件
+        private ToolTreeViewControl _toolTreeControl;
+        private ProcessDataGridViewControl _processGridControl;
         private UISymbolButton btnSave;
-
-        /// <summary>
-        /// 取消按钮
-        /// </summary>
         private UISymbolButton btnCancel;
 
+        // 服务依赖
+        private readonly ILogger<Form_ChildStepsConfig> _logger;
+        private readonly IFormService _formService;
+        private readonly IWorkflowStateService _childWorkflowState; // 子步骤专用的工作流状态
 
-        #endregion
+        // 数据
+        public List<ChildModel> _childSteps;
+        private readonly List<ChildModel> _originalSteps;
+        private bool _hasUnsavedChanges = false;
 
-        #region 重写基类属性
+        // 状态颜色
+        private static readonly Color PrimaryBlue = Color.FromArgb(65, 100, 204);
 
-        /// <summary>
-        /// 不允许循环控制（避免嵌套循环）
-        /// </summary>
-        protected override bool AllowLoopControl => false;
-
-        /// <summary>
-        /// 窗体标题
-        /// </summary>
-        protected override string FormTitle => "📋 循环体子步骤配置";
-
-        /// <summary>
-        /// 获取步骤列表
-        /// </summary>
-        protected override List<ChildModel> GetStepsList() => _childSteps;
-
-        /// <summary>
-        /// 设置步骤列表
-        /// </summary>
-        protected override void SetStepsList(List<ChildModel> steps) => _childSteps = steps;
-
+        // 菜单管理器
+        private StepContextMenuManager _menuManager;
         #endregion
 
         #region 构造函数
@@ -77,111 +52,318 @@ namespace MainUI.LogicalConfiguration.Forms
             _logger = logger;
             _originalSteps = childSteps;
 
-            // 深拷贝子步骤列表，避免直接修改原始数据
+            // 深拷贝子步骤列表
             _childSteps = childSteps != null
-                ? JsonConvert.DeserializeObject<List<ChildModel>>(
-                    JsonConvert.SerializeObject(childSteps)) : [];
+                ? JsonConvert.DeserializeObject<List<ChildModel>>(JsonConvert.SerializeObject(childSteps))
+                : [];
+
+            // 获取服务
+            _formService = Program.ServiceProvider?.GetService<IFormService>();
+
+            // 创建子步骤专用的工作流状态服务(独立实例)
+            _childWorkflowState = new WorkflowStateService();
+
+            // 初始化子步骤到工作流状态
+            foreach (var step in _childSteps)
+            {
+                _childWorkflowState.AddStep(step);
+            }
 
             InitializeComponent();
             InitializeCustomUI();
+            RegisterEventHandlers();
 
-            // 调用基类的初始化方法
-            InitializeToolBox();
-            LoadStepsToGrid();
+            _logger?.LogDebug("循环体子步骤配置窗体已创建,步骤数量: {Count}", _childSteps.Count);
         }
 
         #endregion
 
-        #region 初始化组件
+        #region 初始化UI
 
         /// <summary>
         /// 初始化自定义UI
         /// </summary>
         private void InitializeCustomUI()
         {
-            // 创建保存按钮
-            btnSave = new UISymbolButton
-            {
-                Size = new Size(100, 35),
-                Location = new Point(this.Width - 240, 12),
-                Text = "保存",
-                Symbol = 361445, // ✓ 符号
-                SymbolColor = Color.White,
-                FillColor = Color.FromArgb(65, 100, 204),
-                RectColor = Color.FromArgb(65, 100, 204),
-                FillHoverColor = Color.FromArgb(85, 120, 224),
-                Cursor = Cursors.Hand,
-                Font = new Font("微软雅黑", 10F)
-            };
-            btnSave.Click += BtnSave_Click;
-
-            // 创建取消按钮
-            btnCancel = new UISymbolButton
-            {
-                Size = new Size(100, 35),
-                Location = new Point(this.Width - 130, 12),
-                Text = "取消",
-                Symbol = 361453, // ✕ 符号
-                SymbolColor = Color.FromArgb(80, 80, 80),
-                FillColor = Color.FromArgb(220, 53, 69),
-                RectColor = Color.FromArgb(200, 200, 200),
-                FillHoverColor = Color.FromArgb(220, 53, 69),
-                Cursor = Cursors.Hand,
-                Font = new Font("微软雅黑", 10F)
-            };
-            btnCancel.Click += BtnCancel_Click;
-
-            pnlButtons.Controls.AddRange([btnSave, btnCancel]);
-
-            // 设置右键菜单
-            dgvSteps.ContextMenuStrip = CreateContextMenu();
-        }
-
-        #endregion
-
-        #region 重写基类方法
-
-        /// <summary>
-        /// 重写工具箱初始化（移除循环控制）
-        /// </summary>
-        protected override void InitializeToolBox()
-        {
-            base.InitializeToolBox();
-
-            // 可以在这里添加子步骤特有的工具项
-            // 或者移除不需要的工具项
-            _logger?.LogDebug("子步骤工具箱初始化完成，已禁用循环控制");
-        }
-
-        /// <summary>
-        /// 保存配置
-        /// </summary>
-        protected override void SaveConfiguration()
-        {
             try
             {
-                // 清空原始列表
-                _originalSteps?.Clear();
-
-                // 复制编辑后的步骤到原始列表
-                if (_originalSteps != null && _childSteps != null)
+                // 创建工具箱控件(不允许循环控制)
+                var toolLogger = Program.ServiceProvider?.GetService<ILogger<ToolTreeViewControl>>();
+                _toolTreeControl = new ToolTreeViewControl(toolLogger)
                 {
-                    _originalSteps.AddRange(_childSteps);
-                }
+                    Dock = DockStyle.Fill,
+                    Title = "工具箱"
+                };
 
-                _hasUnsavedChanges = false;
-                _logger?.LogInformation("子步骤配置已保存，共 {Count} 个步骤", _childSteps?.Count ?? 0);
+                // 添加到左侧容器
+                panelToolBox.Controls.Clear();
+                panelToolBox.Controls.Add(_toolTreeControl);
+
+                // 初始化工具箱(过滤掉循环控制相关步骤)
+                InitializeToolBox();
+
+                // 创建流程表格控件
+                var gridLogger = Program.ServiceProvider?.GetService<ILogger<ProcessDataGridViewControl>>();
+                _processGridControl = new ProcessDataGridViewControl(_childWorkflowState, gridLogger)
+                {
+                    Dock = DockStyle.Fill
+                };
+
+                // 添加到中间容器
+                panelProcess.Controls.Clear();
+                panelProcess.Controls.Add(_processGridControl);
+
+                // 刷新表格数据
+                _processGridControl.RefreshGrid();
+
+                // 初始化右键菜单
+                InitializeContextMenu();
+
+                // 创建底部按钮
+                CreateButtons();
+
+                // 设置窗体样式
+                Text = "循环体子步骤配置";
+                TitleColor = PrimaryBlue;
+                ShowRadius = false;
+                Size = new Size(1200, 700);
+                StartPosition = FormStartPosition.CenterParent;
+
+                _logger?.LogDebug("自定义UI初始化完成");
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "保存子步骤配置失败");
+                _logger?.LogError(ex, "初始化自定义UI失败");
                 throw;
             }
         }
 
+        /// <summary>
+        /// 初始化工具箱(过滤循环控制步骤)
+        /// </summary>
+        private void InitializeToolBox()
+        {
+            try
+            {
+                // 禁止的步骤类型(避免嵌套循环)
+                var disallowedSteps = new HashSet<string>
+                {
+                    "循环开始",
+                    "循环结束",
+                    "For循环",
+                    "While循环"
+                };
+
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "初始化工具箱失败");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 初始化右键菜单
+        /// </summary>
+        private void InitializeContextMenu()
+        {
+            try
+            {
+                // 获取ProcessDataGridViewControl内部的DataGridView
+                var dataGridView = _processGridControl.DataGridView;
+
+                // 创建DataGridViewManager(用于菜单管理器)
+                var gridManager = new DataGridViewManager(dataGridView);
+
+                // 创建菜单管理器
+                var menuLogger = Program.ServiceProvider?.GetService<ILogger<StepContextMenuManager>>();
+                _menuManager = new StepContextMenuManager(
+                    dataGridView,
+                    _childWorkflowState,
+                    gridManager,
+                    menuLogger,
+                    this);
+
+                _logger?.LogDebug("右键菜单已初始化");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "初始化右键菜单失败");
+                // 菜单初始化失败不影响主功能,记录日志继续
+            }
+        }
+
+        /// <summary>
+        /// 创建底部按钮
+        /// </summary>
+        private void CreateButtons()
+        {
+            // 保存按钮
+            btnSave = new UISymbolButton
+            {
+                Name = "btnSave",
+                Text = "保存",
+                Symbol = 61639,
+                SymbolSize = 24,
+                FillColor = PrimaryBlue,
+                ForeColor = Color.White,
+                Size = new Size(120, 40),
+                Radius = 5,
+                Cursor = Cursors.Hand,
+                Location = new Point(panelButtons.Width - 260, 10)
+            };
+            btnSave.Click += BtnSave_Click;
+
+            // 取消按钮
+            btnCancel = new UISymbolButton
+            {
+                Name = "btnCancel",
+                Text = "取消",
+                Symbol = 61453,
+                SymbolSize = 24,
+                FillColor = Color.FromArgb(108, 117, 125),
+                ForeColor = Color.White,
+                Size = new Size(120, 40),
+                Radius = 5,
+                Cursor = Cursors.Hand,
+                Location = new Point(panelButtons.Width - 130, 10)
+            };
+            btnCancel.Click += BtnCancel_Click;
+
+            panelButtons.Controls.AddRange([btnSave, btnCancel]);
+        }
+
         #endregion
 
-        #region 按钮事件
+        #region 事件注册
+
+        /// <summary>
+        /// 注册事件处理程序
+        /// </summary>
+        private void RegisterEventHandlers()
+        {
+            try
+            {
+                // 工具箱事件
+                _toolTreeControl.ToolSelected += OnToolSelected;
+
+                // 流程表格事件
+                _processGridControl.StepConfigRequested += OnStepConfigRequested;
+                _processGridControl.DragDropEvent += OnProcessGridDragDrop;
+                _processGridControl.SelectionChangedEvent += OnGridSelectionChanged;
+                _processGridControl.StepsChanged += OnStepsChanged;
+
+                // 窗体关闭事件
+                this.FormClosing += Form_ChildStepsConfig_FormClosing;
+
+                _logger?.LogDebug("事件处理程序已注册");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "注册事件处理程序失败");
+            }
+        }
+
+        #endregion
+
+        #region 事件处理
+
+        /// <summary>
+        /// 工具选择事件(拖拽)
+        /// </summary>
+        private void OnToolSelected(object sender, ToolSelectedEventArgs e)
+        {
+            _logger?.LogDebug("工具被选择: {ToolName}", e.ToolName);
+            _hasUnsavedChanges = true;
+        }
+
+        /// <summary>
+        /// 步骤配置请求事件(双击行)
+        /// </summary>
+        private void OnStepConfigRequested(object sender, StepConfigEventArgs e)
+        {
+            try
+            {
+                _logger?.LogDebug("打开步骤配置: {StepName}, 行索引: {RowIndex}", e.Step.StepName, e.RowIndex);
+
+                if (_formService != null)
+                {
+                    // 设置子工作流状态
+                    _childWorkflowState.StepNum = e.RowIndex;
+                    _childWorkflowState.StepName = e.Step.StepName;
+
+                    // 打开配置窗体
+                    _formService.OpenFormByName(this, e.Step.StepName, this);
+
+                    _hasUnsavedChanges = true;
+                }
+                else
+                {
+                    _logger?.LogWarning("FormService未初始化,无法打开配置窗体");
+                    MessageHelper.MessageOK("无法打开配置窗体,服务未初始化", TType.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "打开步骤配置失败");
+                MessageHelper.MessageOK($"打开步骤配置失败: {ex.Message}", TType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 流程表格拖放事件
+        /// </summary>
+        private void OnProcessGridDragDrop(object sender, DragEventArgs e)
+        {
+            try
+            {
+                if (e.Data.GetDataPresent(typeof(TreeNode)))
+                {
+                    var node = (TreeNode)e.Data.GetData(typeof(TreeNode));
+                    if (node?.Parent != null)
+                    {
+                        // 创建新步骤
+                        var newStep = new ChildModel
+                        {
+                            StepNum = _childWorkflowState.GetStepCount() + 1,
+                            StepName = node.Text,
+                            StepParameter = null,
+                            Remark = string.Empty
+                        };
+
+                        // 添加到工作流状态
+                        _childWorkflowState.AddStep(newStep);
+
+                        // 刷新表格
+                        _processGridControl.RefreshGrid();
+
+                        _hasUnsavedChanges = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "拖拽步骤错误");
+            }
+        }
+
+        /// <summary>
+        /// 表格选择改变事件
+        /// </summary>
+        private void OnGridSelectionChanged(object sender, EventArgs e)
+        {
+            // 可以在这里添加选择改变的逻辑
+            _logger?.LogDebug("表格选择已改变");
+        }
+
+        /// <summary>
+        /// 步骤列表改变事件
+        /// </summary>
+        private void OnStepsChanged(object sender, EventArgs e)
+        {
+            _logger?.LogDebug("步骤列表已改变");
+            _hasUnsavedChanges = true;
+        }
 
         /// <summary>
         /// 保存按钮点击
@@ -190,13 +372,35 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                SaveConfiguration();
-                this.DialogResult = DialogResult.OK;
-                this.Close();
+                // 从工作流状态获取最新的步骤列表
+                var currentSteps = _childWorkflowState.GetSteps();
+
+                if (currentSteps == null || currentSteps.Count == 0)
+                {
+                    var result = MessageHelper.MessageYes("子步骤列表为空,确定要保存吗?");
+                    if (result != DialogResult.OK)
+                    {
+                        return;
+                    }
+                }
+
+                // 更新原始引用(深拷贝回去)
+                _originalSteps.Clear();
+                _originalSteps.AddRange(
+                    JsonConvert.DeserializeObject<List<ChildModel>>(
+                        JsonConvert.SerializeObject(currentSteps)));
+
+                _logger?.LogInformation("子步骤配置已保存,步骤数: {Count}", _originalSteps.Count);
+                MessageHelper.MessageOK($"保存成功!共配置 {_originalSteps.Count} 个子步骤", TType.Success);
+
+                _hasUnsavedChanges = false;
+                DialogResult = DialogResult.OK;
+                Close();
             }
             catch (Exception ex)
             {
-                MessageHelper.MessageOK($"保存失败：{ex.Message}", TType.Error);
+                _logger?.LogError(ex, "保存子步骤配置失败");
+                MessageHelper.MessageOK($"保存失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -205,70 +409,54 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void BtnCancel_Click(object sender, EventArgs e)
         {
+            if (_hasUnsavedChanges)
+            {
+                var result = MessageHelper.MessageYes("有未保存的更改,确定要取消吗?");
+                if (result != DialogResult.OK)
+                {
+                    return;
+                }
+            }
+
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
 
-        #endregion
-
-        #region 公共方法
-
         /// <summary>
-        /// 获取配置好的子步骤列表
+        /// 窗体关闭前检查
         /// </summary>
-        public List<ChildModel> GetChildSteps()
+        private void Form_ChildStepsConfig_FormClosing(object sender, FormClosingEventArgs e)
         {
-            return _childSteps;
-        }
-
-        #endregion
-
-        #region 扩展功能
-
-        /// <summary>
-        /// 验证子步骤配置
-        /// </summary>
-        private bool ValidateChildSteps()
-        {
-            if (_childSteps == null || _childSteps.Count == 0)
+            if (this.DialogResult != DialogResult.OK && _hasUnsavedChanges)
             {
-                MessageHelper.MessageOK("循环体至少需要配置一个步骤", TType.Warn);
-                return false;
-            }
-
-            // 检查是否有嵌套循环
-            foreach (var step in _childSteps)
-            {
-                if (step.StepName == "LoopControlStart" || step.StepName == "Loop")
+                var result = MessageHelper.MessageYes("有未保存的更改,确定要关闭吗?");
+                if (result!= DialogResult.OK)
                 {
-                    MessageHelper.MessageOK(
-                        "子步骤中不能包含循环控制，避免嵌套循环的复杂性",
-                        TType.Warn);
-                    return false;
+                    e.Cancel = true;
                 }
             }
-
-            return true;
         }
+        #endregion
+
+
+        #region 步骤操作
 
         /// <summary>
-        /// 导入步骤模板
+        /// 添加步骤到表单
         /// </summary>
-        private void ImportTemplate()
+        private void AddStepToForm(int stepNumber, string stepName)
         {
-            // 可以实现从模板导入常用步骤组合
-            _logger?.LogInformation("导入步骤模板功能");
-        }
+            var newStep = new ChildModel
+            {
+                StepName = stepName,
+                Status = 0,
+                StepNum = stepNumber,
+                StepParameter = 0
+            };
 
-        /// <summary>
-        /// 导出为模板
-        /// </summary>
-        private void ExportAsTemplate()
-        {
-            // 可以实现将当前配置导出为模板
-            _logger?.LogInformation("导出为模板功能");
+            // 可以通过控件添加
+            _processGridControl.AddStep(newStep);
         }
-
         #endregion
     }
 }

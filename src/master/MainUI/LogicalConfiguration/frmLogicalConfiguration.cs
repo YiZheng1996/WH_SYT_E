@@ -573,6 +573,7 @@ namespace MainUI.LogicalConfiguration
                 _workflowState.StepNum = e.RowIndex;
                 _workflowState.StepName = e.Step.StepName;
                 _formService.OpenFormByName(this, e.Step.StepName, this);
+                _processGridControl.RefreshGrid();
             }
             catch (Exception ex)
             {
