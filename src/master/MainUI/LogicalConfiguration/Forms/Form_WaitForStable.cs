@@ -22,8 +22,28 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 4. 超时处理（继续/停止/跳转）
     /// 5. 稳定值自动赋值到变量
     /// </summary>
-    public partial class Form_WaitForStable : BaseParameterForm<Parameter_WaitForStable>
+    public partial class Form_WaitForStable : BaseParameterForm
     {
+        #region 属性
+
+        private Parameter_WaitForStable _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_WaitForStable Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_WaitForStable();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
+
         #region 私有字段
 
         /// <summary>
@@ -431,88 +451,6 @@ namespace MainUI.LogicalConfiguration.Forms
         #region 参数加载和保存
 
         /// <summary>
-        /// 加载参数到界面
-        /// </summary>
-        public void LoadParameter(Parameter_WaitForStable parameter)
-        {
-            Parameter = parameter ?? new Parameter_WaitForStable();
-            LoadParameterToForm();
-        }
-
-        /// <summary>
-        /// 加载参数到表单控件
-        /// </summary>
-        protected override async void LoadParameterToForm()
-        {
-            try
-            {
-                _isInitializing = true;
-
-                // 基本信息
-                txtDescription.Text = Parameter.Description ?? "";
-
-                // 监测源配置
-                if (Parameter.MonitorSourceType == MonitorSourceType.Variable)
-                {
-                    // 确保选中"全局变量"
-                    SetComboBoxValue(cmbMonitorSourceType, "Variable");
-                    cmbMonitorVariable.Text = Parameter.MonitorVariable ?? "";
-                }
-                else // MonitorSourceType.PLC
-                {
-                    SetComboBoxValue(cmbMonitorSourceType, "PLC");
-
-                    // 先等待PLC模块列表加载完成
-                    await EnsurePlcModulesLoaded();
-                    cmbPlcModule.Text = Parameter.PlcModuleName ?? "";
-
-                    // 如果有模块名，加载对应地址列表
-                    if (!string.IsNullOrEmpty(Parameter.PlcModuleName))
-                    {
-                        await LoadPlcAddresses(Parameter.PlcModuleName);
-                        cmbPlcAddress.Text = Parameter.PlcAddress ?? "";
-                    }
-                }
-
-                // 更新界面显示
-                UpdateMonitorSourceVisibility();
-
-                // 稳定判据
-                numStabilityThreshold.Value = (decimal)Parameter.StabilityThreshold;
-                numSamplingInterval.Value = Parameter.SamplingInterval;
-                numStableCount.Value = Parameter.StableCount;
-
-                // 超时配置
-                numTimeout.Value = Parameter.TimeoutSeconds;
-                SetComboBoxValue(cmbTimeoutAction, Parameter.OnTimeout.ToString());
-                numTimeoutJumpStep.Value = Parameter.TimeoutJumpToStep;
-
-                // 结果处理
-                cmbAssignToVariable.Text = Parameter.AssignToVariable ?? "";
-
-                // 更新界面显示
-                UpdateMonitorSourceVisibility();
-                UpdateTimeoutJumpStepVisibility();
-
-                _hasUnsavedChanges = false;
-
-                Logger?.LogDebug("参数加载完成");
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "加载参数时发生错误");
-                MessageHelper.MessageOK(this, $"加载参数失败：{ex.Message}", TType.Error);
-            }
-            finally
-            {
-                _isInitializing = false;
-
-                // 触发验证
-                await Task.Delay(100).ContinueWith(_ => ValidateConfigurationAsync());
-            }
-        }
-
-        /// <summary>
         /// 确保PLC模块列表已加载
         /// </summary>
         private async Task EnsurePlcModulesLoaded()
@@ -601,59 +539,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 Logger?.LogError(ex, "加载PLC写入参数时发生异常");
                 Parameter = new Parameter_WaitForStable();
                 MessageHelper.MessageOK($"加载PLC参数失败：{ex.Message}", TType.Error);
-            }
-        }
-
-        /// <summary>
-        /// 保存表单到参数
-        /// </summary>
-        protected override void SaveFormToParameter()
-        {
-            try
-            {
-                // 基本信息
-                Parameter.Description = txtDescription.Text;
-
-                // 监测源配置
-                var selectedSourceType = cmbMonitorSourceType.SelectedItem as ComboItem;
-                if (selectedSourceType?.Value?.ToString() == "Variable")
-                {
-                    Parameter.MonitorSourceType = MonitorSourceType.Variable;
-                    Parameter.MonitorVariable = cmbMonitorVariable.Text;
-                    Parameter.PlcModuleName = "";
-                    Parameter.PlcAddress = "";
-                }
-                else
-                {
-                    Parameter.MonitorSourceType = MonitorSourceType.PLC;
-                    Parameter.MonitorVariable = "";
-                    Parameter.PlcModuleName = cmbPlcModule.Text;
-                    Parameter.PlcAddress = cmbPlcAddress.Text;
-                }
-
-                // 稳定判据
-                Parameter.StabilityThreshold = (double)numStabilityThreshold.Value;
-                Parameter.SamplingInterval = (int)numSamplingInterval.Value;
-                Parameter.StableCount = (int)numStableCount.Value;
-
-                // 超时配置
-                Parameter.TimeoutSeconds = (int)numTimeout.Value;
-                var selectedAction = cmbTimeoutAction.SelectedItem as ComboItem;
-                if (selectedAction?.Value is TimeoutAction action)
-                {
-                    Parameter.OnTimeout = action;
-                }
-                Parameter.TimeoutJumpToStep = (int)numTimeoutJumpStep.Value;
-
-                // 结果处理
-                Parameter.AssignToVariable = cmbAssignToVariable.Text;
-
-                _hasUnsavedChanges = false;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "保存参数时发生错误");
-                MessageHelper.MessageOK(this, $"保存参数失败：{ex.Message}", TType.Error);
             }
         }
 
@@ -993,6 +878,132 @@ namespace MainUI.LogicalConfiguration.Forms
 
 
         #region 基类方法重写
+
+        /// <summary>
+        /// 加载参数到表单控件
+        /// </summary>
+        protected override async void LoadParameterToForm()
+        {
+            try
+            {
+                _isInitializing = true;
+
+                // 基本信息
+                txtDescription.Text = Parameter.Description ?? "";
+
+                // 监测源配置
+                if (Parameter.MonitorSourceType == MonitorSourceType.Variable)
+                {
+                    // 确保选中"全局变量"
+                    SetComboBoxValue(cmbMonitorSourceType, "Variable");
+                    cmbMonitorVariable.Text = Parameter.MonitorVariable ?? "";
+                }
+                else // MonitorSourceType.PLC
+                {
+                    SetComboBoxValue(cmbMonitorSourceType, "PLC");
+
+                    // 先等待PLC模块列表加载完成
+                    await EnsurePlcModulesLoaded();
+                    cmbPlcModule.Text = Parameter.PlcModuleName ?? "";
+
+                    // 如果有模块名，加载对应地址列表
+                    if (!string.IsNullOrEmpty(Parameter.PlcModuleName))
+                    {
+                        await LoadPlcAddresses(Parameter.PlcModuleName);
+                        cmbPlcAddress.Text = Parameter.PlcAddress ?? "";
+                    }
+                }
+
+                // 更新界面显示
+                UpdateMonitorSourceVisibility();
+
+                // 稳定判据
+                numStabilityThreshold.Value = (decimal)Parameter.StabilityThreshold;
+                numSamplingInterval.Value = Parameter.SamplingInterval;
+                numStableCount.Value = Parameter.StableCount;
+
+                // 超时配置
+                numTimeout.Value = Parameter.TimeoutSeconds;
+                SetComboBoxValue(cmbTimeoutAction, Parameter.OnTimeout.ToString());
+                numTimeoutJumpStep.Value = Parameter.TimeoutJumpToStep;
+
+                // 结果处理
+                cmbAssignToVariable.Text = Parameter.AssignToVariable ?? "";
+
+                // 更新界面显示
+                UpdateMonitorSourceVisibility();
+                UpdateTimeoutJumpStepVisibility();
+
+                _hasUnsavedChanges = false;
+
+                Logger?.LogDebug("参数加载完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载参数时发生错误");
+                MessageHelper.MessageOK(this, $"加载参数失败：{ex.Message}", TType.Error);
+            }
+            finally
+            {
+                _isInitializing = false;
+
+                // 触发验证
+                await Task.Delay(100).ContinueWith(_ => ValidateConfigurationAsync());
+            }
+        }
+
+        /// <summary>
+        /// 保存表单到参数
+        /// </summary>
+        protected override void SaveFormToParameter()
+        {
+            try
+            {
+                // 基本信息
+                Parameter.Description = txtDescription.Text;
+
+                // 监测源配置
+                var selectedSourceType = cmbMonitorSourceType.SelectedItem as ComboItem;
+                if (selectedSourceType?.Value?.ToString() == "Variable")
+                {
+                    Parameter.MonitorSourceType = MonitorSourceType.Variable;
+                    Parameter.MonitorVariable = cmbMonitorVariable.Text;
+                    Parameter.PlcModuleName = "";
+                    Parameter.PlcAddress = "";
+                }
+                else
+                {
+                    Parameter.MonitorSourceType = MonitorSourceType.PLC;
+                    Parameter.MonitorVariable = "";
+                    Parameter.PlcModuleName = cmbPlcModule.Text;
+                    Parameter.PlcAddress = cmbPlcAddress.Text;
+                }
+
+                // 稳定判据
+                Parameter.StabilityThreshold = (double)numStabilityThreshold.Value;
+                Parameter.SamplingInterval = (int)numSamplingInterval.Value;
+                Parameter.StableCount = (int)numStableCount.Value;
+
+                // 超时配置
+                Parameter.TimeoutSeconds = (int)numTimeout.Value;
+                var selectedAction = cmbTimeoutAction.SelectedItem as ComboItem;
+                if (selectedAction?.Value is TimeoutAction action)
+                {
+                    Parameter.OnTimeout = action;
+                }
+                Parameter.TimeoutJumpToStep = (int)numTimeoutJumpStep.Value;
+
+                // 结果处理
+                Parameter.AssignToVariable = cmbAssignToVariable.Text;
+
+                _hasUnsavedChanges = false;
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "保存参数时发生错误");
+                MessageHelper.MessageOK(this, $"保存参数失败：{ex.Message}", TType.Error);
+            }
+        }
 
         /// <summary>
         /// 设置默认值（基类方法）

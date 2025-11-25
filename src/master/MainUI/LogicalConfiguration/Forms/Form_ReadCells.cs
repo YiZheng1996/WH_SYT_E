@@ -3,7 +3,6 @@ using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -15,12 +14,32 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 3. 支持指定工作表
     /// 4. 单元格地址验证
     /// </summary>
-    public partial class Form_ReadCells : BaseParameterForm<Parameter_ReadCells>
+    public partial class Form_ReadCells : BaseParameterForm
     {
+        #region 属性
+
+        private Parameter_ReadCells _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_ReadCells Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_ReadCells();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
+
+
         #region 私有字段
 
         private readonly GlobalVariableManager _variableManager;
-        private Parameter_ReadCells _currentParameter;
         private bool _isLoading = false;
 
         // 单元格地址格式正则
@@ -70,7 +89,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 BindEvents();
 
                 // 设置默认值
-                _currentParameter ??= new Parameter_ReadCells();
+                _parameter ??= new Parameter_ReadCells();
 
                 // 加载全局变量
                 LoadVariables();
@@ -138,47 +157,7 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 从参数对象加载到表单
-        /// </summary>
-        protected override void LoadParametersFromWorkflow()
-        {
-            if (_currentParameter == null) return;
-
-            _isLoading = true;
-
-            try
-            {
-                txtSheetName.Text = _currentParameter.SheetName ?? "Sheet1";
-
-                // 加载读取项
-                DataGridViewDefineVar.Rows.Clear();
-
-                if (_currentParameter.ReadItems != null && _currentParameter.ReadItems.Count > 0)
-                {
-                    foreach (var item in _currentParameter.ReadItems)
-                    {
-                        int rowIndex = DataGridViewDefineVar.Rows.Add();
-                        var row = DataGridViewDefineVar.Rows[rowIndex];
-
-                        row.Cells["ColCellAddress"].Value = item.CellAddress;
-                        row.Cells["ColSaveToVar"].Value = item.SaveToVariable;
-                        row.Cells["ColDataType"].Value = GetDataTypeDisplayName(item.DataType);
-                        row.Cells["ColDefaultValue"].Value = item.DefaultValue;
-                    }
-                }
-                else
-                {
-                    // 添加一个空行
-                    AddNewRow();
-                }
-            }
-            finally
-            {
-                _isLoading = false;
-            }
-        }
-
+       
         /// <summary>
         /// 获取当前参数
         /// </summary>
@@ -332,8 +311,8 @@ namespace MainUI.LogicalConfiguration.Forms
                     return;
                 }
 
-                // 先更新 _currentParameter,再调用基类保存方法
-                _currentParameter = GetCurrentParameters();
+                // 先更新 _parameter,再调用基类保存方法
+                _parameter = GetCurrentParameters();
 
                 // 调用基类的 SaveParameters() 方法
                 // 基类会调用 CollectParameters() 来获取要保存的参数
@@ -414,7 +393,48 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 参数验证
+        #region 基类方法重写
+
+        /// <summary>
+        /// 从参数对象加载到表单
+        /// </summary>
+        protected override void LoadParametersFromWorkflow()
+        {
+            if (_parameter == null) return;
+
+            _isLoading = true;
+
+            try
+            {
+                txtSheetName.Text = _parameter.SheetName ?? "Sheet1";
+
+                // 加载读取项
+                DataGridViewDefineVar.Rows.Clear();
+
+                if (_parameter.ReadItems != null && _parameter.ReadItems.Count > 0)
+                {
+                    foreach (var item in _parameter.ReadItems)
+                    {
+                        int rowIndex = DataGridViewDefineVar.Rows.Add();
+                        var row = DataGridViewDefineVar.Rows[rowIndex];
+
+                        row.Cells["ColCellAddress"].Value = item.CellAddress;
+                        row.Cells["ColSaveToVar"].Value = item.SaveToVariable;
+                        row.Cells["ColDataType"].Value = GetDataTypeDisplayName(item.DataType);
+                        row.Cells["ColDefaultValue"].Value = item.DefaultValue;
+                    }
+                }
+                else
+                {
+                    // 添加一个空行
+                    AddNewRow();
+                }
+            }
+            finally
+            {
+                _isLoading = false;
+            }
+        }
 
         /// <summary>
         /// 验证参数

@@ -9,16 +9,33 @@ using static MainUI.LogicalConfiguration.LogicalManager.GlobalVariableManager;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
-    public partial class Form_ReadPLC : BaseParameterForm<Parameter_ReadPLC>
+    public partial class Form_ReadPLC : BaseParameterForm
     {
+        #region 属性
+
+        private Parameter_ReadPLC _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_ReadPLC Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_ReadPLC();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
+
         #region 私有字段
 
         // 通过依赖注入获取的服务
         private readonly GlobalVariableManager _variableManager;
-        private readonly IPLCManager _pLCManager;
 
-        // 窗体私有字段
-        private Parameter_ReadPLC _currentParameter;
         private int _currentStepIndex = -1;
 
         #endregion
@@ -38,7 +55,6 @@ namespace MainUI.LogicalConfiguration.Forms
             IPLCManager pLCManager)
         {
             _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
-            _pLCManager = pLCManager ?? throw new ArgumentNullException(nameof(pLCManager));
             InitializeComponent();
             InitializeForm();
             _logger.LogDebug("Form_ReadPLC 初始化完成");
@@ -58,9 +74,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 获取当前步骤信息
                 _currentStepIndex = _workflowState.StepNum;
 
-                // 加载当前步骤的参数
-                LoadCurrentStepParameter();
-
                 // 加载可用变量到下拉框
                 LoadAvailableVariables();
 
@@ -79,43 +92,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
             finally
             {
-            }
-        }
-
-        /// <summary>
-        /// 加载当前步骤的参数
-        /// </summary>
-        private void LoadCurrentStepParameter()
-        {
-            try
-            {
-                var currentStep = _workflowState.GetStep(_currentStepIndex);
-                if (currentStep?.StepParameter != null)
-                {
-                    // 尝试解析参数
-                    if (currentStep.StepParameter is Parameter_ReadPLC param)
-                    {
-                        _currentParameter = param;
-                    }
-                    else
-                    {
-                        // 如果是JSON字符串，尝试反序列化
-                        var jsonString = currentStep.StepParameter.ToString();
-                        _currentParameter = JsonConvert.DeserializeObject<Parameter_ReadPLC>(jsonString)
-                            ?? new Parameter_ReadPLC();
-                    }
-                }
-                else
-                {
-                    _currentParameter = new Parameter_ReadPLC();
-                }
-
-                _logger.LogDebug("加载步骤参数完成，包含 {ItemCount} 个PLC项", _currentParameter.Items?.Count ?? 0);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "加载步骤参数时发生错误");
-                _currentParameter = new Parameter_ReadPLC();
             }
         }
 
@@ -181,7 +157,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 验证所有数据
         /// </summary>
         /// <returns>验证是否通过</returns>
-        private bool ValidateAllData()
+        protected override bool ValidateInput()
         {
             try
             {
@@ -244,7 +220,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 var currentStep = _workflowState.GetStep(_currentStepIndex);
                 if (currentStep != null)
                 {
-                    currentStep.StepParameter = _currentParameter;
+                    currentStep.StepParameter = _parameter;
                     _logger.LogDebug("更新步骤参数完成");
                 }
                 else
@@ -268,7 +244,7 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                foreach (var item in _currentParameter.Items)
+                foreach (var item in _parameter.Items)
                 {
                     var variable = _variableManager.TryFindVariableByName(item.TargetVarName);
                     if (variable != null)
@@ -420,7 +396,7 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 TreeViewPLC.Nodes.Clear();
-                var configs = await _pLCManager.GetModuleTagsAsync();
+                var configs = await _plcManager.GetModuleTagsAsync();
                 foreach (var kvp in configs)
                 {
                     // 创建主节点(Key)
@@ -484,7 +460,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 _logger.LogInformation("开始保存PLC读取参数");
 
                 // 保存前进行最终验证
-                if (!ValidateAllData())
+                if (!ValidateInput())
                 {
                     return;
                 }

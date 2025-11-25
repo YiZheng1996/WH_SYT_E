@@ -8,14 +8,32 @@ using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// PLC写入参数配置表单（优化版）
+    /// PLC写入参数配置表单
     /// 用于配置和管理工作流步骤中的PLC写入操作
-    /// 参考 Form_DefinePoint 的设计模式进行UI优化
     /// </summary>
-    public partial class Form_WritePLC : BaseParameterForm<Parameter_WritePLC>
+    public partial class Form_WritePLC : BaseParameterForm
     {
-        #region 私有字段
+        #region 属性
 
+        private Parameter_WritePLC _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_WritePLC Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_WritePLC();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
+
+        #region 私有字段
         /// <summary>
         /// 初始化状态标志 - 防止在窗体初始化过程中触发不必要的事件
         /// </summary>
@@ -250,7 +268,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 参数加载和保存
+        #region 基类方法重写
 
         /// <summary>
         /// 加载参数到界面（从参数对象到UI控件）
@@ -259,7 +277,7 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                Parameter ??= new Parameter_WritePLC();
+                _parameter ??= new Parameter_WritePLC();
 
                 _isInitializing = true;
 
@@ -269,21 +287,21 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 加载描述信息
                 if (txtDescription != null)
                 {
-                    txtDescription.Text = Parameter.Description ?? "";
+                    txtDescription.Text = _parameter.Description ?? "";
                 }
 
                 if (chkEnabled != null)
                 {
-                    chkEnabled.Checked = Parameter.IsEnabled;
+                    chkEnabled.Checked = _parameter.IsEnabled;
                 }
 
                 // 加载写入项
-                if (Parameter.Items != null && Parameter.Items.Count > 0)
+                if (_parameter.Items != null && _parameter.Items.Count > 0)
                 {
                     // 获取所有PLC模块的地址信息（用于填充下拉框）
                     var moduleTagsDict = _plcManager != null ? await _plcManager.GetModuleTagsAsync() : null;
 
-                    foreach (var item in Parameter.Items)
+                    foreach (var item in _parameter.Items)
                     {
                         int rowIndex = DataGridViewPLCList.Rows.Add();
                         var row = DataGridViewPLCList.Rows[rowIndex];
@@ -351,14 +369,11 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                if (Parameter == null)
-                {
-                    Parameter = new Parameter_WritePLC();
-                }
+                _parameter ??= new Parameter_WritePLC();
 
                 // 保存基本信息
-                Parameter.Description = txtDescription?.Text ?? "";
-                Parameter.IsEnabled = chkEnabled?.Checked ?? true;
+                _parameter.Description = txtDescription?.Text ?? "";
+                _parameter.IsEnabled = chkEnabled?.Checked ?? true;
 
                 // 收集DataGridView中的数据
                 var items = new List<Parameter_WritePLC.PLCWriteItem>();
@@ -387,7 +402,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     });
                 }
 
-                Parameter.Items = items;
+                _parameter.Items = items;
 
                 Logger?.LogDebug("界面数据已保存到参数对象，共{Count}个项目", items.Count);
             }
@@ -405,7 +420,7 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                Parameter = new Parameter_WritePLC
+                _parameter = new Parameter_WritePLC
                 {
                     Description = $"PLC写入步骤 {(_workflowState?.StepNum ?? 0) + 1}",
                     IsEnabled = true,
@@ -422,6 +437,50 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
+        /// <summary>
+        /// 验证输入数据的有效性
+        /// </summary>
+        protected override bool ValidateInput()
+        {
+            try
+            {
+                // 收集当前数据
+                SaveFormToParameter();
+
+                // 检查是否有有效数据
+                if (_parameter.Items == null || _parameter.Items.Count == 0)
+                {
+                    MessageHelper.MessageOK("请至少添加一个PLC写入项！", TType.Warn);
+                    return false;
+                }
+
+                // 验证每一项
+                for (int i = 0; i < _parameter.Items.Count; i++)
+                {
+                    var item = _parameter.Items[i];
+
+                    if (string.IsNullOrWhiteSpace(item.PlcModuleName))
+                    {
+                        MessageHelper.MessageOK($"第 {i + 1} 项：PLC模块不能为空！", TType.Warn);
+                        return false;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(item.PlcKeyName))
+                    {
+                        MessageHelper.MessageOK($"第 {i + 1} 项：PLC地址不能为空！", TType.Warn);
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "验证输入失败");
+                MessageHelper.MessageOK($"验证失败：{ex.Message}", TType.Error);
+                return false;
+            }
+        }
 
         /// <summary>
         /// 为指定行加载PLC地址列表
@@ -797,51 +856,6 @@ namespace MainUI.LogicalConfiguration.Forms
         #endregion
 
         #region 验证方法
-
-        /// <summary>
-        /// 验证输入数据的有效性
-        /// </summary>
-        protected override bool ValidateInput()
-        {
-            try
-            {
-                // 收集当前数据
-                SaveFormToParameter();
-
-                // 检查是否有有效数据
-                if (Parameter.Items == null || Parameter.Items.Count == 0)
-                {
-                    MessageHelper.MessageOK("请至少添加一个PLC写入项！", TType.Warn);
-                    return false;
-                }
-
-                // 验证每一项
-                for (int i = 0; i < Parameter.Items.Count; i++)
-                {
-                    var item = Parameter.Items[i];
-
-                    if (string.IsNullOrWhiteSpace(item.PlcModuleName))
-                    {
-                        MessageHelper.MessageOK($"第 {i + 1} 项：PLC模块不能为空！", TType.Warn);
-                        return false;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(item.PlcKeyName))
-                    {
-                        MessageHelper.MessageOK($"第 {i + 1} 项：PLC地址不能为空！", TType.Warn);
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "验证输入失败");
-                MessageHelper.MessageOK($"验证失败：{ex.Message}", TType.Error);
-                return false;
-            }
-        }
 
         /// <summary>
         /// 验证定时器触发事件

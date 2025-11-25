@@ -9,9 +9,28 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
     /// <summary>
     /// 延时参数配置表单
     /// </summary>
-    public partial class Form_DelayTime : BaseParameterForm<Parameter_DelayTime>
+    public partial class Form_DelayTime : BaseParameterForm
     {
+        #region 属性
         private const double DEFAULT_DELAY_TIME = 1000.0;
+
+        private Parameter_DelayTime _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_DelayTime Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_DelayTime();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
 
         #region 构造函数
 
@@ -58,6 +77,24 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         #endregion
 
         #region 重写基类方法
+        /// <summary>
+        /// 保存参数
+        /// </summary>
+        protected override void SaveFormToParameter()
+        {
+            try
+            {
+                _parameter ??= new Parameter_DelayTime();
+
+                // 保存基本信息
+                _parameter.T = txtTime.Text.ToDouble();
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "保存界面数据到参数对象失败");
+                throw;
+            }
+        }
 
         /// <summary>
         /// 加载参数到界面
@@ -101,7 +138,6 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
         }
 
         // 设置默认值
-
         protected override void SetDefaultValues()
         {
             Parameter = new Parameter_DelayTime { T = DEFAULT_DELAY_TIME };
@@ -146,9 +182,8 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
 
         private void BtnSave_Click(object sender, EventArgs e)
         {
-            SaveParameters();
         }
-     
+
         #endregion
     }
 }

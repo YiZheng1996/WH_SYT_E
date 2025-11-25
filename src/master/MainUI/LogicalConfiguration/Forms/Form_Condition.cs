@@ -11,8 +11,28 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 条件判断参数配置表单
     /// 用于配置和管理工作流步骤中的条件判断操作
     /// </summary>
-    public partial class Form_Condition
+    public partial class Form_Condition : BaseParameterForm
     {
+        #region 属性
+
+        private Parameter_Condition _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_Condition Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_Condition();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
+
         #region 私有字段
 
         /// <summary>
@@ -162,79 +182,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 参数处理
-
-        /// <summary>
-        /// 设置默认值
-        /// </summary>
-        protected override void SetDefaultValues()
-        {
-            Parameter = new Parameter_Condition
-            {
-                LeftExpression = "",
-                Operator = ConditionOperator.等于,
-                RightExpression = "",
-                RangeMin = "",
-                RangeMax = "",
-                TrueSteps = [],
-                FalseSteps = [],
-                Description = $"条件判断步骤 {_workflowState?.StepNum + 1}"
-            };
-
-            Logger?.LogDebug("设置条件判断参数默认值");
-            LoadParameterToForm();
-        }
-
-        /// <summary>
-        /// 加载参数到界面
-        /// </summary>
-        protected override void LoadParameterToForm()
-        {
-            try
-            {
-                _isInitializing = true;
-
-                txtLeftExpression.Text = Parameter.LeftExpression ?? "";
-                cmbOperator.SelectedItem = Parameter.Operator.ToString();
-                txtRightExpression.Text = Parameter.RightExpression ?? "";
-                txtRangeMin.Text = Parameter.RangeMin ?? "";
-                txtRangeMax.Text = Parameter.RangeMax ?? "";
-                txtDescription.Text = Parameter.Description ?? "";
-                chkEnabled.Checked = true; // 默认启用
-
-                // 更新子步骤计数
-                lblTrueStepsCount.Text = $"满足条件时执行的步骤 ({Parameter.TrueSteps?.Count ?? 0} 个)";
-                lblFalseStepsCount.Text = $"不满足条件时执行的步骤 ({Parameter.FalseSteps?.Count ?? 0} 个)";
-
-                // 根据运算符更新界面
-                UpdateUIForOperator();
-
-                _hasUnsavedChanges = false;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "加载参数到界面失败");
-            }
-            finally
-            {
-                _isInitializing = false;
-            }
-        }
-
-        /// <summary>
-        /// 保存界面数据到参数对象
-        /// </summary>
-        protected override void SaveFormToParameter()
-        {
-            Parameter.LeftExpression = txtLeftExpression.Text?.Trim() ?? "";
-            Parameter.Operator = (ConditionOperator)Enum.Parse(typeof(ConditionOperator), cmbOperator.SelectedItem?.ToString() ?? "等于");
-            Parameter.RightExpression = txtRightExpression.Text?.Trim() ?? "";
-            Parameter.RangeMin = txtRangeMin.Text?.Trim() ?? "";
-            Parameter.RangeMax = txtRangeMax.Text?.Trim() ?? "";
-            Parameter.Description = txtDescription.Text?.Trim() ?? "";
-        }
-
-        #endregion
 
         #region UI更新
 
@@ -472,8 +419,27 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 验证方法
+        #region 窗体事件
 
+        /// <summary>
+        /// 窗体关闭事件
+        /// </summary>
+        private void Form_Condition_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (this.DialogResult == DialogResult.OK) return;
+
+            if (_hasUnsavedChanges)
+            {
+                var result = MessageHelper.MessageYes(this, "存在未保存的更改，确定要关闭吗？");
+                if (result != DialogResult.OK)
+                {
+                    e.Cancel = true;
+                }
+            }
+        }
+        #endregion
+
+        #region 基类方法重写
         /// <summary>
         /// 验证输入数据的有效性
         /// </summary>
@@ -481,9 +447,6 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // 收集当前数据
-                SaveFormToParameter();
-
                 // 验证左值表达式
                 if (string.IsNullOrWhiteSpace(Parameter.LeftExpression))
                 {
@@ -533,25 +496,74 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        #endregion
+        /// <summary>
+        /// 加载参数到界面
+        /// </summary>
+        protected override void LoadParameterToForm()
+        {
+            try
+            {
+                _isInitializing = true;
 
-        #region 窗体事件
+                txtLeftExpression.Text = Parameter.LeftExpression ?? "";
+                cmbOperator.SelectedItem = Parameter.Operator.ToString();
+                txtRightExpression.Text = Parameter.RightExpression ?? "";
+                txtRangeMin.Text = Parameter.RangeMin ?? "";
+                txtRangeMax.Text = Parameter.RangeMax ?? "";
+                txtDescription.Text = Parameter.Description ?? "";
+                chkEnabled.Checked = true; // 默认启用
+
+                // 更新子步骤计数
+                lblTrueStepsCount.Text = $"满足条件时执行的步骤 ({Parameter.TrueSteps?.Count ?? 0} 个)";
+                lblFalseStepsCount.Text = $"不满足条件时执行的步骤 ({Parameter.FalseSteps?.Count ?? 0} 个)";
+
+                // 根据运算符更新界面
+                UpdateUIForOperator();
+
+                _hasUnsavedChanges = false;
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载参数到界面失败");
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+        }
 
         /// <summary>
-        /// 窗体关闭事件
+        /// 保存界面数据到参数对象
         /// </summary>
-        private void Form_Condition_FormClosing(object sender, FormClosingEventArgs e)
+        protected override void SaveFormToParameter()
         {
-            if (this.DialogResult == DialogResult.OK) return;
+            Parameter.LeftExpression = txtLeftExpression.Text?.Trim() ?? "";
+            Parameter.Operator = (ConditionOperator)Enum.Parse(typeof(ConditionOperator), cmbOperator.SelectedItem?.ToString() ?? "等于");
+            Parameter.RightExpression = txtRightExpression.Text?.Trim() ?? "";
+            Parameter.RangeMin = txtRangeMin.Text?.Trim() ?? "";
+            Parameter.RangeMax = txtRangeMax.Text?.Trim() ?? "";
+            Parameter.Description = txtDescription.Text?.Trim() ?? "";
+        }
 
-            if (_hasUnsavedChanges)
+        /// <summary>
+        /// 设置默认值
+        /// </summary>
+        protected override void SetDefaultValues()
+        {
+            Parameter = new Parameter_Condition
             {
-                var result = MessageHelper.MessageYes(this, "存在未保存的更改，确定要关闭吗？");
-                if (result != DialogResult.OK)
-                {
-                    e.Cancel = true;
-                }
-            }
+                LeftExpression = "",
+                Operator = ConditionOperator.等于,
+                RightExpression = "",
+                RangeMin = "",
+                RangeMax = "",
+                TrueSteps = [],
+                FalseSteps = [],
+                Description = $"条件判断步骤 {_workflowState?.StepNum + 1}"
+            };
+
+            Logger?.LogDebug("设置条件判断参数默认值");
+            LoadParameterToForm();
         }
         #endregion
 

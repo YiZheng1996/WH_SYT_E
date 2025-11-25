@@ -11,9 +11,28 @@ namespace MainUI.LogicalConfiguration.Forms
     /// <summary>
     /// 实时监控提示配置窗体
     /// </summary>
-    public partial class Form_RealtimeMonitorPromptConfig : BaseParameterForm<Parameter_RealtimeMonitorPrompt>
+    public partial class Form_RealtimeMonitorPromptConfig : BaseParameterForm
     {
+        #region 属性
         private bool _isInitializing = true;
+
+        private Parameter_RealtimeMonitorPrompt _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_RealtimeMonitorPrompt Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_RealtimeMonitorPrompt();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
 
         public Form_RealtimeMonitorPromptConfig()
         {
@@ -138,6 +157,7 @@ namespace MainUI.LogicalConfiguration.Forms
             pnlPlcSource.Visible = !isVariable;
         }
 
+        
         private void LoadParameterFromWorkflowState()
         {
             try
@@ -176,31 +196,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        protected override void LoadParameterToForm()
-        {
-            _isInitializing = true;
-
-            txtTitle.Text = Parameter.Title;
-            txtDescription.Text = Parameter.Description;
-            txtPromptMessage.Text = Parameter.PromptMessage;
-            txtUnit.Text = Parameter.Unit;
-            txtDisplayFormat.Text = Parameter.DisplayFormat;
-            numRefreshInterval.Value = Parameter.RefreshInterval;
-            txtButtonText.Text = Parameter.ButtonText;
-            txtValueLabelText.Text = Parameter.ValueLabelText;
-            chkShowValueLabel.Checked = Parameter.ShowValueLabel;
-
-            cmbMonitorSourceType.SelectedIndex = Parameter.MonitorSourceType == MonitorSourceType.Variable ? 0 : 1;
-            cmbMonitorVariable.Text = Parameter.MonitorVariable;
-            cmbPlcModule.Text = Parameter.PlcModuleName;
-            cmbPlcAddress.Text = Parameter.PlcAddress;
-
-            cmbIconType.SelectedIndex = (int)Parameter.IconType;
-
-            UpdateMonitorSourceVisibility();
-
-            _isInitializing = false;
-        }
 
         private void BtnTest_Click(object sender, EventArgs e)
         {
@@ -273,6 +268,39 @@ namespace MainUI.LogicalConfiguration.Forms
             return true;
         }
 
+        #region 重写基类方法
+        /// <summary>
+        /// 加载参数
+        /// </summary>
+        protected override void LoadParameterToForm()
+        {
+            _isInitializing = true;
+
+            txtTitle.Text = Parameter.Title;
+            txtDescription.Text = Parameter.Description;
+            txtPromptMessage.Text = Parameter.PromptMessage;
+            txtUnit.Text = Parameter.Unit;
+            txtDisplayFormat.Text = Parameter.DisplayFormat;
+            numRefreshInterval.Value = Parameter.RefreshInterval;
+            txtButtonText.Text = Parameter.ButtonText;
+            txtValueLabelText.Text = Parameter.ValueLabelText;
+            chkShowValueLabel.Checked = Parameter.ShowValueLabel;
+
+            cmbMonitorSourceType.SelectedIndex = Parameter.MonitorSourceType == MonitorSourceType.Variable ? 0 : 1;
+            cmbMonitorVariable.Text = Parameter.MonitorVariable;
+            cmbPlcModule.Text = Parameter.PlcModuleName;
+            cmbPlcAddress.Text = Parameter.PlcAddress;
+
+            cmbIconType.SelectedIndex = (int)Parameter.IconType;
+
+            UpdateMonitorSourceVisibility();
+
+            _isInitializing = false;
+        }
+
+        /// <summary>
+        /// 保存参数
+        /// </summary>
         protected override void SaveFormToParameter()
         {
             Parameter.Title = txtTitle.Text;
@@ -292,5 +320,8 @@ namespace MainUI.LogicalConfiguration.Forms
             Parameter.ValueLabelText = txtValueLabelText.Text;
             Parameter.ShowValueLabel = chkShowValueLabel.Checked;
         }
+
+        #endregion
+
     }
 }

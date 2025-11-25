@@ -4,8 +4,28 @@ using MainUI.LogicalConfiguration.LogicalManager;
 using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Forms
 {
-    public partial class Form_DefineVar : BaseParameterForm<Parameter_DefineVar>
+    public partial class Form_DefineVar : BaseParameterForm
     {
+        #region 属性
+
+        private Parameter_DefineVar _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_DefineVar Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_DefineVar();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
+
         #region 构造函数
         private readonly GlobalVariableManager _variableManager;
 

@@ -12,8 +12,28 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 循环参数配置表单
     /// 用于配置和管理工作流步骤中的循环操作
     /// </summary>
-    public partial class Form_Loop : BaseParameterForm<Parameter_Loop>
+    public partial class Form_Loop : BaseParameterForm
     {
+        #region 属性
+
+        private Parameter_Loop _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_Loop Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_Loop();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
+
         #region 私有字段
 
         /// <summary>
@@ -164,7 +184,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (currentStep != null && currentStep.StepParameter != null)
                 {
                     var parameter = ConvertParameter(currentStep.StepParameter);
-                    Parameter = parameter;
+                    Parameter = (Parameter_Loop)parameter;
                 }
                 else
                 {
@@ -178,92 +198,7 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 设置默认值
-        /// </summary>
-        protected override void SetDefaultValues()
-        {
-            Parameter = new Parameter_Loop
-            {
-                LoopCountExpression = "10",
-                CounterVariableName = "LoopIndex",
-                EnableCounter = true,
-                ChildSteps = [],
-                Description = $"循环步骤 {_workflowState?.StepNum + 1}"
-            };
-
-            Logger?.LogDebug("设置循环参数默认值");
-            LoadParameterToForm();
-        }
-
-        /// <summary>
-        /// 加载参数到界面
-        /// </summary>
-        protected override void LoadParameterToForm()
-        {
-            try
-            {
-                _isInitializing = true;
-
-                txtLoopCount.Text = Parameter.LoopCountExpression ?? "10";
-                txtCounterVariable.Text = Parameter.CounterVariableName ?? "LoopIndex";
-                chkEnableCounter.Checked = Parameter.EnableCounter;
-                txtDescription.Text = Parameter.Description ?? "";
-                chkEnabled.Checked = true;
-
-                // 更新子步骤计数
-                int childStepCount = Parameter.ChildSteps?.Count ?? 0;
-                lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
-
-                Debug.WriteLine("LoadParameterToForm - 子步骤数量: {Count}", childStepCount);
-
-                UpdateCounterControls();
-
-                _hasUnsavedChanges = false;
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "加载参数到界面失败");
-            }
-            finally
-            {
-                _isInitializing = false;
-            }
-        }
-
-        /// <summary>
-        /// 保存界面数据到参数对象
-        /// </summary>
-        protected override void SaveFormToParameter()
-        {
-            try
-            {
-                // 只更新界面控件对应的属性
-                Parameter.LoopCountExpression = txtLoopCount.Text?.Trim() ?? "10";
-                Parameter.CounterVariableName = txtCounterVariable.Text?.Trim() ?? "LoopIndex";
-                Parameter.EnableCounter = chkEnableCounter.Checked;
-                Parameter.Description = txtDescription.Text?.Trim() ?? "";
-
-                // 添加日志记录子步骤信息
-                Logger?.LogDebug("SaveFormToParameter - 子步骤数量: {Count}",
-                    Parameter.ChildSteps?.Count ?? 0);
-
-                if (Parameter.ChildSteps != null)
-                {
-                    foreach (var child in Parameter.ChildSteps)
-                    {
-                        var paramLength = child.StepParameter?.ToString()?.Length ?? 0;
-                        Logger?.LogDebug("  子步骤: {StepName}, 参数长度: {Length}",
-                            child.StepName, paramLength);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "保存界面数据到参数对象失败");
-                throw;
-            }
-        }
+       
 
         #endregion
 
@@ -564,7 +499,30 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 验证方法
+
+        #region 窗体事件
+
+        /// <summary>
+        /// 窗体关闭事件
+        /// </summary>
+        private void Form_Loop_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (this.DialogResult == DialogResult.OK) return;
+
+            if (_hasUnsavedChanges)
+            {
+                var result = MessageHelper.MessageYes(this, "存在未保存的更改，确定要关闭吗？");
+                if (result != DialogResult.OK)
+                {
+                    e.Cancel = true;
+                }
+            }
+        }
+
+        #endregion
+
+
+        #region 基类方法重写
 
         /// <summary>
         /// 验证输入数据的有效性
@@ -576,7 +534,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 验证循环次数
                 if (string.IsNullOrWhiteSpace(txtLoopCount.Text))
                 {
-                    MessageHelper.MessageOK("请输入循环次数！", TType.Warn);
+                    MessageHelper.MessageOK(this,"请输入循环次数！", TType.Warn);
                     txtLoopCount.Focus();
                     return false;
                 }
@@ -589,10 +547,10 @@ namespace MainUI.LogicalConfiguration.Forms
                     return false;
                 }
 
-                // ⭐ 新增: 验证子步骤
+                // 验证子步骤
                 if (Parameter.ChildSteps == null || Parameter.ChildSteps.Count == 0)
                 {
-                    var result = MessageHelper.MessageYes(
+                    var result = MessageHelper.MessageYes(this,
                         "尚未配置循环体步骤,是否继续保存?\n(建议至少配置一个步骤)",
                         TType.Warn);
 
@@ -618,7 +576,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         Logger?.LogWarning("发现 {Count} 个子步骤的参数为空", emptyParamCount);
 
                         // 可选: 提示用户但允许继续
-                        MessageHelper.MessageOK(
+                        MessageHelper.MessageOK(this,
                             $"警告: 有 {emptyParamCount} 个子步骤尚未配置参数",
                             TType.Warn);
                     }
@@ -633,28 +591,92 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        #endregion
+        /// <summary>
+        /// 设置默认值
+        /// </summary>
+        protected override void SetDefaultValues()
+        {
+            Parameter = new Parameter_Loop
+            {
+                LoopCountExpression = "10",
+                CounterVariableName = "LoopIndex",
+                EnableCounter = true,
+                ChildSteps = [],
+                Description = $"循环步骤 {_workflowState?.StepNum + 1}"
+            };
 
-        #region 窗体事件
+            Logger?.LogDebug("设置循环参数默认值");
+            LoadParameterToForm();
+        }
 
         /// <summary>
-        /// 窗体关闭事件
+        /// 加载参数到界面
         /// </summary>
-        private void Form_Loop_FormClosing(object sender, FormClosingEventArgs e)
+        protected override void LoadParameterToForm()
         {
-            if (this.DialogResult == DialogResult.OK) return;
-
-            if (_hasUnsavedChanges)
+            try
             {
-                var result = MessageHelper.MessageYes(this, "存在未保存的更改，确定要关闭吗？");
-                if (result != DialogResult.OK)
-                {
-                    e.Cancel = true;
-                }
+                _isInitializing = true;
+
+                txtLoopCount.Text = Parameter.LoopCountExpression ?? "10";
+                txtCounterVariable.Text = Parameter.CounterVariableName ?? "LoopIndex";
+                chkEnableCounter.Checked = Parameter.EnableCounter;
+                txtDescription.Text = Parameter.Description ?? "";
+                chkEnabled.Checked = true;
+
+                // 更新子步骤计数
+                int childStepCount = Parameter.ChildSteps?.Count ?? 0;
+                lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
+
+                Debug.WriteLine("LoadParameterToForm - 子步骤数量: {Count}", childStepCount);
+
+                UpdateCounterControls();
+
+                _hasUnsavedChanges = false;
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载参数到界面失败");
+            }
+            finally
+            {
+                _isInitializing = false;
             }
         }
 
-        #endregion
+        /// <summary>
+        /// 保存界面数据到参数对象
+        /// </summary>
+        protected override void SaveFormToParameter()
+        {
+            try
+            {
+                // 只更新界面控件对应的属性
+                Parameter.LoopCountExpression = txtLoopCount.Text?.Trim() ?? "10";
+                Parameter.CounterVariableName = txtCounterVariable.Text?.Trim() ?? "LoopIndex";
+                Parameter.EnableCounter = chkEnableCounter.Checked;
+                Parameter.Description = txtDescription.Text?.Trim() ?? "";
 
+                // 添加日志记录子步骤信息
+                Logger?.LogDebug("SaveFormToParameter - 子步骤数量: {Count}",
+                    Parameter.ChildSteps?.Count ?? 0);
+
+                if (Parameter.ChildSteps != null)
+                {
+                    foreach (var child in Parameter.ChildSteps)
+                    {
+                        var paramLength = child.StepParameter?.ToString()?.Length ?? 0;
+                        Logger?.LogDebug("  子步骤: {StepName}, 参数长度: {Length}",
+                            child.StepName, paramLength);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "保存界面数据到参数对象失败");
+                throw;
+            }
+        }
+        #endregion
     }
 }

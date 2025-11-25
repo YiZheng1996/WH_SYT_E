@@ -3,7 +3,7 @@ using Sunny.UI;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
-    partial class Form_Condition : BaseParameterForm<Parameter_Condition>
+    partial class Form_Condition
     {
         /// <summary>
         /// Required designer variable.

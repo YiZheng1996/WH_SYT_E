@@ -19,8 +19,25 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 3. 变量复制 - 从其他变量复制值
     /// 4. PLC读取 - 从PLC设备读取值
     /// </summary>
-    public partial class Form_VariableAssignment : BaseParameterForm<Parameter_VariableAssignment>
+    public partial class Form_VariableAssignment : BaseParameterForm
     {
+        #region 属性
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_VariableAssignment Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_VariableAssignment();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
         #region 私有字段
         /// <summary>
         /// 表达式验证器 - 用于验证和计算表达式的正确性
@@ -345,7 +362,68 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 参数处理
+        #region 重写基类方法
+
+        /// <summary>
+        /// 将界面控件的值保存到参数对象
+        /// 在用户点击确定或需要获取当前配置时调用
+        /// </summary>
+        protected override void SaveFormToParameter()
+        {
+            // 确保 _parameter 存在
+            if (_parameter == null)
+            {
+                _parameter = new Parameter_VariableAssignment();
+                Logger?.LogWarning("SaveFormToParameter: _parameter 为 null，已创建新实例");
+            }
+
+            // 确保 DataSource 存在
+            if (_parameter.DataSource == null)
+            {
+                _parameter.DataSource = new DataSourceConfig();
+                Logger?.LogWarning("SaveFormToParameter: DataSource 为 null，已创建新实例");
+            }
+
+            try
+            {
+                _parameter.TargetVarName = cmbTargetVariable?.Text ?? "";
+                _parameter.AssignmentType = (VariableAssignmentType)cmbAssignmentType.SelectedValue;
+                _parameter.Condition = txtCondition?.Text ?? "";
+                _parameter.Description = txtDescription?.Text ?? "";
+                _parameter.IsAssignment = chkEnabled?.Checked ?? false;
+
+                // 根据赋值类型保存数据
+                switch (_parameter.AssignmentType)
+                {
+                    case VariableAssignmentType.PLCRead:
+                        _parameter.DataSource.SourceType = DataSourceType.PLC;
+                        _parameter.DataSource.PlcConfig.ModuleName = CboPlcModule?.Text ?? "";
+                        _parameter.DataSource.PlcConfig.Address = CboPlcAddress?.Text ?? "";
+                        _parameter.Expression = ""; // PLC读取时Expression为空
+                        Logger?.LogDebug($"PLC 模式 - 模块: {_parameter.DataSource.PlcConfig.ModuleName}, 地址: {_parameter.DataSource.PlcConfig.Address}");
+                        break;
+
+                    default:
+                        string expression = txtAssignmentContent?.Text ?? "";
+                        _parameter.Expression = txtAssignmentContent?.Text ?? "";
+                        _parameter.DataSource.SourceType = DataSourceType.Variable; // 默认
+                        // 验证是否真的获取到了值
+                        if (string.IsNullOrEmpty(expression) && _parameter.AssignmentType != VariableAssignmentType.PLCRead)
+                        {
+                            Logger?.LogWarning($"⚠️ 警告: Expression 为空! 控件值: '{txtAssignmentContent?.Text}'");
+                        }
+                        break;
+                }
+
+                _hasUnsavedChanges = false;
+                Logger?.LogDebug("表单数据已保存到参数对象");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "保存表单数据失败");
+                throw;
+            }
+        }
 
         /// <summary>
         /// 设置默认值
@@ -430,210 +508,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 获取当前配置的参数对象
-        /// 根据界面当前状态创建一个新的参数对象，不修改内部_parameter
-        /// 主要用于验证和测试场景
-        /// </summary>
-        /// <returns>根据当前界面状态创建的参数对象</returns>
-        private Parameter_VariableAssignment GetParameter()
-        {
-            var parameter = new Parameter_VariableAssignment
-            {
-                TargetVarName = cmbTargetVariable?.Text ?? "",
-                AssignmentType = (VariableAssignmentType)cmbAssignmentType.SelectedValue,
-                Condition = txtCondition?.Text ?? "",
-                Description = txtDescription?.Text ?? "",
-                IsAssignment = chkEnabled?.Checked ?? false,
-                DataSource = new DataSourceConfig()
-            };
-
-            // 根据赋值类型设置数据
-            switch (parameter.AssignmentType)
-            {
-                case VariableAssignmentType.PLCRead:
-                    parameter.DataSource.SourceType = DataSourceType.PLC;
-                    parameter.DataSource.PlcConfig.ModuleName = CboPlcModule?.Text ?? "";
-                    parameter.DataSource.PlcConfig.Address = CboPlcAddress?.Text ?? "";
-                    parameter.Expression = ""; // PLC读取时Expression为空
-                    break;
-
-                default:
-                    parameter.Expression = txtAssignmentContent?.Text ?? "";
-                    parameter.DataSource.SourceType = DataSourceType.Variable;
-                    break;
-            }
-
-            return parameter;
-        }
-
-        /// <summary>
-        /// 将界面控件的值保存到参数对象
-        /// 在用户点击确定或需要获取当前配置时调用
-        /// </summary>
-        protected override void SaveFormToParameter()
-        {
-            // 确保 _parameter 存在
-            if (_parameter == null)
-            {
-                _parameter = new Parameter_VariableAssignment();
-                Logger?.LogWarning("SaveFormToParameter: _parameter 为 null，已创建新实例");
-            }
-
-            // 确保 DataSource 存在
-            if (_parameter.DataSource == null)
-            {
-                _parameter.DataSource = new DataSourceConfig();
-                Logger?.LogWarning("SaveFormToParameter: DataSource 为 null，已创建新实例");
-            }
-
-            try
-            {
-                _parameter.TargetVarName = cmbTargetVariable?.Text ?? "";
-                _parameter.AssignmentType = (VariableAssignmentType)cmbAssignmentType.SelectedValue;
-                _parameter.Condition = txtCondition?.Text ?? "";
-                _parameter.Description = txtDescription?.Text ?? "";
-                _parameter.IsAssignment = chkEnabled?.Checked ?? false;
-
-                // 根据赋值类型保存数据
-                switch (_parameter.AssignmentType)
-                {
-                    case VariableAssignmentType.PLCRead:
-                        _parameter.DataSource.SourceType = DataSourceType.PLC;
-                        _parameter.DataSource.PlcConfig.ModuleName = CboPlcModule?.Text ?? "";
-                        _parameter.DataSource.PlcConfig.Address = CboPlcAddress?.Text ?? "";
-                        _parameter.Expression = ""; // PLC读取时Expression为空
-                        Logger?.LogDebug($"PLC 模式 - 模块: {_parameter.DataSource.PlcConfig.ModuleName}, 地址: {_parameter.DataSource.PlcConfig.Address}");
-                        break;
-
-                    default:
-                        string expression = txtAssignmentContent?.Text ?? "";
-                        _parameter.Expression = txtAssignmentContent?.Text ?? "";
-                        _parameter.DataSource.SourceType = DataSourceType.Variable; // 默认
-                        // 验证是否真的获取到了值
-                        if (string.IsNullOrEmpty(expression) && _parameter.AssignmentType != VariableAssignmentType.PLCRead)
-                        {
-                            Logger?.LogWarning($"⚠️ 警告: Expression 为空! 控件值: '{txtAssignmentContent?.Text}'");
-                        }
-                        break;
-                }
-
-                _hasUnsavedChanges = false;
-                Logger?.LogDebug("表单数据已保存到参数对象");
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "保存表单数据失败");
-                throw;
-            }
-        }
-        #endregion
-
-        #region PLC功能支持
-
-        /// <summary>
-        /// 加载所有PLC参数
-        /// 从PLCManager获取所有可用的PLC模块
-        /// </summary>
-        private async Task Parameterplcs()
-        {
-            if (CboPlcModule.Items.Count > 0) return; // 避免重复加载
-
-            CboPlcModule.Clear();
-            CboPlcAddress.Clear();
-            try
-            {
-                var modules = await PLCManager.GetModuleTagsAsync();
-                foreach (var module in modules)
-                {
-                    CboPlcModule.Items.Add(module.Key);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "加载PLC模块失败");
-            }
-        }
-
-        /// <summary>
-        /// 加载指定PLC模块的地址列表
-        /// 根据选中的模块名异步获取该模块的所有可用地址
-        /// </summary>
-        /// <param name="moduleName">PLC模块名称</param>
-        private async Task LoadPlcAddresses(string moduleName)
-        {
-            if (string.IsNullOrEmpty(moduleName) || CboPlcAddress == null) return;
-
-            try
-            {
-                CboPlcAddress.Clear();
-                var modules = await PLCManager.GetModuleTagsAsync();
-                if (modules.TryGetValue(moduleName, out List<string> addresses))
-                {
-                    foreach (var address in addresses)
-                    {
-                        CboPlcAddress.Items.Add(address);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "加载PLC模块[{moduleName}]地址失败", moduleName);
-            }
-        }
-
-        /// <summary>
-        /// 安全设置ComboBox的值
-        /// 处理各种ComboBox类型的值设置，包含容错机制
-        /// </summary>
-        /// <param name="comboBox">要设置的ComboBox控件</param>
-        /// <param name="value">要设置的值</param>
-        private void SetComboBoxValue(UIComboBox comboBox, string value)
-        {
-            if (comboBox == null || string.IsNullOrEmpty(value)) return;
-
-            try
-            {
-                // 方法1：先尝试在Items中查找匹配项
-                for (int i = 0; i < comboBox.Items.Count; i++)
-                {
-                    if (comboBox.Items[i].ToString().Equals(value, StringComparison.OrdinalIgnoreCase))
-                    {
-                        comboBox.SelectedIndex = i;
-                        return;
-                    }
-                }
-
-                // 方法2：如果没有找到匹配项，且ComboBox允许编辑，则设置Text属性
-                if (comboBox.DropDownStyle == UIDropDownStyle.DropDown)
-                {
-                    comboBox.Text = value;
-                }
-                else
-                {
-                    // 方法3：对于DropDownList类型，如果找不到匹配项，添加该项
-                    comboBox.Items.Add(value);
-                    comboBox.SelectedItem = value;
-                }
-            }
-            catch (Exception)
-            {
-                Logger?.LogWarning("设置ComboBox值失败: {value}", value);
-                // 最后的备用方案
-                try
-                {
-                    comboBox.Text = value;
-                }
-                catch
-                {
-                    // 忽略最终的设置失败
-                }
-            }
-        }
-
-        #endregion
-
-        #region 验证逻辑
         /// <summary>
         /// 验证用户输入的完整性和正确性
         /// 执行全面的输入验证，包括必填项检查和业务逻辑验证
@@ -745,6 +619,152 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
+
+        /// <summary>
+        /// 获取当前配置的参数对象
+        /// 根据界面当前状态创建一个新的参数对象，不修改内部_parameter
+        /// 主要用于验证和测试场景
+        /// </summary>
+        /// <returns>根据当前界面状态创建的参数对象</returns>
+        private Parameter_VariableAssignment GetParameter()
+        {
+            var parameter = new Parameter_VariableAssignment
+            {
+                TargetVarName = cmbTargetVariable?.Text ?? "",
+                AssignmentType = (VariableAssignmentType)cmbAssignmentType.SelectedValue,
+                Condition = txtCondition?.Text ?? "",
+                Description = txtDescription?.Text ?? "",
+                IsAssignment = chkEnabled?.Checked ?? false,
+                DataSource = new DataSourceConfig()
+            };
+
+            // 根据赋值类型设置数据
+            switch (parameter.AssignmentType)
+            {
+                case VariableAssignmentType.PLCRead:
+                    parameter.DataSource.SourceType = DataSourceType.PLC;
+                    parameter.DataSource.PlcConfig.ModuleName = CboPlcModule?.Text ?? "";
+                    parameter.DataSource.PlcConfig.Address = CboPlcAddress?.Text ?? "";
+                    parameter.Expression = ""; // PLC读取时Expression为空
+                    break;
+
+                default:
+                    parameter.Expression = txtAssignmentContent?.Text ?? "";
+                    parameter.DataSource.SourceType = DataSourceType.Variable;
+                    break;
+            }
+
+            return parameter;
+        }
+
+        #endregion
+
+        #region PLC功能支持
+
+        /// <summary>
+        /// 加载所有PLC参数
+        /// 从PLCManager获取所有可用的PLC模块
+        /// </summary>
+        private async Task Parameterplcs()
+        {
+            if (CboPlcModule.Items.Count > 0) return; // 避免重复加载
+
+            CboPlcModule.Clear();
+            CboPlcAddress.Clear();
+            try
+            {
+                var modules = await PLCManager.GetModuleTagsAsync();
+                foreach (var module in modules)
+                {
+                    CboPlcModule.Items.Add(module.Key);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载PLC模块失败");
+            }
+        }
+
+        /// <summary>
+        /// 加载指定PLC模块的地址列表
+        /// 根据选中的模块名异步获取该模块的所有可用地址
+        /// </summary>
+        /// <param name="moduleName">PLC模块名称</param>
+        private async Task LoadPlcAddresses(string moduleName)
+        {
+            if (string.IsNullOrEmpty(moduleName) || CboPlcAddress == null) return;
+
+            try
+            {
+                CboPlcAddress.Clear();
+                var modules = await PLCManager.GetModuleTagsAsync();
+                if (modules.TryGetValue(moduleName, out List<string> addresses))
+                {
+                    foreach (var address in addresses)
+                    {
+                        CboPlcAddress.Items.Add(address);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载PLC模块[{moduleName}]地址失败", moduleName);
+            }
+        }
+
+        /// <summary>
+        /// 安全设置ComboBox的值
+        /// 处理各种ComboBox类型的值设置，包含容错机制
+        /// </summary>
+        /// <param name="comboBox">要设置的ComboBox控件</param>
+        /// <param name="value">要设置的值</param>
+        private void SetComboBoxValue(UIComboBox comboBox, string value)
+        {
+            if (comboBox == null || string.IsNullOrEmpty(value)) return;
+
+            try
+            {
+                // 方法1：先尝试在Items中查找匹配项
+                for (int i = 0; i < comboBox.Items.Count; i++)
+                {
+                    if (comboBox.Items[i].ToString().Equals(value, StringComparison.OrdinalIgnoreCase))
+                    {
+                        comboBox.SelectedIndex = i;
+                        return;
+                    }
+                }
+
+                // 方法2：如果没有找到匹配项，且ComboBox允许编辑，则设置Text属性
+                if (comboBox.DropDownStyle == UIDropDownStyle.DropDown)
+                {
+                    comboBox.Text = value;
+                }
+                else
+                {
+                    // 方法3：对于DropDownList类型，如果找不到匹配项，添加该项
+                    comboBox.Items.Add(value);
+                    comboBox.SelectedItem = value;
+                }
+            }
+            catch (Exception)
+            {
+                Logger?.LogWarning("设置ComboBox值失败: {value}", value);
+                // 最后的备用方案
+                try
+                {
+                    comboBox.Text = value;
+                }
+                catch
+                {
+                    // 忽略最终的设置失败
+                }
+            }
+        }
+
+        #endregion
+
+        #region 验证逻辑
+      
         /// <summary>
         /// 异步验证配置
         /// </summary>

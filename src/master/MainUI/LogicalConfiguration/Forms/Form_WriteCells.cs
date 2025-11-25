@@ -20,14 +20,33 @@ namespace MainUI.LogicalConfiguration.Forms
     /// 4. 智能提示
     /// 5. 操作按钮列
     /// </summary>
-    public partial class Form_WriteCells : BaseParameterForm<Parameter_WriteCells>
+    public partial class Form_WriteCells : BaseParameterForm
     {
+        #region 属性
+
+        private Parameter_WriteCells _parameter;
+        /// <summary>
+        /// 参数对象 - 基类通过反射访问此属性
+        /// </summary>
+        public Parameter_WriteCells Parameter
+        {
+            get => _parameter;
+            set
+            {
+                _parameter = value ?? new Parameter_WriteCells();
+                if (!DesignMode && !IsLoading && IsHandleCreated)
+                {
+                    base.LoadParameterToForm();
+                }
+            }
+        }
+        #endregion
+
         #region 私有字段
 
         private readonly GlobalVariableManager _variableManager;
         private readonly ReportExpressionHelper _expressionHelper;
         private readonly ExpressionEngine _engine;
-        private Parameter_WriteCells _currentParameter;
         private bool _isLoading = false;
 
         // 预览定时器 - 延迟更新预览,避免频繁计算
@@ -130,58 +149,13 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void InitializeForm()
         {
-            _currentParameter = new Parameter_WriteCells();
             InitializePreviewTimer();
             InitializeDataGridView();
             BindEvents();
             ShowQuickGuide();
-            LoadParametersToForm();
             _logger?.LogInformation("Form_WriteCells 增强版初始化完成");
         }
 
-        /// <summary>
-        /// 从参数对象加载到表单
-        /// </summary>
-        private void LoadParametersToForm()
-        {
-            if (_currentParameter == null) return;
-
-            _isLoading = true;
-
-            try
-            {
-                _isLoading = true;
-                txtSheetName.Text = _currentParameter.SheetName ?? "Sheet1";
-
-                DataGridViewDefineVar.Rows.Clear();
-                if (_currentParameter.Items != null)
-                {
-                    foreach (var item in _currentParameter.Items)
-                    {
-                        var rowIndex = DataGridViewDefineVar.Rows.Add();
-                        var row = DataGridViewDefineVar.Rows[rowIndex];
-
-                        row.Cells["ColVarName"].Value = item.CellAddress ?? "";
-                        row.Cells["ColVarType"].Value = GetSourceTypeDisplayName(item.SourceType);
-
-                        var content = item.SourceType switch
-                        {
-                            CellsDataSourceType.FixedValue => item.FixedValue,
-                            CellsDataSourceType.Variable => item.VariableName,
-                            CellsDataSourceType.Expression => item.Expression,
-                            CellsDataSourceType.SystemProperty => item.PropertyPath,
-                            _ => string.Empty
-                        };
-
-                        row.Cells["ColVarText"].Value = content ?? "";
-                    }
-                }
-            }
-            finally
-            {
-                _isLoading = false;
-            }
-        }
 
         /// <summary>
         /// 初始化预览定时器
@@ -894,60 +868,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 验证和保存
-
-        protected override bool ValidateInput()
-        {
-            try
-            {
-                var param = GetCurrentParameters();
-
-                if (param.Items == null || param.Items.Count == 0)
-                {
-                    MessageHelper.MessageOK("请至少添加一个写入配置", TType.Warn);
-                    return false;
-                }
-
-                // 验证每一项
-                for (int i = 0; i < param.Items.Count; i++)
-                {
-                    var item = param.Items[i];
-
-                    if (string.IsNullOrWhiteSpace(item.CellAddress))
-                    {
-                        MessageHelper.MessageOK($"第 {i + 1} 行:单元格地址不能为空", TType.Warn);
-                        return false;
-                    }
-
-                    var hasContent = item.SourceType switch
-                    {
-                        CellsDataSourceType.FixedValue => !string.IsNullOrWhiteSpace(item.FixedValue),
-                        CellsDataSourceType.Variable => !string.IsNullOrWhiteSpace(item.VariableName),
-                        CellsDataSourceType.Expression => !string.IsNullOrWhiteSpace(item.Expression),
-                        CellsDataSourceType.SystemProperty => !string.IsNullOrWhiteSpace(item.PropertyPath),
-                        _ => false
-                    };
-
-                    if (!hasContent)
-                    {
-                        var typeName = GetSourceTypeDisplayName(item.SourceType);
-                        MessageHelper.MessageOK($"第 {i + 1} 行:{typeName}的内容不能为空", TType.Warn);
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "验证参数时发生错误");
-                MessageHelper.MessageOK($"验证失败:{ex.Message}", TType.Error);
-                return false;
-            }
-        }
-
-        #endregion
-
         #region 辅助方法
 
         private CellsDataSourceType ParseSourceType(string typeStr)
@@ -1037,6 +957,101 @@ namespace MainUI.LogicalConfiguration.Forms
         #region 重写基类方法
 
         /// <summary>
+        /// 从参数对象加载到表单
+        /// </summary>
+        protected override void LoadParameterToForm()
+        {
+            if (_parameter == null) return;
+
+            _isLoading = true;
+
+            try
+            {
+                _isLoading = true;
+                txtSheetName.Text = _parameter.SheetName ?? "Sheet1";
+
+                DataGridViewDefineVar.Rows.Clear();
+                if (_parameter.Items != null)
+                {
+                    foreach (var item in _parameter.Items)
+                    {
+                        var rowIndex = DataGridViewDefineVar.Rows.Add();
+                        var row = DataGridViewDefineVar.Rows[rowIndex];
+
+                        row.Cells["ColVarName"].Value = item.CellAddress ?? "";
+                        row.Cells["ColVarType"].Value = GetSourceTypeDisplayName(item.SourceType);
+
+                        var content = item.SourceType switch
+                        {
+                            CellsDataSourceType.FixedValue => item.FixedValue,
+                            CellsDataSourceType.Variable => item.VariableName,
+                            CellsDataSourceType.Expression => item.Expression,
+                            CellsDataSourceType.SystemProperty => item.PropertyPath,
+                            _ => string.Empty
+                        };
+
+                        row.Cells["ColVarText"].Value = content ?? "";
+                    }
+                }
+            }
+            finally
+            {
+                _isLoading = false;
+            }
+        }
+
+        protected override bool ValidateInput()
+        {
+            try
+            {
+                var param = GetCurrentParameters();
+
+                if (param.Items == null || param.Items.Count == 0)
+                {
+                    MessageHelper.MessageOK("请至少添加一个写入配置", TType.Warn);
+                    return false;
+                }
+
+                // 验证每一项
+                for (int i = 0; i < param.Items.Count; i++)
+                {
+                    var item = param.Items[i];
+
+                    if (string.IsNullOrWhiteSpace(item.CellAddress))
+                    {
+                        MessageHelper.MessageOK($"第 {i + 1} 行:单元格地址不能为空", TType.Warn);
+                        return false;
+                    }
+
+                    var hasContent = item.SourceType switch
+                    {
+                        CellsDataSourceType.FixedValue => !string.IsNullOrWhiteSpace(item.FixedValue),
+                        CellsDataSourceType.Variable => !string.IsNullOrWhiteSpace(item.VariableName),
+                        CellsDataSourceType.Expression => !string.IsNullOrWhiteSpace(item.Expression),
+                        CellsDataSourceType.SystemProperty => !string.IsNullOrWhiteSpace(item.PropertyPath),
+                        _ => false
+                    };
+
+                    if (!hasContent)
+                    {
+                        var typeName = GetSourceTypeDisplayName(item.SourceType);
+                        MessageHelper.MessageOK($"第 {i + 1} 行:{typeName}的内容不能为空", TType.Warn);
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "验证参数时发生错误");
+                MessageHelper.MessageOK($"验证失败:{ex.Message}", TType.Error);
+                return false;
+            }
+        }
+
+
+        /// <summary>
         /// 从步骤参数加载 - 重写基类方法实现自动加载
         /// </summary>
         protected override void LoadParametersFromWorkflow()
@@ -1046,7 +1061,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 加载成功则更新参数并刷新界面
                 if (Parameter != null)
                 {
-                    LoadParametersToForm();  // 刷新界面控件
+                    LoadParameterToForm();  // 刷新界面控件
                 }
                 else
                 {
@@ -1067,8 +1082,8 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                _currentParameter = new Parameter_WriteCells();
-                LoadParametersToForm();
+                _parameter = new Parameter_WriteCells();
+                LoadParameterToForm();
                 _logger?.LogDebug("设置默认值");
 
             }
