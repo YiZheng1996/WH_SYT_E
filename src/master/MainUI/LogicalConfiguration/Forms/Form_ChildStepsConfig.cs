@@ -34,8 +34,6 @@ namespace MainUI.LogicalConfiguration.Forms
         // 状态颜色
         private static readonly Color PrimaryBlue = Color.FromArgb(65, 100, 204);
 
-        // 菜单管理器
-        private StepContextMenuManager _menuManager;
         #endregion
 
         #region 构造函数
@@ -73,6 +71,7 @@ namespace MainUI.LogicalConfiguration.Forms
             InitializeCustomUI();
             RegisterEventHandlers();
 
+            _processGridControl.RefreshGrid();
             _logger?.LogDebug("循环体子步骤配置窗体已创建,步骤数量: {Count}", _childSteps.Count);
         }
 
@@ -112,12 +111,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 添加到中间容器
                 panelProcess.Controls.Clear();
                 panelProcess.Controls.Add(_processGridControl);
-
-                // 刷新表格数据
-                _processGridControl.RefreshGrid();
-
-                // 初始化右键菜单
-                InitializeContextMenu();
 
                 // 创建底部按钮
                 CreateButtons();
@@ -159,37 +152,6 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 _logger?.LogError(ex, "初始化工具箱失败");
                 throw;
-            }
-        }
-
-        /// <summary>
-        /// 初始化右键菜单
-        /// </summary>
-        private void InitializeContextMenu()
-        {
-            try
-            {
-                // 获取ProcessDataGridViewControl内部的DataGridView
-                var dataGridView = _processGridControl.DataGridView;
-
-                // 创建DataGridViewManager(用于菜单管理器)
-                var gridManager = new DataGridViewManager(dataGridView);
-
-                // 创建菜单管理器
-                var menuLogger = Program.ServiceProvider?.GetService<ILogger<StepContextMenuManager>>();
-                _menuManager = new StepContextMenuManager(
-                    dataGridView,
-                    _childWorkflowState,
-                    gridManager,
-                    menuLogger,
-                    this);
-
-                _logger?.LogDebug("右键菜单已初始化");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "初始化右键菜单失败");
-                // 菜单初始化失败不影响主功能,记录日志继续
             }
         }
 
@@ -278,30 +240,60 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 步骤配置请求事件(双击行)
+        /// 步骤配置请求事件(双击行) - 修复版本
         /// </summary>
         private void OnStepConfigRequested(object sender, StepConfigEventArgs e)
         {
             try
             {
-                _logger?.LogDebug("打开步骤配置: {StepName}, 行索引: {RowIndex}", e.Step.StepName, e.RowIndex);
+                _logger?.LogDebug("打开步骤配置: {StepName}, 行索引: {RowIndex}",
+                    e.Step.StepName, e.RowIndex);
 
-                if (_formService != null)
-                {
-                    // 设置子工作流状态
-                    _childWorkflowState.StepNum = e.RowIndex;
-                    _childWorkflowState.StepName = e.Step.StepName;
-
-                    // 打开配置窗体
-                    _formService.OpenFormByName(this, e.Step.StepName, this);
-
-                    _hasUnsavedChanges = true;
-                }
-                else
+                if (_formService == null)
                 {
                     _logger?.LogWarning("FormService未初始化,无法打开配置窗体");
                     MessageHelper.MessageOK("无法打开配置窗体,服务未初始化", TType.Error);
+                    return;
                 }
+
+                // ✅ 获取全局工作流状态服务
+                var globalWorkflowState = Program.ServiceProvider?.GetService<IWorkflowStateService>();
+                if (globalWorkflowState == null)
+                {
+                    _logger?.LogError("无法获取全局工作流状态服务");
+                    MessageHelper.MessageOK("系统错误：无法获取工作流服务", TType.Error);
+                    return;
+                }
+
+                // ✅ 设置全局工作流状态（配置窗体会使用）
+                globalWorkflowState.StepNum = e.RowIndex;
+                globalWorkflowState.StepName = e.Step.StepName;
+
+                // ✅ 同时设置子工作流状态
+                _childWorkflowState.StepNum = e.RowIndex;
+                _childWorkflowState.StepName = e.Step.StepName;
+
+                // ✅ 打开配置窗体
+                _formService.OpenFormByName(this, e.Step.StepName, this);
+
+                // ✅ 关键修复：配置完成后同步参数
+                var globalStep = globalWorkflowState.GetStep(e.RowIndex);
+                if (globalStep != null)
+                {
+                    var childStep = _childWorkflowState.GetStep(e.RowIndex);
+                    if (childStep != null)
+                    {
+                        // 同步参数
+                        childStep.StepParameter = globalStep.StepParameter;
+                        _childWorkflowState.UpdateStepParameter(childStep.StepNum, childStep);
+
+                        _logger?.LogDebug("已同步步骤参数: {StepName}, 参数长度: {Length}",
+                            childStep.StepName,
+                            globalStep.StepParameter?.ToString()?.Length ?? 0);
+                    }
+                }
+
+                _hasUnsavedChanges = true;
             }
             catch (Exception ex)
             {
@@ -372,26 +364,30 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // 从工作流状态获取最新的步骤列表
+                // 1. 从工作流状态获取最新步骤
                 var currentSteps = _childWorkflowState.GetSteps();
 
                 if (currentSteps == null || currentSteps.Count == 0)
                 {
-                    var result = MessageHelper.MessageYes("子步骤列表为空,确定要保存吗?");
+                    var result = MessageHelper.MessageYes(
+                        "当前没有配置任何子步骤，确定要保存空配置吗？");
                     if (result != DialogResult.OK)
-                    {
                         return;
-                    }
                 }
 
-                // 更新原始引用(深拷贝回去)
-                _originalSteps.Clear();
-                _originalSteps.AddRange(
-                    JsonConvert.DeserializeObject<List<ChildModel>>(
-                        JsonConvert.SerializeObject(currentSteps)));
+                // 2. 深拷贝数据
+                var deepCopiedSteps = JsonConvert.DeserializeObject<List<ChildModel>>(
+                    JsonConvert.SerializeObject(currentSteps));
 
-                _logger?.LogInformation("子步骤配置已保存,步骤数: {Count}", _originalSteps.Count);
-                MessageHelper.MessageOK($"保存成功!共配置 {_originalSteps.Count} 个子步骤", TType.Success);
+                // 同时更新两个列表
+                _childSteps = deepCopiedSteps; // 供Form_Loop访问
+                _originalSteps.Clear();
+                _originalSteps.AddRange(deepCopiedSteps);   // 更新原始引用
+
+                _logger?.LogInformation("子步骤配置已保存，步骤数: {Count}", _childSteps.Count);
+                MessageHelper.MessageOK(
+                    $"保存成功！共配置 {_childSteps.Count} 个子步骤",
+                    TType.Success);
 
                 _hasUnsavedChanges = false;
                 DialogResult = DialogResult.OK;
@@ -430,7 +426,7 @@ namespace MainUI.LogicalConfiguration.Forms
             if (this.DialogResult != DialogResult.OK && _hasUnsavedChanges)
             {
                 var result = MessageHelper.MessageYes("有未保存的更改,确定要关闭吗?");
-                if (result!= DialogResult.OK)
+                if (result != DialogResult.OK)
                 {
                     e.Cancel = true;
                 }

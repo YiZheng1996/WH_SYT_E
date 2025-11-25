@@ -1,5 +1,6 @@
 ﻿using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace MainUI.LogicalConfiguration.Controls
@@ -10,16 +11,32 @@ namespace MainUI.LogicalConfiguration.Controls
     public partial class ProcessDataGridViewControl : UserControl
     {
         #region 字段
-
         private DataGridView _dataGridView;
         private readonly ILogger<ProcessDataGridViewControl> _logger;
         private readonly IWorkflowStateService _workflowState;
         private DataGridViewManager _gridManager;
+        private StepContextMenuManager _menuManager;
+        private bool _isDisposed;
+        private bool _isInitialized;
 
-        // 状态颜色
-        private static readonly Color PrimaryBlue = Color.FromArgb(65, 100, 204);
-        private static readonly Color SuccessGreen = Color.FromArgb(40, 167, 69);
-        private static readonly Color ErrorRed = Color.FromArgb(220, 53, 69);
+        #endregion
+
+        #region 配置属性
+
+        /// <summary>
+        /// 是否启用右键菜单（默认启用）
+        /// </summary>
+        public bool EnableContextMenu { get; set; } = true;
+
+        /// <summary>
+        /// 是否自动刷新UI（默认启用）
+        /// </summary>
+        public bool AutoRefresh { get; set; } = true;
+
+        /// <summary>
+        /// 是否允许拖放（默认启用）
+        /// </summary>
+        public bool AllowDragDrop { get; set; } = true;
 
         #endregion
 
@@ -90,11 +107,14 @@ namespace MainUI.LogicalConfiguration.Controls
             IWorkflowStateService workflowState,
             ILogger<ProcessDataGridViewControl> logger) : this()
         {
-            _workflowState = workflowState;
+            _workflowState = workflowState ?? throw new ArgumentNullException(nameof(workflowState));
             _logger = logger;
 
             // 创建管理器
             _gridManager = new DataGridViewManager(_dataGridView);
+
+            // 延迟初始化菜单和事件订阅（等待 ParentForm 可用）
+            Load += OnControlLoad;
 
             _logger?.LogDebug("流程配置表格控件已创建");
         }
@@ -102,6 +122,34 @@ namespace MainUI.LogicalConfiguration.Controls
         #endregion
 
         #region 初始化
+
+        /// <summary>
+        /// 控件加载完成事件
+        /// </summary>
+        private void OnControlLoad(object sender, EventArgs e)
+        {
+            if (_isInitialized) return;
+
+            try
+            {
+                // 初始化右键菜单
+                if (EnableContextMenu)
+                {
+                    InitializeContextMenu();
+                }
+
+                // 订阅工作流状态事件
+                SubscribeToWorkflowEvents();
+
+                _isInitialized = true;
+                _logger?.LogDebug("流程配置表格控件初始化完成");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "初始化流程配置表格控件时发生错误");
+            }
+        }
+
         /// <summary>
         /// 初始化DataGridView控件
         /// </summary>
@@ -213,10 +261,11 @@ namespace MainUI.LogicalConfiguration.Controls
             _dataGridView.DragEnter += DataGridView_DragEnter;
             _dataGridView.DragDrop += DataGridView_DragDrop;
             _dataGridView.SelectionChanged += DataGridView_SelectionChanged;
-            _dataGridView.CellEndEdit += DataGridView_CellEndEdit;
             _dataGridView.CellBeginEdit += DataGridView_CellBeginEdit;
+            _dataGridView.CellEndEdit += DataGridView_CellEndEdit;
 
-            this.Controls.Add(_dataGridView);
+
+            Controls.Add(_dataGridView);
         }
 
         /// <summary>
@@ -308,6 +357,187 @@ namespace MainUI.LogicalConfiguration.Controls
             });
         }
 
+        /// <summary>
+        /// 初始化右键菜单管理器
+        /// </summary>
+        private void InitializeContextMenu()
+        {
+            try
+            {
+                if (_menuManager != null)
+                {
+                    _logger?.LogDebug("右键菜单管理器已存在，跳过初始化");
+                    return;
+                }
+
+                // 获取父窗体
+                var parentForm = FindForm();
+                if (parentForm == null)
+                {
+                    _logger?.LogWarning("无法找到父窗体，延迟初始化右键菜单");
+                    return;
+                }
+
+                // 创建菜单管理器
+                var menuLogger = Program.ServiceProvider?.GetService<ILogger<StepContextMenuManager>>();
+                _menuManager = new StepContextMenuManager(
+                    _dataGridView,
+                    _workflowState,
+                    _gridManager,
+                    menuLogger ?? _logger as Microsoft.Extensions.Logging.ILogger,
+                    parentForm);
+
+                _logger?.LogDebug("右键菜单管理器已初始化");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "初始化右键菜单管理器失败");
+            }
+        }
+
+        /// <summary>
+        /// 订阅工作流状态服务的事件
+        /// </summary>
+        private void SubscribeToWorkflowEvents()
+        {
+            if (_workflowState == null) return;
+
+            try
+            {
+                _workflowState.StepAdded += OnWorkflowStepAdded;
+                _workflowState.StepRemoved += OnWorkflowStepRemoved;
+                _workflowState.StepsChanged += OnWorkflowStepsChanged;
+
+                _logger?.LogDebug("已订阅工作流状态事件");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "订阅工作流状态事件失败");
+            }
+        }
+
+        /// <summary>
+        /// 取消订阅工作流状态服务的事件
+        /// </summary>
+        private void UnsubscribeFromWorkflowEvents()
+        {
+            if (_workflowState == null) return;
+
+            try
+            {
+                _workflowState.StepAdded -= OnWorkflowStepAdded;
+                _workflowState.StepRemoved -= OnWorkflowStepRemoved;
+                _workflowState.StepsChanged -= OnWorkflowStepsChanged;
+
+                _logger?.LogDebug("已取消订阅工作流状态事件");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "取消订阅工作流状态事件失败");
+            }
+        }
+
+        #endregion
+
+        #region 工作流事件处理（内部自动刷新）
+
+        /// <summary>
+        /// 工作流步骤添加事件 - 自动刷新UI
+        /// </summary>
+        private void OnWorkflowStepAdded(ChildModel step)
+        {
+            try
+            {
+                _logger?.LogDebug("步骤已添加到工作流: {StepName}", step.StepName);
+
+                // 自动刷新UI
+                if (AutoRefresh)
+                {
+                    RefreshGridInternal();
+                }
+
+                // 触发外部事件
+                StepAdded?.Invoke(this, new StepEventArgs(step));
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "处理步骤添加事件时发生错误");
+            }
+        }
+
+        /// <summary>
+        /// 工作流步骤移除事件 - 自动刷新UI
+        /// </summary>
+        private void OnWorkflowStepRemoved(ChildModel step)
+        {
+            try
+            {
+                _logger?.LogDebug("步骤已从工作流移除: {StepName}", step.StepName);
+
+                // 自动刷新UI
+                if (AutoRefresh)
+                {
+                    RefreshGridInternal();
+                }
+
+                // 触发外部事件
+                StepDeleted?.Invoke(this, new StepEventArgs(step));
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "处理步骤移除事件时发生错误");
+            }
+        }
+
+        /// <summary>
+        /// 工作流步骤集合变更事件 - 自动刷新UI
+        /// </summary>
+        private void OnWorkflowStepsChanged()
+        {
+            try
+            {
+                _logger?.LogDebug("工作流步骤集合已变更");
+
+                // 自动刷新UI
+                if (AutoRefresh)
+                {
+                    RefreshGridInternal();
+                }
+
+                // 触发外部事件
+                StepsChanged?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "处理步骤集合变更事件时发生错误");
+            }
+        }
+
+        /// <summary>
+        /// 内部刷新方法（支持线程安全）
+        /// </summary>
+        private void RefreshGridInternal()
+        {
+            if (_gridManager == null || _workflowState == null) return;
+
+            try
+            {
+                // 确保在UI线程上执行
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(RefreshGridInternal));
+                    return;
+                }
+
+                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+                _logger?.LogDebug("表格已刷新，步骤数: {Count}", _workflowState.GetSteps().Count);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "刷新表格时发生错误");
+            }
+        }
+
         #endregion
 
         #region 公开属性
@@ -372,7 +602,7 @@ namespace MainUI.LogicalConfiguration.Controls
             if (_workflowState != null)
             {
                 _workflowState.AddStep(step);
-                StepAdded?.Invoke(this, new StepEventArgs(step));
+                // 事件订阅会自动刷新UI，无需手动刷新
                 _logger?.LogDebug("步骤已添加: {StepName}", step.StepName);
             }
         }
@@ -388,7 +618,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 if (_workflowState != null)
                 {
                     _workflowState.RemoveStep(step);
-                    StepDeleted?.Invoke(this, new StepEventArgs(step));
+                    // 事件订阅会自动刷新UI，无需手动刷新
                     _logger?.LogDebug("步骤已删除: {StepName}", step.StepName);
                 }
             }
@@ -407,15 +637,11 @@ namespace MainUI.LogicalConfiguration.Controls
         }
 
         /// <summary>
-        /// 刷新表格显示
+        /// 刷新表格显示（手动刷新）
         /// </summary>
         public void RefreshGrid()
         {
-            if (_gridManager != null && _workflowState != null)
-            {
-                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
-                _logger?.LogDebug("表格已刷新");
-            }
+            RefreshGridInternal();
         }
 
         /// <summary>
@@ -426,7 +652,7 @@ namespace MainUI.LogicalConfiguration.Controls
             if (_workflowState != null)
             {
                 _workflowState.ClearSteps();
-                StepsChanged?.Invoke(this, EventArgs.Empty);
+                // 事件订阅会自动刷新UI，无需手动刷新
                 _logger?.LogDebug("所有步骤已清空");
             }
         }
@@ -467,18 +693,9 @@ namespace MainUI.LogicalConfiguration.Controls
             }
         }
 
-        /// <summary>
-        /// 设置右键菜单
-        /// </summary>
-        public void SetContextMenu(System.Windows.Forms.ContextMenuStrip contextMenu)
-        {
-            _dataGridView.ContextMenuStrip = contextMenu;
-        }
-
         #endregion
 
-        #region 事件处理
-
+        #region DataGridView事件处理
         /// <summary>
         /// 双击单元格打开配置
         /// </summary>
@@ -497,6 +714,8 @@ namespace MainUI.LogicalConfiguration.Controls
         /// </summary>
         private void DataGridView_DragEnter(object sender, DragEventArgs e)
         {
+            if (!AllowDragDrop) return;
+
             e.Effect = e.Data.GetDataPresent(typeof(TreeNode))
                 ? DragDropEffects.Copy
                 : DragDropEffects.None;
@@ -509,6 +728,8 @@ namespace MainUI.LogicalConfiguration.Controls
         /// </summary>
         private void DataGridView_DragDrop(object sender, DragEventArgs e)
         {
+            if (!AllowDragDrop) return;
+
             DragDropEvent?.Invoke(sender, e);
         }
 
@@ -521,6 +742,14 @@ namespace MainUI.LogicalConfiguration.Controls
         }
 
         /// <summary>
+        /// 单元格开始编辑
+        /// </summary>
+        private void DataGridView_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
+        {
+            CellBeginEditEvent?.Invoke(sender, e);
+        }
+
+        /// <summary>
         /// 单元格编辑结束
         /// </summary>
         private void DataGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
@@ -528,12 +757,51 @@ namespace MainUI.LogicalConfiguration.Controls
             CellEndEditEvent?.Invoke(sender, e);
         }
 
+        #endregion
+
+        #region IDisposable 实现
+
         /// <summary>
-        /// 单元格开始编辑
+        /// 释放资源
         /// </summary>
-        private void DataGridView_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
+        protected override void Dispose(bool disposing)
         {
-            CellBeginEditEvent?.Invoke(sender, e);
+            if (!_isDisposed)
+            {
+                if (disposing)
+                {
+                    try
+                    {
+                        // 取消事件订阅
+                        UnsubscribeFromWorkflowEvents();
+
+                        // 释放菜单管理器
+                        _menuManager?.Dispose();
+                        _menuManager = null;
+
+                        // 释放DataGridView事件
+                        if (_dataGridView != null)
+                        {
+                            _dataGridView.CellDoubleClick -= DataGridView_CellDoubleClick;
+                            _dataGridView.DragEnter -= DataGridView_DragEnter;
+                            _dataGridView.DragDrop -= DataGridView_DragDrop;
+                            _dataGridView.SelectionChanged -= DataGridView_SelectionChanged;
+                            _dataGridView.CellBeginEdit -= DataGridView_CellBeginEdit;
+                            _dataGridView.CellEndEdit -= DataGridView_CellEndEdit;
+                        }
+
+                        _logger?.LogDebug("流程配置表格控件已释放");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "释放流程配置表格控件时发生错误");
+                    }
+                }
+
+                _isDisposed = true;
+            }
+
+            base.Dispose(disposing);
         }
 
         #endregion

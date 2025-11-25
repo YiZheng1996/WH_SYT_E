@@ -4,7 +4,6 @@ using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NLog;
 
 namespace MainUI.LogicalConfiguration
 {
@@ -26,9 +25,6 @@ namespace MainUI.LogicalConfiguration
         // UI管理器
         private StepExecutionManager _executionManager;
         private bool _isExecuting = false;
-
-        // 添加菜单管理器
-        private StepContextMenuManager _menuManager;
 
         // 使用自定义控件
         private ToolTreeViewControl _toolTreeControl;
@@ -112,7 +108,6 @@ namespace MainUI.LogicalConfiguration
                 };
 
                 // 订阅工具箱事件
-                _toolTreeControl.ToolSelected += OnToolSelected;
                 _toolTreeControl.AfterSelect += TvTools_AfterSelect;
 
                 // 添加到容器
@@ -125,7 +120,10 @@ namespace MainUI.LogicalConfiguration
                 var gridLogger = Program.ServiceProvider?.GetService<ILogger<ProcessDataGridViewControl>>();
                 _processGridControl = new ProcessDataGridViewControl(_workflowState, gridLogger)
                 {
-                    Dock = DockStyle.Fill
+                    Dock = DockStyle.Fill,
+                    EnableContextMenu = true,    // 自动启用右键菜单
+                    AutoRefresh = true,          // 自动刷新
+                    AllowDragDrop = true         // 允许拖放
                 };
 
                 // 订阅流程表格事件
@@ -140,16 +138,6 @@ namespace MainUI.LogicalConfiguration
                 panelProcess.Controls.Add(_processGridControl);
 
                 _logger.LogDebug("流程表格控件已初始化");
-
-                // 创建右键菜单管理器
-                _menuManager = new StepContextMenuManager(
-                    _processGridControl.DataGridView,
-                    _workflowState,
-                    new DataGridViewManager(_processGridControl.DataGridView),
-                    _logger,
-                    this);
-
-                _logger.LogInformation("自定义控件初始化完成");
             }
             catch (Exception ex)
             {
@@ -171,11 +159,7 @@ namespace MainUI.LogicalConfiguration
                 _workflowState.StepNumChanged += OnStepNumChanged;
                 _workflowState.VariableAdded += OnVariableAdded;
                 _workflowState.VariableRemoved += OnVariableRemoved;
-                _workflowState.StepAdded += OnStepAdded;
-                _workflowState.StepRemoved += OnStepRemoved;
-                _workflowState.StepsChanged += OnStepsChanged;
 
-           
                 // 按钮事件
                 btnSave.Click += BtnSave_Click;
                 btnExecute.Click += BtnExecute_Click;
@@ -229,8 +213,6 @@ namespace MainUI.LogicalConfiguration
                 }
                 else
                 {
-                    // 如果没有数据，手动刷新UI显示空表格
-                    _processGridControl.RefreshGrid();
                     _logger.LogInformation("没有找到已保存的步骤数据");
                 }
             }
@@ -454,88 +436,6 @@ namespace MainUI.LogicalConfiguration
             }
         }
 
-        /// <summary>
-        /// 步骤添加事件处理
-        /// </summary>
-        private void OnStepAdded(ChildModel step)
-        {
-            try
-            {
-                _logger.LogDebug("步骤已添加: {StepName}", step.StepName);
-
-                // 确保在UI线程上执行
-                if (InvokeRequired)
-                {
-                    Invoke(new Action<ChildModel>(OnStepAdded), step);
-                    return;
-                }
-
-                // 从数据源刷新整个表格，确保数据一致性
-                _processGridControl.RefreshGrid();
-
-                _logger.LogInformation("UI已更新：步骤 {StepName} 添加成功", step.StepName);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "处理步骤添加事件时发生错误");
-            }
-        }
-
-        /// <summary>
-        /// 步骤移除事件处理
-        /// </summary>
-        private void OnStepRemoved(ChildModel step)
-        {
-            try
-            {
-                _logger.LogDebug("步骤已移除: {StepName}", step.StepName);
-
-                // 确保在UI线程上执行
-                if (InvokeRequired)
-                {
-                    Invoke(new Action<ChildModel>(OnStepRemoved), step);
-                    return;
-                }
-
-                // 从数据源刷新整个表格，确保数据一致性
-                _processGridControl.RefreshGrid();
-
-                _logger.LogInformation("UI已更新：步骤 {StepName} 移除成功", step.StepName);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "处理步骤移除事件时发生错误");
-            }
-        }
-
-        /// <summary>
-        /// 批量步骤变更事件处理 - UI自动刷新
-        /// 用于处理 ClearSteps、批量插入等操作
-        /// </summary>
-        private void OnStepsChanged()
-        {
-            try
-            {
-                _logger.LogDebug("步骤集合已发生批量变更");
-
-                // 确保在UI线程上执行
-                if (InvokeRequired)
-                {
-                    Invoke(new Action(OnStepsChanged));
-                    return;
-                }
-
-                // 从数据源刷新整个表格
-                _processGridControl.RefreshGrid();
-
-                _logger.LogInformation("UI已更新：步骤集合刷新完成");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "处理批量步骤变更事件时发生错误");
-            }
-        }
-
         // 只需要处理工具被选择后的逻辑
         private void OnToolSelected(object sender, ToolSelectedEventArgs e)
         {
@@ -564,16 +464,21 @@ namespace MainUI.LogicalConfiguration
             }
         }
 
-
+        /// <summary>
+        /// 请求步骤配置
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void OnStepConfigRequested(object sender, StepConfigEventArgs e)
         {
             try
             {
-                // 步骤信息已经在事件参数中
+                // 设置当前步骤信息
                 _workflowState.StepNum = e.RowIndex;
                 _workflowState.StepName = e.Step.StepName;
+
+                // 打开配置窗体
                 _formService.OpenFormByName(this, e.Step.StepName, this);
-                _processGridControl.RefreshGrid();
             }
             catch (Exception ex)
             {
@@ -838,22 +743,6 @@ namespace MainUI.LogicalConfiguration
             txtLog.ScrollToCaret();
         }
 
-        /// <summary>
-        /// 处理键盘快捷键
-        /// </summary>
-        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
-        {
-            // 如果焦点在 DataGridView 上，让菜单管理器处理快捷键
-            if (_processGridControl.DataGridView.Focused)
-            {
-                if (_menuManager.HandleKeyDown(keyData))
-                {
-                    return true;
-                }
-            }
-
-            return base.ProcessCmdKey(ref msg, keyData);
-        }
         #endregion
 
         #region 资源释放
@@ -871,8 +760,6 @@ namespace MainUI.LogicalConfiguration
                     _workflowState.StepNumChanged -= OnStepNumChanged;
                     _workflowState.VariableAdded -= OnVariableAdded;
                     _workflowState.VariableRemoved -= OnVariableRemoved;
-                    _workflowState.StepAdded -= OnStepAdded;
-                    _workflowState.StepRemoved -= OnStepRemoved;
                 }
 
                 _logger.LogInformation("工作流配置窗体已关闭");

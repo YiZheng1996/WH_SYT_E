@@ -133,12 +133,13 @@ namespace MainUI.LogicalConfiguration.Forms
             panelChildSteps.Dock = DockStyle.Fill;
             panelChildSteps.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             panelChildSteps.Location = new Point(15, 190);
-            panelChildSteps.Margin = new Padding(4, 5, 4, 5);
+            panelChildSteps.Margin = new Padding(5);
             panelChildSteps.MinimumSize = new Size(1, 1);
             panelChildSteps.Name = "panelChildSteps";
             panelChildSteps.Padding = new Padding(15);
             panelChildSteps.Radius = 8;
             panelChildSteps.RectColor = Color.FromArgb(65, 100, 204);
+            panelChildSteps.RectSides = ToolStripStatusLabelBorderSides.Left | ToolStripStatusLabelBorderSides.Right | ToolStripStatusLabelBorderSides.Bottom;
             panelChildSteps.Size = new Size(770, 195);
             panelChildSteps.TabIndex = 1;
             panelChildSteps.Text = null;
@@ -151,7 +152,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnConfigChildSteps.Location = new Point(18, 60);
             btnConfigChildSteps.MinimumSize = new Size(1, 1);
             btnConfigChildSteps.Name = "btnConfigChildSteps";
-            btnConfigChildSteps.Radius = 5;
             btnConfigChildSteps.Size = new Size(150, 35);
             btnConfigChildSteps.TabIndex = 2;
             btnConfigChildSteps.Text = "配置循环体步骤...";
@@ -192,12 +192,13 @@ namespace MainUI.LogicalConfiguration.Forms
             panelLoopConfig.Dock = DockStyle.Top;
             panelLoopConfig.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             panelLoopConfig.Location = new Point(15, 10);
-            panelLoopConfig.Margin = new Padding(4, 5, 4, 5);
+            panelLoopConfig.Margin = new Padding(5);
             panelLoopConfig.MinimumSize = new Size(1, 1);
             panelLoopConfig.Name = "panelLoopConfig";
             panelLoopConfig.Padding = new Padding(15);
             panelLoopConfig.Radius = 8;
             panelLoopConfig.RectColor = Color.FromArgb(65, 100, 204);
+            panelLoopConfig.RectSides = ToolStripStatusLabelBorderSides.Left | ToolStripStatusLabelBorderSides.Top | ToolStripStatusLabelBorderSides.Right;
             panelLoopConfig.Size = new Size(770, 180);
             panelLoopConfig.TabIndex = 0;
             panelLoopConfig.Text = null;
@@ -252,7 +253,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnSelectVarCount.Location = new Point(590, 45);
             btnSelectVarCount.MinimumSize = new Size(1, 1);
             btnSelectVarCount.Name = "btnSelectVarCount";
-            btnSelectVarCount.Radius = 5;
             btnSelectVarCount.Size = new Size(120, 30);
             btnSelectVarCount.Symbol = 361697;
             btnSelectVarCount.TabIndex = 3;
@@ -262,7 +262,9 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtLoopCount
             // 
             txtLoopCount.Cursor = Cursors.IBeam;
+            txtLoopCount.DoubleValue = 10D;
             txtLoopCount.Font = new Font("微软雅黑", 10F);
+            txtLoopCount.IntValue = 10;
             txtLoopCount.Location = new Point(124, 45);
             txtLoopCount.Margin = new Padding(4, 5, 4, 5);
             txtLoopCount.MinimumSize = new Size(1, 16);
@@ -318,7 +320,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnHelp.Location = new Point(18, 13);
             btnHelp.MinimumSize = new Size(1, 1);
             btnHelp.Name = "btnHelp";
-            btnHelp.Radius = 5;
             btnHelp.Size = new Size(100, 35);
             btnHelp.Symbol = 61529;
             btnHelp.TabIndex = 2;
@@ -333,7 +334,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnCancel.Location = new Point(572, 13);
             btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
-            btnCancel.Radius = 5;
             btnCancel.RectColor = Color.FromArgb(230, 80, 80);
             btnCancel.RectHoverColor = Color.FromArgb(235, 115, 115);
             btnCancel.RectPressColor = Color.FromArgb(184, 64, 64);
@@ -352,7 +352,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnSave.Location = new Point(682, 13);
             btnSave.MinimumSize = new Size(1, 1);
             btnSave.Name = "btnSave";
-            btnSave.Radius = 5;
             btnSave.RectColor = Color.FromArgb(65, 100, 204);
             btnSave.RectHoverColor = Color.FromArgb(80, 126, 164);
             btnSave.RectPressColor = Color.FromArgb(52, 80, 163);
@@ -374,11 +373,12 @@ namespace MainUI.LogicalConfiguration.Forms
             MinimizeBox = false;
             Name = "Form_Loop";
             RectColor = Color.FromArgb(65, 100, 204);
+            ShowIcon = false;
             ShowInTaskbar = false;
-            ShowRadius = false;
             StartPosition = FormStartPosition.CenterParent;
             Text = "循环配置";
             TitleColor = Color.FromArgb(65, 100, 204);
+            TitleFont = new Font("微软雅黑", 14F, FontStyle.Bold);
             ZoomScaleRect = new Rectangle(15, 15, 800, 560);
             panelDescription.ResumeLayout(false);
             panelMain.ResumeLayout(false);

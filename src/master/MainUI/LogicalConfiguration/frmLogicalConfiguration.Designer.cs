@@ -16,9 +16,6 @@
         {
             if (disposing && (components != null) && _workflowState != null)
             {
-                _workflowState.StepAdded -= OnStepAdded;
-                _workflowState.StepRemoved -= OnStepRemoved;
-                _workflowState.StepsChanged -= OnStepsChanged;
                 components.Dispose();
             }
             base.Dispose(disposing);

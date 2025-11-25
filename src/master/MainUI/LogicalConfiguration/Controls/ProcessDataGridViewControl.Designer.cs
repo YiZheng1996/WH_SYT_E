@@ -7,21 +7,6 @@
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary> 
-        /// 清理所有正在使用的资源。
-        /// </summary>
-        /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                _dataGridView?.Dispose();
-                _gridManager = null;
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
         #region 组件设计器生成的代码
 
         /// <summary> 
@@ -31,15 +16,13 @@
         private void InitializeComponent()
         {
             this.SuspendLayout();
-
-            // 控件基本设置
+            // 
+            // ProcessDataGridViewControl
+            // 
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.Name = "ProcessDataGridViewControl";
-            this.Size = new Size(800, 500);
-            this.BackColor = Color.White;
-
+            this.Size = new System.Drawing.Size(1000, 600);
             this.ResumeLayout(false);
-            components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
         }
 
         #endregion
