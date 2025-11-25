@@ -34,27 +34,11 @@
         {
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmLogicalConfiguration));
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
             splitContainerMain = new SplitContainer();
-            palTools = new UIPanel();
-            ToolTreeView = new UITreeView();
-            imageList1 = new ImageList(components);
+            panelToolBox = new UIPanel();
             pnlToolsTop = new UIPanel();
             splitContainerRight = new SplitContainer();
-            palProcess = new UIPanel();
-            ProcessDataGridView = new UIDataGridView();
-            ColStepNumber = new DataGridViewTextBoxColumn();
-            ColStepName = new DataGridViewTextBoxColumn();
-            ColStepType = new DataGridViewTextBoxColumn();
-            ColStepDetails = new DataGridViewTextBoxColumn();
-            ColRemark = new DataGridViewTextBoxColumn();
-            ColStatus = new DataGridViewTextBoxColumn();
-            ColExecutionTime = new DataGridViewTextBoxColumn();
+            panelProcess = new UIPanel();
             palProcessTop = new UIPanel();
             splitContainerBottom = new SplitContainer();
             palStepDetails = new UIPanel();
@@ -73,6 +57,7 @@
             palExecutionLog = new UIPanel();
             txtLog = new TextBox();
             palExecutionLogTop = new UIPanel();
+            imageList1 = new ImageList(components);
             pnlButtons = new UIPanel();
             BtnSystemParams = new UISymbolButton();
             BtnVariableMonitor = new UISymbolButton();
@@ -81,17 +66,16 @@
             btnClose = new UISymbolButton();
             btnExecute = new UISymbolButton();
             btnSave = new UISymbolButton();
+            uiTreeView1 = new UITreeView();
             ((System.ComponentModel.ISupportInitialize)splitContainerMain).BeginInit();
             splitContainerMain.Panel1.SuspendLayout();
             splitContainerMain.Panel2.SuspendLayout();
             splitContainerMain.SuspendLayout();
-            palTools.SuspendLayout();
+            panelToolBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainerRight).BeginInit();
             splitContainerRight.Panel1.SuspendLayout();
             splitContainerRight.Panel2.SuspendLayout();
             splitContainerRight.SuspendLayout();
-            palProcess.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)ProcessDataGridView).BeginInit();
             ((System.ComponentModel.ISupportInitialize)splitContainerBottom).BeginInit();
             splitContainerBottom.Panel1.SuspendLayout();
             splitContainerBottom.Panel2.SuspendLayout();
@@ -113,7 +97,7 @@
             // splitContainerMain.Panel1
             // 
             splitContainerMain.Panel1.BackColor = Color.FromArgb(248, 249, 250);
-            splitContainerMain.Panel1.Controls.Add(palTools);
+            splitContainerMain.Panel1.Controls.Add(panelToolBox);
             splitContainerMain.Panel1.Controls.Add(pnlToolsTop);
             splitContainerMain.Panel1MinSize = 240;
             // 
@@ -126,75 +110,26 @@
             splitContainerMain.SplitterWidth = 1;
             splitContainerMain.TabIndex = 0;
             // 
-            // palTools
+            // panelToolBox
             // 
-            palTools.BackColor = Color.FromArgb(248, 249, 250);
-            palTools.Controls.Add(ToolTreeView);
-            palTools.Dock = DockStyle.Fill;
-            palTools.FillColor = Color.FromArgb(248, 249, 250);
-            palTools.FillColor2 = Color.FromArgb(248, 249, 250);
-            palTools.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
-            palTools.Location = new Point(0, 40);
-            palTools.Margin = new Padding(4, 5, 4, 5);
-            palTools.MinimumSize = new Size(1, 1);
-            palTools.Name = "palTools";
-            palTools.Padding = new Padding(8);
-            palTools.RectColor = Color.FromArgb(248, 249, 250);
-            palTools.RectDisableColor = Color.FromArgb(248, 249, 250);
-            palTools.Size = new Size(280, 847);
-            palTools.TabIndex = 0;
-            palTools.TabStop = false;
-            palTools.Text = null;
-            palTools.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // ToolTreeView
-            // 
-            ToolTreeView.Dock = DockStyle.Fill;
-            ToolTreeView.FillColor = Color.FromArgb(248, 249, 250);
-            ToolTreeView.FillColor2 = Color.FromArgb(248, 249, 250);
-            ToolTreeView.Font = new Font("微软雅黑", 12F);
-            ToolTreeView.HoverColor = Color.FromArgb(227, 242, 253);
-            ToolTreeView.ImageKey = "文件夹.png";
-            ToolTreeView.ImageList = imageList1;
-            ToolTreeView.Indent = 23;
-            ToolTreeView.ItemHeight = 35;
-            ToolTreeView.LineColor = Color.White;
-            ToolTreeView.Location = new Point(8, 8);
-            ToolTreeView.Margin = new Padding(4, 5, 4, 5);
-            ToolTreeView.MinimumSize = new Size(1, 1);
-            ToolTreeView.Name = "ToolTreeView";
-            ToolTreeView.RectColor = Color.FromArgb(248, 249, 250);
-            ToolTreeView.RectDisableColor = Color.FromArgb(248, 249, 250);
-            ToolTreeView.ScrollBarStyleInherited = false;
-            ToolTreeView.SelectedColor = Color.FromArgb(25, 118, 210);
-            ToolTreeView.SelectedImageIndex = 0;
-            ToolTreeView.ShowPlusMinus = false;
-            ToolTreeView.ShowText = false;
-            ToolTreeView.Size = new Size(264, 831);
-            ToolTreeView.TabIndex = 0;
-            ToolTreeView.Text = null;
-            ToolTreeView.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // imageList1
-            // 
-            imageList1.ColorDepth = ColorDepth.Depth32Bit;
-            imageList1.ImageStream = (ImageListStreamer)resources.GetObject("imageList1.ImageStream");
-            imageList1.TransparentColor = Color.Transparent;
-            imageList1.Images.SetKeyName(0, "文件夹.png");
-            imageList1.Images.SetKeyName(1, "条件判断.png");
-            imageList1.Images.SetKeyName(2, "延时等待.png");
-            imageList1.Images.SetKeyName(3, "数据读取.png");
-            imageList1.Images.SetKeyName(4, "变量赋值.png");
-            imageList1.Images.SetKeyName(5, "数据计算.png");
-            imageList1.Images.SetKeyName(6, "消息通知.png");
-            imageList1.Images.SetKeyName(7, "循环开始.png");
-            imageList1.Images.SetKeyName(8, "循环结束.png");
-            imageList1.Images.SetKeyName(9, "报表读取.png");
-            imageList1.Images.SetKeyName(10, "报表写入.png");
-            imageList1.Images.SetKeyName(11, "读取PLC.png");
-            imageList1.Images.SetKeyName(12, "写入PLC.png");
-            imageList1.Images.SetKeyName(13, "等待稳定.png");
-            imageList1.Images.SetKeyName(14, "检测工具.png");
+            panelToolBox.BackColor = Color.FromArgb(248, 249, 250);
+            panelToolBox.Controls.Add(uiTreeView1);
+            panelToolBox.Dock = DockStyle.Fill;
+            panelToolBox.FillColor = Color.FromArgb(248, 249, 250);
+            panelToolBox.FillColor2 = Color.FromArgb(248, 249, 250);
+            panelToolBox.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            panelToolBox.Location = new Point(0, 40);
+            panelToolBox.Margin = new Padding(4, 5, 4, 5);
+            panelToolBox.MinimumSize = new Size(1, 1);
+            panelToolBox.Name = "panelToolBox";
+            panelToolBox.Padding = new Padding(8);
+            panelToolBox.RectColor = Color.FromArgb(248, 249, 250);
+            panelToolBox.RectDisableColor = Color.FromArgb(248, 249, 250);
+            panelToolBox.Size = new Size(280, 847);
+            panelToolBox.TabIndex = 0;
+            panelToolBox.TabStop = false;
+            panelToolBox.Text = "工具组件库";
+            panelToolBox.TextAlignment = ContentAlignment.MiddleCenter;
             // 
             // pnlToolsTop
             // 
@@ -228,7 +163,7 @@
             // splitContainerRight.Panel1
             // 
             splitContainerRight.Panel1.BackColor = Color.FromArgb(248, 249, 250);
-            splitContainerRight.Panel1.Controls.Add(palProcess);
+            splitContainerRight.Panel1.Controls.Add(panelProcess);
             splitContainerRight.Panel1.Controls.Add(palProcessTop);
             // 
             // splitContainerRight.Panel2
@@ -239,137 +174,25 @@
             splitContainerRight.SplitterWidth = 1;
             splitContainerRight.TabIndex = 1;
             // 
-            // palProcess
+            // panelProcess
             // 
-            palProcess.BackColor = Color.White;
-            palProcess.Controls.Add(ProcessDataGridView);
-            palProcess.Dock = DockStyle.Fill;
-            palProcess.FillColor = Color.White;
-            palProcess.FillColor2 = Color.White;
-            palProcess.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
-            palProcess.Location = new Point(0, 40);
-            palProcess.Margin = new Padding(4, 5, 4, 5);
-            palProcess.MinimumSize = new Size(1, 1);
-            palProcess.Name = "palProcess";
-            palProcess.Padding = new Padding(8);
-            palProcess.RectColor = Color.White;
-            palProcess.RectDisableColor = Color.White;
-            palProcess.Size = new Size(999, 604);
-            palProcess.TabIndex = 0;
-            palProcess.TabStop = false;
-            palProcess.Text = "流程配置 - 拖拽组件到此处构建逻辑流程";
-            palProcess.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // ProcessDataGridView
-            // 
-            ProcessDataGridView.AllowDrop = true;
-            ProcessDataGridView.AllowUserToAddRows = false;
-            ProcessDataGridView.AllowUserToDeleteRows = false;
-            ProcessDataGridView.AllowUserToResizeColumns = false;
-            ProcessDataGridView.AllowUserToResizeRows = false;
-            dataGridViewCellStyle1.BackColor = Color.White;
-            ProcessDataGridView.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
-            ProcessDataGridView.BackgroundColor = Color.White;
-            ProcessDataGridView.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.BackColor = Color.FromArgb(80, 160, 255);
-            dataGridViewCellStyle2.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            dataGridViewCellStyle2.ForeColor = Color.White;
-            dataGridViewCellStyle2.SelectionBackColor = Color.FromArgb(80, 160, 255);
-            dataGridViewCellStyle2.SelectionForeColor = Color.White;
-            dataGridViewCellStyle2.WrapMode = DataGridViewTriState.True;
-            ProcessDataGridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
-            ProcessDataGridView.ColumnHeadersHeight = 40;
-            ProcessDataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            ProcessDataGridView.Columns.AddRange(new DataGridViewColumn[] { ColStepNumber, ColStepName, ColStepType, ColStepDetails, ColRemark, ColStatus, ColExecutionTime });
-            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle4.BackColor = Color.White;
-            dataGridViewCellStyle4.Font = new Font("微软雅黑", 9F);
-            dataGridViewCellStyle4.ForeColor = Color.FromArgb(48, 48, 48);
-            dataGridViewCellStyle4.SelectionBackColor = Color.FromArgb(227, 242, 253);
-            dataGridViewCellStyle4.SelectionForeColor = Color.Black;
-            dataGridViewCellStyle4.WrapMode = DataGridViewTriState.False;
-            ProcessDataGridView.DefaultCellStyle = dataGridViewCellStyle4;
-            ProcessDataGridView.Dock = DockStyle.Fill;
-            ProcessDataGridView.EnableHeadersVisualStyles = false;
-            ProcessDataGridView.Font = new Font("微软雅黑", 9F);
-            ProcessDataGridView.GridColor = Color.FromArgb(233, 236, 239);
-            ProcessDataGridView.Location = new Point(8, 8);
-            ProcessDataGridView.MultiSelect = false;
-            ProcessDataGridView.Name = "ProcessDataGridView";
-            ProcessDataGridView.RectColor = Color.White;
-            dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle5.BackColor = SystemColors.Control;
-            dataGridViewCellStyle5.Font = new Font("微软雅黑", 12F);
-            dataGridViewCellStyle5.ForeColor = SystemColors.WindowText;
-            dataGridViewCellStyle5.SelectionBackColor = SystemColors.Highlight;
-            dataGridViewCellStyle5.SelectionForeColor = SystemColors.HighlightText;
-            dataGridViewCellStyle5.WrapMode = DataGridViewTriState.True;
-            ProcessDataGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle5;
-            ProcessDataGridView.RowHeadersVisible = false;
-            ProcessDataGridView.RowHeadersWidth = 35;
-            dataGridViewCellStyle6.BackColor = Color.White;
-            dataGridViewCellStyle6.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            ProcessDataGridView.RowsDefaultCellStyle = dataGridViewCellStyle6;
-            ProcessDataGridView.RowTemplate.DefaultCellStyle.Font = new Font("微软雅黑", 12F);
-            ProcessDataGridView.RowTemplate.Height = 35;
-            ProcessDataGridView.SelectedIndex = -1;
-            ProcessDataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            ProcessDataGridView.Size = new Size(983, 588);
-            ProcessDataGridView.StripeOddColor = Color.White;
-            ProcessDataGridView.TabIndex = 0;
-            // 
-            // ColStepNumber
-            // 
-            ColStepNumber.HeaderText = "步骤";
-            ColStepNumber.Name = "ColStepNumber";
-            ColStepNumber.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepNumber.Width = 60;
-            // 
-            // ColStepName
-            // 
-            ColStepName.HeaderText = "操作名称";
-            ColStepName.Name = "ColStepName";
-            ColStepName.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepName.Width = 140;
-            // 
-            // ColStepType
-            // 
-            ColStepType.HeaderText = "操作类型";
-            ColStepType.Name = "ColStepType";
-            ColStepType.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepType.Width = 120;
-            // 
-            // ColStepDetails
-            // 
-            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.True;
-            ColStepDetails.DefaultCellStyle = dataGridViewCellStyle3;
-            ColStepDetails.HeaderText = "步骤详情";
-            ColStepDetails.Name = "ColStepDetails";
-            ColStepDetails.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStepDetails.Width = 380;
-            // 
-            // ColRemark
-            // 
-            ColRemark.HeaderText = "备注说明";
-            ColRemark.Name = "ColRemark";
-            ColRemark.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColRemark.Width = 280;
-            // 
-            // ColStatus
-            // 
-            ColStatus.HeaderText = "状态";
-            ColStatus.Name = "ColStatus";
-            ColStatus.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColStatus.Visible = false;
-            ColStatus.Width = 120;
-            // 
-            // ColExecutionTime
-            // 
-            ColExecutionTime.HeaderText = "执行时间";
-            ColExecutionTime.Name = "ColExecutionTime";
-            ColExecutionTime.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColExecutionTime.Visible = false;
+            panelProcess.BackColor = Color.White;
+            panelProcess.Dock = DockStyle.Fill;
+            panelProcess.FillColor = Color.White;
+            panelProcess.FillColor2 = Color.White;
+            panelProcess.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            panelProcess.Location = new Point(0, 40);
+            panelProcess.Margin = new Padding(4, 5, 4, 5);
+            panelProcess.MinimumSize = new Size(1, 1);
+            panelProcess.Name = "panelProcess";
+            panelProcess.Padding = new Padding(8);
+            panelProcess.RectColor = Color.White;
+            panelProcess.RectDisableColor = Color.White;
+            panelProcess.Size = new Size(999, 604);
+            panelProcess.TabIndex = 0;
+            panelProcess.TabStop = false;
+            panelProcess.Text = "流程配置 - 拖拽组件到此处构建逻辑流程";
+            panelProcess.TextAlignment = ContentAlignment.MiddleCenter;
             // 
             // palProcessTop
             // 
@@ -657,6 +480,27 @@
             palExecutionLogTop.Text = " 执行日志";
             palExecutionLogTop.TextAlignment = ContentAlignment.MiddleLeft;
             // 
+            // imageList1
+            // 
+            imageList1.ColorDepth = ColorDepth.Depth32Bit;
+            imageList1.ImageStream = (ImageListStreamer)resources.GetObject("imageList1.ImageStream");
+            imageList1.TransparentColor = Color.Transparent;
+            imageList1.Images.SetKeyName(0, "文件夹.png");
+            imageList1.Images.SetKeyName(1, "条件判断.png");
+            imageList1.Images.SetKeyName(2, "延时等待.png");
+            imageList1.Images.SetKeyName(3, "数据读取.png");
+            imageList1.Images.SetKeyName(4, "变量赋值.png");
+            imageList1.Images.SetKeyName(5, "数据计算.png");
+            imageList1.Images.SetKeyName(6, "消息通知.png");
+            imageList1.Images.SetKeyName(7, "循环开始.png");
+            imageList1.Images.SetKeyName(8, "循环结束.png");
+            imageList1.Images.SetKeyName(9, "报表读取.png");
+            imageList1.Images.SetKeyName(10, "报表写入.png");
+            imageList1.Images.SetKeyName(11, "读取PLC.png");
+            imageList1.Images.SetKeyName(12, "写入PLC.png");
+            imageList1.Images.SetKeyName(13, "等待稳定.png");
+            imageList1.Images.SetKeyName(14, "检测工具.png");
+            // 
             // pnlButtons
             // 
             pnlButtons.BackColor = Color.White;
@@ -869,6 +713,21 @@
             btnSave.Text = "保存配置";
             btnSave.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             // 
+            // uiTreeView1
+            // 
+            uiTreeView1.FillColor = Color.White;
+            uiTreeView1.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            uiTreeView1.Location = new Point(12, 217);
+            uiTreeView1.Margin = new Padding(4, 5, 4, 5);
+            uiTreeView1.MinimumSize = new Size(1, 1);
+            uiTreeView1.Name = "uiTreeView1";
+            uiTreeView1.ScrollBarStyleInherited = false;
+            uiTreeView1.ShowText = false;
+            uiTreeView1.Size = new Size(216, 433);
+            uiTreeView1.TabIndex = 0;
+            uiTreeView1.Text = "uiTreeView1";
+            uiTreeView1.TextAlignment = ContentAlignment.MiddleCenter;
+            // 
             // FrmLogicalConfiguration
             // 
             AutoScaleMode = AutoScaleMode.None;
@@ -892,13 +751,11 @@
             splitContainerMain.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainerMain).EndInit();
             splitContainerMain.ResumeLayout(false);
-            palTools.ResumeLayout(false);
+            panelToolBox.ResumeLayout(false);
             splitContainerRight.Panel1.ResumeLayout(false);
             splitContainerRight.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainerRight).EndInit();
             splitContainerRight.ResumeLayout(false);
-            palProcess.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)ProcessDataGridView).EndInit();
             splitContainerBottom.Panel1.ResumeLayout(false);
             splitContainerBottom.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainerBottom).EndInit();
@@ -916,13 +773,11 @@
         #endregion
 
         private System.Windows.Forms.SplitContainer splitContainerMain;
-        private Sunny.UI.UIPanel palTools;
+        private Sunny.UI.UIPanel panelToolBox;
         private Sunny.UI.UIPanel pnlToolsTop;
-        private Sunny.UI.UITreeView ToolTreeView;
         private System.Windows.Forms.SplitContainer splitContainerRight;
-        private Sunny.UI.UIPanel palProcess;
+        private Sunny.UI.UIPanel panelProcess;
         private Sunny.UI.UIPanel palProcessTop;
-        private Sunny.UI.UIDataGridView ProcessDataGridView;
         private System.Windows.Forms.SplitContainer splitContainerBottom;
         private Sunny.UI.UIPanel palStepDetails;
         private Sunny.UI.UIPanel palStepDetailsTop;
@@ -949,12 +804,6 @@
         private UISymbolButton BtnSystemParams;
         private UISymbolButton BtnVariableMonitor;
         private UISymbolButton BtnPointDefine;
-        private DataGridViewTextBoxColumn ColStepNumber;
-        private DataGridViewTextBoxColumn ColStepName;
-        private DataGridViewTextBoxColumn ColStepType;
-        private DataGridViewTextBoxColumn ColStepDetails;
-        private DataGridViewTextBoxColumn ColRemark;
-        private DataGridViewTextBoxColumn ColStatus;
-        private DataGridViewTextBoxColumn ColExecutionTime;
+        private UITreeView uiTreeView1;
     }
 }

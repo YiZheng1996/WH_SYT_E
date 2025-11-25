@@ -1,8 +1,10 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace MainUI.LogicalConfiguration
 {
@@ -22,12 +24,15 @@ namespace MainUI.LogicalConfiguration
         private readonly IFormService _formService;
 
         // UI管理器
-        private readonly DataGridViewManager _gridManager;
         private StepExecutionManager _executionManager;
         private bool _isExecuting = false;
 
         // 添加菜单管理器
         private StepContextMenuManager _menuManager;
+
+        // 使用自定义控件
+        private ToolTreeViewControl _toolTreeControl;
+        private ProcessDataGridViewControl _processGridControl;
         #endregion
 
         #region 构造函数
@@ -72,21 +77,14 @@ namespace MainUI.LogicalConfiguration
                 // 初始化变量
                 InitializeVariables();
 
-                // 使用服务创建DataGridView管理器
-                _gridManager = new DataGridViewManager(ProcessDataGridView);
-
-                // 使用服务创建菜单管理器
-                _menuManager = new StepContextMenuManager(
-                    ProcessDataGridView, _workflowState, _gridManager, _logger, this);
+                // 使用自定义控件初始化
+                InitializeCustomControls();
 
                 // 设置事件处理程序，先注册事件，再加载数据
                 RegisterEventHandlers();
 
                 // 加载已保存的步骤到DataGridView
                 LoadStepsToGrid();
-
-                // 加载工具箱
-                LoadTreeViewData();
 
                 _logger.LogInformation("工作流配置窗体初始化完成");
             }
@@ -95,6 +93,68 @@ namespace MainUI.LogicalConfiguration
                 _logger.LogError(ex, "初始化工作流配置窗体时发生错误");
                 MessageHelper.MessageOK($"构造函数加载数据错误：{ex.Message}", TType.Error);
                 throw; // 重新抛出异常，让调用方处理
+            }
+        }
+
+        /// <summary>
+        /// 初始化自定义控件
+        /// </summary>
+        private void InitializeCustomControls()
+        {
+            try
+            {
+                // 创建工具箱控件
+                var toolLogger = Program.ServiceProvider?.GetService<ILogger<ToolTreeViewControl>>();
+                _toolTreeControl = new ToolTreeViewControl(toolLogger)
+                {
+                    Dock = DockStyle.Fill,
+                    Title = "工具箱"
+                };
+
+                // 订阅工具箱事件
+                _toolTreeControl.ToolSelected += OnToolSelected;
+                _toolTreeControl.AfterSelect += TvTools_AfterSelect;
+
+                // 添加到容器
+                panelToolBox.Controls.Clear();
+                panelToolBox.Controls.Add(_toolTreeControl);
+
+                _logger.LogDebug("工具箱控件已初始化");
+
+                // 创建流程表格控件
+                var gridLogger = Program.ServiceProvider?.GetService<ILogger<ProcessDataGridViewControl>>();
+                _processGridControl = new ProcessDataGridViewControl(_workflowState, gridLogger)
+                {
+                    Dock = DockStyle.Fill
+                };
+
+                // 订阅流程表格事件
+                _processGridControl.StepConfigRequested += OnStepConfigRequested;
+                _processGridControl.DragDropEvent += OnProcessGridDragDrop;
+                _processGridControl.SelectionChangedEvent += OnGridSelectionChanged;
+                _processGridControl.CellEndEditEvent += ProcessDataGridView_CellEndEdit;
+                _processGridControl.CellBeginEditEvent += ProcessDataGridView_CellBeginEdit;
+
+                // 添加到容器
+                panelProcess.Controls.Clear();
+                panelProcess.Controls.Add(_processGridControl);
+
+                _logger.LogDebug("流程表格控件已初始化");
+
+                // 创建右键菜单管理器
+                _menuManager = new StepContextMenuManager(
+                    _processGridControl.DataGridView,
+                    _workflowState,
+                    new DataGridViewManager(_processGridControl.DataGridView),
+                    _logger,
+                    this);
+
+                _logger.LogInformation("自定义控件初始化完成");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "初始化自定义控件时发生错误");
+                throw;
             }
         }
         #endregion
@@ -115,19 +175,7 @@ namespace MainUI.LogicalConfiguration
                 _workflowState.StepRemoved += OnStepRemoved;
                 _workflowState.StepsChanged += OnStepsChanged;
 
-                // 订阅ToolTreeView的事件
-                ToolTreeView.ItemDrag += ToolTreeView_ItemDrag;
-                ToolTreeView.AfterSelect += TvTools_AfterSelect;
-
-                // 订阅DataGridView的事件
-                ProcessDataGridView.DragDrop += ProcessDataGridView_DragDrop;
-                ProcessDataGridView.DragEnter += ProcessDataGridView_DragEnter;
-                ProcessDataGridView.CellDoubleClick += ProcessDataGridView_CellDoubleClick;
-                ProcessDataGridView.SelectionChanged += DgvProcess_SelectionChanged;
-                // 编辑DataGridView备注列
-                ProcessDataGridView.CellEndEdit += ProcessDataGridView_CellEndEdit;
-                ProcessDataGridView.CellBeginEdit += ProcessDataGridView_CellBeginEdit;
-
+           
                 // 按钮事件
                 btnSave.Click += BtnSave_Click;
                 btnExecute.Click += BtnExecute_Click;
@@ -182,7 +230,7 @@ namespace MainUI.LogicalConfiguration
                 else
                 {
                     // 如果没有数据，手动刷新UI显示空表格
-                    _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+                    _processGridControl.RefreshGrid();
                     _logger.LogInformation("没有找到已保存的步骤数据");
                 }
             }
@@ -193,127 +241,6 @@ namespace MainUI.LogicalConfiguration
             }
         }
 
-        #endregion
-
-        #region 工具箱初始化
-
-        /// <summary>
-        /// 加载TreeView数据
-        /// </summary>
-        private void LoadTreeViewData()
-        {
-            ToolTreeView.Nodes.Clear();
-
-            // 逻辑控制组
-            TreeNode logicNode = new("逻辑控制") { Tag = "LogicControl", ImageKey = "文件夹.png" };
-            logicNode.Nodes.Add(new TreeNode("延时等待") { Tag = "DelayWait", ImageKey = "延时等待.png" });
-            logicNode.Nodes.Add(new TreeNode("条件判断") { Tag = "ConditionJudge", ImageKey = "条件判断.png" });
-            logicNode.Nodes.Add(new TreeNode("循环开始") { Tag = "LoopControlStart", ImageKey = "循环开始.png" });
-            logicNode.Nodes.Add(new TreeNode("循环结束") { Tag = "LoopControlStop", ImageKey = "循环结束.png" });
-            logicNode.Nodes.Add(new TreeNode("等待稳定") { Tag = "Waitingforstability", ImageKey = "等待稳定.png" });
-            logicNode.Nodes.Add(new TreeNode("检测工具") { Tag = "Waitingforstability", ImageKey = "检测工具.png" });
-            logicNode.Nodes.Add(new TreeNode("循环工具") { Tag = "RealTimeMonitoring", ImageKey = "" });
-            ToolTreeView.Nodes.Add(logicNode);
-
-            // 数据操作组
-            TreeNode dataNode = new("数据操作") { Tag = "DataOperation", ImageKey = "文件夹.png" };
-            dataNode.Nodes.Add(new TreeNode("变量赋值") { Tag = "VariableAssign", ImageKey = "变量赋值.png" });
-            //dataNode.Nodes.Add(new TreeNode("数据读取") { Tag = "DataRead", ImageKey = "数据读取.png" });
-            //dataNode.Nodes.Add(new TreeNode("数据计算") { Tag = "DataCalculate", ImageKey = "数据计算.png" });
-            dataNode.Nodes.Add(new TreeNode("消息通知") { Tag = "", ImageKey = "消息通知.png" });
-            ToolTreeView.Nodes.Add(dataNode);
-
-            // PLC通信组
-            TreeNode plcNode = new("通信操作") { Tag = "PLCCommunication", ImageKey = "文件夹.png" };
-            plcNode.Nodes.Add(new TreeNode("读取PLC") { Tag = "PLCRead", ImageKey = "读取PLC.png" });
-            plcNode.Nodes.Add(new TreeNode("写入PLC") { Tag = "PLCWrite", ImageKey = "写入PLC.png" });
-            ToolTreeView.Nodes.Add(plcNode);
-
-            // 报表操作组
-            TreeNode reportNode = new("报表工具") { Tag = "PLCCommunication", ImageKey = "文件夹.png" };
-            reportNode.Nodes.Add(new TreeNode("读取单元格") { Tag = "PLCRead", ImageKey = "报表读取.png" });
-            reportNode.Nodes.Add(new TreeNode("写入单元格") { Tag = "PLCWrite", ImageKey = "报表写入.png" });
-            ToolTreeView.Nodes.Add(reportNode);
-
-            // 为不同节点设置颜色
-            logicNode.ForeColor = Color.FromArgb(52, 58, 64);
-            dataNode.ForeColor = Color.FromArgb(40, 167, 69);
-            plcNode.ForeColor = Color.FromArgb(13, 110, 253);
-
-            // 展开所有节点
-            ToolTreeView.ExpandAll();
-        }
-
-        #endregion
-
-        #region 右键菜单功能
-
-        #region 右键菜单初始化
-
-
-        #endregion
-
-        /// <summary>
-        /// 删除选中的步骤
-        /// </summary>
-        private void DeleteSelectedStep()
-        {
-            try
-            {
-                // 获取选中的行索引
-                int selectIndex = _gridManager.GetSelectedRowIndex();
-
-                if (selectIndex < 0)
-                {
-                    MessageHelper.MessageOK("请先选择要删除的步骤！", TType.Warn);
-                    return;
-                }
-
-                // 确认删除
-                if (MessageHelper.MessageYes(this, "确定要删除选中的步骤吗？") != DialogResult.OK)
-                {
-                    return;
-                }
-
-                _logger.LogDebug("删除步骤，索引: {Index}", selectIndex);
-
-                // 只操作数据层，UI更新由事件触发
-                if (_workflowState.RemoveStepAt(selectIndex))
-                {
-                    _logger.LogInformation("步骤删除成功，索引: {Index}", selectIndex);
-                }
-                else
-                {
-                    _logger.LogWarning("步骤删除失败，索引: {Index}", selectIndex);
-                    MessageHelper.MessageOK("删除步骤失败！", TType.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "删除步骤时发生错误");
-                MessageHelper.MessageOK($"删除步骤错误：{ex.Message}", TType.Error);
-            }
-        }
-
-        private void MenuItemDelete_Click(object sender, EventArgs e)
-        {
-            DeleteSelectedStep();
-        }
-
-        private void MenuItemInsert_Click(object sender, EventArgs e)
-        {
-            // TODO: 实现插入逻辑
-        }
-
-        private void MenuItemMoveUp_Click(object sender, EventArgs e)
-        {
-            // TODO: 实现上移逻辑
-        }
-
-        private void MenuItemMoveDown_Click(object sender, EventArgs e)
-        {
-            // TODO: 实现下移逻辑
-        }
         #endregion
 
         #region 变量初始化
@@ -431,29 +358,16 @@ namespace MainUI.LogicalConfiguration
         /// </summary>
         private void AddStepToForm(int stepNumber, string stepName)
         {
-            try
+            var newStep = new ChildModel
             {
-                _logger.LogDebug("添加步骤: {StepName}, 序号: {StepNumber}", stepName, stepNumber);
+                StepName = stepName,
+                Status = 0,
+                StepNum = stepNumber,
+                StepParameter = 0
+            };
 
-                var newStep = new ChildModel
-                {
-                    StepName = stepName,
-                    Status = 0,
-                    StepNum = stepNumber,
-                    StepParameter = 0,
-                    Remark = ""
-                };
-
-                // 只操作数据层，UI更新由事件触发
-                _workflowState.AddStep(newStep);
-
-                _logger.LogInformation("步骤添加成功: {StepName}", stepName);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "添加步骤时发生错误: {StepName}", stepName);
-                MessageHelper.MessageOK($"添加步骤错误：{ex.Message}", TType.Error);
-            }
+            // 可以通过控件添加
+            _processGridControl.AddStep(newStep);
         }
 
         /// <summary>
@@ -463,14 +377,8 @@ namespace MainUI.LogicalConfiguration
         {
             try
             {
-                if (ProcessDataGridView.InvokeRequired)
-                {
-                    ProcessDataGridView.Invoke(() => UpdateStepStatus(step, index));
-                    return;
-                }
-
                 // 使用 DataGridViewManager 更新UI
-                _gridManager.UpdateRowStatus(index, step.Status);
+                _processGridControl.UpdateStepStatus(index, step.Status);
 
                 _logger.LogDebug("更新步骤状态: Index={Index}, Status={Status}", index, step.Status);
             }
@@ -563,7 +471,7 @@ namespace MainUI.LogicalConfiguration
                 }
 
                 // 从数据源刷新整个表格，确保数据一致性
-                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+                _processGridControl.RefreshGrid();
 
                 _logger.LogInformation("UI已更新：步骤 {StepName} 添加成功", step.StepName);
             }
@@ -590,7 +498,7 @@ namespace MainUI.LogicalConfiguration
                 }
 
                 // 从数据源刷新整个表格，确保数据一致性
-                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+                _processGridControl.RefreshGrid();
 
                 _logger.LogInformation("UI已更新：步骤 {StepName} 移除成功", step.StepName);
             }
@@ -618,7 +526,7 @@ namespace MainUI.LogicalConfiguration
                 }
 
                 // 从数据源刷新整个表格
-                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+                _processGridControl.RefreshGrid();
 
                 _logger.LogInformation("UI已更新：步骤集合刷新完成");
             }
@@ -628,17 +536,15 @@ namespace MainUI.LogicalConfiguration
             }
         }
 
-        // 工具箱拖放事件处理
-        private void ToolTreeView_ItemDrag(object sender, ItemDragEventArgs e)
+        // 只需要处理工具被选择后的逻辑
+        private void OnToolSelected(object sender, ToolSelectedEventArgs e)
         {
-            if (e.Item is TreeNode node && node.Parent != null)
-            {
-                ToolTreeView.DoDragDrop(e.Item, DragDropEffects.Copy);
-            }
+            var stepNum = _processGridControl.StepCount + 1;
+            AddStepToForm(stepNum, e.ToolName);
         }
 
-        // DataGridView拖放事件处理
-        private void ProcessDataGridView_DragDrop(object sender, DragEventArgs e)
+        // 表格拖放事件
+        private void OnProcessGridDragDrop(object sender, DragEventArgs e)
         {
             try
             {
@@ -647,52 +553,30 @@ namespace MainUI.LogicalConfiguration
                     var node = (TreeNode)e.Data.GetData(typeof(TreeNode));
                     if (node?.Parent != null)
                     {
-                        AddStepToForm(ProcessDataGridView.Rows.Count + 1, node.Text);
+                        // 使用控件的属性
+                        AddStepToForm(_processGridControl.StepCount + 1, node.Text);
                     }
                 }
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error("拖拽步骤错误", ex);
-                MessageHelper.MessageOK($"拖拽步骤错误：{ex.Message}", TType.Error);
+                _logger.LogError(ex, "拖拽步骤错误");
             }
         }
 
-        // DataGridView拖放进入事件处理
-        private void ProcessDataGridView_DragEnter(object sender, DragEventArgs e)
-        {
-            e.Effect = e.Data.GetDataPresent(typeof(TreeNode)) ?
-                DragDropEffects.Copy : DragDropEffects.None;
-        }
 
-        /// <summary>
-        /// 双击DataGridView单元格打开步骤配置界面
-        /// </summary>
-        private void ProcessDataGridView_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        private void OnStepConfigRequested(object sender, StepConfigEventArgs e)
         {
             try
             {
-                if (e.RowIndex >= 0)
-                {
-                    var row = ProcessDataGridView.Rows[e.RowIndex];
-                    string stepName = row.Cells[1].Value?.ToString();
-
-                    if (!string.IsNullOrEmpty(stepName))
-                    {
-                        _logger.LogDebug("打开步骤配置: {StepName}, 行索引: {RowIndex}", stepName, e.RowIndex);
-
-                        // 使用新的线程安全属性设置
-                        _workflowState.StepNum = e.RowIndex;
-                        _workflowState.StepName = stepName;
-
-                        _formService.OpenFormByName(this, stepName, this);
-                    }
-                }
+                // 步骤信息已经在事件参数中
+                _workflowState.StepNum = e.RowIndex;
+                _workflowState.StepName = e.Step.StepName;
+                _formService.OpenFormByName(this, e.Step.StepName, this);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "打开步骤参数配置界面时发生错误");
-                MessageHelper.MessageOK($"打开步骤参数配置界面错误：{ex.Message}", TType.Error);
+                _logger.LogError(ex, "打开步骤配置时发生错误");
             }
         }
 
@@ -706,7 +590,7 @@ namespace MainUI.LogicalConfiguration
         private void ProcessDataGridView_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
         {
             // 只允许编辑备注列
-            if (ProcessDataGridView.Columns[e.ColumnIndex].Name != "ColRemark")
+            if (_processGridControl.DataGridView.Columns[e.ColumnIndex].Name != "ColRemark")
             {
                 e.Cancel = true;
             }
@@ -720,10 +604,10 @@ namespace MainUI.LogicalConfiguration
             try
             {
                 // 确保是备注列
-                if (ProcessDataGridView.Columns[e.ColumnIndex].Name != "ColRemark")
+                if (_processGridControl.DataGridView.Columns[e.ColumnIndex].Name != "ColRemark")
                     return;
 
-                var row = ProcessDataGridView.Rows[e.RowIndex];
+                var row = _processGridControl.DataGridView.Rows[e.RowIndex];
                 string newRemark = row.Cells["ColRemark"].Value?.ToString() ?? "";
 
                 // 更新数据源
@@ -740,15 +624,12 @@ namespace MainUI.LogicalConfiguration
             }
         }
 
-        /// <summary>
-        /// DataGridView选择改变事件
-        /// </summary>
-        private void DgvProcess_SelectionChanged(object sender, EventArgs e)
+        private void OnGridSelectionChanged(object sender, EventArgs e)
         {
-            if (ProcessDataGridView.SelectedRows.Count > 0)
+            // 使用控件的属性
+            if (_processGridControl.SelectedIndex >= 0)
             {
-                int selectedIndex = ProcessDataGridView.SelectedRows[0].Index;
-                UpdateStepDetails(selectedIndex);
+                UpdateStepDetails(_processGridControl.SelectedIndex);
             }
         }
 
@@ -800,7 +681,7 @@ namespace MainUI.LogicalConfiguration
                 });
 
                 // 保存后刷新表格显示,更新步骤详情列
-                _gridManager.RefreshFromDataSource(_workflowState.GetSteps());
+                _processGridControl.RefreshGrid();
 
                 _logger.LogInformation("工作流配置保存成功");
                 MessageHelper.MessageOK(this, "保存成功！", TType.Success);
@@ -833,7 +714,7 @@ namespace MainUI.LogicalConfiguration
                 try
                 {
                     // 取消选择
-                    ProcessDataGridView.ClearSelection();
+                    _processGridControl.DataGridView.ClearSelection();
 
                     // 使用新的线程安全方法获取步骤
                     var steps = _workflowState.GetSteps();
@@ -905,13 +786,7 @@ namespace MainUI.LogicalConfiguration
         {
             try
             {
-                // 更新界面显示当前步骤
-                if (stepNum >= 0 && stepNum < ProcessDataGridView.Rows.Count)
-                {
-                    ProcessDataGridView.ClearSelection();
-                    ProcessDataGridView.Rows[stepNum].Selected = true;
-                    ProcessDataGridView.CurrentCell = ProcessDataGridView.Rows[stepNum].Cells[0];
-                }
+                _processGridControl.SelectRow(stepNum);
             }
             catch (Exception ex)
             {
@@ -924,10 +799,10 @@ namespace MainUI.LogicalConfiguration
         /// </summary>
         private void UpdateStepDetails(int stepIndex)
         {
-            if (stepIndex < 0 || stepIndex >= ProcessDataGridView.Rows.Count)
+            if (stepIndex < 0 || stepIndex >= _processGridControl.DataGridView.Rows.Count)
                 return;
 
-            DataGridViewRow row = ProcessDataGridView.Rows[stepIndex];
+            DataGridViewRow row = _processGridControl.DataGridView.Rows[stepIndex];
 
             lblStepNumber.Text = row.Cells["ColStepNumber"].Value?.ToString() ?? "";
             lblStepName.Text = row.Cells["ColStepName"].Value?.ToString() ?? "";
@@ -968,7 +843,7 @@ namespace MainUI.LogicalConfiguration
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
             // 如果焦点在 DataGridView 上，让菜单管理器处理快捷键
-            if (ProcessDataGridView.Focused)
+            if (_processGridControl.DataGridView.Focused)
             {
                 if (_menuManager.HandleKeyDown(keyData))
                 {

@@ -49,6 +49,7 @@
     <Compile Remove="Model\TestStep.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="LogicalConfiguration\Controls\ToolTreeViewControl.Designer.cs~RF57a68e8.TMP" />
     <None Remove="LogicalConfiguration\Forms\kja3lzxb.b2v~" />
     <None Remove="Procedure\b0k3pdyj.on3~" />
     <None Remove="UcHMI_FLE.Designer.cs~RF6dc9f21.TMP" />
