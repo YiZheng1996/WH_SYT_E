@@ -336,23 +336,6 @@ namespace MainUI.LogicalConfiguration
         #region 步骤操作
 
         /// <summary>
-        /// 添加步骤到表单
-        /// </summary>
-        private void AddStepToForm(int stepNumber, string stepName)
-        {
-            var newStep = new ChildModel
-            {
-                StepName = stepName,
-                Status = 0,
-                StepNum = stepNumber,
-                StepParameter = 0
-            };
-
-            // 可以通过控件添加
-            _processGridControl.AddStep(newStep);
-        }
-
-        /// <summary>
         /// 更新步骤状态显示
         /// </summary>
         private void UpdateStepStatus(ChildModel step, int index)
@@ -436,13 +419,6 @@ namespace MainUI.LogicalConfiguration
             }
         }
 
-        // 只需要处理工具被选择后的逻辑
-        private void OnToolSelected(object sender, ToolSelectedEventArgs e)
-        {
-            var stepNum = _processGridControl.StepCount + 1;
-            AddStepToForm(stepNum, e.ToolName);
-        }
-
         // 表格拖放事件
         private void OnProcessGridDragDrop(object sender, DragEventArgs e)
         {
@@ -453,8 +429,13 @@ namespace MainUI.LogicalConfiguration
                     var node = (TreeNode)e.Data.GetData(typeof(TreeNode));
                     if (node?.Parent != null)
                     {
-                        // 使用控件的属性
-                        AddStepToForm(_processGridControl.StepCount + 1, node.Text);
+                        _processGridControl.AddStep(new ChildModel
+                        {
+                            StepName = node.Text,
+                            Status = 0,
+                            StepNum = _processGridControl.StepCount + 1,
+                            StepParameter = 0
+                        });
                     }
                 }
             }
