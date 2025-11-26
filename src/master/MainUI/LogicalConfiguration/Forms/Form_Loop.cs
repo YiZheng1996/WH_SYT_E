@@ -410,9 +410,14 @@ namespace MainUI.LogicalConfiguration.Forms
                 // ⭐ 诊断日志2: 保存后的状态
                 Debug.WriteLine("SaveFormToParameter 后状态:");
                 Debug.WriteLine($"  子步骤数量: {Parameter.ChildSteps?.Count ?? 0}");
+                var settings = new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                    NullValueHandling = NullValueHandling.Ignore
+                };
 
                 // 序列化参数对象
-                var json = JsonConvert.SerializeObject(Parameter, Formatting.None);
+                var json = JsonConvert.SerializeObject(Parameter, Formatting.None, settings);
 
                 // ⭐ 诊断日志3: 序列化后的JSON
                 Logger?.LogDebug("序列化后的JSON: {Json}", json);

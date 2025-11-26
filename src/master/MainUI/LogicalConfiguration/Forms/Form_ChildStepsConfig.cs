@@ -49,16 +49,16 @@ namespace MainUI.LogicalConfiguration.Forms
             _logger = logger;
             _originalSteps = childSteps;
 
-            // 深拷贝子步骤列表
-            _childSteps = childSteps != null
-                ? JsonConvert.DeserializeObject<List<ChildModel>>(JsonConvert.SerializeObject(childSteps))
-                : [];
+            // ⭐ 直接使用传入的列表，不深拷贝
+            _childSteps = childSteps ?? [];
 
             // 获取服务
             _formService = Program.ServiceProvider?.GetService<IFormService>();
-            _workflowState = Program.ServiceProvider?.GetService<IWorkflowStateService>();
 
-            // 初始化子步骤到工作流状态
+            // 创建独立的本地工作流状态服务实例
+            _workflowState = new WorkflowStateService();
+
+            // 初始化子步骤到本地工作流状态（不影响全局）
             foreach (var step in _childSteps)
             {
                 _workflowState.AddStep(step);
@@ -68,10 +68,7 @@ namespace MainUI.LogicalConfiguration.Forms
             InitializeCustomUI();
             RegisterEventHandlers();
 
-            // 窗体加载时将子步骤加载到全局状态
-            this.Load += Form_ChildStepsConfig_Load;
-
-            //_processGridControl.RefreshGrid();
+            _processGridControl.RefreshGrid();
             _logger?.LogDebug("循环体子步骤配置窗体已创建,步骤数量: {Count}", _childSteps.Count);
         }
 
@@ -198,33 +195,6 @@ namespace MainUI.LogicalConfiguration.Forms
         #endregion
 
         #region 事件注册
-
-        /// <summary>
-        /// 窗体加载 - 将子步骤加载到全局状态
-        /// </summary>
-        private void Form_ChildStepsConfig_Load(object sender, EventArgs e)
-        {
-            try
-            {
-                // 将子步骤加载到全局状态
-                if (_childSteps != null && _childSteps.Count > 0)
-                {
-                    foreach (var step in _childSteps)
-                    {
-                        _workflowState.AddStep(step);
-                    }
-                    _logger?.LogDebug("已加载 {Count} 个子步骤到全局状态", _childSteps.Count);
-                }
-
-                _logger?.LogDebug("子步骤配置窗体加载完成");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "加载子步骤失败");
-                MessageHelper.MessageOK($"加载失败: {ex.Message}", TType.Error);
-            }
-        }
-
         /// <summary>
         /// 注册事件处理程序
         /// </summary>
@@ -263,60 +233,88 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 步骤配置请求事件(双击行) - 修复版本
+        /// 步骤配置请求事件(双击行)
         /// </summary>
         private void OnStepConfigRequested(object sender, StepConfigEventArgs e)
         {
             try
             {
-                _logger?.LogDebug("打开步骤配置: {StepName}, 行索引: {RowIndex}",
-                    e.Step.StepName, e.RowIndex);
-
                 if (_formService == null)
                 {
-                    _logger?.LogWarning("FormService未初始化,无法打开配置窗体");
                     MessageHelper.MessageOK("无法打开配置窗体,服务未初始化", TType.Error);
                     return;
                 }
 
-                // 获取全局工作流状态服务
                 var globalWorkflowState = Program.ServiceProvider?.GetService<IWorkflowStateService>();
                 if (globalWorkflowState == null)
                 {
-                    _logger?.LogError("无法获取全局工作流状态服务");
                     MessageHelper.MessageOK("系统错误：无法获取工作流服务", TType.Error);
                     return;
                 }
 
-                // 设置全局工作流状态（配置窗体会使用）
-                globalWorkflowState.StepNum = e.RowIndex;
-                globalWorkflowState.StepName = e.Step.StepName;
+                var localStep = _workflowState.GetStep(e.RowIndex);
+                if (localStep == null) return;
 
-                // 同时设置子工作流状态
-                _workflowState.StepNum = e.RowIndex;
-                _workflowState.StepName = e.Step.StepName;
+                // ⭐ 保存全局状态的原始值
+                var originalStepNum = globalWorkflowState.StepNum;
+                var originalStepName = globalWorkflowState.StepName;
+                var originalSteps = globalWorkflowState.GetSteps(); // 备份全局步骤列表
 
-                // 打开配置窗体
-                _formService.OpenFormByName(this, e.Step.StepName, this);
-
-                // 配置完成后同步参数
-                var globalStep = globalWorkflowState.GetStep(e.RowIndex);
-                if (globalStep != null)
+                try
                 {
-                    var childStep = _workflowState.GetStep(e.RowIndex);
-                    if (childStep != null)
-                    {
-                        // 同步参数
-                        childStep.StepParameter = globalStep.StepParameter;
-                        _workflowState.UpdateStepParameter(childStep.StepNum, childStep);
+                    // ⭐ 临时替换：清空全局状态，只添加当前要配置的子步骤
+                    globalWorkflowState.ClearSteps();
+                    globalWorkflowState.AddStep(localStep);
+                    globalWorkflowState.StepNum = 0;  // 配置窗体使用索引0
+                    globalWorkflowState.StepName = e.Step.StepName;
 
-                        _logger?.LogDebug("已同步步骤参数: {StepName}, 参数长度: {Length}",
-                            childStep.StepName,
-                            globalStep.StepParameter?.ToString()?.Length ?? 0);
+                    // 打开配置窗体（会修改全局状态索引0的步骤）
+                    _formService.OpenFormByName(this, e.Step.StepName, this);
+
+                    // ⭐ 从全局状态获取修改后的参数
+                    var updatedStep = globalWorkflowState.GetStep(0);
+                    if (updatedStep != null)
+                    {
+                        // ⭐ 先序列化再反序列化，切断引用链
+                        if (updatedStep.StepParameter != null)
+                        {
+                            var settings = new JsonSerializerSettings
+                            {
+                                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                            };
+
+                            var paramJson = JsonConvert.SerializeObject(updatedStep.StepParameter, settings);
+                            var paramCopy = JsonConvert.DeserializeObject(paramJson);
+
+                            localStep.StepParameter = paramCopy;
+                            _workflowState.UpdateStepParameter(e.RowIndex, localStep);
+
+                            if (e.RowIndex >= 0 && e.RowIndex < _childSteps.Count)
+                            {
+                                _childSteps[e.RowIndex].StepParameter = paramCopy;
+                            }
+                        }
+
+                    _logger?.LogDebug("已同步子步骤参数: {StepName}", e.Step.StepName);
                     }
+                }
+                finally
+                {
+                    // ⭐ 恢复全局状态
+                    globalWorkflowState.ClearSteps();
+                    if (originalSteps != null)
+                    {
+                        foreach (var step in originalSteps)
+                        {
+                            globalWorkflowState.AddStep(step);
+                        }
+                    }
+                    globalWorkflowState.StepNum = originalStepNum;
+                    globalWorkflowState.StepName = originalStepName;
                 }
 
                 _hasUnsavedChanges = true;
+                _processGridControl?.RefreshGrid();
             }
             catch (Exception ex)
             {
@@ -387,7 +385,6 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // 从全局状态获取最新步骤（包含所有配置的参数）
                 var currentSteps = _workflowState.GetSteps();
 
                 if (currentSteps == null || currentSteps.Count == 0)
@@ -398,34 +395,18 @@ namespace MainUI.LogicalConfiguration.Forms
                         return;
                 }
 
-                if (_hasUnsavedChanges)
-                {
-                    var result = MessageHelper.MessageYes("您做了更改，是否保存？");
-                    if (result != DialogResult.OK)
-                        return;
-                }
-
-                // 深拷贝数据
-                var deepCopiedSteps = JsonConvert.DeserializeObject<List<ChildModel>>(
-                    JsonConvert.SerializeObject(currentSteps));
-
-                // 同时更新两个列表
-                _childSteps = deepCopiedSteps;
+                // 直接清空并同步，不深拷贝（因为最终会序列化成字符串）
                 _originalSteps.Clear();
-                _originalSteps.AddRange(deepCopiedSteps);
+                _originalSteps.AddRange(currentSteps);
 
-                _logger?.LogInformation("子步骤配置已保存，步骤数: {Count}", _childSteps.Count);
-                MessageHelper.MessageOK(
-                    $"保存成功！共配置 {_childSteps.Count} 个子步骤",
-                    TType.Success);
+                _logger?.LogInformation("成功保存 {Count} 个子步骤", _originalSteps.Count);
 
-                _hasUnsavedChanges = false;
                 DialogResult = DialogResult.OK;
                 Close();
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "保存子步骤配置失败");
+                _logger?.LogError(ex, "保存子步骤失败");
                 MessageHelper.MessageOK($"保存失败: {ex.Message}", TType.Error);
             }
         }
