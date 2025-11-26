@@ -617,8 +617,9 @@ namespace MainUI
                 // 6. 批量执行工作流
                 if (_workflowService != null && checkedItems.Count > 0)
                 {
+                    //TODO:试验开始前排气暂时注释
                     // 试验前排空所有气压
-                    bool exhaustSuccess = await ExhaustkPaAsync(_cancellationTokenSource.Token);
+                    //bool exhaustSuccess = await ExhaustkPaAsync(_cancellationTokenSource.Token);
 
                     var results = await _workflowService.ExecuteMultipleWorkflowsAsync(
                         checkedItems,
@@ -808,7 +809,7 @@ namespace MainUI
         }
 
         // 结束试验操作
-        private async void IsTestEnd()
+        private void IsTestEnd()
         {
             try
             {
@@ -817,7 +818,8 @@ namespace MainUI
                 _cancellationTokenSource.Cancel();
                 _workflowService?.StopExecution();
                 _countdownService.StopCountdown();
-                await ExhaustkPaAsync(_cancellationTokenSource.Token);
+                //TODO:结束排气暂时注释
+                //await ExhaustkPaAsync(_cancellationTokenSource.Token);
                 Disable(false);
                 TestStateChanged?.Invoke(false, false);
             }

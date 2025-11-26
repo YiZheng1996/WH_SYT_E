@@ -275,27 +275,24 @@ namespace MainUI.LogicalConfiguration.Forms
                     var updatedStep = globalWorkflowState.GetStep(0);
                     if (updatedStep != null)
                     {
-                        // ⭐ 先序列化再反序列化，切断引用链
+                        // 序列化为JSON字符串,切断引用链
                         if (updatedStep.StepParameter != null)
                         {
                             var settings = new JsonSerializerSettings
                             {
-                                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                                NullValueHandling = NullValueHandling.Ignore
                             };
 
-                            var paramJson = JsonConvert.SerializeObject(updatedStep.StepParameter, settings);
-                            var paramCopy = JsonConvert.DeserializeObject(paramJson);
+                            // 序列化为JSON字符串
+                            string paramJson = JsonConvert.SerializeObject(
+                                updatedStep.StepParameter,
+                                settings
+                            );
 
-                            localStep.StepParameter = paramCopy;
-                            _workflowState.UpdateStepParameter(e.RowIndex, localStep);
-
-                            if (e.RowIndex >= 0 && e.RowIndex < _childSteps.Count)
-                            {
-                                _childSteps[e.RowIndex].StepParameter = paramCopy;
-                            }
+                            // 保存JSON字符串,而非对象引用
+                            _childSteps[e.RowIndex].StepParameter = paramJson;
                         }
-
-                    _logger?.LogDebug("已同步子步骤参数: {StepName}", e.Step.StepName);
                     }
                 }
                 finally
