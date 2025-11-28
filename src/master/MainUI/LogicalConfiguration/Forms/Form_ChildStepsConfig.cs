@@ -252,52 +252,93 @@ namespace MainUI.LogicalConfiguration.Forms
                     return;
                 }
 
+                // 从工作流状态获取实际的步骤对象(基于当前表格位置)
                 var localStep = _workflowState.GetStep(e.RowIndex);
-                if (localStep == null) return;
+                if (localStep == null)
+                {
+                    _logger?.LogWarning("无法获取步骤: RowIndex={RowIndex}", e.RowIndex);
+                    return;
+                }
 
-                // ⭐ 保存全局状态的原始值
+                _logger?.LogDebug("准备打开配置: StepNum={StepNum}, StepName={StepName}, RowIndex={RowIndex}",
+                    localStep.StepNum, localStep.StepName, e.RowIndex);
+
+                // 保存全局状态的原始值
                 var originalStepNum = globalWorkflowState.StepNum;
                 var originalStepName = globalWorkflowState.StepName;
                 var originalSteps = globalWorkflowState.GetSteps(); // 备份全局步骤列表
 
                 try
                 {
-                    // ⭐ 临时替换：清空全局状态，只添加当前要配置的子步骤
+                    // 临时替换：清空全局状态，只添加当前要配置的子步骤
                     globalWorkflowState.ClearSteps();
                     globalWorkflowState.AddStep(localStep);
                     globalWorkflowState.StepNum = 0;  // 配置窗体使用索引0
                     globalWorkflowState.StepName = e.Step.StepName;
 
+                    _logger?.LogDebug("已设置全局状态为子步骤配置模式");
+
                     // 打开配置窗体（会修改全局状态索引0的步骤）
                     _formService.OpenFormByName(this, e.Step.StepName, this);
 
-                    // ⭐ 从全局状态获取修改后的参数
+                    // 从全局状态获取修改后的参数
                     var updatedStep = globalWorkflowState.GetStep(0);
-                    if (updatedStep != null)
+                    if (updatedStep != null && updatedStep.StepParameter != null)
                     {
+                        //var settings = new JsonSerializerSettings
+                        //{
+                        //    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                        //    NullValueHandling = NullValueHandling.Ignore
+                        //};
+
                         // 序列化为JSON字符串,切断引用链
-                        if (updatedStep.StepParameter != null)
+                        //string paramJson = JsonConvert.SerializeObject(updatedStep.StepParameter);
+
+                        //_logger?.LogDebug("参数已序列化: Length={Length}", paramJson?.Length ?? 0);
+
+                        // 关键修改: 使用对象引用而非索引来更新参数
+                        // 方法1: 直接更新 localStep 对象(因为它是从 _workflowState 获取的引用)
+                        //localStep.StepParameter = paramJson;
+                        _logger?.LogDebug("已更新 localStep.StepParameter");
+
+                        // 方法2: 同时在 _childSteps 中查找并更新对应的步骤
+                        // 通过 StepNum 和 StepName 双重匹配确保准确性
+                        var matchingStep = _childSteps.FirstOrDefault(s =>
+                            s.StepNum == localStep.StepNum &&
+                            s.StepName == localStep.StepName);
+
+                        if (matchingStep != null)
                         {
-                            var settings = new JsonSerializerSettings
-                            {
-                                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                                NullValueHandling = NullValueHandling.Ignore
-                            };
-
-                            // 序列化为JSON字符串
-                            string paramJson = JsonConvert.SerializeObject(
-                                updatedStep.StepParameter,
-                                settings
-                            );
-
-                            // 保存JSON字符串,而非对象引用
-                            _childSteps[e.RowIndex].StepParameter = paramJson;
+                            //matchingStep.StepParameter = paramJson;
+                            _logger?.LogDebug("已更新 _childSteps 中的匹配步骤: StepNum={StepNum}, StepName={StepName}",
+                                matchingStep.StepNum, matchingStep.StepName);
                         }
+                        else
+                        {
+                            _logger?.LogWarning("在 _childSteps 中未找到匹配的步骤: StepNum={StepNum}, StepName={StepName}",
+                                localStep.StepNum, localStep.StepName);
+                        }
+
+                        // 方法3: 额外的安全措施 - 确保 _originalSteps 也同步
+                        // (因为保存时会同步 _originalSteps 和 _childSteps)
+                        var originalMatchingStep = _originalSteps.FirstOrDefault(s =>
+                            s.StepNum == localStep.StepNum &&
+                            s.StepName == localStep.StepName);
+
+                        if (originalMatchingStep != null)
+                        {
+                            //originalMatchingStep.StepParameter = paramJson;
+                            _logger?.LogDebug("已更新 _originalSteps 中的匹配步骤");
+                        }
+                    }
+                    else
+                    {
+                        _logger?.LogDebug("配置窗体返回的步骤参数为空");
                     }
                 }
                 finally
                 {
-                    // ⭐ 恢复全局状态
+                    // ⭐ 恢复全局状态到原始状态
                     globalWorkflowState.ClearSteps();
                     if (originalSteps != null)
                     {
@@ -308,10 +349,14 @@ namespace MainUI.LogicalConfiguration.Forms
                     }
                     globalWorkflowState.StepNum = originalStepNum;
                     globalWorkflowState.StepName = originalStepName;
+
+                    _logger?.LogDebug("已恢复全局状态");
                 }
 
                 _hasUnsavedChanges = true;
                 _processGridControl?.RefreshGrid();
+
+                _logger?.LogInformation("步骤配置完成: StepName={StepName}", localStep.StepName);
             }
             catch (Exception ex)
             {

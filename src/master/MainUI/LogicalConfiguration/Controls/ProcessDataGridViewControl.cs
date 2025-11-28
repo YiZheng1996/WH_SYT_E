@@ -768,7 +768,7 @@ namespace MainUI.LogicalConfiguration.Controls
         {
             if (!_isDisposed)
             {
-                if (disposing)
+                if (disposing && (components != null))
                 {
                     try
                     {

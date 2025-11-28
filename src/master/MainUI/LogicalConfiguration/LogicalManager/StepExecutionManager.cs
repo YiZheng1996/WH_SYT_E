@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.Methods;
+﻿using MainUI.LogicalConfiguration.Engine;
+using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Newtonsoft.Json;
@@ -23,6 +24,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     ConditionMethods conditionMethods,
     LoopMethods loopMethods,
     IWorkflowStateService workflowState,
+    ExpressionEngine expressionEngine,
     GlobalVariableManager globalVariableManager)
     {
         #region 字段和属性
@@ -41,6 +43,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private readonly GlobalVariableManager _globalVariableManager = globalVariableManager
        ?? throw new ArgumentNullException(nameof(globalVariableManager));
         private readonly IWorkflowStateService _workflowStateService = workflowState;
+        private readonly ExpressionEngine _expressionEngine = expressionEngine;
 
         public event Action<ChildModel, int> StepStatusChanged;
 
@@ -652,6 +655,17 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
                 NlogHelper.Default.Info($"开始循环执行，共 {loopInfo.LoopCount} 次 - {loopInfo.Description}");
 
+                // 检查是否启用提前退出
+                bool earlyExitEnabled = param.EnableEarlyExit &&
+                                        !string.IsNullOrWhiteSpace(param.ExitConditionExpression);
+
+                if (earlyExitEnabled)
+                {
+                    NlogHelper.Default.Info($"✓ 已启用提前退出，退出条件: {param.ExitConditionExpression}");
+                }
+
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
                 // 执行循环
                 for (int i = 1; i <= loopInfo.LoopCount; i++)
                 {
@@ -659,13 +673,43 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
                     NlogHelper.Default.Info($"========== 第 {i}/{loopInfo.LoopCount} 次循环 ==========");
 
+                    if (earlyExitEnabled)
+                    {
+                        try
+                        {
+                            // 使用表达式引擎计算退出条件
+                            var exitResult = _expressionEngine.EvaluateExpression(param.ExitConditionExpression);
+
+                            // 检查结果是否为 true
+                            if (exitResult.Success is bool shouldExit && shouldExit)
+                            {
+                                NlogHelper.Default.Info(
+                                    $"✓ 满足退出条件 [{param.ExitConditionExpression}]，" +
+                                    $"在第 {i}/{loopInfo.LoopCount} 次循环提前退出");
+
+                                // 立即退出循环
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // 条件计算出错，记录日志但继续执行
+                            NlogHelper.Default.Error(
+                                $"✗ 计算退出条件出错: {ex.Message}，条件: {param.ExitConditionExpression}");
+
+                            // 可选：如果希望条件错误时停止循环，取消下面的注释
+                            // return ExecutionResult.Failed($"退出条件计算错误: {ex.Message}");
+                        }
+                    }
+
+
                     // 更新计数器变量
                     if (loopInfo.EnableCounter && !string.IsNullOrWhiteSpace(loopInfo.CounterVariableName))
                     {
                         _loopMethods.UpdateLoopCounter(loopInfo.CounterVariableName, i);
                     }
 
-                    // 重置循环控制标志
+                    // 重置循环控制标志（保留原有的Break/Continue支持）
                     _workflowStateService.ShouldBreakLoop = false;
                     _workflowStateService.ShouldContinueLoop = false;
 
@@ -679,8 +723,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
                             if (childSteps != null)
                             {
-                                cancellationToken.ThrowIfCancellationRequested();
-
                                 try
                                 {
                                     // 递归调用执行子步骤
@@ -688,10 +730,11 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
                                     if (!childResult.Succes)
                                     {
-                                        NlogHelper.Default.Warn($"循环子步骤执行失败: {childSteps.StepName}, 原因: {childResult.Message}");
+                                        NlogHelper.Default.Warn(
+                                            $"循环子步骤执行失败: {childSteps.StepName}, 原因: {childResult.Message}");
                                     }
 
-                                    // 检查循环控制指令
+                                    // 检查循环控制指令（保留原有功能）
                                     if (_workflowStateService.ShouldBreakLoop)
                                     {
                                         NlogHelper.Default.Info("收到 Break 指令，跳出循环");
@@ -702,26 +745,27 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
                                     if (_workflowStateService.ShouldContinueLoop)
                                     {
-                                        NlogHelper.Default.Info("收到 Continue 指令，跳过本次循环剩余步骤");
+                                        NlogHelper.Default.Info("收到 Continue 指令，继续下一次循环");
                                         _workflowStateService.ShouldContinueLoop = false;
                                         break;
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    NlogHelper.Default.Error($"循环子步骤执行异常: {childSteps.StepName}", ex);
-                                    throw;
+                                    NlogHelper.Default.Error($"执行循环子步骤异常: {childSteps.StepName}", ex);
                                 }
-
                             }
-
-                            if (shouldBreak || _workflowStateService.ShouldContinueLoop) break;
                         }
                     }
 
-                    if (shouldBreak) break;
+                    // 如果收到 Break 指令，退出整个循环
+                    if (shouldBreak)
+                    {
+                        break;
+                    }
 
-                    NlogHelper.Default.Info($"完成第 {i}/{loopInfo.LoopCount} 次循环");
+                    // 循环迭代之间的延时（可选）
+                    await Task.Delay(10, cancellationToken);
                 }
 
                 NlogHelper.Default.Info("循环执行完成");
@@ -729,7 +773,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             }
             catch (OperationCanceledException)
             {
-                NlogHelper.Default.Info("循环被取消");
+                NlogHelper.Default.Info("循环执行被取消");
                 throw;
             }
             catch (Exception ex)

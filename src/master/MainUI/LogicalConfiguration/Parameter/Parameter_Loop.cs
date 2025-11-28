@@ -23,7 +23,6 @@
 
         /// <summary>
         /// 循环体子步骤列表
-        /// ⭐ 修正: 从 List<Parent> 改为 List<ChildModel>
         /// </summary>
         public List<ChildModel> ChildSteps { get; set; } = [];
 
@@ -31,6 +30,23 @@
         /// 循环描述
         /// </summary>
         public string Description { get; set; } = "";
+
+        /// <summary>
+        /// 是否启用提前退出
+        /// </summary>
+        public bool EnableEarlyExit { get; set; } = false;
+
+        /// <summary>
+        /// 提前退出条件表达式
+        /// 例如: {压力值} >= 6.0
+        /// 当表达式结果为 true 时，立即退出循环
+        /// </summary>
+        public string ExitConditionExpression { get; set; } = "";
+
+        /// <summary>
+        /// 退出条件说明（可选，用于界面提示）
+        /// </summary>
+        public string ExitConditionDescription { get; set; } = "";
     }
 
 

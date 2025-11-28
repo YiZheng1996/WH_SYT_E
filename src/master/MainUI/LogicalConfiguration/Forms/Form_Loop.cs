@@ -1,7 +1,9 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
+using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -98,6 +100,8 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 // 从工作流状态加载参数
                 LoadParameterFromWorkflowState();
+
+                ChkEnableEarlyExit_CheckedChanged(null, null);
             }
             catch (Exception ex)
             {
@@ -140,6 +144,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 txtLoopCount.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
                 txtCounterVariable.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
                 txtDescription.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                txtExitCondition.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
 
                 // 复选框改变事件
                 chkEnableCounter.CheckedChanged += (s, e) =>
@@ -151,11 +156,14 @@ namespace MainUI.LogicalConfiguration.Forms
                     }
                 };
 
+                chkEnableEarlyExit.CheckedChanged += ChkEnableEarlyExit_CheckedChanged;
+
                 // 按钮点击事件
                 btnSave.Click += BtnSave_Click;
                 btnCancel.Click += BtnCancel_Click;
                 btnHelp.Click += BtnHelp_Click;
                 btnSelectVarCount.Click += BtnSelectVarCount_Click;
+                btnSelectVarForExit.Click += BtnExpressionHelper_Click;
                 btnConfigChildSteps.Click += BtnConfigChildSteps_Click;
 
                 // 窗体关闭事件
@@ -198,8 +206,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-       
-
         #endregion
 
         #region UI更新
@@ -214,9 +220,45 @@ namespace MainUI.LogicalConfiguration.Forms
             lblCounterVariable.Enabled = enabled;
         }
 
+        /// <summary>
+        /// 更新提前退出控件状态
+        /// </summary>
+        private void UpdateEarlyExitControls()
+        {
+            bool enabled = chkEnableEarlyExit.Checked;
+            lblExitCondition.Enabled = enabled;
+            txtExitCondition.Enabled = enabled;
+            btnSelectVarForExit.Enabled = enabled;
+            lblExitConditionHint.Enabled = enabled;
+
+            //if (!enabled)
+            //{
+            //    txtExitCondition.Text = "";
+            //}
+        }
+
         #endregion
 
-        #region 变量选择
+        #region 事件处理器
+
+        /// <summary>
+        /// 启用提前退出复选框状态改变事件
+        /// </summary>
+        private void ChkEnableEarlyExit_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!_isInitializing)
+                {
+                    _hasUnsavedChanges = true;
+                    UpdateEarlyExitControls();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "切换提前退出状态失败");
+            }
+        }
 
         /// <summary>
         /// 选择循环次数变量
@@ -224,6 +266,37 @@ namespace MainUI.LogicalConfiguration.Forms
         private void BtnSelectVarCount_Click(object sender, EventArgs e)
         {
             SelectVariableForTextBox(txtLoopCount);
+        }
+
+        /// <summary>
+        /// 选择退出条件变量
+        /// </summary>
+        private void BtnSelectVarForExit_Click(object sender, EventArgs e)
+        {
+            SelectVariableForTextBox(txtExitCondition);
+        }
+
+        /// <summary>
+        /// 表达式助手按钮点击事件
+        /// </summary>
+        private void BtnExpressionHelper_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var expressionValidator = Program.ServiceProvider?.GetService<ExpressionEngine>();
+                using var dialog = new ExpressionBuilderDialog(_globalVariable, expressionValidator);
+
+                if (dialog.ShowDialog(this) == DialogResult.OK)
+                {
+                    txtExitCondition.Text = dialog.GeneratedExpression;
+                    _hasUnsavedChanges = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "打开表达式助手失败");
+                MessageHelper.MessageOK(this, $"打开助手失败：{ex.Message}", TType.Error);
+            }
         }
 
         /// <summary>
@@ -276,82 +349,31 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 子步骤配置
+        #region 变量选择
 
         /// <summary>
-        /// 配置循环体子步骤
+        /// 配置子步骤按钮点击事件
         /// </summary>
         private void BtnConfigChildSteps_Click(object sender, EventArgs e)
         {
             try
             {
-                Debug.WriteLine("========== 开始配置子步骤 ==========");
+                // 保存当前界面数据到参数对象
+                SaveFormToParameter();
 
-                // 确保 ChildSteps 列表已初始化
-                if (Parameter.ChildSteps == null)
+                var configForm = new Form_ChildStepsConfig(Parameter.ChildSteps);
+                if (configForm.ShowDialog(this) == DialogResult.OK)
                 {
-                    Parameter.ChildSteps = [];
-                    Logger?.LogDebug("初始化空的子步骤列表");
-                }
+                    // 直接使用Form返回的结果更新Parameter
+                    Parameter.ChildSteps = configForm._childSteps;
 
-                // ⭐ 诊断日志1: 配置前的状态
-                Debug.WriteLine($"配置前子步骤数量: {Parameter.ChildSteps.Count}");
-                if (Parameter.ChildSteps.Count > 0)
-                {
-                    for (int i = 0; i < Parameter.ChildSteps.Count; i++)
-                    {
-                        var child = Parameter.ChildSteps[i];
-                        Debug.WriteLine($"  [{i}] {child.StepName}: 参数={child.StepParameter}");
-                    }
-                }
-
-                // 打开子步骤配置窗体
-                using var configForm = new Form_ChildStepsConfig(Parameter.ChildSteps);
-                var result = configForm.ShowDialog(this);
-
-                if (result == DialogResult.OK)
-                {
-                    // 获取配置好的子步骤列表
-                    var updatedSteps = configForm._childSteps;
-
-                    // 诊断日志2: 配置对话框返回的数据
-                    Debug.WriteLine("配置对话框返回:");
-                    Debug.WriteLine($"  返回的子步骤数量: {updatedSteps?.Count ?? 0}");
-                    if (updatedSteps != null && updatedSteps.Count > 0)
-                    {
-                        for (int i = 0; i < updatedSteps.Count; i++)
-                        {
-                            var child = updatedSteps[i];
-                            var hasParam = !string.IsNullOrEmpty(child.StepParameter?.ToString());
-                            Debug.WriteLine($"    [{i}] {child.StepName}: 参数={hasParam}, 长度={child.StepParameter?.ToString()?.Length ?? 0}");
-                        }
-                    }
-
-                    // 更新参数对象的子步骤列表
-                    Parameter.ChildSteps = updatedSteps;
-
-                    // 诊断日志3: 更新后的状态
-                    Debug.WriteLine("更新Parameter.ChildSteps后:");
-                    Debug.WriteLine($"  Parameter.ChildSteps 数量: {Parameter.ChildSteps?.Count ?? 0}"
-                        );
-                    Debug.WriteLine("  引用是否相同: {ReferenceEquals(Parameter.ChildSteps, updatedSteps)}");
-
-                    // 更新显示
-                    int stepCount = Parameter.ChildSteps?.Count ?? 0;
-                    lblChildStepsCount.Text = $"循环体步骤 ({stepCount} 个)";
+                    // 更新子步骤数量显示
+                    int childStepCount = Parameter.ChildSteps?.Count ?? 0;
+                    lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
 
                     _hasUnsavedChanges = true;
 
-                    Debug.WriteLine("========== 子步骤配置完成 ==========");
-
-                    if (stepCount > 0)
-                    {
-                        MessageHelper.MessageOK($"已配置 {stepCount} 个循环体步骤", TType.Success);
-                    }
-                }
-                else
-                {
-                    Logger?.LogDebug("用户取消了子步骤配置");
+                    Logger?.LogDebug("子步骤配置完成，数量: {Count}", childStepCount);
                 }
             }
             catch (Exception ex)
@@ -372,54 +394,50 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                Debug.WriteLine("========== 开始保存循环配置 ==========");
-
                 // 验证输入
                 if (!ValidateInput())
                 {
                     return;
                 }
 
+                // 保存界面数据到参数对象
+                SaveFormToParameter();
+
                 // 获取当前步骤
                 var currentStep = GetCurrentStepSafely();
                 if (currentStep == null)
                 {
-                    MessageHelper.MessageOK("当前步骤无效,无法保存数据。", TType.Warn);
+                    MessageHelper.MessageOK("无法获取当前步骤信息", TType.Error);
                     return;
                 }
 
-                // ⭐ 诊断日志1: 保存前的状态
-                Debug.WriteLine("保存前状态:");
-                Debug.WriteLine("  循环次数: {Count}", txtLoopCount.Text);
-                Debug.WriteLine("  计数器变量: {Var}", txtCounterVariable.Text);
-                Debug.WriteLine($"  子步骤数量: {Parameter.ChildSteps?.Count ?? 0}");
+                // ⭐ 诊断日志1: 保存前的Parameter状态
+                Logger?.LogDebug("保存前 Parameter.ChildSteps 数量: {Count}",
+                    Parameter.ChildSteps?.Count ?? 0);
 
-                if (Parameter.ChildSteps != null && Parameter.ChildSteps.Count > 0)
+                // ⭐ 诊断日志2: 检查子步骤参数
+                if (Parameter.ChildSteps != null)
                 {
-                    for (int i = 0; i < Parameter.ChildSteps.Count; i++)
+                    foreach (var child in Parameter.ChildSteps)
                     {
-                        var child = Parameter.ChildSteps[i];
-                        var hasParam = !string.IsNullOrEmpty(child.StepParameter?.ToString());
-                        Debug.WriteLine($"    [{i}] {child.StepName}: 参数={hasParam}, 长度={child.StepParameter?.ToString()?.Length ?? 0}");
+                        var paramLength = child.StepParameter?.ToString()?.Length ?? 0;
+                        Logger?.LogDebug("  子步骤: {StepName}, 参数长度: {Length}",
+                            child.StepName, paramLength);
                     }
                 }
 
-                // 保存界面数据到参数对象
-                SaveFormToParameter();
-
-                // ⭐ 诊断日志2: 保存后的状态
-                Debug.WriteLine("SaveFormToParameter 后状态:");
-                Debug.WriteLine($"  子步骤数量: {Parameter.ChildSteps?.Count ?? 0}");
+                // 序列化参数到JSON
                 var settings = new JsonSerializerSettings
                 {
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                    NullValueHandling = NullValueHandling.Ignore
+                    NullValueHandling = NullValueHandling.Ignore,
+                    DefaultValueHandling = DefaultValueHandling.Include,
+                    Formatting = Formatting.None
                 };
 
                 // 序列化参数对象
                 var json = JsonConvert.SerializeObject(Parameter, Formatting.None, settings);
 
-                // ⭐ 诊断日志3: 序列化后的JSON
+                // 诊断日志3: 序列化后的JSON
                 Logger?.LogDebug("序列化后的JSON: {Json}", json);
 
                 // 保存到步骤
@@ -430,8 +448,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 Debug.WriteLine("========== 循环配置保存成功 ==========");
                 MessageHelper.MessageOK("保存成功！循环配置将在主界面保存时写入配置文件。", TType.Success);
 
-                this.DialogResult = DialogResult.OK;
-                this.Close();
+                DialogResult = DialogResult.OK;
+                Close();
             }
             catch (Exception ex)
             {
@@ -467,6 +485,7 @@ namespace MainUI.LogicalConfiguration.Forms
    • 循环次数: 设置循环执行的次数
    • 计数器变量: 在子步骤中可使用此变量获取当前循环索引
    • 循环体步骤: 配置每次循环要执行的步骤
+   • ⭐ 提前退出: 满足条件时立即退出循环
 
 🔹 循环次数设置
    • 固定值: 如 10, 100
@@ -479,18 +498,44 @@ namespace MainUI.LogicalConfiguration.Forms
    • 可在子步骤中使用 {LoopIndex} 引用当前索引
    • 可禁用计数器变量以提升性能
 
+🔹 ⭐ 提前退出 (新功能)
+   • 功能: 满足条件时立即退出循环
+   • 条件格式: {变量名} 运算符 值
+   • 运算符: ==, !=, >, <, >=, <=, AND, OR
+   • 示例1: {压力值} >= 6.0
+   • 示例2: {温度} > 80 AND {压力值} < 5
+   • 场景1: 压力测试达标后立即退出
+   • 场景2: 设备连接成功后停止重试
+   • 场景3: 温度或压力超标时紧急停止
+
 🔹 使用场景
    • 重复执行测试
    • 批量处理数据
-   • 失败重试机制
+   • 失败重试机制（配合提前退出）
    • 数据采集
+   • 条件满足时提前终止
 
 ⚠️ 注意事项
    1. 循环次数必须大于 0
    2. 避免设置过大的循环次数造成长时间执行
    3. 计数器变量名不能与现有变量重名
-   4. 循环内部可使用 Break 和 Continue 控制步骤
-   5. 确保循环体内的步骤配置正确
+   4. 提前退出条件会在每次循环迭代前检查
+   5. 循环内部可使用 Break 和 Continue 控制步骤
+   6. 确保循环体内的步骤配置正确
+   7. 退出条件中的变量必须在循环体中被更新
+
+💡 提前退出示例
+   场景: 压力测试，达到6.0 MPa即停止
+   配置:
+     循环次数: 100
+     ✓ 启用提前退出
+     退出条件: {压力值} >= 6.0
+   
+   循环体步骤:
+     1. 读取PLC → {压力值}
+     2. 延时 100ms
+   
+   效果: 第15次达标后立即退出，节省85%时间
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
 
@@ -503,7 +548,6 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         #endregion
-
 
         #region 窗体事件
 
@@ -539,7 +583,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 验证循环次数
                 if (string.IsNullOrWhiteSpace(txtLoopCount.Text))
                 {
-                    MessageHelper.MessageOK(this,"请输入循环次数！", TType.Warn);
+                    MessageHelper.MessageOK(this, "请输入循环次数！", TType.Warn);
                     txtLoopCount.Focus();
                     return false;
                 }
@@ -550,6 +594,41 @@ namespace MainUI.LogicalConfiguration.Forms
                     MessageHelper.MessageOK("启用计数器时必须指定变量名！", TType.Warn);
                     txtCounterVariable.Focus();
                     return false;
+                }
+
+                // ⭐ 验证提前退出条件
+                if (chkEnableEarlyExit.Checked)
+                {
+                    if (string.IsNullOrWhiteSpace(txtExitCondition.Text))
+                    {
+                        MessageHelper.MessageOK(this,
+                         "启用提前退出时必须输入退出条件！\n\n" +
+                         "支持功能:\n" +
+                         "• 基本比较: {压力值} >= 6.0\n" +
+                         "• 数学运算: {A} * 2 + {B} > 10\n" +
+                         "• 逻辑运算: {A} > 5 AND {B} < 10\n" +
+                         "• 函数调用: ABS({偏差}) < 0.1\n\n" +
+                         "点击帮助按钮查看更多示例",
+                         TType.Warn);
+                        txtExitCondition.Focus();
+                        return false;
+                    }
+
+                    // 简单验证：检查是否包含变量引用
+                    string condition = txtExitCondition.Text.Trim();
+                    if (!condition.Contains("{") && !condition.Contains("}"))
+                    {
+                        var result = MessageHelper.MessageYes(this,
+                            "退出条件中未检测到变量引用，确定继续？\n" +
+                            "建议使用格式: {变量名} 运算符 值\n" +
+                            "例如: {压力值} >= 6.0",
+                            TType.Warn);
+                        if (result != DialogResult.OK)
+                        {
+                            txtExitCondition.Focus();
+                            return false;
+                        }
+                    }
                 }
 
                 // 验证子步骤
@@ -606,6 +685,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 LoopCountExpression = "10",
                 CounterVariableName = "LoopIndex",
                 EnableCounter = true,
+                EnableEarlyExit = false,
+                ExitConditionExpression = "",
                 ChildSteps = [],
                 Description = $"循环步骤 {_workflowState?.StepNum + 1}"
             };
@@ -629,6 +710,10 @@ namespace MainUI.LogicalConfiguration.Forms
                 txtDescription.Text = Parameter.Description ?? "";
                 chkEnabled.Checked = true;
 
+                // ⭐ 加载提前退出配置
+                chkEnableEarlyExit.Checked = Parameter.EnableEarlyExit;
+                txtExitCondition.Text = Parameter.ExitConditionExpression ?? "";
+
                 // 更新子步骤计数
                 int childStepCount = Parameter.ChildSteps?.Count ?? 0;
                 lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
@@ -636,6 +721,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 Debug.WriteLine("LoadParameterToForm - 子步骤数量: {Count}", childStepCount);
 
                 UpdateCounterControls();
+                UpdateEarlyExitControls();
 
                 _hasUnsavedChanges = false;
             }
@@ -661,6 +747,10 @@ namespace MainUI.LogicalConfiguration.Forms
                 Parameter.CounterVariableName = txtCounterVariable.Text?.Trim() ?? "LoopIndex";
                 Parameter.EnableCounter = chkEnableCounter.Checked;
                 Parameter.Description = txtDescription.Text?.Trim() ?? "";
+
+                // ⭐ 保存提前退出配置
+                Parameter.EnableEarlyExit = chkEnableEarlyExit.Checked;
+                Parameter.ExitConditionExpression = txtExitCondition.Text?.Trim() ?? "";
 
                 // 添加日志记录子步骤信息
                 Logger?.LogDebug("SaveFormToParameter - 子步骤数量: {Count}",

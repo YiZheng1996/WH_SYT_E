@@ -46,7 +46,12 @@
     <None Remove="CurrencyHelper\Permission\**" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="LogicalConfiguration\Forms\Form_ExpressionHelper.cs" />
+    <Compile Remove="LogicalConfiguration\Forms\Form_ExpressionHelper.Designer.cs" />
     <Compile Remove="Model\TestStep.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="LogicalConfiguration\Forms\Form_ExpressionHelper.resx" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="LogicalConfiguration\Controls\ToolTreeViewControl.Designer.cs~RF57a68e8.TMP" />
