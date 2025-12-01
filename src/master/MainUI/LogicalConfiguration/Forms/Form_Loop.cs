@@ -1,8 +1,10 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Controls;  // ⭐ 新增：引用表达式输入面板
 using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
+using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,7 +13,7 @@ using Newtonsoft.Json;
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// 循环参数配置表单
+    /// 循环参数配置表单 - 已集成通用表达式输入面板
     /// 用于配置和管理工作流步骤中的循环操作
     /// </summary>
     public partial class Form_Loop : BaseParameterForm
@@ -47,6 +49,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 未保存更改标志
         /// </summary>
         private bool _hasUnsavedChanges = false;
+
         #endregion
 
         #region 构造函数
@@ -92,8 +95,8 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 _isInitializing = true;
 
-                // 加载可用变量
-                LoadAvailableVariables();
+                // ⭐ 设置表达式输入面板
+                SetupExpressionInputPanels();
 
                 // 绑定事件
                 BindEvents();
@@ -101,7 +104,10 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 从工作流状态加载参数
                 LoadParameterFromWorkflowState();
 
-                ChkEnableEarlyExit_CheckedChanged(null, null);
+                // 更新控件状态
+                UpdateControlStates();
+
+                Logger?.LogInformation("Form_Loop 初始化完成，已集成表达式输入面板");
             }
             catch (Exception ex)
             {
@@ -115,63 +121,120 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 加载可用变量
+        /// ⭐ 设置表达式输入面板 - 核心集成代码
         /// </summary>
-        private void LoadAvailableVariables()
+        private void SetupExpressionInputPanels()
         {
             try
             {
-                var globalVariableManager = _globalVariable ?? Program.ServiceProvider?.GetService<GlobalVariableManager>();
-                if (globalVariableManager == null) return;
+                // =====================================
+                // 1. 循环次数输入框 - 支持数值、变量、PLC
+                // =====================================
+                ExpressionInputPanel.AttachTo(txtLoopCount, new InputPanelOptions
+                {
+                    Mode = InputMode.Expression,
+                    EnabledModules = InputModules.Variable | InputModules.PLC | InputModules.Constant,
+                    Title = "循环次数",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true
+                });
 
-                var variables = globalVariableManager.GetAllVariables();
-                Logger?.LogInformation("成功加载 {Count} 个可用变量", variables.Count);
+                // 添加视觉提示
+                txtLoopCount.Watermark = "点击输入循环次数，支持数值/变量/PLC (按F2打开面板)";
+
+                // =====================================
+                // 2. 退出条件输入框 - 支持条件表达式
+                // =====================================
+                ExpressionInputPanel.AttachTo(txtExitCondition, new InputPanelOptions
+                {
+                    Mode = InputMode.Condition,  // 条件模式
+                    EnabledModules = InputModules.Variable | InputModules.PLC |
+                                     InputModules.Expression | InputModules.Constant,
+                    Title = "退出条件表达式",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true
+                });
+
+                // 添加视觉提示
+                txtExitCondition.Watermark = "点击输入退出条件，如：{压力值} >= 6.0 (按F2打开面板)";
+
+                // =====================================
+                // 3. 计数器变量名输入框 - 仅支持变量选择
+                // =====================================
+                ExpressionInputPanel.AttachTo(txtCounterVariable, new InputPanelOptions
+                {
+                    Mode = InputMode.VariableOnly,
+                    EnabledModules = InputModules.Variable,
+                    Title = "选择计数器变量",
+                    ShowValidation = false,
+                    CloseOnSubmit = true
+                });
+
+                txtCounterVariable.Watermark = "点击选择计数器变量名";
+
+                Logger?.LogDebug("表达式输入面板设置完成");
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "加载可用变量失败");
+                Logger?.LogError(ex, "设置表达式输入面板失败");
             }
         }
 
         /// <summary>
-        /// 绑定事件处理器
+        /// 绑定事件处理器 - 简化版
         /// </summary>
         private void BindEvents()
         {
             try
             {
-                // 文本框改变事件
-                txtLoopCount.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
-                txtCounterVariable.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
-                txtDescription.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
-                txtExitCondition.TextChanged += (s, e) => { if (!_isInitializing) _hasUnsavedChanges = true; };
+                // 文本框改变事件 - 标记未保存
+                txtLoopCount.TextChanged += (s, e) => MarkAsChanged();
+                txtCounterVariable.TextChanged += (s, e) => MarkAsChanged();
+                txtDescription.TextChanged += (s, e) => MarkAsChanged();
+                txtExitCondition.TextChanged += (s, e) => MarkAsChanged();
 
                 // 复选框改变事件
                 chkEnableCounter.CheckedChanged += (s, e) =>
                 {
-                    if (!_isInitializing)
-                    {
-                        _hasUnsavedChanges = true;
-                        UpdateCounterControls();
-                    }
+                    MarkAsChanged();
+                    UpdateControlStates();
                 };
 
-                chkEnableEarlyExit.CheckedChanged += ChkEnableEarlyExit_CheckedChanged;
+                chkEnableEarlyExit.CheckedChanged += (s, e) =>
+                {
+                    MarkAsChanged();
+                    UpdateControlStates();
+                };
+
+                chkEnabled.CheckedChanged += (s, e) => MarkAsChanged();
 
                 // 按钮点击事件
                 btnSave.Click += BtnSave_Click;
                 btnCancel.Click += BtnCancel_Click;
                 btnHelp.Click += BtnHelp_Click;
-                btnSelectVarCount.Click += BtnSelectVarCount_Click;
-                btnSelectVarForExit.Click += BtnExpressionHelper_Click;
                 btnConfigChildSteps.Click += BtnConfigChildSteps_Click;
 
                 // 窗体关闭事件
                 this.FormClosing += Form_Loop_FormClosing;
+
+                Logger?.LogDebug("事件绑定完成");
             }
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "绑定事件失败");
+            }
+        }
+
+        /// <summary>
+        /// 标记为已更改
+        /// </summary>
+        private void MarkAsChanged()
+        {
+            if (!_isInitializing)
+            {
+                _hasUnsavedChanges = true;
             }
         }
 
@@ -211,181 +274,55 @@ namespace MainUI.LogicalConfiguration.Forms
         #region UI更新
 
         /// <summary>
-        /// 更新计数器控件状态
+        /// 更新控件状态 - 简化版
         /// </summary>
-        private void UpdateCounterControls()
+        private void UpdateControlStates()
         {
-            bool enabled = chkEnableCounter.Checked;
-            txtCounterVariable.Enabled = enabled;
-            lblCounterVariable.Enabled = enabled;
-        }
+            if (_isInitializing) return;
 
-        /// <summary>
-        /// 更新提前退出控件状态
-        /// </summary>
-        private void UpdateEarlyExitControls()
-        {
-            bool enabled = chkEnableEarlyExit.Checked;
-            lblExitCondition.Enabled = enabled;
-            txtExitCondition.Enabled = enabled;
-            btnSelectVarForExit.Enabled = enabled;
-            lblExitConditionHint.Enabled = enabled;
+            try
+            {
+                // 计数器控件状态
+                bool counterEnabled = chkEnableCounter.Checked;
+                txtCounterVariable.Enabled = counterEnabled;
+                lblCounterVariable.Enabled = counterEnabled;
 
-            //if (!enabled)
-            //{
-            //    txtExitCondition.Text = "";
-            //}
+                // 提前退出控件状态
+                bool exitEnabled = chkEnableEarlyExit.Checked;
+                lblExitCondition.Enabled = exitEnabled;
+                txtExitCondition.Enabled = exitEnabled;
+                lblExitConditionHint.Enabled = exitEnabled;
+
+                // ⭐ 隐藏不再需要的控件（面板已集成这些功能）
+                rbExitVariable.Visible = false;
+                rbExitPlc.Visible = false;
+                rbExitExpression.Visible = false;
+                btnSelectVarForExit.Visible = false;
+                btnBuildExpression.Visible = false;
+                cboExitPlcModule.Visible = false;
+                cboExitPlcAddress.Visible = false;
+
+                // 循环次数相关控件也隐藏（面板已集成）
+                rbFixedValue.Visible = false;
+                rbVariable.Visible = false;
+                rbPlc.Visible = false;
+                btnSelectVarCount.Visible = false;
+                cboPlcModule.Visible = false;
+                cboPlcAddress.Visible = false;
+
+                // 确保文本框始终可见
+                txtLoopCount.Visible = true;
+                txtExitCondition.Visible = true;
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "更新控件状态失败");
+            }
         }
 
         #endregion
 
         #region 事件处理器
-
-        /// <summary>
-        /// 启用提前退出复选框状态改变事件
-        /// </summary>
-        private void ChkEnableEarlyExit_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (!_isInitializing)
-                {
-                    _hasUnsavedChanges = true;
-                    UpdateEarlyExitControls();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "切换提前退出状态失败");
-            }
-        }
-
-        /// <summary>
-        /// 选择循环次数变量
-        /// </summary>
-        private void BtnSelectVarCount_Click(object sender, EventArgs e)
-        {
-            SelectVariableForTextBox(txtLoopCount);
-        }
-
-        /// <summary>
-        /// 选择退出条件变量
-        /// </summary>
-        private void BtnSelectVarForExit_Click(object sender, EventArgs e)
-        {
-            SelectVariableForTextBox(txtExitCondition);
-        }
-
-        /// <summary>
-        /// 表达式助手按钮点击事件
-        /// </summary>
-        private void BtnExpressionHelper_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                var expressionValidator = Program.ServiceProvider?.GetService<ExpressionEngine>();
-                using var dialog = new ExpressionBuilderDialog(_globalVariable, expressionValidator);
-
-                if (dialog.ShowDialog(this) == DialogResult.OK)
-                {
-                    txtExitCondition.Text = dialog.GeneratedExpression;
-                    _hasUnsavedChanges = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "打开表达式助手失败");
-                MessageHelper.MessageOK(this, $"打开助手失败：{ex.Message}", TType.Error);
-            }
-        }
-
-        /// <summary>
-        /// 为文本框选择变量
-        /// </summary>
-        private void SelectVariableForTextBox(Sunny.UI.UITextBox textBox)
-        {
-            try
-            {
-                var globalVariableManager = _globalVariable ?? Program.ServiceProvider?.GetService<GlobalVariableManager>();
-                if (globalVariableManager == null)
-                {
-                    MessageHelper.MessageOK("全局变量管理器不可用", TType.Warn);
-                    return;
-                }
-
-                var variables = globalVariableManager.GetAllVariables();
-                if (variables.Count == 0)
-                {
-                    MessageHelper.MessageOK("当前没有可用的变量", TType.Info);
-                    return;
-                }
-
-                // 创建变量选择对话框
-                var dialog = new VariableSelectionDialog(globalVariableManager);
-                if (dialog.ShowDialog(this) == DialogResult.OK)
-                {
-                    string selectedVar = dialog.SelectedVariable.Name;
-                    if (!string.IsNullOrEmpty(selectedVar))
-                    {
-                        // 在当前光标位置插入变量引用
-                        int selectionStart = textBox.SelectionStart;
-                        string currentText = textBox.Text ?? "";
-                        string varReference = $"{{{selectedVar}}}";
-
-                        textBox.Text = currentText.Insert(selectionStart, varReference);
-                        textBox.SelectionStart = selectionStart + varReference.Length;
-                        textBox.Focus();
-
-                        _hasUnsavedChanges = true;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "选择变量失败");
-                MessageHelper.MessageOK($"选择变量失败：{ex.Message}", TType.Error);
-            }
-        }
-
-        #endregion
-
-        #region 变量选择
-
-        /// <summary>
-        /// 配置子步骤按钮点击事件
-        /// </summary>
-        private void BtnConfigChildSteps_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // 保存当前界面数据到参数对象
-                SaveFormToParameter();
-
-                var configForm = new Form_ChildStepsConfig(Parameter.ChildSteps);
-                if (configForm.ShowDialog(this) == DialogResult.OK)
-                {
-                    // 直接使用Form返回的结果更新Parameter
-                    Parameter.ChildSteps = configForm._childSteps;
-
-                    // 更新子步骤数量显示
-                    int childStepCount = Parameter.ChildSteps?.Count ?? 0;
-                    lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
-
-                    _hasUnsavedChanges = true;
-
-                    Logger?.LogDebug("子步骤配置完成，数量: {Count}", childStepCount);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "配置子步骤失败");
-                MessageHelper.MessageOK($"配置子步骤失败：{ex.Message}", TType.Error);
-            }
-        }
-
-        #endregion
-
-        #region 按钮事件
 
         /// <summary>
         /// 保存按钮点击事件
@@ -394,66 +331,20 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // 验证输入
-                if (!ValidateInput())
+                if (!ValidateInputs())
                 {
                     return;
                 }
 
-                // 保存界面数据到参数对象
                 SaveFormToParameter();
-
-                // 获取当前步骤
-                var currentStep = GetCurrentStepSafely();
-                if (currentStep == null)
-                {
-                    MessageHelper.MessageOK("无法获取当前步骤信息", TType.Error);
-                    return;
-                }
-
-                // ⭐ 诊断日志1: 保存前的Parameter状态
-                Logger?.LogDebug("保存前 Parameter.ChildSteps 数量: {Count}",
-                    Parameter.ChildSteps?.Count ?? 0);
-
-                // ⭐ 诊断日志2: 检查子步骤参数
-                if (Parameter.ChildSteps != null)
-                {
-                    foreach (var child in Parameter.ChildSteps)
-                    {
-                        var paramLength = child.StepParameter?.ToString()?.Length ?? 0;
-                        Logger?.LogDebug("  子步骤: {StepName}, 参数长度: {Length}",
-                            child.StepName, paramLength);
-                    }
-                }
-
-                // 序列化参数到JSON
-                var settings = new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    DefaultValueHandling = DefaultValueHandling.Include,
-                    Formatting = Formatting.None
-                };
-
-                // 序列化参数对象
-                var json = JsonConvert.SerializeObject(Parameter, Formatting.None, settings);
-
-                // 诊断日志3: 序列化后的JSON
-                Logger?.LogDebug("序列化后的JSON: {Json}", json);
-
-                // 保存到步骤
-                currentStep.StepParameter = json;
+                SaveParameters();
 
                 _hasUnsavedChanges = false;
-
-                Debug.WriteLine("========== 循环配置保存成功 ==========");
-                MessageHelper.MessageOK("保存成功！循环配置将在主界面保存时写入配置文件。", TType.Success);
-
-                DialogResult = DialogResult.OK;
-                Close();
+                Logger?.LogInformation("循环配置保存成功");
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "保存循环参数失败");
+                Logger?.LogError(ex, "保存循环配置失败");
                 MessageHelper.MessageOK($"保存失败：{ex.Message}", TType.Error);
             }
         }
@@ -463,6 +354,20 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void BtnCancel_Click(object sender, EventArgs e)
         {
+            if (_hasUnsavedChanges)
+            {
+                var result = MessageBox.Show(
+                    "有未保存的更改，确定要放弃吗？",
+                    "确认",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
@@ -474,196 +379,123 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                string helpText = @"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                var helpText = @"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📖 循环配置 - 使用说明
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 基本概念
-   循环用于重复执行一组步骤指定的次数
-
-🔹 配置说明
-   • 循环次数: 设置循环执行的次数
-   • 计数器变量: 在子步骤中可使用此变量获取当前循环索引
-   • 循环体步骤: 配置每次循环要执行的步骤
-   • ⭐ 提前退出: 满足条件时立即退出循环
-
-🔹 循环次数设置
-   • 固定值: 如 10, 100
-   • 变量引用: 使用 {变量名} 引用变量值
-   • 示例: {MaxRetryCount}
+🔹 循环次数配置
+   点击输入框会弹出智能输入面板，支持：
+   • 固定数值：直接输入数字，如 10
+   • 变量引用：选择变量，如 {MaxCount}
+   • PLC点位：选择PLC地址读取值
+   • 表达式：如 {总数} / 2
 
 🔹 计数器变量
-   • 默认名称: LoopIndex
-   • 索引范围: 从 1 开始到循环次数
-   • 可在子步骤中使用 {LoopIndex} 引用当前索引
-   • 可禁用计数器变量以提升性能
+   • 启用后，每次循环会自动更新计数器
+   • 可在循环体内使用 {LoopIndex} 获取当前次数
+   • 计数从 0 开始
 
-🔹 ⭐ 提前退出 (新功能)
-   • 功能: 满足条件时立即退出循环
-   • 条件格式: {变量名} 运算符 值
-   • 运算符: ==, !=, >, <, >=, <=, AND, OR
-   • 示例1: {压力值} >= 6.0
-   • 示例2: {温度} > 80 AND {压力值} < 5
-   • 场景1: 压力测试达标后立即退出
-   • 场景2: 设备连接成功后停止重试
-   • 场景3: 温度或压力超标时紧急停止
+🔹 提前退出条件
+   点击输入框会弹出智能输入面板，支持：
+   • 条件表达式：{压力值} >= 6.0
+   • 复合条件：{压力} > 5 AND {温度} < 80
+   • PLC条件：{模块.地址} == true
 
-🔹 使用场景
-   • 重复执行测试
-   • 批量处理数据
-   • 失败重试机制（配合提前退出）
-   • 数据采集
-   • 条件满足时提前终止
+🔹 快捷键
+   • F2 或 Ctrl+Space：打开输入面板
+   • Enter：提交并关闭面板
+   • Escape：取消并关闭面板
 
-⚠️ 注意事项
-   1. 循环次数必须大于 0
-   2. 避免设置过大的循环次数造成长时间执行
-   3. 计数器变量名不能与现有变量重名
-   4. 提前退出条件会在每次循环迭代前检查
-   5. 循环内部可使用 Break 和 Continue 控制步骤
-   6. 确保循环体内的步骤配置正确
-   7. 退出条件中的变量必须在循环体中被更新
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-💡 提前退出示例
-   场景: 压力测试，达到6.0 MPa即停止
-   配置:
-     循环次数: 100
-     ✓ 启用提前退出
-     退出条件: {压力值} >= 6.0
-   
-   循环体步骤:
-     1. 读取PLC → {压力值}
-     2. 延时 100ms
-   
-   效果: 第15次达标后立即退出，节省85%时间
+💡 提示
+   • 变量使用 {变量名} 格式引用
+   • 支持的运算符：==, !=, >, <, >=, <=
+   • 支持逻辑运算：AND, OR, NOT
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
 
-                MessageHelper.MessageOK(this, helpText, TType.Info);
+                MessageHelper.MessageOK(helpText, TType.Info);
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "显示帮助失败");
+                Logger?.LogError(ex, "显示帮助信息失败");
             }
         }
 
-        #endregion
-
-        #region 窗体事件
+        /// <summary>
+        /// 配置循环体步骤按钮点击事件
+        /// </summary>
+        private void BtnConfigChildSteps_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // TODO: 打开循环体步骤配置界面
+                MessageHelper.MessageOK("循环体步骤配置功能待实现", TType.Info);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "配置循环体步骤失败");
+                MessageHelper.MessageOK($"配置失败：{ex.Message}", TType.Error);
+            }
+        }
 
         /// <summary>
         /// 窗体关闭事件
         /// </summary>
         private void Form_Loop_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (this.DialogResult == DialogResult.OK) return;
-
-            if (_hasUnsavedChanges)
+            if (_hasUnsavedChanges && this.DialogResult != DialogResult.OK)
             {
-                var result = MessageHelper.MessageYes(this, "存在未保存的更改，确定要关闭吗？");
-                if (result != DialogResult.OK)
+                var result = MessageBox.Show(
+                    "有未保存的更改，确定要关闭吗？",
+                    "确认关闭",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes)
                 {
                     e.Cancel = true;
                 }
             }
+
+            // ⭐ 关闭时清理表达式输入面板
+            ExpressionInputPanel.CloseActivePanel();
         }
 
         #endregion
 
-
-        #region 基类方法重写
+        #region 验证和保存
 
         /// <summary>
-        /// 验证输入数据的有效性
+        /// 验证输入
         /// </summary>
-        protected override bool ValidateInput()
+        private bool ValidateInputs()
         {
             try
             {
                 // 验证循环次数
                 if (string.IsNullOrWhiteSpace(txtLoopCount.Text))
                 {
-                    MessageHelper.MessageOK(this, "请输入循环次数！", TType.Warn);
+                    MessageHelper.MessageOK("请输入循环次数！", TType.Warn);
                     txtLoopCount.Focus();
                     return false;
                 }
 
-                // 验证计数器变量名(如果启用)
+                // 验证计数器变量名
                 if (chkEnableCounter.Checked && string.IsNullOrWhiteSpace(txtCounterVariable.Text))
                 {
-                    MessageHelper.MessageOK("启用计数器时必须指定变量名！", TType.Warn);
+                    MessageHelper.MessageOK("启用计数器时必须指定计数器变量名！", TType.Warn);
                     txtCounterVariable.Focus();
                     return false;
                 }
 
-                // ⭐ 验证提前退出条件
-                if (chkEnableEarlyExit.Checked)
+                // 验证退出条件
+                if (chkEnableEarlyExit.Checked && string.IsNullOrWhiteSpace(txtExitCondition.Text))
                 {
-                    if (string.IsNullOrWhiteSpace(txtExitCondition.Text))
-                    {
-                        MessageHelper.MessageOK(this,
-                         "启用提前退出时必须输入退出条件！\n\n" +
-                         "支持功能:\n" +
-                         "• 基本比较: {压力值} >= 6.0\n" +
-                         "• 数学运算: {A} * 2 + {B} > 10\n" +
-                         "• 逻辑运算: {A} > 5 AND {B} < 10\n" +
-                         "• 函数调用: ABS({偏差}) < 0.1\n\n" +
-                         "点击帮助按钮查看更多示例",
-                         TType.Warn);
-                        txtExitCondition.Focus();
-                        return false;
-                    }
-
-                    // 简单验证：检查是否包含变量引用
-                    string condition = txtExitCondition.Text.Trim();
-                    if (!condition.Contains("{") && !condition.Contains("}"))
-                    {
-                        var result = MessageHelper.MessageYes(this,
-                            "退出条件中未检测到变量引用，确定继续？\n" +
-                            "建议使用格式: {变量名} 运算符 值\n" +
-                            "例如: {压力值} >= 6.0",
-                            TType.Warn);
-                        if (result != DialogResult.OK)
-                        {
-                            txtExitCondition.Focus();
-                            return false;
-                        }
-                    }
-                }
-
-                // 验证子步骤
-                if (Parameter.ChildSteps == null || Parameter.ChildSteps.Count == 0)
-                {
-                    var result = MessageHelper.MessageYes(this,
-                        "尚未配置循环体步骤,是否继续保存?\n(建议至少配置一个步骤)",
-                        TType.Warn);
-
-                    if (result != DialogResult.OK)
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    // 检查子步骤是否都有参数
-                    int emptyParamCount = 0;
-                    foreach (var child in Parameter.ChildSteps)
-                    {
-                        if (string.IsNullOrEmpty(child.StepParameter?.ToString()))
-                        {
-                            emptyParamCount++;
-                        }
-                    }
-
-                    if (emptyParamCount > 0)
-                    {
-                        Logger?.LogWarning("发现 {Count} 个子步骤的参数为空", emptyParamCount);
-
-                        // 可选: 提示用户但允许继续
-                        MessageHelper.MessageOK(this,
-                            $"警告: 有 {emptyParamCount} 个子步骤尚未配置参数",
-                            TType.Warn);
-                    }
+                    MessageHelper.MessageOK("启用提前退出时必须输入退出条件！", TType.Warn);
+                    txtExitCondition.Focus();
+                    return false;
                 }
 
                 return true;
@@ -671,6 +503,7 @@ namespace MainUI.LogicalConfiguration.Forms
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "验证输入失败");
+                MessageHelper.MessageOK($"验证失败：{ex.Message}", TType.Error);
                 return false;
             }
         }
@@ -696,7 +529,7 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 加载参数到界面
+        /// 从参数对象加载到窗体控件
         /// </summary>
         protected override void LoadParameterToForm()
         {
@@ -704,30 +537,35 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 _isInitializing = true;
 
-                txtLoopCount.Text = Parameter.LoopCountExpression ?? "10";
-                txtCounterVariable.Text = Parameter.CounterVariableName ?? "LoopIndex";
-                chkEnableCounter.Checked = Parameter.EnableCounter;
-                txtDescription.Text = Parameter.Description ?? "";
-                chkEnabled.Checked = true;
+                if (Parameter == null) return;
 
-                // ⭐ 加载提前退出配置
+                // 加载基本信息
+                txtDescription.Text = Parameter.Description ?? "";
+                chkEnabled.Checked = true; // 默认启用
+
+                // ⭐ 简化：直接加载循环次数表达式
+                txtLoopCount.Text = Parameter.LoopCountExpression ?? "10";
+
+                // 加载计数器配置
+                chkEnableCounter.Checked = Parameter.EnableCounter;
+                txtCounterVariable.Text = Parameter.CounterVariableName ?? "LoopIndex";
+
+                // ⭐ 简化：直接加载退出条件表达式
                 chkEnableEarlyExit.Checked = Parameter.EnableEarlyExit;
                 txtExitCondition.Text = Parameter.ExitConditionExpression ?? "";
 
-                // 更新子步骤计数
+                // 更新子步骤数量显示
                 int childStepCount = Parameter.ChildSteps?.Count ?? 0;
                 lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
 
-                Debug.WriteLine("LoadParameterToForm - 子步骤数量: {Count}", childStepCount);
+                // 更新控件状态
+                UpdateControlStates();
 
-                UpdateCounterControls();
-                UpdateEarlyExitControls();
-
-                _hasUnsavedChanges = false;
+                Logger?.LogDebug("参数加载完成");
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "加载参数到界面失败");
+                Logger?.LogError(ex, "加载参数到窗体失败");
             }
             finally
             {
@@ -736,42 +574,38 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 保存界面数据到参数对象
+        /// 从窗体控件保存到参数对象
         /// </summary>
         protected override void SaveFormToParameter()
         {
             try
             {
-                // 只更新界面控件对应的属性
-                Parameter.LoopCountExpression = txtLoopCount.Text?.Trim() ?? "10";
-                Parameter.CounterVariableName = txtCounterVariable.Text?.Trim() ?? "LoopIndex";
+                if (Parameter == null) return;
+
+                // 保存基本信息
+                Parameter.Description = txtDescription.Text;
+
+                // ⭐ 简化：直接保存循环次数表达式
+                Parameter.LoopCountExpression = txtLoopCount.Text;
+
+                // 保存计数器配置
                 Parameter.EnableCounter = chkEnableCounter.Checked;
-                Parameter.Description = txtDescription.Text?.Trim() ?? "";
+                Parameter.CounterVariableName = txtCounterVariable.Text;
 
-                // ⭐ 保存提前退出配置
+                // ⭐ 简化：直接保存退出条件表达式
                 Parameter.EnableEarlyExit = chkEnableEarlyExit.Checked;
-                Parameter.ExitConditionExpression = txtExitCondition.Text?.Trim() ?? "";
+                Parameter.ExitConditionExpression = txtExitCondition.Text;
 
-                // 添加日志记录子步骤信息
-                Logger?.LogDebug("SaveFormToParameter - 子步骤数量: {Count}",
-                    Parameter.ChildSteps?.Count ?? 0);
-
-                if (Parameter.ChildSteps != null)
-                {
-                    foreach (var child in Parameter.ChildSteps)
-                    {
-                        var paramLength = child.StepParameter?.ToString()?.Length ?? 0;
-                        Logger?.LogDebug("  子步骤: {StepName}, 参数长度: {Length}",
-                            child.StepName, paramLength);
-                    }
-                }
+                Logger?.LogDebug("参数保存完成: LoopCount={LoopCount}, ExitCondition={ExitCondition}",
+                    Parameter.LoopCountExpression, Parameter.ExitConditionExpression);
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "保存界面数据到参数对象失败");
+                Logger?.LogError(ex, "保存参数失败");
                 throw;
             }
         }
+
         #endregion
     }
 }
