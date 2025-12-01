@@ -410,6 +410,7 @@ namespace MainUI.Procedure.Controls
                 "写入PLC" or "WritePLC" => DisplayWritePLCParameters(stepParameter, yPosition),
                 "等待稳定" or "WaitForStable" => DisplayWaitForStableParameters(stepParameter, yPosition),
                 "实时监控提示" => DisplayRealtimeMonitorPromptParameters(stepParameter, yPosition),
+                "循环工具" => DisplayLoopParameters(stepParameter, yPosition),
                 _ => DisplayGenericParameters(stepParameter, yPosition)
             };
         }
@@ -1299,6 +1300,145 @@ namespace MainUI.Procedure.Controls
             catch (Exception ex)
             {
                 Debug.WriteLine($"DisplayRealtimeMonitorPromptParameters 错误: {ex}");
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 循环参数展示 - 表格式
+        /// </summary>
+        private int DisplayLoopParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                // 尝试转换为强类型参数
+                var param = ConvertToParameter<Parameter_Loop>(stepParameter);
+
+                if (param == null)
+                {
+                    // 如果转换失败,尝试JSON解析
+                    var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                    var json = JObject.Parse(jsonStr);
+
+                    yPosition = AddSubSectionTitle("循环配置", yPosition);
+
+                    // 定义列宽
+                    int col1Width = 120;
+                    int col2Width = detailsPanel.Width - col1Width - 10;
+
+                    // 表头
+                    AddTableCell("配置项", yPosition, 0, col1Width, true);
+                    AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                    yPosition += 25;
+
+                    // 循环次数表达式
+                    AddTableCell("循环次数", yPosition, 0, col1Width, false);
+                    AddTableCell(json["LoopCountExpression"]?.ToString() ?? "10", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    // 计数器变量
+                    bool enableCounter = json["EnableCounter"]?.ToObject<bool>() ?? true;
+                    if (enableCounter)
+                    {
+                        AddTableCell("计数器变量", yPosition, 0, col1Width, false);
+                        AddTableCell(json["CounterVariableName"]?.ToString() ?? "LoopIndex", yPosition, col1Width, col2Width, false);
+                        yPosition += 22;
+                    }
+
+                    // 子步骤数量
+                    var childSteps = json["ChildSteps"] as JArray;
+                    int childCount = childSteps?.Count ?? 0;
+                    AddTableCell("子步骤数量", yPosition, 0, col1Width, false);
+                    AddTableCell($"{childCount} 个", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    // 提前退出条件
+                    bool enableEarlyExit = json["EnableEarlyExit"]?.ToObject<bool>() ?? false;
+                    if (enableEarlyExit)
+                    {
+                        yPosition = AddSeparatorLine(yPosition);
+                        yPosition = AddSubSectionTitle("提前退出配置", yPosition);
+
+                        string exitCondition = json["ExitConditionExpression"]?.ToString() ?? "";
+                        AddTableCell("退出条件", yPosition, 0, col1Width, false);
+                        AddTableCell(exitCondition, yPosition, col1Width, col2Width, false, StatusColors.Skipped);
+                        yPosition += 22;
+                    }
+
+                    // 描述信息
+                    string description = json["Description"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        yPosition = AddSeparatorLine(yPosition);
+                        //yPosition = AddTextContent("描述", description, yPosition);
+                    }
+
+                    return yPosition;
+                }
+                else
+                {
+                    // 使用强类型参数显示
+                    yPosition = AddSubSectionTitle("循环配置", yPosition);
+
+                    int col1Width = 120;
+                    int col2Width = detailsPanel.Width - col1Width - 10;
+
+                    // 表头
+                    AddTableCell("配置项", yPosition, 0, col1Width, true);
+                    AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                    yPosition += 25;
+
+                    // 循环次数表达式
+                    AddTableCell("循环次数", yPosition, 0, col1Width, false);
+                    AddTableCell(param.LoopCountExpression ?? "10", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    // 计数器变量
+                    if (param.EnableCounter)
+                    {
+                        AddTableCell("计数器变量", yPosition, 0, col1Width, false);
+                        AddTableCell(param.CounterVariableName ?? "LoopIndex", yPosition, col1Width, col2Width, false);
+                        yPosition += 22;
+                    }
+
+                    // 子步骤数量
+                    int childCount = param.ChildSteps?.Count ?? 0;
+                    AddTableCell("子步骤数量", yPosition, 0, col1Width, false);
+                    AddTableCell($"{childCount} 个", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    // 提前退出条件
+                    if (param.EnableEarlyExit)
+                    {
+                        yPosition = AddSeparatorLine(yPosition);
+                        yPosition = AddSubSectionTitle("提前退出配置", yPosition);
+
+                        AddTableCell("退出条件", yPosition, 0, col1Width, false);
+                        AddTableCell(param.ExitConditionExpression ?? "", yPosition, col1Width, col2Width, false, StatusColors.Skipped);
+                        yPosition += 22;
+
+                        // 退出条件说明
+                        if (!string.IsNullOrEmpty(param.ExitConditionDescription))
+                        {
+                            AddTableCell("条件说明", yPosition, 0, col1Width, false);
+                            AddTableCell(param.ExitConditionDescription, yPosition, col1Width, col2Width, false);
+                            yPosition += 22;
+                        }
+                    }
+
+                    // 描述信息
+                    if (!string.IsNullOrEmpty(param.Description))
+                    {
+                        yPosition = AddSeparatorLine(yPosition);
+                        //yPosition = AddTextContent("描述", param.Description, yPosition);
+                    }
+
+                    return yPosition;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DisplayLoopParameters 错误: {ex}");
                 return DisplayGenericParameters(stepParameter, yPosition);
             }
         }

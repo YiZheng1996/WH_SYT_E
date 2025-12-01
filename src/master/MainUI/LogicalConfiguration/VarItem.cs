@@ -56,7 +56,7 @@ namespace MainUI.LogicalConfiguration
             // 记录历史
             ValueHistory.Add(new VariableHistoryItem
             {
-                OldValue = oldValue.ToString(),
+                OldValue = oldValue?.ToString(),
                 NewValue = VarValue.ToString(),
                 Timestamp = LastUpdated,
                 Source = source

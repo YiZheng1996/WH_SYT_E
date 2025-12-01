@@ -434,7 +434,7 @@ namespace MainUI.LogicalConfiguration
                             StepName = node.Text,
                             Status = 0,
                             StepNum = _processGridControl.StepCount + 1,
-                            StepParameter = 0
+                            StepParameter = null
                         });
                     }
                 }

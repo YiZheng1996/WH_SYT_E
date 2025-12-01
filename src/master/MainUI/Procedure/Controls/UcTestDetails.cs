@@ -1,6 +1,5 @@
 ﻿using MainUI.LogicalConfiguration;
 using Newtonsoft.Json.Linq;
-using System.Net.NetworkInformation;
 
 namespace MainUI.Procedure.Controls
 {

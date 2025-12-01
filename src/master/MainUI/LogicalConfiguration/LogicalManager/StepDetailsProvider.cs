@@ -40,8 +40,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "延时等待" => GetDelayPreview(step),
                     "等待稳定" => GetWaitForStablePreview(step),
                     "条件判断" => GetConditionPreview(step),
-                    "循环开始" => GetLoopStartPreview(step),
-                    "循环结束" => "结束循环",
+                    "循环工具" => GetLoopStartPreview(step),
                     "数据读取" => GetDataReadPreview(step),
                     "数据计算" => GetDataCalculationPreview(step),
                     "消息通知" => GetMessageNotificationPreview(step),
@@ -211,9 +210,37 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// </summary>
         private string GetLoopStartPreview(ChildModel step)
         {
-            // 根据实际的 Parameter_LoopControl 结构调整
-            // 这里假设有一个循环次数的参数
-            return "开始循环";
+            if (!TryGetParameter<Parameter_Loop>(step.StepParameter, out var param))
+                return "未配置";
+
+            // 获取循环次数表达式
+            var loopCount = param.LoopCountExpression ?? "10";
+
+            // 获取子步骤数量
+            var childCount = param.ChildSteps?.Count ?? 0;
+
+            // 构建预览文本
+            var preview = $"循环 {loopCount} 次";
+
+            // 添加子步骤计数
+            if (childCount > 0)
+            {
+                preview += $", 包含 {childCount} 个步骤";
+            }
+
+            // 添加计数器信息
+            if (param.EnableCounter && !string.IsNullOrWhiteSpace(param.CounterVariableName))
+            {
+                preview += $", 计数器: @{param.CounterVariableName}";
+            }
+
+            // 添加提前退出条件
+            if (param.EnableEarlyExit && !string.IsNullOrWhiteSpace(param.ExitConditionExpression))
+            {
+                preview += $" [退出: {TruncateText(param.ExitConditionExpression, 30)}]";
+            }
+
+            return preview;
         }
 
         /// <summary>

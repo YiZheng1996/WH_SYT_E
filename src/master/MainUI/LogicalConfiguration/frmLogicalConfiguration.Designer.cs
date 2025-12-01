@@ -63,12 +63,10 @@
             btnClose = new UISymbolButton();
             btnExecute = new UISymbolButton();
             btnSave = new UISymbolButton();
-            uiTreeView1 = new UITreeView();
             ((System.ComponentModel.ISupportInitialize)splitContainerMain).BeginInit();
             splitContainerMain.Panel1.SuspendLayout();
             splitContainerMain.Panel2.SuspendLayout();
             splitContainerMain.SuspendLayout();
-            panelToolBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainerRight).BeginInit();
             splitContainerRight.Panel1.SuspendLayout();
             splitContainerRight.Panel2.SuspendLayout();
@@ -110,7 +108,6 @@
             // panelToolBox
             // 
             panelToolBox.BackColor = Color.FromArgb(248, 249, 250);
-            panelToolBox.Controls.Add(uiTreeView1);
             panelToolBox.Dock = DockStyle.Fill;
             panelToolBox.FillColor = Color.FromArgb(248, 249, 250);
             panelToolBox.FillColor2 = Color.FromArgb(248, 249, 250);
@@ -710,21 +707,6 @@
             btnSave.Text = "保存配置";
             btnSave.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             // 
-            // uiTreeView1
-            // 
-            uiTreeView1.FillColor = Color.White;
-            uiTreeView1.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiTreeView1.Location = new Point(12, 217);
-            uiTreeView1.Margin = new Padding(4, 5, 4, 5);
-            uiTreeView1.MinimumSize = new Size(1, 1);
-            uiTreeView1.Name = "uiTreeView1";
-            uiTreeView1.ScrollBarStyleInherited = false;
-            uiTreeView1.ShowText = false;
-            uiTreeView1.Size = new Size(216, 433);
-            uiTreeView1.TabIndex = 0;
-            uiTreeView1.Text = "uiTreeView1";
-            uiTreeView1.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
             // FrmLogicalConfiguration
             // 
             AutoScaleMode = AutoScaleMode.None;
@@ -748,7 +730,6 @@
             splitContainerMain.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainerMain).EndInit();
             splitContainerMain.ResumeLayout(false);
-            panelToolBox.ResumeLayout(false);
             splitContainerRight.Panel1.ResumeLayout(false);
             splitContainerRight.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainerRight).EndInit();
@@ -801,6 +782,5 @@
         private UISymbolButton BtnSystemParams;
         private UISymbolButton BtnVariableMonitor;
         private UISymbolButton BtnPointDefine;
-        private UITreeView uiTreeView1;
     }
 }
