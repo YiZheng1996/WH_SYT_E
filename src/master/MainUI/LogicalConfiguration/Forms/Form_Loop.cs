@@ -438,19 +438,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void Form_Loop_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (_hasUnsavedChanges && this.DialogResult != DialogResult.OK)
-            {
-                var result = MessageBox.Show(
-                    "有未保存的更改，确定要关闭吗？",
-                    "确认关闭",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
-
-                if (result != DialogResult.Yes)
-                {
-                    e.Cancel = true;
-                }
-            }
+            
 
             // 关闭时清理表达式输入面板
             ExpressionInputPanel.CloseActivePanel();

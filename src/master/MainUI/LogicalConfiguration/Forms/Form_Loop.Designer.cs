@@ -166,6 +166,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // lblChildStepsCount
             // 
+            lblChildStepsCount.BackColor = Color.Transparent;
             lblChildStepsCount.Font = new Font("微软雅黑", 10F);
             lblChildStepsCount.ForeColor = Color.FromArgb(48, 48, 48);
             lblChildStepsCount.Location = new Point(18, 30);
@@ -211,13 +212,14 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // lblExitConditionHint
             // 
+            lblExitConditionHint.BackColor = Color.Transparent;
             lblExitConditionHint.Font = new Font("微软雅黑", 9F);
             lblExitConditionHint.ForeColor = Color.Gray;
             lblExitConditionHint.Location = new Point(124, 106);
             lblExitConditionHint.Name = "lblExitConditionHint";
             lblExitConditionHint.Size = new Size(586, 35);
             lblExitConditionHint.TabIndex = 9;
-            lblExitConditionHint.Text = "💡 点击输入框打开智能面板，支持变量、PLC、表达式等多种输入方式";
+            lblExitConditionHint.Text = "点击输入框打开智能面板，支持变量、PLC、表达式等多种输入方式";
             // 
             // txtExitCondition
             // 
@@ -237,6 +239,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // lblExitCondition
             // 
+            lblExitCondition.BackColor = Color.Transparent;
             lblExitCondition.Font = new Font("微软雅黑", 10F);
             lblExitCondition.ForeColor = Color.FromArgb(48, 48, 48);
             lblExitCondition.Location = new Point(18, 70);
@@ -248,6 +251,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // chkEnableEarlyExit
             // 
+            chkEnableEarlyExit.BackColor = Color.Transparent;
             chkEnableEarlyExit.CheckBoxColor = Color.FromArgb(65, 100, 204);
             chkEnableEarlyExit.CheckBoxSize = 18;
             chkEnableEarlyExit.Font = new Font("微软雅黑", 10F);
@@ -296,6 +300,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // chkEnableCounter
             // 
+            chkEnableCounter.BackColor = Color.Transparent;
             chkEnableCounter.CheckBoxColor = Color.FromArgb(65, 100, 204);
             chkEnableCounter.CheckBoxSize = 18;
             chkEnableCounter.Checked = true;
@@ -327,6 +332,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // lblCounterVariable
             // 
+            lblCounterVariable.BackColor = Color.Transparent;
             lblCounterVariable.Font = new Font("微软雅黑", 10F);
             lblCounterVariable.ForeColor = Color.FromArgb(48, 48, 48);
             lblCounterVariable.Location = new Point(160, 80);
@@ -357,6 +363,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // lblLoopCount
             // 
+            lblLoopCount.BackColor = Color.Transparent;
             lblLoopCount.Font = new Font("微软雅黑", 10F);
             lblLoopCount.ForeColor = Color.FromArgb(48, 48, 48);
             lblLoopCount.Location = new Point(18, 40);

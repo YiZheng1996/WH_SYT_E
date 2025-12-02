@@ -2,39 +2,349 @@
 {
     partial class ExpressionInputPanel
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
+                components?.Dispose();
                 _validationTimer?.Dispose();
-                components.Dispose();
             }
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
+        #region Windows 窗体设计器生成的代码
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "ExpressionInputPanel2";
+            components = new System.ComponentModel.Container();
+            _mainPanel = new Panel();
+            _contentPanel = new Panel();
+            _keyboardPanel = new Panel();
+            _keyboardGrid = new TableLayoutPanel();
+            _sourcePanel = new Panel();
+            _btnConstant = new Button();
+            _btnFunction = new Button();
+            _btnSystem = new Button();
+            _btnExpression = new Button();
+            _btnVariable = new Button();
+            _btnPLC = new Button();
+            _topPanel = new Panel();
+            _statusPanel = new Panel();
+            _previewLabel = new Label();
+            _validationLabel = new Label();
+            _expressionTextBox = new UITextBox();
+            _validationTimer = new System.Windows.Forms.Timer(components);
+            _mainPanel.SuspendLayout();
+            _contentPanel.SuspendLayout();
+            _keyboardPanel.SuspendLayout();
+            _sourcePanel.SuspendLayout();
+            _topPanel.SuspendLayout();
+            _statusPanel.SuspendLayout();
+            SuspendLayout();
+            // 
+            // _mainPanel
+            // 
+            _mainPanel.BackColor = Color.FromArgb(248, 249, 250);
+            _mainPanel.Controls.Add(_contentPanel);
+            _mainPanel.Controls.Add(_topPanel);
+            _mainPanel.Dock = DockStyle.Fill;
+            _mainPanel.Location = new Point(1, 1);
+            _mainPanel.Name = "_mainPanel";
+            _mainPanel.Padding = new Padding(8);
+            _mainPanel.Size = new Size(718, 306);
+            _mainPanel.TabIndex = 0;
+            // 
+            // _contentPanel
+            // 
+            _contentPanel.Controls.Add(_keyboardPanel);
+            _contentPanel.Controls.Add(_sourcePanel);
+            _contentPanel.Dock = DockStyle.Fill;
+            _contentPanel.Location = new Point(8, 73);
+            _contentPanel.Name = "_contentPanel";
+            _contentPanel.Padding = new Padding(0, 8, 0, 0);
+            _contentPanel.Size = new Size(702, 225);
+            _contentPanel.TabIndex = 1;
+            // 
+            // _keyboardPanel
+            // 
+            _keyboardPanel.Controls.Add(_keyboardGrid);
+            _keyboardPanel.Dock = DockStyle.Fill;
+            _keyboardPanel.Location = new Point(140, 8);
+            _keyboardPanel.Name = "_keyboardPanel";
+            _keyboardPanel.Size = new Size(562, 217);
+            _keyboardPanel.TabIndex = 1;
+            // 
+            // _keyboardGrid
+            // 
+            _keyboardGrid.ColumnCount = 10;
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+            _keyboardGrid.Dock = DockStyle.Fill;
+            _keyboardGrid.Location = new Point(0, 0);
+            _keyboardGrid.Name = "_keyboardGrid";
+            _keyboardGrid.Padding = new Padding(4);
+            _keyboardGrid.RowCount = 5;
+            _keyboardGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            _keyboardGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            _keyboardGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            _keyboardGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            _keyboardGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            _keyboardGrid.Size = new Size(562, 217);
+            _keyboardGrid.TabIndex = 0;
+            // 
+            // _sourcePanel
+            // 
+            _sourcePanel.Controls.Add(_btnConstant);
+            _sourcePanel.Controls.Add(_btnFunction);
+            _sourcePanel.Controls.Add(_btnSystem);
+            _sourcePanel.Controls.Add(_btnExpression);
+            _sourcePanel.Controls.Add(_btnVariable);
+            _sourcePanel.Controls.Add(_btnPLC);
+            _sourcePanel.Dock = DockStyle.Left;
+            _sourcePanel.Location = new Point(0, 8);
+            _sourcePanel.Name = "_sourcePanel";
+            _sourcePanel.Padding = new Padding(0, 0, 8, 0);
+            _sourcePanel.Size = new Size(140, 217);
+            _sourcePanel.TabIndex = 0;
+            // 
+            // _btnConstant
+            // 
+            _btnConstant.BackColor = Color.FromArgb(240, 240, 240);
+            _btnConstant.Cursor = Cursors.Hand;
+            _btnConstant.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            _btnConstant.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnConstant.FlatStyle = FlatStyle.Flat;
+            _btnConstant.Font = new Font("微软雅黑", 9F);
+            _btnConstant.Location = new Point(0, 180);
+            _btnConstant.Name = "_btnConstant";
+            _btnConstant.Padding = new Padding(8, 0, 0, 0);
+            _btnConstant.Size = new Size(130, 32);
+            _btnConstant.TabIndex = 5;
+            _btnConstant.Text = "常量输入 >>";
+            _btnConstant.TextAlign = ContentAlignment.MiddleLeft;
+            _btnConstant.UseVisualStyleBackColor = false;
+            _btnConstant.Click += BtnConstant_Click;
+            _btnConstant.MouseEnter += SourceButton_MouseEnter;
+            _btnConstant.MouseLeave += SourceButton_MouseLeave;
+            // 
+            // _btnFunction
+            // 
+            _btnFunction.BackColor = Color.FromArgb(240, 240, 240);
+            _btnFunction.Cursor = Cursors.Hand;
+            _btnFunction.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            _btnFunction.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnFunction.FlatStyle = FlatStyle.Flat;
+            _btnFunction.Font = new Font("微软雅黑", 9F);
+            _btnFunction.Location = new Point(0, 144);
+            _btnFunction.Name = "_btnFunction";
+            _btnFunction.Padding = new Padding(8, 0, 0, 0);
+            _btnFunction.Size = new Size(130, 32);
+            _btnFunction.TabIndex = 4;
+            _btnFunction.Text = "函数选择 >>";
+            _btnFunction.TextAlign = ContentAlignment.MiddleLeft;
+            _btnFunction.UseVisualStyleBackColor = false;
+            _btnFunction.Click += BtnFunction_Click;
+            _btnFunction.MouseEnter += SourceButton_MouseEnter;
+            _btnFunction.MouseLeave += SourceButton_MouseLeave;
+            // 
+            // _btnSystem
+            // 
+            _btnSystem.BackColor = Color.FromArgb(240, 240, 240);
+            _btnSystem.Cursor = Cursors.Hand;
+            _btnSystem.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            _btnSystem.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnSystem.FlatStyle = FlatStyle.Flat;
+            _btnSystem.Font = new Font("微软雅黑", 9F);
+            _btnSystem.Location = new Point(0, 108);
+            _btnSystem.Name = "_btnSystem";
+            _btnSystem.Padding = new Padding(8, 0, 0, 0);
+            _btnSystem.Size = new Size(130, 32);
+            _btnSystem.TabIndex = 3;
+            _btnSystem.Text = "系统属性 >>";
+            _btnSystem.TextAlign = ContentAlignment.MiddleLeft;
+            _btnSystem.UseVisualStyleBackColor = false;
+            _btnSystem.Click += BtnSystem_Click;
+            _btnSystem.MouseEnter += SourceButton_MouseEnter;
+            _btnSystem.MouseLeave += SourceButton_MouseLeave;
+            // 
+            // _btnExpression
+            // 
+            _btnExpression.BackColor = Color.FromArgb(240, 240, 240);
+            _btnExpression.Cursor = Cursors.Hand;
+            _btnExpression.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            _btnExpression.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnExpression.FlatStyle = FlatStyle.Flat;
+            _btnExpression.Font = new Font("微软雅黑", 9F);
+            _btnExpression.Location = new Point(0, 72);
+            _btnExpression.Name = "_btnExpression";
+            _btnExpression.Padding = new Padding(8, 0, 0, 0);
+            _btnExpression.Size = new Size(130, 32);
+            _btnExpression.TabIndex = 2;
+            _btnExpression.Text = "表达式 >>";
+            _btnExpression.TextAlign = ContentAlignment.MiddleLeft;
+            _btnExpression.UseVisualStyleBackColor = false;
+            _btnExpression.Click += BtnExpression_Click;
+            _btnExpression.MouseEnter += SourceButton_MouseEnter;
+            _btnExpression.MouseLeave += SourceButton_MouseLeave;
+            // 
+            // _btnVariable
+            // 
+            _btnVariable.BackColor = Color.FromArgb(240, 240, 240);
+            _btnVariable.Cursor = Cursors.Hand;
+            _btnVariable.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            _btnVariable.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnVariable.FlatStyle = FlatStyle.Flat;
+            _btnVariable.Font = new Font("微软雅黑", 9F);
+            _btnVariable.Location = new Point(0, 36);
+            _btnVariable.Name = "_btnVariable";
+            _btnVariable.Padding = new Padding(8, 0, 0, 0);
+            _btnVariable.Size = new Size(130, 32);
+            _btnVariable.TabIndex = 1;
+            _btnVariable.Text = "变量选择 >>";
+            _btnVariable.TextAlign = ContentAlignment.MiddleLeft;
+            _btnVariable.UseVisualStyleBackColor = false;
+            _btnVariable.Click += BtnVariable_Click;
+            _btnVariable.MouseEnter += SourceButton_MouseEnter;
+            _btnVariable.MouseLeave += SourceButton_MouseLeave;
+            // 
+            // _btnPLC
+            // 
+            _btnPLC.BackColor = Color.FromArgb(240, 240, 240);
+            _btnPLC.Cursor = Cursors.Hand;
+            _btnPLC.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            _btnPLC.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            _btnPLC.FlatStyle = FlatStyle.Flat;
+            _btnPLC.Font = new Font("微软雅黑", 9F);
+            _btnPLC.Location = new Point(0, 0);
+            _btnPLC.Name = "_btnPLC";
+            _btnPLC.Padding = new Padding(8, 0, 0, 0);
+            _btnPLC.Size = new Size(130, 32);
+            _btnPLC.TabIndex = 0;
+            _btnPLC.Text = "PLC地址 >>";
+            _btnPLC.TextAlign = ContentAlignment.MiddleLeft;
+            _btnPLC.UseVisualStyleBackColor = false;
+            _btnPLC.Click += BtnPLC_Click;
+            _btnPLC.MouseEnter += SourceButton_MouseEnter;
+            _btnPLC.MouseLeave += SourceButton_MouseLeave;
+            // 
+            // _topPanel
+            // 
+            _topPanel.Controls.Add(_statusPanel);
+            _topPanel.Controls.Add(_expressionTextBox);
+            _topPanel.Dock = DockStyle.Top;
+            _topPanel.Location = new Point(8, 8);
+            _topPanel.Name = "_topPanel";
+            _topPanel.Padding = new Padding(0, 0, 0, 5);
+            _topPanel.Size = new Size(702, 65);
+            _topPanel.TabIndex = 0;
+            // 
+            // _statusPanel
+            // 
+            _statusPanel.Controls.Add(_previewLabel);
+            _statusPanel.Controls.Add(_validationLabel);
+            _statusPanel.Dock = DockStyle.Top;
+            _statusPanel.Location = new Point(0, 28);
+            _statusPanel.Name = "_statusPanel";
+            _statusPanel.Padding = new Padding(0, 5, 0, 0);
+            _statusPanel.Size = new Size(702, 30);
+            _statusPanel.TabIndex = 1;
+            // 
+            // _previewLabel
+            // 
+            _previewLabel.AutoSize = true;
+            _previewLabel.Font = new Font("微软雅黑", 9F);
+            _previewLabel.ForeColor = Color.DimGray;
+            _previewLabel.Location = new Point(200, 5);
+            _previewLabel.Name = "_previewLabel";
+            _previewLabel.Size = new Size(0, 17);
+            _previewLabel.TabIndex = 1;
+            // 
+            // _validationLabel
+            // 
+            _validationLabel.AutoSize = true;
+            _validationLabel.Font = new Font("微软雅黑", 9F);
+            _validationLabel.ForeColor = Color.Gray;
+            _validationLabel.Location = new Point(5, 6);
+            _validationLabel.Name = "_validationLabel";
+            _validationLabel.Size = new Size(69, 17);
+            _validationLabel.TabIndex = 0;
+            _validationLabel.Text = "✓ 准备就绪";
+            // 
+            // _expressionTextBox
+            // 
+            _expressionTextBox.Dock = DockStyle.Top;
+            _expressionTextBox.Font = new Font("Consolas", 11F);
+            _expressionTextBox.Location = new Point(0, 0);
+            _expressionTextBox.Margin = new Padding(4, 5, 4, 5);
+            _expressionTextBox.MinimumSize = new Size(1, 16);
+            _expressionTextBox.Name = "_expressionTextBox";
+            _expressionTextBox.Padding = new Padding(5);
+            _expressionTextBox.ShowText = false;
+            _expressionTextBox.Size = new Size(702, 28);
+            _expressionTextBox.TabIndex = 0;
+            _expressionTextBox.TextAlignment = ContentAlignment.MiddleLeft;
+            _expressionTextBox.Watermark = "";
+            _expressionTextBox.TextChanged += ExpressionTextBox_TextChanged;
+            // 
+            // _validationTimer
+            // 
+            _validationTimer.Interval = 300;
+            _validationTimer.Tick += ValidationTimer_Tick;
+            // 
+            // ExpressionInputPanel
+            // 
+            AutoScaleDimensions = new SizeF(7F, 17F);
+            AutoScaleMode = AutoScaleMode.Font;
+            BackColor = Color.FromArgb(248, 249, 250);
+            ClientSize = new Size(720, 308);
+            Controls.Add(_mainPanel);
+            FormBorderStyle = FormBorderStyle.None;
+            Name = "ExpressionInputPanel";
+            Padding = new Padding(1);
+            ShowInTaskbar = false;
+            StartPosition = FormStartPosition.Manual;
+            TopMost = true;
+            Deactivate += ExpressionInputPanel_Deactivate;
+            Paint += ExpressionInputPanel_Paint;
+            _mainPanel.ResumeLayout(false);
+            _contentPanel.ResumeLayout(false);
+            _keyboardPanel.ResumeLayout(false);
+            _sourcePanel.ResumeLayout(false);
+            _topPanel.ResumeLayout(false);
+            _statusPanel.ResumeLayout(false);
+            _statusPanel.PerformLayout();
+            ResumeLayout(false);
+
         }
 
         #endregion
+
+        private System.Windows.Forms.Panel _mainPanel;
+        private System.Windows.Forms.Panel _topPanel;
+        private System.Windows.Forms.Panel _statusPanel;
+        private System.Windows.Forms.Panel _contentPanel;
+        private System.Windows.Forms.Panel _sourcePanel;
+        private System.Windows.Forms.Panel _keyboardPanel;
+        private System.Windows.Forms.TableLayoutPanel _keyboardGrid;
+        private Sunny.UI.UITextBox _expressionTextBox;
+        private System.Windows.Forms.Label _validationLabel;
+        private System.Windows.Forms.Label _previewLabel;
+        private System.Windows.Forms.Button _btnPLC;
+        private System.Windows.Forms.Button _btnVariable;
+        private System.Windows.Forms.Button _btnExpression;
+        private System.Windows.Forms.Button _btnSystem;
+        private System.Windows.Forms.Button _btnFunction;
+        private System.Windows.Forms.Button _btnConstant;
+        private System.Windows.Forms.Timer _validationTimer;
     }
 }
