@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Linq;
-using System.Windows.Forms;
-using MainUI.LogicalConfiguration.Engine;
+﻿using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.DependencyInjection;
+using System.Drawing.Drawing2D;
 
 namespace MainUI.LogicalConfiguration.Controls
 {
@@ -15,7 +10,7 @@ namespace MainUI.LogicalConfiguration.Controls
     /// AntdUI 风格的表达式输入面板
     /// 提供更美观的界面和更流畅的交互体验
     /// </summary>
-    public partial class ExpressionInputPanelAntd: Form
+    public partial class ExpressionInputPanelAntd : Form
     {
         #region 静态成员
 
@@ -29,7 +24,7 @@ namespace MainUI.LogicalConfiguration.Controls
         private readonly ExpressionEngine _expressionEngine;
         private readonly IPLCManager _plcManager;
 
-        private TextBox _targetTextBox;
+        private UITextBox _targetTextBox;
         private InputPanelOptions _options;
         private bool _isSubmitting;
 
@@ -41,7 +36,7 @@ namespace MainUI.LogicalConfiguration.Controls
         private Panel _sourcePanel;
         private Panel _keyboardPanel;
 
-        private TextBox _expressionTextBox;
+        private UITextBox _expressionTextBox;
         private Label _titleLabel;
         private Label _validationLabel;
         private Label _previewLabel;
@@ -127,7 +122,7 @@ namespace MainUI.LogicalConfiguration.Controls
 
         #region 静态方法
 
-        public static void Show(TextBox textBox, InputPanelOptions options = null)
+        public static void Show(UITextBox textBox, InputPanelOptions options = null)
         {
             if (textBox == null) return;
 
@@ -143,7 +138,7 @@ namespace MainUI.LogicalConfiguration.Controls
             _activeInstance = panel;
         }
 
-        public static void AttachTo(TextBox textBox, InputPanelOptions options = null)
+        public static void AttachTo(UITextBox textBox, InputPanelOptions options = null)
         {
             if (textBox == null) return;
 
@@ -299,12 +294,11 @@ namespace MainUI.LogicalConfiguration.Controls
             _inputPanel.BringToFront();
 
             // 表达式输入框
-            _expressionTextBox = new TextBox
+            _expressionTextBox = new UITextBox
             {
                 Dock = DockStyle.Top,
                 Height = 32,
                 Font = Styles.CodeFont,
-                BorderStyle = BorderStyle.FixedSingle
             };
             _expressionTextBox.TextChanged += (s, e) =>
             {
@@ -948,7 +942,7 @@ namespace MainUI.LogicalConfiguration.Controls
 
         #region 显示和关闭
 
-        private void SetTarget(TextBox textBox, InputPanelOptions options)
+        private void SetTarget(UITextBox textBox, InputPanelOptions options)
         {
             _targetTextBox = textBox;
             _options = options;

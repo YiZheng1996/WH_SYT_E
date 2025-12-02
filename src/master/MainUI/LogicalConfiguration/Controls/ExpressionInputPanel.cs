@@ -633,7 +633,7 @@ namespace MainUI.LogicalConfiguration.Controls
             UpdateModuleVisibility();
 
             // 设置标题（如果窗体有标题栏的话）
-            // this.Text = options.Title;
+             this.Text = options.Title;
         }
 
         /// <summary>
@@ -1031,8 +1031,10 @@ namespace MainUI.LogicalConfiguration.Controls
         {
             try
             {
-                var menu = new ContextMenuStrip();
-                menu.Font = new Font("微软雅黑", 9f);
+                var menu = new ContextMenuStrip
+                {
+                    Font = new Font("微软雅黑", 9f)
+                };
 
                 if (_plcManager != null)
                 {
@@ -1389,8 +1391,10 @@ namespace MainUI.LogicalConfiguration.Controls
         /// </summary>
         private void ShowConstantInput()
         {
-            var menu = new ContextMenuStrip();
-            menu.Font = new Font("微软雅黑", 9f);
+            var menu = new ContextMenuStrip
+            {
+                Font = new Font("微软雅黑", 9f)
+            };
 
             var constants = new Dictionary<string, string>
             {

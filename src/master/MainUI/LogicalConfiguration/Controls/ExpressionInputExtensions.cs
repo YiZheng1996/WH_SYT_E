@@ -12,7 +12,7 @@ namespace MainUI.LogicalConfiguration.Controls
         #region 附加面板
 
         /// <summary>
-        /// 为UITextBox附加表达式输入面板（通用模式）
+        /// 为UITextBox附加表达式输入面板
         /// </summary>
         /// <param name="textBox">目标UITextBox</param>
         /// <param name="modules">启用的模块</param>

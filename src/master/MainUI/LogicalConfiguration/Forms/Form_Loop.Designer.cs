@@ -56,22 +56,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnHelp = new UISymbolButton();
             btnCancel = new UISymbolButton();
             btnSave = new UISymbolButton();
-
-            // ⭐ 保留但隐藏的控件（为了兼容性）
-            rbFixedValue = new UIRadioButton();
-            rbVariable = new UIRadioButton();
-            rbPlc = new UIRadioButton();
-            cboPlcModule = new UIComboBox();
-            cboPlcAddress = new UIComboBox();
-            btnSelectVarCount = new UISymbolButton();
-            rbExitVariable = new UIRadioButton();
-            rbExitPlc = new UIRadioButton();
-            rbExitExpression = new UIRadioButton();
-            cboExitPlcModule = new UIComboBox();
-            cboExitPlcAddress = new UIComboBox();
-            btnSelectVarForExit = new UISymbolButton();
-            btnBuildExpression = new UISymbolButton();
-
             panelDescription.SuspendLayout();
             panelMain.SuspendLayout();
             panelChildSteps.SuspendLayout();
@@ -79,7 +63,6 @@ namespace MainUI.LogicalConfiguration.Forms
             panelLoopConfig.SuspendLayout();
             panelBottom.SuspendLayout();
             SuspendLayout();
-
             // 
             // panelDescription
             // 
@@ -93,7 +76,6 @@ namespace MainUI.LogicalConfiguration.Forms
             panelDescription.Padding = new Padding(15, 10, 15, 10);
             panelDescription.Size = new Size(800, 70);
             panelDescription.TabIndex = 1;
-
             // 
             // chkEnabled
             // 
@@ -108,7 +90,6 @@ namespace MainUI.LogicalConfiguration.Forms
             chkEnabled.Size = new Size(130, 30);
             chkEnabled.TabIndex = 2;
             chkEnabled.Text = "启用此步骤";
-
             // 
             // txtDescription
             // 
@@ -125,7 +106,6 @@ namespace MainUI.LogicalConfiguration.Forms
             txtDescription.TabIndex = 1;
             txtDescription.TextAlignment = ContentAlignment.MiddleLeft;
             txtDescription.Watermark = "请输入步骤描述信息";
-
             // 
             // lblDescription
             // 
@@ -137,7 +117,6 @@ namespace MainUI.LogicalConfiguration.Forms
             lblDescription.TabIndex = 0;
             lblDescription.Text = "步骤描述:";
             lblDescription.TextAlign = ContentAlignment.MiddleLeft;
-
             // 
             // panelMain
             // 
@@ -151,7 +130,6 @@ namespace MainUI.LogicalConfiguration.Forms
             panelMain.Padding = new Padding(15, 10, 15, 10);
             panelMain.Size = new Size(800, 515);
             panelMain.TabIndex = 2;
-
             // 
             // panelChildSteps
             // 
@@ -173,7 +151,6 @@ namespace MainUI.LogicalConfiguration.Forms
             panelChildSteps.TabIndex = 2;
             panelChildSteps.Text = null;
             panelChildSteps.TextAlignment = ContentAlignment.MiddleCenter;
-
             // 
             // btnConfigChildSteps
             // 
@@ -186,7 +163,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnConfigChildSteps.TabIndex = 2;
             btnConfigChildSteps.Text = "配置循环体步骤...";
             btnConfigChildSteps.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
             // 
             // lblChildStepsCount
             // 
@@ -198,7 +174,6 @@ namespace MainUI.LogicalConfiguration.Forms
             lblChildStepsCount.TabIndex = 1;
             lblChildStepsCount.Text = "循环体步骤 (0 个)";
             lblChildStepsCount.TextAlign = ContentAlignment.MiddleLeft;
-
             // 
             // lblChildStepsTitle
             // 
@@ -210,9 +185,8 @@ namespace MainUI.LogicalConfiguration.Forms
             lblChildStepsTitle.TabIndex = 0;
             lblChildStepsTitle.Text = "循环体步骤配置";
             lblChildStepsTitle.TextAlign = ContentAlignment.MiddleLeft;
-
             // 
-            // panelEarlyExit - ⭐ 简化版，移除单选按钮和额外控件
+            // panelEarlyExit
             // 
             panelEarlyExit.BackColor = Color.FromArgb(250, 250, 250);
             panelEarlyExit.Controls.Add(lblExitConditionHint);
@@ -230,11 +204,10 @@ namespace MainUI.LogicalConfiguration.Forms
             panelEarlyExit.Radius = 8;
             panelEarlyExit.RectColor = Color.FromArgb(65, 100, 204);
             panelEarlyExit.RectSides = ToolStripStatusLabelBorderSides.None;
-            panelEarlyExit.Size = new Size(770, 150);  // ⭐ 减小高度
+            panelEarlyExit.Size = new Size(770, 150);
             panelEarlyExit.TabIndex = 1;
             panelEarlyExit.Text = null;
             panelEarlyExit.TextAlignment = ContentAlignment.MiddleCenter;
-
             // 
             // lblExitConditionHint
             // 
@@ -245,9 +218,8 @@ namespace MainUI.LogicalConfiguration.Forms
             lblExitConditionHint.Size = new Size(586, 35);
             lblExitConditionHint.TabIndex = 9;
             lblExitConditionHint.Text = "💡 点击输入框打开智能面板，支持变量、PLC、表达式等多种输入方式";
-
             // 
-            // txtExitCondition - ⭐ 加宽，因为移除了其他控件
+            // txtExitCondition
             // 
             txtExitCondition.Cursor = Cursors.IBeam;
             txtExitCondition.Font = new Font("微软雅黑", 10F);
@@ -258,11 +230,10 @@ namespace MainUI.LogicalConfiguration.Forms
             txtExitCondition.Padding = new Padding(5);
             txtExitCondition.RectColor = Color.FromArgb(65, 100, 204);
             txtExitCondition.ShowText = false;
-            txtExitCondition.Size = new Size(620, 35);  // ⭐ 加宽加高
+            txtExitCondition.Size = new Size(620, 35);
             txtExitCondition.TabIndex = 6;
             txtExitCondition.TextAlignment = ContentAlignment.MiddleLeft;
             txtExitCondition.Watermark = "点击输入退出条件，如：{压力值} >= 6.0 (按F2打开面板)";
-
             // 
             // lblExitCondition
             // 
@@ -274,7 +245,6 @@ namespace MainUI.LogicalConfiguration.Forms
             lblExitCondition.TabIndex = 5;
             lblExitCondition.Text = "退出条件:";
             lblExitCondition.TextAlign = ContentAlignment.MiddleLeft;
-
             // 
             // chkEnableEarlyExit
             // 
@@ -288,7 +258,6 @@ namespace MainUI.LogicalConfiguration.Forms
             chkEnableEarlyExit.Size = new Size(200, 30);
             chkEnableEarlyExit.TabIndex = 4;
             chkEnableEarlyExit.Text = "启用提前退出";
-
             // 
             // lblEarlyExitTitle
             // 
@@ -300,9 +269,8 @@ namespace MainUI.LogicalConfiguration.Forms
             lblEarlyExitTitle.TabIndex = 3;
             lblEarlyExitTitle.Text = "提前退出配置";
             lblEarlyExitTitle.TextAlign = ContentAlignment.MiddleLeft;
-
             // 
-            // panelLoopConfig - ⭐ 简化版
+            // panelLoopConfig
             // 
             panelLoopConfig.BackColor = Color.FromArgb(250, 250, 250);
             panelLoopConfig.Controls.Add(chkEnableCounter);
@@ -320,12 +288,11 @@ namespace MainUI.LogicalConfiguration.Forms
             panelLoopConfig.Padding = new Padding(15);
             panelLoopConfig.Radius = 8;
             panelLoopConfig.RectColor = Color.FromArgb(65, 100, 204);
-            panelLoopConfig.RectSides = ToolStripStatusLabelBorderSides.Top | ToolStripStatusLabelBorderSides.Left | ToolStripStatusLabelBorderSides.Right;
-            panelLoopConfig.Size = new Size(770, 160);  // ⭐ 减小高度
+            panelLoopConfig.RectSides = ToolStripStatusLabelBorderSides.Left | ToolStripStatusLabelBorderSides.Top | ToolStripStatusLabelBorderSides.Right;
+            panelLoopConfig.Size = new Size(770, 160);
             panelLoopConfig.TabIndex = 0;
             panelLoopConfig.Text = null;
             panelLoopConfig.TextAlignment = ContentAlignment.MiddleCenter;
-
             // 
             // chkEnableCounter
             // 
@@ -340,7 +307,6 @@ namespace MainUI.LogicalConfiguration.Forms
             chkEnableCounter.Size = new Size(130, 30);
             chkEnableCounter.TabIndex = 8;
             chkEnableCounter.Text = "启用计数器";
-
             // 
             // txtCounterVariable
             // 
@@ -358,7 +324,6 @@ namespace MainUI.LogicalConfiguration.Forms
             txtCounterVariable.Text = "LoopIndex";
             txtCounterVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtCounterVariable.Watermark = "计数器变量名";
-
             // 
             // lblCounterVariable
             // 
@@ -370,12 +335,13 @@ namespace MainUI.LogicalConfiguration.Forms
             lblCounterVariable.TabIndex = 9;
             lblCounterVariable.Text = "计数器变量:";
             lblCounterVariable.TextAlign = ContentAlignment.MiddleLeft;
-
             // 
-            // txtLoopCount - ⭐ 加宽
+            // txtLoopCount
             // 
             txtLoopCount.Cursor = Cursors.IBeam;
+            txtLoopCount.DoubleValue = 10D;
             txtLoopCount.Font = new Font("微软雅黑", 10F);
+            txtLoopCount.IntValue = 10;
             txtLoopCount.Location = new Point(124, 36);
             txtLoopCount.Margin = new Padding(4, 5, 4, 5);
             txtLoopCount.MinimumSize = new Size(1, 16);
@@ -383,12 +349,11 @@ namespace MainUI.LogicalConfiguration.Forms
             txtLoopCount.Padding = new Padding(5);
             txtLoopCount.RectColor = Color.FromArgb(65, 100, 204);
             txtLoopCount.ShowText = false;
-            txtLoopCount.Size = new Size(620, 35);  // ⭐ 加宽加高
+            txtLoopCount.Size = new Size(620, 35);
             txtLoopCount.TabIndex = 4;
             txtLoopCount.Text = "10";
             txtLoopCount.TextAlignment = ContentAlignment.MiddleLeft;
             txtLoopCount.Watermark = "点击输入循环次数，支持数值/变量/PLC (按F2打开面板)";
-
             // 
             // lblLoopCount
             // 
@@ -400,7 +365,6 @@ namespace MainUI.LogicalConfiguration.Forms
             lblLoopCount.TabIndex = 3;
             lblLoopCount.Text = "循环次数:";
             lblLoopCount.TextAlign = ContentAlignment.MiddleLeft;
-
             // 
             // lblLoopConfigTitle
             // 
@@ -412,7 +376,6 @@ namespace MainUI.LogicalConfiguration.Forms
             lblLoopConfigTitle.TabIndex = 0;
             lblLoopConfigTitle.Text = "循环配置";
             lblLoopConfigTitle.TextAlign = ContentAlignment.MiddleLeft;
-
             // 
             // panelBottom
             // 
@@ -426,7 +389,6 @@ namespace MainUI.LogicalConfiguration.Forms
             panelBottom.Padding = new Padding(15, 10, 15, 10);
             panelBottom.Size = new Size(800, 60);
             panelBottom.TabIndex = 3;
-
             // 
             // btnHelp
             // 
@@ -440,7 +402,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnHelp.TabIndex = 2;
             btnHelp.Text = "帮助";
             btnHelp.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
             // 
             // btnCancel
             // 
@@ -459,7 +420,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnCancel.TabIndex = 1;
             btnCancel.Text = "取消";
             btnCancel.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
             // 
             // btnSave
             // 
@@ -478,10 +438,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnSave.TabIndex = 0;
             btnSave.Text = "保存";
             btnSave.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
-            // ⭐ 隐藏的控件 - 保留字段定义以兼容现有代码
-            InitializeHiddenControls();
-
             // 
             // Form_Loop
             // 
@@ -508,31 +464,6 @@ namespace MainUI.LogicalConfiguration.Forms
             panelLoopConfig.ResumeLayout(false);
             panelBottom.ResumeLayout(false);
             ResumeLayout(false);
-        }
-
-        /// <summary>
-        /// 初始化隐藏的控件 - 为了兼容性保留这些控件
-        /// </summary>
-        private void InitializeHiddenControls()
-        {
-            // 循环次数相关的隐藏控件
-            rbFixedValue.Visible = false;
-            rbFixedValue.Checked = true;
-            rbVariable.Visible = false;
-            rbPlc.Visible = false;
-            cboPlcModule.Visible = false;
-            cboPlcAddress.Visible = false;
-            btnSelectVarCount.Visible = false;
-
-            // 退出条件相关的隐藏控件
-            rbExitVariable.Visible = false;
-            rbExitPlc.Visible = false;
-            rbExitExpression.Visible = false;
-            rbExitExpression.Checked = true;
-            cboExitPlcModule.Visible = false;
-            cboExitPlcAddress.Visible = false;
-            btnSelectVarForExit.Visible = false;
-            btnBuildExpression.Visible = false;
         }
 
         #endregion
@@ -564,21 +495,5 @@ namespace MainUI.LogicalConfiguration.Forms
         private UISymbolButton btnHelp;
         private UISymbolButton btnCancel;
         private UISymbolButton btnSave;
-
-        // ====== 隐藏控件（为兼容性保留） ======
-        private UIComboBox cboPlcModule;
-        private UIComboBox cboPlcAddress;
-        private UIRadioButton rbFixedValue;
-        private UIRadioButton rbVariable;
-        private UIRadioButton rbPlc;
-        private UISymbolButton btnSelectVarCount;
-
-        private UIRadioButton rbExitVariable;
-        private UIRadioButton rbExitPlc;
-        private UIRadioButton rbExitExpression;
-        private UIComboBox cboExitPlcModule;
-        private UIComboBox cboExitPlcAddress;
-        private UISymbolButton btnSelectVarForExit;
-        private UISymbolButton btnBuildExpression;
     }
 }

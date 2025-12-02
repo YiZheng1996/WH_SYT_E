@@ -116,7 +116,7 @@
         /// <summary>
         /// 自定义标题（空则使用默认）
         /// </summary>
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; } = "参数配置";
 
         /// <summary>
         /// 根据输入模式获取默认启用的模块

@@ -1,14 +1,8 @@
 ﻿using AntdUI;
-using MainUI.LogicalConfiguration.Controls;  // ⭐ 新增：引用表达式输入面板
-using MainUI.LogicalConfiguration.Engine;
-using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
-using MainUI.LogicalConfiguration.Services.ServicesPLC;
-using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -274,7 +268,7 @@ namespace MainUI.LogicalConfiguration.Forms
         #region UI更新
 
         /// <summary>
-        /// 更新控件状态 - 简化版
+        /// 更新控件状态
         /// </summary>
         private void UpdateControlStates()
         {
@@ -292,23 +286,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 lblExitCondition.Enabled = exitEnabled;
                 txtExitCondition.Enabled = exitEnabled;
                 lblExitConditionHint.Enabled = exitEnabled;
-
-                // ⭐ 隐藏不再需要的控件（面板已集成这些功能）
-                rbExitVariable.Visible = false;
-                rbExitPlc.Visible = false;
-                rbExitExpression.Visible = false;
-                btnSelectVarForExit.Visible = false;
-                btnBuildExpression.Visible = false;
-                cboExitPlcModule.Visible = false;
-                cboExitPlcAddress.Visible = false;
-
-                // 循环次数相关控件也隐藏（面板已集成）
-                rbFixedValue.Visible = false;
-                rbVariable.Visible = false;
-                rbPlc.Visible = false;
-                btnSelectVarCount.Visible = false;
-                cboPlcModule.Visible = false;
-                cboPlcAddress.Visible = false;
 
                 // 确保文本框始终可见
                 txtLoopCount.Visible = true;
@@ -424,21 +401,37 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 配置循环体步骤按钮点击事件
+        /// 配置子步骤按钮点击事件
         /// </summary>
         private void BtnConfigChildSteps_Click(object sender, EventArgs e)
         {
             try
             {
-                // TODO: 打开循环体步骤配置界面
-                MessageHelper.MessageOK("循环体步骤配置功能待实现", TType.Info);
+                // 保存当前界面数据到参数对象
+                SaveFormToParameter();
+
+                var configForm = new Form_ChildStepsConfig(Parameter.ChildSteps);
+                if (configForm.ShowDialog(this) == DialogResult.OK)
+                {
+                    // 直接使用Form返回的结果更新Parameter
+                    Parameter.ChildSteps = configForm._childSteps;
+
+                    // 更新子步骤数量显示
+                    int childStepCount = Parameter.ChildSteps?.Count ?? 0;
+                    lblChildStepsCount.Text = $"循环体步骤 ({childStepCount} 个)";
+
+                    _hasUnsavedChanges = true;
+
+                    Logger?.LogDebug("子步骤配置完成，数量: {Count}", childStepCount);
+                }
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "配置循环体步骤失败");
-                MessageHelper.MessageOK($"配置失败：{ex.Message}", TType.Error);
+                Logger?.LogError(ex, "配置子步骤失败");
+                MessageHelper.MessageOK($"配置子步骤失败：{ex.Message}", TType.Error);
             }
         }
+
 
         /// <summary>
         /// 窗体关闭事件
@@ -459,7 +452,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
             }
 
-            // ⭐ 关闭时清理表达式输入面板
+            // 关闭时清理表达式输入面板
             ExpressionInputPanel.CloseActivePanel();
         }
 
