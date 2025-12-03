@@ -205,12 +205,27 @@ namespace MainUI.LogicalConfiguration.Forms
                     return;
                 }
 
+                // 加载目标变量(不加大括号)
                 txtTargetVariable.Text = _parameter.TargetVarName ?? "";
-                txtAssignmentContent.Text = _parameter.Expression ?? "";
+
+                // 根据赋值类型加载内容
+                string displayContent = "";
+                if (_parameter.AssignmentType == VariableAssignmentType.PLCRead)
+                {
+                    // PLC模式: 显示为 PLC.模块名.地址
+                    displayContent = $"{{PLC.{_parameter.DataSource.PlcConfig.ModuleName}.{_parameter.DataSource.PlcConfig.Address}}}";
+                }
+                else
+                {
+                    // 其他模式: 直接使用Expression
+                    displayContent = _parameter.Expression ?? "";
+                }
+
+                txtAssignmentContent.Text = displayContent;
                 txtDescription.Text = _parameter.Description ?? "";
                 chkEnabled.Checked = _parameter.IsAssignment;
 
-                Logger?.LogDebug("参数加载到界面完成");
+                Logger?.LogDebug($"参数加载完成: 目标={_parameter.TargetVarName}, 类型={_parameter.AssignmentType}");
             }
             catch (Exception ex)
             {
@@ -225,26 +240,50 @@ namespace MainUI.LogicalConfiguration.Forms
                 _parameter ??= new Parameter_VariableAssignment();
                 _parameter.DataSource ??= new DataSourceConfig();
 
-                _parameter.TargetVarName = txtTargetVariable?.Text?.Trim() ?? "";
-                _parameter.Expression = txtAssignmentContent?.Text?.Trim() ?? "";
+                // 移除变量名中的大括号
+                string targetVarName = txtTargetVariable?.Text?.Trim() ?? "";
+                targetVarName = targetVarName.Trim('{', '}');
+                _parameter.TargetVarName = targetVarName;
+
+                // 获取赋值内容并移除大括号
+                string expression = txtAssignmentContent?.Text?.Trim() ?? "";
+                expression = expression.Trim('{', '}'); // 先去除大括号
+
+                // 识别PLC格式: PLC.模块名.地址
+                if (expression.StartsWith("PLC.", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = expression.Substring(4).Split('.');
+                    if (parts.Length == 2)
+                    {
+                        _parameter.AssignmentType = VariableAssignmentType.PLCRead;
+                        _parameter.DataSource.PlcConfig.ModuleName = parts[0];
+                        _parameter.DataSource.PlcConfig.Address = parts[1];
+                        _parameter.Expression = "";
+
+                        Logger?.LogDebug($"PLC模式: {parts[0]}.{parts[1]}");
+                    }
+                    else
+                    {
+                        _parameter.AssignmentType = VariableAssignmentType.ExpressionCalculation;
+                        _parameter.Expression = expression;
+                    }
+                }
+                else
+                {
+                    _parameter.AssignmentType = VariableAssignmentType.ExpressionCalculation;
+                    _parameter.Expression = expression;
+                }
+
                 _parameter.Condition = "";
                 _parameter.Description = txtDescription?.Text ?? "";
                 _parameter.IsAssignment = chkEnabled?.Checked ?? false;
-
                 _hasUnsavedChanges = false;
-                Logger?.LogDebug("表单数据已保存到参数对象");
             }
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "保存表单数据失败");
                 throw;
             }
-        }
-
-        private Parameter_VariableAssignment GetParameter()
-        {
-            SaveFormToParameter();
-            return _parameter;
         }
 
         #endregion

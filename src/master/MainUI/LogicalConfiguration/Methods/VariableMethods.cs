@@ -40,27 +40,22 @@ namespace MainUI.LogicalConfiguration.Methods
             }, false);
         }
 
-        /// <summary>
-        /// 变量赋值方法
-        /// </summary>
         public async Task<bool> VariableAssignment(Parameter_VariableAssignment param)
         {
             return await ExecuteWithLogging(param, async () =>
             {
                 // 1. 验证目标变量是否存在
-                var targetVar = _globalVariableManager.FindVariableByName(param.TargetVarName) ??
-                throw new ArgumentException($"目标变量不存在: {param.TargetVarName}");
+                var targetVar = _globalVariableManager.FindVariableByName(param.TargetVarName) ?? throw new ArgumentException(
+                        $"目标变量不存在: '{param.TargetVarName}");
+                NlogHelper.Default.Debug($"找到变量: {targetVar.VarName}, 类型: {targetVar.VarType}, 当前值: {targetVar.VarValue}");
 
-                // 2. 使用赋值引擎执行赋值操作
+                // 执行赋值
                 var result = await _assignmentEngine.ExecuteAssignmentAsync(param);
-
-                // 3. 检查执行结果
                 if (!result.Success)
                 {
                     throw new InvalidOperationException($"变量赋值失败: {result.ErrorMessage}");
                 }
 
-                // 4. 记录日志
                 NlogHelper.Default.Info(
                     $"变量赋值成功 - 变量: {param.TargetVarName}, " +
                     $"赋值类型: {param.AssignmentType}, " +
