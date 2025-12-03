@@ -855,10 +855,15 @@ namespace MainUI.LogicalConfiguration.Engine
         /// </summary>
         private bool CheckParenthesesBalance(string expression)
         {
+            // 先移除变量引用中的花括号
+            var tempExpression = Regex.Replace(expression, @"\{[^}]+\}", "VAR");
+
+            _logger?.LogDebug("原表达式: {Original}, 处理后: {Processed}", expression, tempExpression);
+
             var stack = new Stack<char>();
             var pairs = new Dictionary<char, char> { { ')', '(' }, { ']', '[' }, { '}', '{' } };
 
-            foreach (var c in expression)
+            foreach (var c in tempExpression)
             {
                 if (c is '(' or '[' or '{')
                 {

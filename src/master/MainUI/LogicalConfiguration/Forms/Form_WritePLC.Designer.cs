@@ -264,7 +264,7 @@
             btnMoveUp.RectDisableColor = Color.FromArgb(40, 167, 69);
             btnMoveUp.Size = new Size(90, 38);
             btnMoveUp.Style = UIStyle.Custom;
-            btnMoveUp.Symbol = 61701;
+            btnMoveUp.Symbol = 61702;
             btnMoveUp.SymbolSize = 20;
             btnMoveUp.TabIndex = 2;
             btnMoveUp.Text = "上移";
