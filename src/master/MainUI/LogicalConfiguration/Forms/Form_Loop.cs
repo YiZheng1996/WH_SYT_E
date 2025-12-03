@@ -89,7 +89,7 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 _isInitializing = true;
 
-                // ⭐ 设置表达式输入面板
+                // 设置表达式输入面板
                 SetupExpressionInputPanels();
 
                 // 绑定事件
@@ -121,9 +121,8 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                // =====================================
-                // 1. 循环次数输入框 - 支持数值、变量、PLC
-                // =====================================
+               
+                // 循环次数输入框 - 支持数值、变量、PLC
                 ExpressionInputPanel.AttachTo(txtLoopCount, new InputPanelOptions
                 {
                     Mode = InputMode.Expression,
@@ -137,9 +136,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 添加视觉提示
                 txtLoopCount.Watermark = "点击输入循环次数，支持数值/变量/PLC (按F2打开面板)";
 
-                // =====================================
-                // 2. 退出条件输入框 - 支持条件表达式
-                // =====================================
+                // 退出条件输入框 - 支持条件表达式
                 ExpressionInputPanel.AttachTo(txtExitCondition, new InputPanelOptions
                 {
                     Mode = InputMode.Condition,  // 条件模式
@@ -154,9 +151,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 添加视觉提示
                 txtExitCondition.Watermark = "点击输入退出条件，如：{压力值} >= 6.0 (按F2打开面板)";
 
-                // =====================================
-                // 3. 计数器变量名输入框 - 仅支持变量选择
-                // =====================================
+               
+                // 计数器变量名输入框 - 仅支持变量选择
                 ExpressionInputPanel.AttachTo(txtCounterVariable, new InputPanelOptions
                 {
                     Mode = InputMode.VariableOnly,
@@ -177,7 +173,7 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 绑定事件处理器 - 简化版
+        /// 绑定事件处理器
         /// </summary>
         private void BindEvents()
         {

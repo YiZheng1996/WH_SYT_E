@@ -174,8 +174,7 @@ namespace MainUI.LogicalConfiguration.Services
                 // 变量赋值窗体
                 nameof(Form_VariableAssignment) => (T)(object)new Form_VariableAssignment(
                     _workflowState,
-                    GetSpecificLogger<Form_VariableAssignment>(),
-                    _plcManager
+                    GetSpecificLogger<Form_VariableAssignment>()
                     ),
 
                 // PLC读取窗体
