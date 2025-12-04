@@ -112,7 +112,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 ExpressionInputPanel.AttachTo(_tempValueTextBox, new InputPanelOptions
                 {
                     Mode = InputMode.Expression,
-                    EnabledModules = InputModules.Constant | InputModules.Variable | InputModules.Expression,
+                    EnabledModules = InputModules.All,
                     Title = "配置单元格内容",
                     ShowValidation = true,
                     ShowPreview = true,
@@ -196,7 +196,17 @@ namespace MainUI.LogicalConfiguration.Forms
                 _tempValueTextBox.Width = cellRect.Width;
 
                 // 显示面板
-                ExpressionInputPanel.Show(_tempValueTextBox);
+                ExpressionInputPanel.Show(_tempValueTextBox, new InputPanelOptions
+                {
+                    Mode = InputMode.Expression,
+                    EnabledModules = InputModules.All,  // 所有模块
+                    Title = "配置单元格内容",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true,
+                    InitialExpression = currentValue  // 传递当前值
+                });
+
 
                 // 显示后恢复隐藏位置
                 _tempValueTextBox.Location = new Point(-100, -100);
@@ -479,7 +489,10 @@ namespace MainUI.LogicalConfiguration.Forms
 
             // 1. 检查是否为表达式（包含 {变量名} 或函数调用）
             if (Regex.IsMatch(content, @"\{[\w\u4e00-\u9fa5]+\}") || // 包含 {变量名}
-                Regex.IsMatch(content, @"[A-Z_]+\s*\(.*\)", RegexOptions.IgnoreCase)) // 包含函数 FUNC(...)
+                Regex.IsMatch(content, @"[A-Z_]+\s*\(.*\)", RegexOptions.IgnoreCase) || // 包含函数 FUNC(...)
+                content.Contains("DateTime.Now") || // 时间表达式
+                content.Contains("FORMAT(") || // 格式化函数
+                content.Contains("ADDDAYS(") || content.Contains("ADDHOURS(")) // 时间运算
             {
                 return CellsDataSourceType.Expression;
             }

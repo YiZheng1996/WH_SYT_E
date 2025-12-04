@@ -43,7 +43,6 @@ namespace MainUI.LogicalConfiguration.Forms
             uiLine1 = new UILine();
             pnlButtons = new UIPanel();
             btnHelp = new UISymbolButton();
-            btnTest = new UISymbolButton();
             btnCancel = new UISymbolButton();
             btnOK = new UISymbolButton();
             toolTip = new ToolTip(components);
@@ -192,7 +191,6 @@ namespace MainUI.LogicalConfiguration.Forms
             // pnlButtons
             // 
             pnlButtons.Controls.Add(btnHelp);
-            pnlButtons.Controls.Add(btnTest);
             pnlButtons.Controls.Add(btnCancel);
             pnlButtons.Controls.Add(btnOK);
             pnlButtons.FillColor = Color.White;
@@ -226,25 +224,6 @@ namespace MainUI.LogicalConfiguration.Forms
             btnHelp.Text = "帮助";
             btnHelp.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             toolTip.SetToolTip(btnHelp, "查看变量赋值工具的使用帮助");
-            // 
-            // btnTest
-            // 
-            btnTest.Cursor = Cursors.Hand;
-            btnTest.FillColor = Color.FromArgb(255, 193, 7);
-            btnTest.FillColor2 = Color.FromArgb(255, 193, 7);
-            btnTest.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
-            btnTest.ForeColor = Color.FromArgb(33, 37, 41);
-            btnTest.Location = new Point(180, 17);
-            btnTest.MinimumSize = new Size(1, 1);
-            btnTest.Name = "btnTest";
-            btnTest.RectColor = Color.FromArgb(255, 193, 7);
-            btnTest.RectDisableColor = Color.FromArgb(255, 193, 7);
-            btnTest.Size = new Size(130, 35);
-            btnTest.Symbol = 61515;
-            btnTest.TabIndex = 2;
-            btnTest.Text = "测试";
-            btnTest.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            toolTip.SetToolTip(btnTest, "测试赋值操作 - 会自动创建不存在的变量");
             // 
             // btnCancel
             // 
@@ -320,7 +299,6 @@ namespace MainUI.LogicalConfiguration.Forms
         private UIPanel pnlButtons;
         private UISymbolButton btnOK;
         private UISymbolButton btnCancel;
-        private UISymbolButton btnTest;
         private UISymbolButton btnHelp;
 
         private System.Windows.Forms.ToolTip toolTip;

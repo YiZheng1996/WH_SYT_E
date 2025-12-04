@@ -36,14 +36,41 @@ namespace MainUI.LogicalConfiguration.Controls
         private InputPanelOptions _options;
         private bool _isSubmitting;
 
-        // 颜色定义
-        private static readonly Color PrimaryColor = Color.FromArgb(65, 100, 204);
-        private static readonly Color SuccessColor = Color.FromArgb(40, 167, 69);
-        private static readonly Color ErrorColor = Color.FromArgb(220, 53, 69);
-        private static readonly Color BackgroundColor = Color.FromArgb(248, 249, 250);
-        private static readonly Color ButtonColor = Color.FromArgb(240, 240, 240);
-        private static readonly Color ButtonHoverColor = Color.FromArgb(220, 220, 220);
+        // 配色方案
+        private static class UIColors
+        {
+            // 主题色 - 鲜艳的蓝色
+            public static readonly Color Primary = Color.FromArgb(24, 144, 255);
+            public static readonly Color PrimaryLight = Color.FromArgb(230, 244, 255);
+            public static readonly Color PrimaryHover = Color.FromArgb(64, 169, 255);
 
+            // 状态色
+            public static readonly Color Success = Color.FromArgb(82, 196, 26);
+            public static readonly Color SuccessLight = Color.FromArgb(246, 255, 237);
+            public static readonly Color Error = Color.FromArgb(255, 77, 79);
+            public static readonly Color ErrorLight = Color.FromArgb(255, 241, 240);
+            public static readonly Color Warning = Color.FromArgb(250, 173, 20);
+
+            // 背景色
+            public static readonly Color Background = Color.White;
+            public static readonly Color BackgroundGray = Color.FromArgb(250, 250, 250);
+            public static readonly Color BackgroundLight = Color.FromArgb(245, 247, 250);
+
+            // 按钮色
+            public static readonly Color ButtonDefault = Color.White;
+            public static readonly Color ButtonHover = Color.FromArgb(230, 235, 241);
+            public static readonly Color ButtonActive = Color.FromArgb(220, 225, 235);
+
+            // 边框色
+            public static readonly Color Border = Color.FromArgb(217, 217, 217);
+            public static readonly Color BorderLight = Color.FromArgb(240, 240, 240);
+            public static readonly Color BorderHover = Color.FromArgb(24, 144, 255);
+
+            // 文字色
+            public static readonly Color TextPrimary = Color.FromArgb(38, 38, 38);
+            public static readonly Color TextSecondary = Color.FromArgb(115, 115, 115);
+            public static readonly Color TextDisabled = Color.FromArgb(191, 191, 191);
+        }
         #endregion
 
         #region 事件
@@ -265,7 +292,7 @@ namespace MainUI.LogicalConfiguration.Controls
             var btnBackspace = AddKeyButton(_keyboardGrid, "←", 0, 6, Backspace);
             var btnClear = AddKeyButton(_keyboardGrid, "清空", 0, 7, Clear);
             var btnSubmit = AddKeyButton(_keyboardGrid, "确定", 0, 8, Submit);
-            btnSubmit.BackColor = PrimaryColor;
+            btnSubmit.BackColor = UIColors.Primary;
             btnSubmit.ForeColor = Color.White;
             _keyboardGrid.SetColumnSpan(btnSubmit, 2);
 
@@ -318,7 +345,7 @@ namespace MainUI.LogicalConfiguration.Controls
             AddKeyButton(_keyboardGrid, ".", 4, 7, () => InsertText("."));
             AddKeyButton(_keyboardGrid, "+/-", 4, 8, ToggleSign);
             var btnClose = AddKeyButton(_keyboardGrid, "关闭", 4, 9, ClosePanel);
-            btnClose.BackColor = Color.RebeccaPurple;
+            btnClose.BackColor = UIColors.TextSecondary;
             btnClose.ForeColor = Color.White;
         }
 
@@ -334,15 +361,16 @@ namespace MainUI.LogicalConfiguration.Controls
                 Dock = DockStyle.Fill,
                 Margin = new Padding(2),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = backColor ?? ButtonColor,
+                BackColor = backColor ?? UIColors.BackgroundGray,
+                ForeColor = UIColors.TextPrimary,
                 Font = new Font("微软雅黑", 10f),
                 Cursor = string.IsNullOrEmpty(text) ? Cursors.Default : Cursors.Hand
             };
-            btn.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            btn.FlatAppearance.BorderColor = UIColors.BorderLight;
 
             if (!string.IsNullOrEmpty(text))
             {
-                btn.FlatAppearance.MouseOverBackColor = ButtonHoverColor;
+                btn.FlatAppearance.MouseOverBackColor = UIColors.ButtonHover;
                 if (onClick != null)
                 {
                     btn.Click += (s, e) => onClick();
@@ -351,7 +379,7 @@ namespace MainUI.LogicalConfiguration.Controls
             else
             {
                 btn.Enabled = false;
-                btn.BackColor = BackgroundColor;
+                btn.BackColor = UIColors.Background;
                 btn.FlatAppearance.BorderSize = 0;
             }
 
@@ -407,12 +435,12 @@ namespace MainUI.LogicalConfiguration.Controls
             var buttons = new[] { _btnPLC, _btnVariable, _btnExpression, _btnSystem, _btnFunction, _btnConstant };
             var visibleButtons = buttons.Where(b => b.Visible).ToList();
 
-            int currentY = 0;
-            int buttonSpacing = 4;
+            int currentY = -2; // 起始位置微调
+            int buttonSpacing = 2; // 按钮间距
 
             foreach (var btn in visibleButtons)
             {
-                btn.Location = new Point(0, currentY);
+                btn.Location = new Point(8, currentY);
                 currentY += btn.Height + buttonSpacing;
             }
         }
@@ -494,37 +522,31 @@ namespace MainUI.LogicalConfiguration.Controls
 
         private void BtnPLC_Click(object sender, EventArgs e)
         {
-            // TODO: 显示PLC地址选择器
             ShowPLCSelector();
         }
 
         private void BtnVariable_Click(object sender, EventArgs e)
         {
-            // TODO: 显示变量选择器
             ShowVariableSelector();
         }
 
         private void BtnExpression_Click(object sender, EventArgs e)
         {
-            // TODO: 显示表达式模板
             ShowExpressionTemplates();
         }
 
         private void BtnSystem_Click(object sender, EventArgs e)
         {
-            // TODO: 显示系统属性
             ShowSystemProperties();
         }
 
         private void BtnFunction_Click(object sender, EventArgs e)
         {
-            // TODO: 显示函数选择器
             ShowFunctions();
         }
 
         private void BtnConstant_Click(object sender, EventArgs e)
         {
-            // TODO: 显示常量输入
             ShowConstants();
         }
 
@@ -532,7 +554,8 @@ namespace MainUI.LogicalConfiguration.Controls
         {
             if (sender is Button btn)
             {
-                btn.BackColor = ButtonHoverColor;
+                btn.BackColor = UIColors.ButtonHover;
+                btn.FlatAppearance.BorderColor = UIColors.BorderHover;
             }
         }
 
@@ -540,7 +563,8 @@ namespace MainUI.LogicalConfiguration.Controls
         {
             if (sender is Button btn)
             {
-                btn.BackColor = ButtonColor;
+                btn.BackColor = UIColors.ButtonDefault;
+                btn.FlatAppearance.BorderColor = UIColors.Border;
             }
         }
 
@@ -594,7 +618,8 @@ namespace MainUI.LogicalConfiguration.Controls
 
         private void ExpressionInputPanel_Paint(object sender, PaintEventArgs e)
         {
-            using var pen = new Pen(Color.FromArgb(200, 200, 200), 1);
+            // 绘制边框
+            using var pen = new Pen(UIColors.Border, 1);
             e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
         }
 
@@ -790,12 +815,24 @@ namespace MainUI.LogicalConfiguration.Controls
             if (_validationLabel != null)
             {
                 _validationLabel.Text = $"{(isValid ? "✓" : "✗")} {message}";
-                _validationLabel.ForeColor = isValid ? SuccessColor : ErrorColor;
+                _validationLabel.ForeColor = isValid ? UIColors.Success : UIColors.Error;
             }
 
-            if (_previewLabel != null)
+            if (_previewLabel != null && _statusPanel != null)
             {
                 _previewLabel.Text = preview ?? string.Empty;
+
+                // 更新状态面板背景色
+                if (isValid)
+                {
+                    _statusPanel.BackColor = string.IsNullOrEmpty(message) || message == "准备就绪"
+                        ? UIColors.BackgroundGray
+                        : UIColors.SuccessLight;
+                }
+                else
+                {
+                    _statusPanel.BackColor = UIColors.ErrorLight;
+                }
             }
         }
 
@@ -894,66 +931,96 @@ namespace MainUI.LogicalConfiguration.Controls
         /// </summary>
         private void ShowVariableSelector()
         {
-            try
+            var menu = new ContextMenuStrip
             {
-                var menu = new ContextMenuStrip();
-                menu.Font = new Font("微软雅黑", 9f);
-                menu.MaximumSize = new Size(300, 400);
+                Font = new Font("微软雅黑", 9f)
+            };
 
-                if (_variableManager != null)
+            if (_variableManager != null)
+            {
+                // 1. 系统变量组
+                var systemVars = _variableManager.GetAllVariables()
+                    .Where(v => v is VarItem_Enhanced enhanced && enhanced.IsSystemVariable)
+                    .OrderBy(v => v.VarName)
+                    .ToList();
+
+                if (systemVars.Any())
                 {
-                    var variables = _variableManager.GetAllVariables()
-                        .Where(v => !v.IsSystemVariable)
-                        .OrderBy(v => v.VarName)
-                        .ToList();
-
-                    if (variables.Count != 0)
+                    var systemGroup = new ToolStripMenuItem("🔧 系统变量")
                     {
-                        // 按类型分组
-                        var groups = variables.GroupBy(v => v.VarType);
+                        Font = new Font("微软雅黑", 9f, FontStyle.Bold)
+                    };
 
-                        foreach (var group in groups)
+                    foreach (var variable in systemVars)
+                    {
+                        var varItem = new ToolStripMenuItem($"{variable.VarName} = {variable.VarValue}");
+                        varItem.ToolTipText = variable.VarText;
+                        varItem.Click += (s, e) =>
                         {
-                            var typeItem = new ToolStripMenuItem($"📁 {group.Key}");
-                            typeItem.Font = new Font("微软雅黑", 9f, FontStyle.Bold);
+                            InsertText($"{{{variable.VarName}}}");
 
-                            foreach (var variable in group)
+                            SourceSelected?.Invoke(this, new SourceSelectedEventArgs
                             {
-                                var varItem = new ToolStripMenuItem($"{variable.VarName} = {variable.VarValue}");
-                                varItem.Click += (s, e) =>
-                                {
-                                    InsertText($"{{{variable.VarName}}}");
-
-                                    SourceSelected?.Invoke(this, new SourceSelectedEventArgs
-                                    {
-                                        SourceType = InputModules.Variable,
-                                        SelectedValue = variable.VarName,
-                                        FormattedExpression = $"{{{variable.VarName}}}"
-                                    });
-                                };
-                                typeItem.DropDownItems.Add(varItem);
-                            }
-
-                            menu.Items.Add(typeItem);
-                        }
+                                SourceType = InputModules.Variable,
+                                SelectedValue = variable.VarName,
+                                FormattedExpression = $"{{{variable.VarName}}}"
+                            });
+                        };
+                        systemGroup.DropDownItems.Add(varItem);
                     }
-                    else
+
+                    menu.Items.Add(systemGroup);
+                    menu.Items.Add(new ToolStripSeparator());
+                }
+
+                // 2. 用户变量（按类型分组）
+                var userVars = _variableManager.GetAllVariables()
+                    .Where(v => !(v is VarItem_Enhanced enhanced && enhanced.IsSystemVariable))
+                    .OrderBy(v => v.VarName)
+                    .ToList();
+
+                if (userVars.Count != 0)
+                {
+                    var groups = userVars.GroupBy(v => v.VarType);
+
+                    foreach (var group in groups)
                     {
-                        menu.Items.Add(new ToolStripMenuItem("(无可用变量)") { Enabled = false });
+                        var typeItem = new ToolStripMenuItem($"📁 {group.Key}")
+                        {
+                            Font = new Font("微软雅黑", 9f, FontStyle.Bold)
+                        };
+
+                        foreach (var variable in group)
+                        {
+                            var varItem = new ToolStripMenuItem($"{variable.VarName} = {variable.VarValue}");
+                            varItem.Click += (s, e) =>
+                            {
+                                InsertText($"{{{variable.VarName}}}");
+
+                                SourceSelected?.Invoke(this, new SourceSelectedEventArgs
+                                {
+                                    SourceType = InputModules.Variable,
+                                    SelectedValue = variable.VarName,
+                                    FormattedExpression = $"{{{variable.VarName}}}"
+                                });
+                            };
+                            typeItem.DropDownItems.Add(varItem);
+                        }
+
+                        menu.Items.Add(typeItem);
                     }
                 }
                 else
                 {
-                    menu.Items.Add(new ToolStripMenuItem("(变量管理器不可用)") { Enabled = false });
+                    menu.Items.Add(new ToolStripMenuItem("(无可用变量)") { Enabled = false });
                 }
-
-                menu.Show(_btnVariable, new Point(0, _btnVariable.Height));
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show($"加载变量列表失败：{ex.Message}", "错误",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                menu.Items.Add(new ToolStripMenuItem("(变量管理器不可用)") { Enabled = false });
             }
+
+            menu.Show(_btnVariable, new Point(0, _btnVariable.Height));
         }
 
         /// <summary>
@@ -1048,34 +1115,57 @@ namespace MainUI.LogicalConfiguration.Controls
             menu.Font = new Font("微软雅黑", 9f);
 
             var properties = new Dictionary<string, Dictionary<string, string>>
+    {
+        {
+            "👤 用户信息", new Dictionary<string, string>
             {
-                {
-                    "👤 用户信息", new Dictionary<string, string>
-                    {
-                        { "用户名", "NewUsers.NewUserInfo.Username" },
-                        { "用户级别", "NewUsers.NewUserInfo.UserLevel" }
-                    }
-                },
-                {
-                    "📅 日期时间", new Dictionary<string, string>
-                    {
-                        { "当前日期", "DateTime.Now.ToString(\"yyyy-MM-dd\")" },
-                        { "当前时间", "DateTime.Now.ToString(\"HH:mm:ss\")" },
-                        { "当前日期时间", "DateTime.Now.ToString(\"yyyy-MM-dd HH:mm:ss\")" },
-                        { "年份", "DateTime.Now.Year" },
-                        { "月份", "DateTime.Now.Month" },
-                        { "日期", "DateTime.Now.Day" }
-                    }
-                },
-                {
-                    "🔧 系统信息", new Dictionary<string, string>
-                    {
-                        { "产品类型", "{产品类型}" },
-                        { "产品型号", "{产品型号}" },
-                        { "试验项点", "{试验项点}" }
-                    }
-                }
-            };
+                { "用户名", "NewUsers.NewUserInfo.Username" },
+                { "用户级别", "NewUsers.NewUserInfo.UserLevel" },
+                { "用户角色", "NewUsers.NewUserInfo.RoleName" }
+            }
+        },
+        {
+            "🧪 测试信息（系统变量）", new Dictionary<string, string>
+            {
+                { "试验员", "{试验员}" },
+                { "产品类型", "{产品类型}" },
+                { "产品型号", "{产品型号}" },
+                { "产品图号", "{产品图号}" },
+                { "测试时间", "{测试时间}" },
+                { "试验台", "{试验台}" }
+            }
+        },
+        {
+            "📅 日期时间 - 完整格式", new Dictionary<string, string>
+            {
+                { "当前日期时间", "DateTime.Now.ToString(\"yyyy-MM-dd HH:mm:ss\")" },
+                { "当前日期", "DateTime.Now.ToString(\"yyyy-MM-dd\")" },
+                { "当前时间", "DateTime.Now.ToString(\"HH:mm:ss\")" },
+                { "年月日时分", "DateTime.Now.ToString(\"yyyyMMdd_HHmm\")" },
+                { "文件名时间戳", "DateTime.Now.ToString(\"yyyyMMddHHmmss\")" }
+            }
+        },
+        {
+            "📅 日期时间 - 组件获取", new Dictionary<string, string>
+            {
+                { "年份 (2025)", "DateTime.Now.Year" },
+                { "月份 (1-12)", "DateTime.Now.Month" },
+                { "日期 (1-31)", "DateTime.Now.Day" },
+                { "小时 (0-23)", "DateTime.Now.Hour" },
+                { "分钟 (0-59)", "DateTime.Now.Minute" },
+                { "秒数 (0-59)", "DateTime.Now.Second" },
+                { "星期几 (0-6)", "DateTime.Now.DayOfWeek" }
+            }
+        },
+        {
+            "🔧 系统信息", new Dictionary<string, string>
+            {
+                { "计算机名", "Environment.MachineName" },
+                { "当前目录", "Environment.CurrentDirectory" },
+                { "系统版本", "Environment.OSVersion.ToString()" }
+            }
+        }
+    };
 
             foreach (var category in properties)
             {
@@ -1087,7 +1177,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 foreach (var property in category.Value)
                 {
                     var propertyItem = new ToolStripMenuItem(property.Key);
-                    propertyItem.ToolTipText = property.Value;
+                    propertyItem.ToolTipText = $"插入: {property.Value}";
                     propertyItem.Click += (s, e) =>
                     {
                         InsertText(property.Value);

@@ -108,10 +108,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 ExpressionInputPanel.AttachTo(txtAssignmentContent, new InputPanelOptions
                 {
                     Mode = InputMode.Expression,
-                    EnabledModules = InputModules.Constant |
-                                     InputModules.Variable |
-                                     InputModules.Expression |
-                                     InputModules.PLC,
+                    EnabledModules = InputModules.All,
                     Title = "配置赋值内容",
                     ShowValidation = true,
                     ShowPreview = true,
@@ -205,19 +202,19 @@ namespace MainUI.LogicalConfiguration.Forms
                     return;
                 }
 
-                // 加载目标变量(不加大括号)
+                // 目标变量：原样显示，不加花括号
                 txtTargetVariable.Text = _parameter.TargetVarName ?? "";
 
                 // 根据赋值类型加载内容
                 string displayContent = "";
                 if (_parameter.AssignmentType == VariableAssignmentType.PLCRead)
                 {
-                    // PLC模式: 显示为 PLC.模块名.地址
+                    // PLC模式: 显示为 {PLC.模块名.地址}
                     displayContent = $"{{PLC.{_parameter.DataSource.PlcConfig.ModuleName}.{_parameter.DataSource.PlcConfig.Address}}}";
                 }
                 else
                 {
-                    // 其他模式: 直接使用Expression
+                    // 其他模式: 原样显示，不处理花括号
                     displayContent = _parameter.Expression ?? "";
                 }
 
@@ -225,7 +222,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 txtDescription.Text = _parameter.Description ?? "";
                 chkEnabled.Checked = _parameter.IsAssignment;
 
-                Logger?.LogDebug($"参数加载完成: 目标={_parameter.TargetVarName}, 类型={_parameter.AssignmentType}");
+                Logger?.LogDebug($"参数加载完成: 表达式={displayContent}");
             }
             catch (Exception ex)
             {
@@ -240,49 +237,50 @@ namespace MainUI.LogicalConfiguration.Forms
                 _parameter ??= new Parameter_VariableAssignment();
                 _parameter.DataSource ??= new DataSourceConfig();
 
-                // 移除变量名中的大括号
-                string targetVarName = txtTargetVariable?.Text?.Trim() ?? "";
-                targetVarName = targetVarName.Trim('{', '}');
-                _parameter.TargetVarName = targetVarName;
+                // 目标变量名：直接使用，不处理花括号
+                _parameter.TargetVarName = txtTargetVariable?.Text?.Trim() ?? "";
 
-                // 获取赋值内容并移除大括号
+                // 赋值内容：原样保存，不处理花括号
                 string expression = txtAssignmentContent?.Text?.Trim() ?? "";
-                expression = expression.Trim('{', '}'); // 先去除大括号
 
-                // 识别PLC格式: PLC.模块名.地址
-                if (expression.StartsWith("PLC.", StringComparison.OrdinalIgnoreCase))
+                // 识别PLC格式: PLC.模块名.地址 (可能带花括号)
+                // 移除可能的花括号再判断
+                string cleanExpression = expression.Trim('{', '}');
+                if (cleanExpression.StartsWith("PLC.", StringComparison.OrdinalIgnoreCase))
                 {
-                    var parts = expression.Substring(4).Split('.');
+                    var parts = cleanExpression.Substring(4).Split('.');
                     if (parts.Length == 2)
                     {
                         _parameter.AssignmentType = VariableAssignmentType.PLCRead;
                         _parameter.DataSource.PlcConfig.ModuleName = parts[0];
                         _parameter.DataSource.PlcConfig.Address = parts[1];
-                        _parameter.Expression = "";
+                        _parameter.Expression = ""; // PLC模式不保存到Expression
 
                         Logger?.LogDebug($"PLC模式: {parts[0]}.{parts[1]}");
                     }
                     else
                     {
+                        // PLC格式不正确，当作表达式处理
                         _parameter.AssignmentType = VariableAssignmentType.ExpressionCalculation;
-                        _parameter.Expression = expression;
+                        _parameter.Expression = expression; // 原样保存
                     }
                 }
                 else
                 {
+                    // 普通表达式：原样保存
                     _parameter.AssignmentType = VariableAssignmentType.ExpressionCalculation;
-                    _parameter.Expression = expression;
+                    _parameter.Expression = expression; // 原样保存，包含花括号
                 }
 
                 _parameter.Condition = "";
                 _parameter.Description = txtDescription?.Text ?? "";
-                _parameter.IsAssignment = chkEnabled?.Checked ?? false;
-                _hasUnsavedChanges = false;
+                _parameter.IsAssignment = chkEnabled?.Checked ?? true;
+
+                Logger?.LogDebug($"参数保存完成: 表达式={_parameter.Expression}");
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "保存表单数据失败");
-                throw;
+                Logger?.LogError(ex, "保存参数失败");
             }
         }
 

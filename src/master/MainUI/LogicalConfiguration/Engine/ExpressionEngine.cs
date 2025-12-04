@@ -1,6 +1,7 @@
 ﻿using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.Logging;
+using NLog;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -852,13 +853,14 @@ namespace MainUI.LogicalConfiguration.Engine
 
         /// <summary>
         /// 检查括号是否匹配
+        /// 变量引用 {变量名} 中的花括号不参与配对检查
         /// </summary>
         private bool CheckParenthesesBalance(string expression)
         {
-            // 先移除变量引用中的花括号
+            // 先移除变量引用中的花括号，替换为占位符
             var tempExpression = Regex.Replace(expression, @"\{[^}]+\}", "VAR");
 
-            _logger?.LogDebug("原表达式: {Original}, 处理后: {Processed}", expression, tempExpression);
+            _logger?.LogDebug($"括号检查 - 原始: {expression}, 处理后: {tempExpression}");
 
             var stack = new Stack<char>();
             var pairs = new Dictionary<char, char> { { ')', '(' }, { ']', '[' }, { '}', '{' } };
