@@ -228,7 +228,7 @@ namespace MainUI.LogicalConfiguration.Engine
                     return variable == null;
                 }).ToList();
 
-                if (missingVars.Any())
+                if (missingVars.Count != 0)
                 {
                     result.IsValid = false;
                     result.Message = $"以下变量不存在: {string.Join(", ", missingVars)}";

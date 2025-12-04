@@ -257,6 +257,11 @@
         /// 自定义验证标签（用于日志和错误追踪）
         /// </summary>
         public string ValidationLabel { get; set; }
+
+        /// <summary>
+        /// 获取允许在应用程序中使用的运行时变量名的列表
+        /// </summary>
+        public List<string> RuntimeVariableWhitelist { get; internal set; }
     }
     #endregion
 }

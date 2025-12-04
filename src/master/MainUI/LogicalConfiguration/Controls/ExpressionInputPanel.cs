@@ -749,32 +749,54 @@ namespace MainUI.LogicalConfiguration.Controls
                     return;
                 }
 
-                // 使用表达式引擎验证
+                // 使用表达式引擎的验证方法,而不是执行方法
                 if (_expressionEngine != null)
                 {
-                    // 预处理：将PLC占位符和变量占位符替换为测试值
-                    string testExpression = PreprocessExpressionForValidation(expression);
+                    // 创建验证上下文
+                    var validationContext = new ValidationContext
+                    {
+                        ValidationLabel = "表达式输入面板",
+                        AllowFunctionCalls = true,        // 允许函数调用
+                        AllowPlcReferences = true,         // 允许PLC引用
+                        StrictMode = false,                // 配置时使用宽松模式
+                        RuntimeVariableWhitelist = GetRuntimeVariableWhitelist()  // 系统变量白名单
+                    };
 
-                    var result = _expressionEngine.EvaluateExpression(testExpression);
-                    if (result.Success)
+                    // 直接调用 ValidateExpression,而不是 EvaluateExpression
+                    var result = _expressionEngine.ValidateExpression(expression, validationContext);
+
+                    if (result.IsValid)
                     {
                         IsValid = true;
-                        UpdateValidationUI(true, "表达式语法有效", "（使用测试值验证）");
+                        string message = "表达式语法有效";
+                        string detail = null;
+
+                        // 如果有警告,显示警告信息
+                        if (result.HasWarnings)
+                        {
+                            var warningMessages = string.Join("; ", result.Warnings);
+                            detail = $"警告: {warningMessages}";
+                        }
+
+                        UpdateValidationUI(true, message, detail);
                     }
                     else
                     {
                         IsValid = false;
-                        UpdateValidationUI(false, "表达式无效", result.ErrorMessage);
+                        string errorDetail = result.Errors.Count != 0
+                            ? string.Join("; ", result.Errors)
+                            : result.Message;
+                        UpdateValidationUI(false, "表达式无效", errorDetail);
                     }
                 }
                 else
                 {
-                    // 简单验证:检查括号匹配
+                    // 降级方案:没有表达式引擎时,使用简单验证
                     bool bracketsValid = ValidateBrackets(expression);
                     IsValid = bracketsValid;
                     UpdateValidationUI(bracketsValid,
                         bracketsValid ? "语法检查通过" : "括号不匹配",
-                        null);
+                        bracketsValid ? null : "表达式引擎未加载,仅进行基础验证");
                 }
             }
             catch (Exception ex)
@@ -785,26 +807,30 @@ namespace MainUI.LogicalConfiguration.Controls
         }
 
         /// <summary>
-        /// 预处理表达式用于验证（将占位符替换为测试值）
+        /// 获取运行时变量白名单
+        /// 这些变量/属性在配置时可能不存在或为空,但在运行时会有值
         /// </summary>
-        private string PreprocessExpressionForValidation(string expression)
+        private List<string> GetRuntimeVariableWhitelist()
         {
-            if (string.IsNullOrWhiteSpace(expression))
-                return expression;
-
-            // 替换PLC地址占位符：{PLC.xxx} -> 100
-            expression = System.Text.RegularExpressions.Regex.Replace(
-                expression,
-                @"\{PLC\.[^}]+\}",
-                "100");
-
-            // 替换变量占位符：{变量名} -> 100
-            expression = System.Text.RegularExpressions.Regex.Replace(
-                expression,
-                @"\{[^}]+\}",
-                "100");
-
-            return expression;
+            return
+            [
+                // 系统日期时间
+                "DateTime.Now",
+                "DateTime.Today",
+                "DateTime.UtcNow",
+                
+                // 系统环境信息
+                "Environment.MachineName",
+                "Environment.UserName",
+                "Environment.OSVersion",
+                "Environment.ProcessorCount",
+                
+                // 数学常量
+                "Math.PI",
+                "Math.E",
+                
+                // 可以根据需要添加更多系统变量
+            ];
         }
 
         /// <summary>
