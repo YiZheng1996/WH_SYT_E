@@ -176,6 +176,9 @@ namespace MainUI.LogicalConfiguration.Engine
         /// <param name="expression">要验证的表达式</param>
         /// <param name="context">验证上下文，提供目标变量信息等</param>
         /// <returns>验证结果，包含错误和警告</returns>
+        /// <summary>
+        /// 验证表达式的合法性（带验证上下文）
+        /// </summary>
         public ValidationResult ValidateExpression(string expression, ValidationContext context)
         {
             // 如果没有提供上下文，调用无参数版本
@@ -222,7 +225,24 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 3. 检查变量存在性
                 var referencedVars = GetReferencedVariables(expression);
-                var missingVars = referencedVars.Where(v =>
+
+                // 过滤掉白名单中的变量，支持前缀匹配
+                var varsToCheck = referencedVars.Where(v =>
+                {
+                    if (context.RuntimeVariableWhitelist == null || context.RuntimeVariableWhitelist.Count == 0)
+                        return true;  // 没有白名单，需要检查所有变量
+
+                    // 检查是否在白名单中（完全匹配 或 前缀匹配）
+                    bool isInWhitelist = context.RuntimeVariableWhitelist.Any(w =>
+                        v.Equals(w, StringComparison.OrdinalIgnoreCase) ||
+                        v.StartsWith(w + ".", StringComparison.OrdinalIgnoreCase)
+                    );
+
+                    return !isInWhitelist;  // 不在白名单中的需要检查
+                }).ToList();
+
+                // 检查剩余变量是否存在
+                var missingVars = varsToCheck.Where(v =>
                 {
                     var variable = _variableManager.TryFindVariableByName(v);
                     return variable == null;
@@ -230,20 +250,31 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 if (missingVars.Count != 0)
                 {
-                    result.IsValid = false;
-                    result.Message = $"以下变量不存在: {string.Join(", ", missingVars)}";
-                    result.Errors.AddRange(missingVars.Select(v => $"变量 '{v}' 未定义"));
-                    return result;
+                    if (context.StrictMode)
+                    {
+                        // 严格模式：报错
+                        result.IsValid = false;
+                        result.Message = $"以下变量不存在: {string.Join(", ", missingVars)}";
+                        result.Errors.AddRange(missingVars.Select(v => $"变量 '{v}' 未定义"));
+                        return result;
+                    }
+                    else
+                    {
+                        // 宽松模式：仅警告
+                        result.Warnings.AddRange(missingVars.Select(v =>
+                            $"变量 '{v}' 未定义，运行时需要确保存在"));
+                    }
                 }
-
+               
                 // 4. 检查函数调用（如果启用）
                 if (context.AllowFunctionCalls)
                 {
                     var functionMatches = _functionPattern.Matches(expression);
                     foreach (Match match in functionMatches)
                     {
-                        var funcName = match.Groups[1].Value.ToUpper();
-                        if (!IsFunctionSupported(funcName))
+                        var funcName = match.Groups[1].Value;
+                        var funcNameUpper = funcName.ToUpper();
+                        if (!IsFunctionSupported(funcNameUpper))
                         {
                             result.IsValid = false;
                             result.Message = $"不支持的函数: {funcName}";
@@ -318,6 +349,33 @@ namespace MainUI.LogicalConfiguration.Engine
 
             return result;
         }
+
+        /// <summary>
+        /// 检查是否是系统属性的方法调用
+        /// </summary>
+        private bool IsSystemPropertyMethod(string methodName, string expression, int matchIndex)
+        {
+            // 常见的系统方法
+            var systemMethods = new[] { "ToString", "Parse", "TryParse", "ToUpper", "ToLower",
+                                "Trim", "ToInt32", "ToDouble", "ToBoolean" };
+
+            if (!systemMethods.Contains(methodName, StringComparer.OrdinalIgnoreCase))
+                return false;
+
+            // 检查前面是否有 DateTime, Environment, Math 等系统属性
+            if (matchIndex > 0)
+            {
+                var prefix = expression.Substring(0, matchIndex);
+                if (prefix.Contains("DateTime.") || prefix.Contains("Environment.") ||
+                    prefix.Contains("Math.") || prefix.Contains("Convert."))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
 
         /// <summary>
         /// 计算表达式的预期值(用于预览)
@@ -1838,7 +1896,7 @@ namespace MainUI.LogicalConfiguration.Engine
             {
                 var str = args[0]?.ToString() ?? "";
                 var separator = args[1]?.ToString() ?? ",";
-                return str.Split(new[] { separator }, StringSplitOptions.None);
+                return str.Split([separator], StringSplitOptions.None);
             };
 
             functions["JOIN"] = args =>
@@ -1850,35 +1908,37 @@ namespace MainUI.LogicalConfiguration.Engine
 
             // === 数学函数 ===
             // 定义实际函数逻辑
-            Func<List<object>, object> absFunc = args => Math.Abs(Convert.ToDouble(args[0]));
-            Func<List<object>, object> maxFunc = args => args.Max(x => Convert.ToDouble(x));
-            Func<List<object>, object> minFunc = args => args.Min(x => Convert.ToDouble(x));
-            Func<List<object>, object> roundFunc = args =>
+            // 同时注册带和不带 Math. 前缀的版本
+            functions["ABS"] = functions["Math.Abs"] = args => Math.Abs(Convert.ToDouble(args[0]));
+            functions["MAX"] = functions["Math.Max"] = args => args.Max(x => Convert.ToDouble(x));
+            functions["MIN"] = functions["Math.Min"] = args => args.Min(x => Convert.ToDouble(x));
+            functions["ROUND"] = functions["Math.Round"] = args =>
             {
                 var value = Convert.ToDouble(args[0]);
                 var digits = args.Count > 1 ? Convert.ToInt32(args[1]) : 0;
                 return Math.Round(value, digits);
             };
-            Func<List<object>, object> floorFunc = args => Math.Floor(Convert.ToDouble(args[0]));
-            Func<List<object>, object> ceilingFunc = args => Math.Ceiling(Convert.ToDouble(args[0]));
-            Func<List<object>, object> sqrtFunc = args => Math.Sqrt(Convert.ToDouble(args[0]));
-            Func<List<object>, object> powFunc = args => Math.Pow(Convert.ToDouble(args[0]), Convert.ToDouble(args[1]));
-            Func<List<object>, object> sinFunc = args => Math.Sin(Convert.ToDouble(args[0]));
-            Func<List<object>, object> cosFunc = args => Math.Cos(Convert.ToDouble(args[0]));
-            Func<List<object>, object> tanFunc = args => Math.Tan(Convert.ToDouble(args[0]));
+            functions["FLOOR"] = functions["Math.Floor"] = args => Math.Floor(Convert.ToDouble(args[0]));
+            functions["CEILING"] = functions["Math.Ceiling"] = args => Math.Ceiling(Convert.ToDouble(args[0]));
+            functions["SQRT"] = functions["Math.Sqrt"] = args => Math.Sqrt(Convert.ToDouble(args[0]));
+            functions["POW"] = functions["Math.Pow"] = args => Math.Pow(Convert.ToDouble(args[0]), Convert.ToDouble(args[1]));
+            functions["SIN"] = functions["Math.Sin"] = args => Math.Sin(Convert.ToDouble(args[0]));
+            functions["COS"] = functions["Math.Cos"] = args => Math.Cos(Convert.ToDouble(args[0]));
+            functions["TAN"] = functions["Math.Tan"] = args => Math.Tan(Convert.ToDouble(args[0]));
 
-            // 同时注册带和不带 Math. 前缀的版本
-            functions["ABS"] = functions["Math.Abs"] = absFunc;
-            functions["MAX"] = functions["Math.Max"] = maxFunc;
-            functions["MIN"] = functions["Math.Min"] = minFunc;
-            functions["ROUND"] = functions["Math.Round"] = roundFunc;
-            functions["FLOOR"] = functions["Math.Floor"] = floorFunc;
-            functions["CEILING"] = functions["Math.Ceiling"] = ceilingFunc;
-            functions["SQRT"] = functions["Math.Sqrt"] = sqrtFunc;
-            functions["POW"] = functions["Math.Pow"] = powFunc;
-            functions["SIN"] = functions["Math.Sin"] = sinFunc;
-            functions["COS"] = functions["Math.Cos"] = cosFunc;
-            functions["TAN"] = functions["Math.Tan"] = tanFunc;
+            // === 系统方法（用于验证，实际执行时会被预处理替换）===
+            functions["TOSTRING"] = functions["ToString"] = args => args[0]?.ToString() ?? "";
+            functions["PARSE"] = args => args[0];  // 占位，实际不调用
+            functions["TRYPARSE"] = args => true;  // 占位，实际不调用
+            functions["TOINT32"] = functions["ToInt32"] = args => Convert.ToInt32(args[0]);
+            functions["TODOUBLE"] = functions["ToDouble"] = args => Convert.ToDouble(args[0]);
+            functions["TOBOOLEAN"] = functions["ToBoolean"] = args => Convert.ToBoolean(args[0]);
+
+            // Environment 方法
+            functions["Environment.MachineName"] = args => Environment.MachineName;
+            functions["Environment.UserName"] = args => Environment.UserName;
+            functions["Environment.CurrentDirectory"] = args => Environment.CurrentDirectory;
+            functions["Environment.OSVersion"] = args => Environment.OSVersion.ToString();
 
             // === 日期时间函数 ===
             // 无参数函数 - 获取当前时间
