@@ -167,6 +167,9 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 获取参数对象（通过反射访问子类的 Parameter 属性）
                 var parameter = GetParameterValue();
 
+                // 清理花括号
+                CleanBracketsFromProperties(parameter);
+
                 // 更新到工作流
                 WorkflowState.UpdateStepParameter(WorkflowState.StepNum, parameter);
 
@@ -210,6 +213,9 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             if (parameter == null) return;
 
+            // 加载时还原花括号
+            RestoreBracketsToProperties(parameter);
+
             var parameterProperty = GetType().GetProperty("Parameter");
             if (parameterProperty != null && parameterProperty.CanWrite)
             {
@@ -226,9 +232,68 @@ namespace MainUI.LogicalConfiguration.Forms
             return parameterProperty?.PropertyType;
         }
 
+        /// <summary>
+        /// 清理参数对象中特定属性的花括号
+        /// </summary>
+        private void CleanBracketsFromProperties(object parameter)
+        {
+            if (parameter == null) return;
+
+            var type = parameter.GetType();
+            var properties = type.GetProperties();
+
+            foreach (var prop in properties)
+            {
+                // 需要清理花括号的属性名模式
+                if (prop.Name.EndsWith("VarName") ||
+                    prop.Name == "TargetVariable" ||
+                    prop.Name == "SourceVariable")
+                {
+                    if (prop.PropertyType == typeof(string) && prop.CanWrite)
+                    {
+                        var value = prop.GetValue(parameter) as string;
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            var cleaned = value.Trim().Trim('{', '}');
+                            prop.SetValue(parameter, cleaned);
+                        }
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region 参数转换
+
+        /// <summary>
+        /// 还原参数对象中特定属性的花括号（用于界面显示和验证）
+        /// </summary>
+        private void RestoreBracketsToProperties(object parameter)
+        {
+            if (parameter == null) return;
+
+            var type = parameter.GetType();
+            var properties = type.GetProperties();
+
+            foreach (var prop in properties)
+            {
+                // 需要还原花括号的属性名模式
+                if (prop.Name.EndsWith("VarName") ||
+                    prop.Name == "TargetVariable" ||
+                    prop.Name == "SourceVariable")
+                {
+                    if (prop.PropertyType == typeof(string) && prop.CanWrite)
+                    {
+                        var value = prop.GetValue(parameter) as string;
+                        if (!string.IsNullOrEmpty(value) && !value.StartsWith("{"))
+                        {
+                            prop.SetValue(parameter, $"{{{value}}}");
+                        }
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// 统一的参数转换逻辑 - 支持直接转换和JSON反序列化

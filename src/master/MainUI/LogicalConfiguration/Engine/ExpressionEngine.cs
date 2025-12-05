@@ -39,18 +39,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
         #region 运算符和函数定义
 
-        // 运算符优先级
-        private readonly Dictionary<string, int> _operatorPrecedence = new()
-        {
-            { "||", 1 },
-            { "&&", 2 },
-            { "==", 3 }, { "!=", 3 },
-            { "<", 4 }, { "<=", 4 }, { ">", 4 }, { ">=", 4 },
-            { "+", 5 }, { "-", 5 },
-            { "*", 6 }, { "/", 6 }, { "%", 6 },
-            { "!", 7 }  // 一元运算符
-        };
-
+      
         // 支持的运算符
         private readonly string[] _supportedOperators =
         {
@@ -349,33 +338,6 @@ namespace MainUI.LogicalConfiguration.Engine
 
             return result;
         }
-
-        /// <summary>
-        /// 检查是否是系统属性的方法调用
-        /// </summary>
-        private bool IsSystemPropertyMethod(string methodName, string expression, int matchIndex)
-        {
-            // 常见的系统方法
-            var systemMethods = new[] { "ToString", "Parse", "TryParse", "ToUpper", "ToLower",
-                                "Trim", "ToInt32", "ToDouble", "ToBoolean" };
-
-            if (!systemMethods.Contains(methodName, StringComparer.OrdinalIgnoreCase))
-                return false;
-
-            // 检查前面是否有 DateTime, Environment, Math 等系统属性
-            if (matchIndex > 0)
-            {
-                var prefix = expression.Substring(0, matchIndex);
-                if (prefix.Contains("DateTime.") || prefix.Contains("Environment.") ||
-                    prefix.Contains("Math.") || prefix.Contains("Convert."))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
 
         /// <summary>
         /// 计算表达式的预期值(用于预览)
@@ -677,6 +639,14 @@ namespace MainUI.LogicalConfiguration.Engine
         {
             try
             {
+                // 智能识别：单纯变量引用自动转为变量复制
+                if (IsSingleVariableReference(expression, out string sourceVarName))
+                {
+                    _logger?.LogDebug("检测到单纯变量引用，自动转换为变量复制: {Expression} → {SourceVar}",
+                        expression, sourceVarName);
+                    return AssignFromVariable(targetVarName, sourceVarName);
+                }
+
                 _logger?.LogInformation("表达式赋值: {VarName} = {Expression}", targetVarName, expression);
 
                 // 验证目标变量存在
@@ -890,6 +860,34 @@ namespace MainUI.LogicalConfiguration.Engine
         #region 私有方法 - 验证辅助
 
         /// <summary>
+        /// 判断是否为单纯的变量引用（无运算符）
+        /// </summary>
+        private bool IsSingleVariableReference(string expression, out string varName)
+        {
+            varName = null;
+            if (string.IsNullOrWhiteSpace(expression)) return false;
+
+            expression = expression.Trim();
+
+            // 匹配 {VarName} 格式
+            var bracketMatch = Regex.Match(expression, @"^\{([a-zA-Z_]\w*)\}$");
+            if (bracketMatch.Success)
+            {
+                varName = bracketMatch.Groups[1].Value;
+                return _variableManager.TryFindVariableByName(varName) != null;
+            }
+
+            // 匹配纯变量名（无花括号）
+            if (Regex.IsMatch(expression, @"^[a-zA-Z_]\w*$"))
+            {
+                varName = expression;
+                return _variableManager.TryFindVariableByName(varName) != null;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 检查是否包含无效字符
         /// 支持中文变量：允许所有 Unicode 字符（字母、数字、中文等）
         /// </summary>
@@ -916,14 +914,14 @@ namespace MainUI.LogicalConfiguration.Engine
         private bool CheckParenthesesBalance(string expression)
         {
             // 先移除变量引用中的花括号，替换为占位符
-            var tempExpression = Regex.Replace(expression, @"\{[^}]+\}", "VAR");
+            //var tempExpression = Regex.Replace(expression, @"\{[^}]+\}", "VAR");
 
-            _logger?.LogDebug($"括号检查 - 原始: {expression}, 处理后: {tempExpression}");
+            //_logger?.LogDebug($"括号检查 - 原始: {expression}, 处理后: {tempExpression}");
 
             var stack = new Stack<char>();
             var pairs = new Dictionary<char, char> { { ')', '(' }, { ']', '[' }, { '}', '{' } };
 
-            foreach (var c in tempExpression)
+            foreach (var c in expression)
             {
                 if (c is '(' or '[' or '{')
                 {
@@ -1934,12 +1932,6 @@ namespace MainUI.LogicalConfiguration.Engine
             functions["TODOUBLE"] = functions["ToDouble"] = args => Convert.ToDouble(args[0]);
             functions["TOBOOLEAN"] = functions["ToBoolean"] = args => Convert.ToBoolean(args[0]);
 
-            // Environment 方法
-            functions["Environment.MachineName"] = args => Environment.MachineName;
-            functions["Environment.UserName"] = args => Environment.UserName;
-            functions["Environment.CurrentDirectory"] = args => Environment.CurrentDirectory;
-            functions["Environment.OSVersion"] = args => Environment.OSVersion.ToString();
-
             // === 日期时间函数 ===
             // 无参数函数 - 获取当前时间
             functions["NOW"] = args => DateTime.Now;
@@ -1961,6 +1953,39 @@ namespace MainUI.LogicalConfiguration.Engine
             functions["DateTime.Today.Month"] = args => DateTime.Today.Month;
             functions["DateTime.Today.Day"] = args => DateTime.Today.Day;
             functions["DateTime.Today.DayOfWeek"] = args => (int)DateTime.Today.DayOfWeek;
+
+            // DateTime.ToString 方法支持
+            functions["DateTime.Now.ToString"] = args =>
+            {
+                var format = args.Count > 0 ? args[0]?.ToString() : "yyyy-MM-dd HH:mm:ss";
+                return DateTime.Now.ToString(format);
+            };
+
+            functions["DateTime.Today.ToString"] = args =>
+            {
+                var format = args.Count > 0 ? args[0]?.ToString() : "yyyy-MM-dd";
+                return DateTime.Today.ToString(format);
+            };
+
+            functions["DateTime.UtcNow.ToString"] = args =>
+            {
+                var format = args.Count > 0 ? args[0]?.ToString() : "yyyy-MM-dd HH:mm:ss";
+                return DateTime.UtcNow.ToString(format);
+            };
+
+            // 通用 ToString 支持（用于其他类型）
+            functions["TOSTRING"] = functions["ToString"] = args =>
+            {
+                if (args.Count == 0) return "";
+
+                if (args[0] is DateTime dt)
+                {
+                    var format = args.Count > 1 ? args[1]?.ToString() : "yyyy-MM-dd HH:mm:ss";
+                    return dt.ToString(format);
+                }
+
+                return args[0]?.ToString() ?? "";
+            };
 
             // 添加毫秒属性
             functions["DateTime.Now.Millisecond"] = args => DateTime.Now.Millisecond;
@@ -2209,6 +2234,4 @@ namespace MainUI.LogicalConfiguration.Engine
         }
         #endregion
     }
-
-
 }

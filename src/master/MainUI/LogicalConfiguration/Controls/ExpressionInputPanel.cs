@@ -345,7 +345,7 @@ namespace MainUI.LogicalConfiguration.Controls
             AddKeyButton(_keyboardGrid, ".", 4, 7, () => InsertText("."));
             AddKeyButton(_keyboardGrid, "+/-", 4, 8, ToggleSign);
             var btnClose = AddKeyButton(_keyboardGrid, "关闭", 4, 9, ClosePanel);
-            btnClose.BackColor = UIColors.TextSecondary;
+            btnClose.BackColor = Color.IndianRed;
             btnClose.ForeColor = Color.White;
         }
 
@@ -1181,14 +1181,6 @@ namespace MainUI.LogicalConfiguration.Controls
                 { "分钟 (0-59)", "DateTime.Now.Minute" },
                 { "秒数 (0-59)", "DateTime.Now.Second" },
                 { "星期几 (0-6)", "DateTime.Now.DayOfWeek" }
-            }
-        },
-        {
-            "🔧 系统信息", new Dictionary<string, string>
-            {
-                { "计算机名", "Environment.MachineName" },
-                { "当前目录", "Environment.CurrentDirectory" },
-                { "系统版本", "Environment.OSVersion.ToString()" }
             }
         }
     };

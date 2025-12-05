@@ -1,14 +1,8 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Controls;
-using MainUI.LogicalConfiguration.Engine;
-using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
-using MainUI.LogicalConfiguration.Services.ServicesPLC;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Windows.Forms;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -248,7 +242,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 string cleanExpression = expression.Trim('{', '}');
                 if (cleanExpression.StartsWith("PLC.", StringComparison.OrdinalIgnoreCase))
                 {
-                    var parts = cleanExpression.Substring(4).Split('.');
+                    var parts = cleanExpression[4..].Split('.');
                     if (parts.Length == 2)
                     {
                         _parameter.AssignmentType = VariableAssignmentType.PLCRead;
