@@ -5,6 +5,7 @@ using NLog;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace MainUI.LogicalConfiguration.Engine
 {
@@ -39,7 +40,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
         #region 运算符和函数定义
 
-      
+
         // 支持的运算符
         private readonly string[] _supportedOperators =
         {
@@ -111,7 +112,15 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 // 3. 检查变量存在性
                 var referencedVars = GetReferencedVariables(expression);
-                var missingVars = referencedVars.Where(v => _variableManager.TryFindVariableByName(v) == null).ToList();
+                var missingVars = referencedVars.Where(v =>
+                {
+                    // 跳过 PLC 地址格式的检查
+                    if (v.StartsWith("PLC.", StringComparison.OrdinalIgnoreCase))
+                        return false;
+
+                    var variable = _variableManager.TryFindVariableByName(v);
+                    return variable == null;
+                }).ToList();
                 if (missingVars.Count > 0)
                 {
                     result.IsValid = false;
@@ -254,7 +263,7 @@ namespace MainUI.LogicalConfiguration.Engine
                             $"变量 '{v}' 未定义，运行时需要确保存在"));
                     }
                 }
-               
+
                 // 4. 检查函数调用（如果启用）
                 if (context.AllowFunctionCalls)
                 {
@@ -997,6 +1006,50 @@ namespace MainUI.LogicalConfiguration.Engine
         #region 私有方法 - 表达式预处理
 
         /// <summary>
+        /// 处理PLC引用 - 读取PLC值
+        /// </summary>
+        private async Task<string> ProcessPlcReferenceAsync(string plcReference)
+        {
+            try
+            {
+                // 解析格式: 模块名.地址
+                var parts = plcReference.Split('.');
+                //if (parts.Length != 2)  // 改为2个部分
+                //{
+                //    _logger?.LogError($"PLC引用格式错误: {plcReference}，应为 模块名.地址");
+                //    throw new InvalidOperationException($"PLC引用格式错误: {plcReference}");
+                //}
+
+                string moduleName = parts[1];  // 第一个是模块名
+                string address = parts[2];     // 第二个是地址
+
+                if (_plcManager == null)
+                {
+                    _logger?.LogError("PLCManager 未初始化，无法读取PLC");
+                    throw new InvalidOperationException("PLCManager 未初始化");
+                }
+
+                // 使用异步读取
+                var plcValue = await _plcManager.ReadPLCValueAsync(moduleName, address);
+
+                if (plcValue == null)
+                {
+                    _logger?.LogWarning($"PLC读取失败或返回null: {moduleName}.{address}");
+                    throw new InvalidOperationException($"无法读取PLC: {moduleName}.{address}");
+                }
+
+                _logger?.LogDebug($"✓ PLC读取成功: {moduleName}.{address} = {plcValue}");
+
+                return FormatValueForExpression(plcValue);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"处理PLC引用失败: {plcReference}");
+                throw new InvalidOperationException($"PLC读取失败: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// 预处理表达式(替换变量引用为实际值)
         /// </summary>
         private string PreprocessExpression(string expression)
@@ -1004,6 +1057,17 @@ namespace MainUI.LogicalConfiguration.Engine
             return _variablePattern.Replace(expression, match =>
             {
                 var varName = match.Groups[1].Value;
+
+                // 检查是否是 PLC 地址格式: 模块名.地址
+                if (varName.Contains('.'))
+                {
+                    // 使用 Task.Run 隔离同步上下文，避免死锁
+                    return Task.Run(async () =>
+                        await ProcessPlcReferenceAsync(varName).ConfigureAwait(false)
+                    ).GetAwaiter().GetResult();
+                }
+
+                // 处理普通变量
                 var variable = _variableManager.TryFindVariableByName(varName);
 
                 if (variable == null)
@@ -1014,15 +1078,12 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 var value = variable.VarValue;
 
-                // 当变量值为空时，根据变量类型使用默认值
                 if (value == null || (value is string str && string.IsNullOrEmpty(str)))
                 {
-                    _logger?.LogWarning("预处理时发现变量值为空: {VarName}，使用类型默认值", varName);
-                    var defaultValue = GetDefaultValueForType(variable.VarType);
-                    return FormatValueForExpression(defaultValue);
+                    _logger?.LogWarning("预处理时发现变量值为空: {VarName}", varName);
+                    throw new InvalidOperationException($"变量 '{varName}' 的值为空，无法计算表达式");
                 }
 
-                // 调用统一的格式化方法
                 return FormatValueForExpression(value);
             });
         }

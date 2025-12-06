@@ -899,7 +899,7 @@ namespace MainUI.LogicalConfiguration.Controls
             {
                 var menu = new ContextMenuStrip
                 {
-                    Font = new Font("微软雅黑", 9f)
+                    Font = new Font("微软雅黑", 10f)
                 };
 
                 if (_plcManager != null)
@@ -959,7 +959,7 @@ namespace MainUI.LogicalConfiguration.Controls
         {
             var menu = new ContextMenuStrip
             {
-                Font = new Font("微软雅黑", 9f)
+                Font = new Font("微软雅黑", 10f)
             };
 
             if (_variableManager != null)
@@ -974,7 +974,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 {
                     var systemGroup = new ToolStripMenuItem("🔧 系统变量")
                     {
-                        Font = new Font("微软雅黑", 9f, FontStyle.Bold)
+                        Font = new Font("微软雅黑", 10f, FontStyle.Bold)
                     };
 
                     foreach (var variable in systemVars)
@@ -1013,7 +1013,7 @@ namespace MainUI.LogicalConfiguration.Controls
                     {
                         var typeItem = new ToolStripMenuItem($"📁 {group.Key}")
                         {
-                            Font = new Font("微软雅黑", 9f, FontStyle.Bold)
+                            Font = new Font("微软雅黑", 10f, FontStyle.Bold)
                         };
 
                         foreach (var variable in group)
@@ -1055,7 +1055,7 @@ namespace MainUI.LogicalConfiguration.Controls
         private void ShowExpressionTemplates()
         {
             var menu = new ContextMenuStrip();
-            menu.Font = new Font("微软雅黑", 9f);
+            menu.Font = new Font("微软雅黑", 10f);
 
             var templates = new Dictionary<string, Dictionary<string, string>>
             {
@@ -1100,13 +1100,30 @@ namespace MainUI.LogicalConfiguration.Controls
                         { "小写 ToLower", "str.ToLower()" },
                         { "包含 Contains", "str.Contains(value)" }
                     }
-                }
+
+                },
+                {
+                    "⏱ 时间差值计算", new Dictionary<string, string>
+                    {
+                        { "毫秒差值", "DATEDIFF_MILLISECONDS({结束时间}, {开始时间})" },
+                        { "秒数差值", "DATEDIFF_SECONDS({结束时间}, {开始时间})" },
+                        { "分钟差值", "DATEDIFF_MINUTES({结束时间}, {开始时间})" },
+                        { "小时差值", "DATEDIFF_HOURS({结束时间}, {开始时间})" },
+                        { "天数差值", "DATEDIFF_DAYS({结束时间}, {开始时间})" },
+                        { "距今秒数", "ELAPSED_SECONDS({开始时间})" },
+                        { "距今毫秒数", "ELAPSED_MILLISECONDS({开始时间})" },
+                        { "距今分钟数", "ELAPSED_MINUTES({开始时间})" }
+                    }
+            }
+
             };
 
             foreach (var category in templates)
             {
-                var categoryItem = new ToolStripMenuItem(category.Key);
-                categoryItem.Font = new Font("微软雅黑", 9f, FontStyle.Bold);
+                var categoryItem = new ToolStripMenuItem(category.Key)
+                {
+                    Font = new Font("微软雅黑", 10f, FontStyle.Bold)
+                };
 
                 foreach (var template in category.Value)
                 {
@@ -1137,8 +1154,10 @@ namespace MainUI.LogicalConfiguration.Controls
         /// </summary>
         private void ShowSystemProperties()
         {
-            var menu = new ContextMenuStrip();
-            menu.Font = new Font("微软雅黑", 9f);
+            var menu = new ContextMenuStrip
+            {
+                Font = new Font("微软雅黑", 10f)
+            };
 
             var properties = new Dictionary<string, Dictionary<string, string>>
     {
@@ -1164,7 +1183,8 @@ namespace MainUI.LogicalConfiguration.Controls
         {
             "📅 日期时间 - 完整格式", new Dictionary<string, string>
             {
-                { "当前日期时间", "DateTime.Now.ToString(\"yyyy-MM-dd HH:mm:ss\")" },
+                { "当前日期时间(无毫秒)", "DateTime.Now.ToString(\"yyyy-MM-dd HH:mm:ss\")" },
+                { "当前日期时间(带毫秒)", "DateTime.Now.ToString(\"yyyy-MM-dd HH:mm:ss.fff\")" },
                 { "当前日期", "DateTime.Now.ToString(\"yyyy-MM-dd\")" },
                 { "当前时间", "DateTime.Now.ToString(\"HH:mm:ss\")" },
                 { "年月日时分", "DateTime.Now.ToString(\"yyyyMMdd_HHmm\")" },
@@ -1182,14 +1202,38 @@ namespace MainUI.LogicalConfiguration.Controls
                 { "秒数 (0-59)", "DateTime.Now.Second" },
                 { "星期几 (0-6)", "DateTime.Now.DayOfWeek" }
             }
-        }
-    };
+        },
+            {
+                "⏱ 时间差值计算", new Dictionary<string, string>
+                {
+                    { "秒数差值", "DATEDIFF_SECONDS({结束时间}, {开始时间})" },
+                    { "秒数差值(2位)", "ROUND(DATEDIFF_SECONDS({结束时间}, {开始时间}), 2)" },
+                    { "毫秒差值", "DATEDIFF_MILLISECONDS({结束时间}, {开始时间})" },
+                    { "分钟差值", "DATEDIFF_MINUTES({结束时间}, {开始时间})" },
+                    { "小时差值", "DATEDIFF_HOURS({结束时间}, {开始时间})" },
+                    { "天数差值", "DATEDIFF_DAYS({结束时间}, {开始时间})" },
+                    { "距今秒数", "ELAPSED_SECONDS({开始时间})" },
+                    { "距今毫秒", "ELAPSED_MILLISECONDS({开始时间})" }
+                }
+            },
+            {
+                "🧮 数学函数", new Dictionary<string, string>
+                {
+                    { "四舍五入(保留2位)", "ROUND({数值}, 2)" },
+                    { "绝对值", "ABS({数值})" },
+                    { "最大值", "MAX({数值1}, {数值2})" },
+                    { "最小值", "MIN({数值1}, {数值2})" },
+                    { "向下取整", "FLOOR({数值})" },
+                    { "向上取整", "CEILING({数值})" }
+                }
+            }
+        };
 
             foreach (var category in properties)
             {
                 var categoryItem = new ToolStripMenuItem(category.Key)
                 {
-                    Font = new Font("微软雅黑", 9f, FontStyle.Bold)
+                    Font = new Font("微软雅黑", 10f, FontStyle.Bold)
                 };
 
                 foreach (var property in category.Value)
@@ -1222,7 +1266,7 @@ namespace MainUI.LogicalConfiguration.Controls
         private void ShowFunctions()
         {
             var menu = new ContextMenuStrip();
-            menu.Font = new Font("微软雅黑", 9f);
+            menu.Font = new Font("微软雅黑", 10f);
 
             var functions = new Dictionary<string, Dictionary<string, string>>
             {
@@ -1262,7 +1306,7 @@ namespace MainUI.LogicalConfiguration.Controls
             foreach (var category in functions)
             {
                 var categoryItem = new ToolStripMenuItem(category.Key);
-                categoryItem.Font = new Font("微软雅黑", 9f, FontStyle.Bold);
+                categoryItem.Font = new Font("微软雅黑", 10f, FontStyle.Bold);
 
                 foreach (var func in category.Value)
                 {
@@ -1297,7 +1341,7 @@ namespace MainUI.LogicalConfiguration.Controls
         {
             var menu = new ContextMenuStrip
             {
-                Font = new Font("微软雅黑", 9f)
+                Font = new Font("微软雅黑", 10f)
             };
 
             var constants = new Dictionary<string, string>

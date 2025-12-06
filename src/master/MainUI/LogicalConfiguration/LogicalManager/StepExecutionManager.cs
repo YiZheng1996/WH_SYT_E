@@ -664,8 +664,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     NlogHelper.Default.Info($"✓ 已启用提前退出，退出条件: {param.ExitConditionExpression}");
                 }
 
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
                 // 执行循环
                 for (int i = 1; i <= loopInfo.LoopCount; i++)
                 {
@@ -680,25 +678,59 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                             // 使用表达式引擎计算退出条件
                             var exitResult = _expressionEngine.EvaluateExpression(param.ExitConditionExpression);
 
-                            // 检查结果是否为 true
-                            if (exitResult.Success is bool shouldExit && shouldExit)
-                            {
-                                NlogHelper.Default.Info(
-                                    $"✓ 满足退出条件 [{param.ExitConditionExpression}]，" +
-                                    $"在第 {i}/{loopInfo.LoopCount} 次循环提前退出");
+                            // 添加详细日志
+                            NlogHelper.Default.Info($"退出条件计算结果: Success={exitResult.Success}, Result={exitResult.Result}, ResultType={exitResult.Result?.GetType().Name ?? "null"}");
 
-                                // 立即退出循环
-                                break;
+                            // 检查计算是否成功
+                            if (!exitResult.Success)
+                            {
+                                NlogHelper.Default.Warn($"退出条件计算失败: {exitResult.ErrorMessage}");
+                            }
+                            else
+                            {
+                                // 尝试转换为bool
+                                bool shouldExit = false;
+
+                                if (exitResult.Result is bool boolResult)
+                                {
+                                    shouldExit = boolResult;
+                                    NlogHelper.Default.Info($"条件结果为布尔值: {shouldExit}");
+                                }
+                                else
+                                {
+                                    // 尝试强制转换
+                                    try
+                                    {
+                                        shouldExit = Convert.ToBoolean(exitResult.Result);
+                                        NlogHelper.Default.Info($"条件结果已转换为布尔值: {shouldExit} (原始类型: {exitResult.Result?.GetType().Name})");
+                                    }
+                                    catch
+                                    {
+                                        NlogHelper.Default.Warn($"无法将条件结果转换为布尔值: {exitResult.Result}");
+                                    }
+                                }
+
+                                // 判断是否应该退出
+                                if (shouldExit)
+                                {
+                                    NlogHelper.Default.Info(
+                                        $"满足退出条件 [{param.ExitConditionExpression}]，" +
+                                        $"在第 {i}/{loopInfo.LoopCount} 次循环提前退出");
+
+                                    // 立即退出循环
+                                    break;
+                                }
+                                else
+                                {
+                                    NlogHelper.Default.Info($"未满足退出条件，继续循环");
+                                }
                             }
                         }
                         catch (Exception ex)
                         {
                             // 条件计算出错，记录日志但继续执行
                             NlogHelper.Default.Error(
-                                $"✗ 计算退出条件出错: {ex.Message}，条件: {param.ExitConditionExpression}");
-
-                            // 可选：如果希望条件错误时停止循环，取消下面的注释
-                            // return ExecutionResult.Failed($"退出条件计算错误: {ex.Message}");
+                                $"计算退出条件出错: {ex.Message}，条件: {param.ExitConditionExpression}");
                         }
                     }
 

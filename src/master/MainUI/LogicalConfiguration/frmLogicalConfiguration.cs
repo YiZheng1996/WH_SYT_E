@@ -460,6 +460,7 @@ namespace MainUI.LogicalConfiguration
 
                 // 打开配置窗体
                 _formService.OpenFormByName(this, e.Step.StepName, this);
+                _processGridControl.RefreshGrid();
             }
             catch (Exception ex)
             {
