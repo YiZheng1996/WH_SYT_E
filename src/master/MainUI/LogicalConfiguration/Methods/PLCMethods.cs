@@ -129,6 +129,9 @@ namespace MainUI.LogicalConfiguration.Methods
                             successCount++;
                             _logger.LogDebug("PLC写入成功: {ModuleName}.{KeyName} = {Value}",
                                 plc.PlcModuleName, plc.PlcKeyName, writeValue);
+
+                            // 添加写入间隔，避免PLC通信拥塞，50ms延迟，根据实际PLC调整
+                            await Task.Delay(50, cancellationToken);
                         }
                         else
                         {

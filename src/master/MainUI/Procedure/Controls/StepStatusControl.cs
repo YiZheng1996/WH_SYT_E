@@ -1585,6 +1585,7 @@ namespace MainUI.Procedure.Controls
         {
             yPosition = AddSectionTitle("运行时信息", yPosition, 0);
 
+            // 状态信息
             string statusInfo = currentStatus switch
             {
                 "running" => "步骤正在执行中...",
@@ -1602,12 +1603,62 @@ namespace MainUI.Procedure.Controls
 
             yPosition = AddDetailLine("状态", statusInfo, yPosition, 0, detailsPanel.Width, statusColor);
 
+            // 显示错误信息（失败时）
+            if (currentStatus == "failed" && !string.IsNullOrEmpty(stepData?.ErrorMessage))
+            {
+                yPosition = AddMultilineDetailBlock("错误信息", stepData.ErrorMessage, yPosition,
+                    StatusColors.Failed);
+            }
+
+            // 显示备注
+            if (!string.IsNullOrEmpty(stepData?.Remark))
+            {
+                yPosition = AddMultilineDetailBlock("备注", stepData.Remark, yPosition,
+                    Color.FromArgb(96, 96, 96));
+            }
+
             return yPosition;
         }
 
         #endregion
 
         #region 辅助方法
+        /// <summary>
+        /// 添加多行文本块（用于显示较长的文本内容）
+        /// </summary>
+        private int AddMultilineDetailBlock(string label, string content, int yPosition, Color textColor)
+        {
+            // 标签
+            var lblLabel = new Label
+            {
+                Text = $"{label}:",
+                Font = new Font("微软雅黑", 8.5F, FontStyle.Bold),
+                ForeColor = textColor,
+                AutoSize = true,
+                Location = new Point(5, yPosition)
+            };
+            detailsPanel.Controls.Add(lblLabel);
+            yPosition += 20;
+
+            // 内容（多行显示，带边框）
+            var lblContent = new Label
+            {
+                Text = content,
+                Font = new Font("微软雅黑", 8.5F),
+                ForeColor = textColor,
+                AutoSize = false,
+                Location = new Point(5, yPosition),
+                Size = new Size(detailsPanel.Width - 10, 0), // 宽度固定，高度自动
+                MaximumSize = new Size(detailsPanel.Width - 10, 0),
+                //AutoSize = true, // 设置为true让高度自适应
+                Padding = new Padding(8, 6, 8, 6),
+                BackColor = Color.FromArgb(250, 250, 250),
+            };
+            detailsPanel.Controls.Add(lblContent);
+
+            // 返回新的Y坐标（标签高度 + 内边距）
+            return yPosition + lblContent.Height + 10;
+        }
 
         // 大表头参数配置等
         private int AddSectionTitle(string title, int yPosition, int xPosition)

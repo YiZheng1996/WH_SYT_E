@@ -29,6 +29,11 @@
         /// 步骤备注 - 用户自定义说明
         /// </summary>
         public string Remark { get; set; }
+
+        /// <summary>
+        /// 错误信息 - 执行失败时记录的详细错误
+        /// </summary>
+        public string ErrorMessage { get; set; }
     }
 
 }

@@ -116,6 +116,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                         if (result.Succes)
                         {
                             step.Status = 2; // 成功
+                            step.ErrorMessage = null; // 清空错误信息
                             NlogHelper.Default.Info($"步骤执行成功: {step.StepName}");
 
                             // 检查是否需要跳转
@@ -129,6 +130,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                         else
                         {
                             step.Status = 3; // 失败
+                            step.ErrorMessage = result.Message; // 记录错误信息
                             NlogHelper.Default.Error($"步骤执行失败: {step.StepName}, 原因: {result.Message}");
                             break;
                         }
@@ -137,12 +139,14 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     {
                         // 操作被取消
                         step.Status = 3; // 标记为失败
+                        step.ErrorMessage = $"执行异常:操作被取消";
                         NlogHelper.Default.Info($"步骤 {step.StepName} 执行被取消");
                         break;
                     }
                     catch (Exception ex)
                     {
                         step.Status = 3; // 失败
+                        step.ErrorMessage = $"执行异常: {ex.Message}"; // ⭐ 记录异常信息
                         NlogHelper.Default.Error($"步骤执行异常: {step.StepName}", ex);
                         break;
                     }
