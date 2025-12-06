@@ -36,7 +36,6 @@ namespace MainUI
         private readonly WorkflowExecutionService _workflowService;
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
         private UcTestDetails ucTestDetails;// 试验详情控件
-        private Dictionary<int, StepStatusControl> stepControls = []; // 步骤状态字典
         #endregion
         public UcHMI(WorkflowExecutionService workflowService, ILogger<UcHMI> logger)
         {
@@ -192,6 +191,7 @@ namespace MainUI
                 InitializeProcessInterface(); //加载工艺界面
                 EnsureFrmHandleCreated(); //确保主窗体句柄已创建
                 InitializeTestDetailsPage();
+                OPCHelper.TestCongrp[0] = true; //默认自动模式
             }
             catch (Exception ex)
             {
@@ -339,6 +339,12 @@ namespace MainUI
         {
             try
             {
+                if (InvokeRequired)
+                {
+                    BeginInvoke(() => CountdownService_TimingUpdated(seconds));
+                    return;
+                }
+
                 TimeSpan elapsed = TimeSpan.FromSeconds(seconds);
 
                 // 更新 UcTestDetails 的总时间显示
@@ -785,7 +791,7 @@ namespace MainUI
             }
         }
 
-        private  void btnStopTest_Click(object sender, EventArgs e) =>  IsTestEnd();
+        private void btnStopTest_Click(object sender, EventArgs e) => IsTestEnd();
 
         private (bool Result, string txt) FrmText()
         {
@@ -1053,5 +1059,10 @@ namespace MainUI
         }
 
         #endregion
+
+        private void RadioAuto_CheckedChanged(object sender, EventArgs e)
+        {
+            OPCHelper.TestCongrp[0] = RadioAuto.Checked;
+        }
     }
 }

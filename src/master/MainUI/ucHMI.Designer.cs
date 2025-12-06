@@ -788,6 +788,7 @@ namespace MainUI
             RadioHand.Size = new Size(116, 29);
             RadioHand.TabIndex = 67;
             RadioHand.Text = "手动控制";
+            RadioHand.CheckedChanged += RadioAuto_CheckedChanged;
             // 
             // RadioAuto
             // 
@@ -800,6 +801,7 @@ namespace MainUI
             RadioAuto.Size = new Size(118, 29);
             RadioAuto.TabIndex = 498;
             RadioAuto.Text = "自动控制";
+            RadioAuto.CheckedChanged += RadioAuto_CheckedChanged;
             // 
             // panelHand
             // 
@@ -989,8 +991,8 @@ namespace MainUI
             // 
             tabs1.BackColor = Color.FromArgb(236, 236, 237);
             tabs1.Controls.Add(tabPage3);
-            tabs1.Controls.Add(tabPageTestDetails);
             tabs1.Controls.Add(tabPage1);
+            tabs1.Controls.Add(tabPageTestDetails);
             tabs1.Location = new Point(257, 33);
             tabs1.Name = "tabs1";
             tabs1.Pages.Add(tabPage3);

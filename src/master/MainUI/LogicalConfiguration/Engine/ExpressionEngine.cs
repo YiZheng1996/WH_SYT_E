@@ -2294,5 +2294,121 @@ namespace MainUI.LogicalConfiguration.Engine
             }
         }
         #endregion
+
+        #region 新异步方法：步骤执行、循环条件判断时用
+        /// <summary>
+        /// 异步预处理表达式 - 支持PLC异步读取
+        /// </summary>
+        private async Task<string> PreprocessExpressionAsync(string expression)
+        {
+            var result = expression;
+            var matches = _variablePattern.Matches(expression);
+
+            foreach (Match match in matches)
+            {
+                var varName = match.Groups[1].Value;
+
+                // 检查是否是 PLC 地址格式
+                if (varName.Contains('.'))
+                {
+                    var plcValue = await ReplacePLCReferenceAsync(varName);
+                    result = result.Replace(match.Value, plcValue);
+                }
+                else
+                {
+                    // 普通变量
+                    var variable = _variableManager.TryFindVariableByName(varName);
+                    if (variable != null)
+                    {
+                        var formattedValue = FormatValueForExpression(variable.VarValue);
+                        result = result.Replace(match.Value, formattedValue);
+                    }
+                    else
+                    {
+                        _logger?.LogWarning($"变量 '{varName}' 不存在");
+                        throw new InvalidOperationException($"变量 '{varName}' 不存在");
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 异步替换PLC引用
+        /// </summary>
+        private async Task<string> ReplacePLCReferenceAsync(string plcReference)
+        {
+            try
+            {
+                var parts = plcReference.Split('.');
+                //if (parts.Length != 2)
+                //{
+                //    throw new InvalidOperationException($"PLC引用格式错误: {plcReference}");
+                //}
+
+                string moduleName = parts[1];
+                string address = parts[2];
+
+                if (_plcManager == null)
+                {
+                    throw new InvalidOperationException("PLCManager 未初始化");
+                }
+
+                var plcValue = await _plcManager.ReadPLCValueAsync(moduleName, address);
+
+                if (plcValue == null)
+                {
+                    throw new InvalidOperationException($"无法读取PLC: {moduleName}.{address}");
+                }
+
+                _logger?.LogDebug($"PLC读取成功: {moduleName}.{address} = {plcValue}");
+                return FormatValueForExpression(plcValue);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"处理PLC引用失败: {plcReference}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 真正的异步求值表达式
+        /// </summary>
+        public async Task<EvaluationResult> EvaluateExpressionAsync_Real(string expression)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(expression))
+                {
+                    return EvaluationResult.Error("表达式为空");
+                }
+
+                _logger?.LogDebug("开始异步求值表达式: {Expression}", expression);
+
+                // 1. 验证表达式
+                var validation = ValidateExpression(expression);
+                if (!validation.IsValid)
+                {
+                    return EvaluationResult.Error(validation.Message);
+                }
+
+                // 2. 异步预处理表达式（支持PLC读取）
+                var processedExpression = await PreprocessExpressionAsync(expression);
+
+                // 3. 计算结果
+                var result = EvaluateProcessedExpression(processedExpression);
+
+                _logger?.LogDebug("表达式求值成功: {Expression} = {Result}", expression, result);
+
+                return EvaluationResult.Succes(result);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "表达式求值失败: {Expression}", expression);
+                return EvaluationResult.Error($"求值失败: {ex.Message}");
+            }
+        }
+        #endregion
     }
 }

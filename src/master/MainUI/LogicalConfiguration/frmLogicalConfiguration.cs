@@ -342,9 +342,13 @@ namespace MainUI.LogicalConfiguration
         {
             try
             {
-                // 使用 DataGridViewManager 更新UI
-                _processGridControl.UpdateStepStatus(index, step.Status);
+                if (_processGridControl.InvokeRequired)
+                {
+                    _processGridControl.BeginInvoke(() => UpdateStepStatus(step, index));
+                    return;
+                }
 
+                _processGridControl.UpdateStepStatus(index, step.Status);
                 _logger.LogDebug("更新步骤状态: Index={Index}, Status={Status}", index, step.Status);
             }
             catch (Exception ex)

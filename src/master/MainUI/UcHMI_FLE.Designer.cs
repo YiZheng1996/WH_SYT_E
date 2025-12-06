@@ -146,7 +146,7 @@
             // 
             uiPipe2.Direction = UILine.LineDirection.Vertical;
             uiPipe2.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe2.Location = new Point(785, 654);
+            uiPipe2.Location = new Point(785, 665);
             uiPipe2.MinimumSize = new Size(1, 1);
             uiPipe2.Name = "uiPipe2";
             uiPipe2.Radius = 12;
@@ -163,7 +163,7 @@
             // 
             uiPanel3.FillColor = Color.White;
             uiPanel3.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            uiPanel3.Location = new Point(666, 623);
+            uiPanel3.Location = new Point(666, 634);
             uiPanel3.Margin = new Padding(4, 5, 4, 5);
             uiPanel3.MinimumSize = new Size(1, 1);
             uiPanel3.Name = "uiPanel3";
@@ -173,12 +173,13 @@
             uiPanel3.TabIndex = 574;
             uiPanel3.Text = "EP01";
             uiPanel3.TextAlignment = ContentAlignment.MiddleCenter;
+            uiPanel3.MouseDown += DCFVX01_MouseDown;
             // 
             // EP01
             // 
             EP01.FillColor = Color.White;
             EP01.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            EP01.Location = new Point(666, 641);
+            EP01.Location = new Point(666, 652);
             EP01.Margin = new Padding(4, 5, 4, 5);
             EP01.MinimumSize = new Size(1, 1);
             EP01.Name = "EP01";
@@ -190,6 +191,7 @@
             EP01.Text = "0";
             EP01.TextAlignment = ContentAlignment.MiddleCenter;
             EP01.Click += TimeSetting_Click;
+            EP01.MouseDown += DCFVX01_MouseDown;
             // 
             // uiPanel11
             // 
@@ -203,7 +205,7 @@
             uiPanel11.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel11.ForeColor = Color.Black;
             uiPanel11.ForeDisableColor = Color.Black;
-            uiPanel11.Location = new Point(148, 211);
+            uiPanel11.Location = new Point(148, 222);
             uiPanel11.Margin = new Padding(4, 5, 4, 5);
             uiPanel11.MinimumSize = new Size(1, 1);
             uiPanel11.Name = "uiPanel11";
@@ -255,7 +257,7 @@
             // 
             uiPipe10.Direction = UILine.LineDirection.Vertical;
             uiPipe10.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe10.Location = new Point(193, 263);
+            uiPipe10.Location = new Point(193, 274);
             uiPipe10.MinimumSize = new Size(1, 1);
             uiPipe10.Name = "uiPipe10";
             uiPipe10.Radius = 10;
@@ -279,7 +281,7 @@
             uiPanel20.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel20.ForeColor = Color.Black;
             uiPanel20.ForeDisableColor = Color.Black;
-            uiPanel20.Location = new Point(111, 547);
+            uiPanel20.Location = new Point(111, 558);
             uiPanel20.Margin = new Padding(4, 5, 4, 5);
             uiPanel20.MinimumSize = new Size(1, 1);
             uiPanel20.Name = "uiPanel20";
@@ -339,7 +341,7 @@
             uiPanel9.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel9.ForeColor = Color.Black;
             uiPanel9.ForeDisableColor = Color.Black;
-            uiPanel9.Location = new Point(112, 32);
+            uiPanel9.Location = new Point(112, 43);
             uiPanel9.Margin = new Padding(4, 5, 4, 5);
             uiPanel9.MinimumSize = new Size(1, 1);
             uiPanel9.Name = "uiPanel9";
@@ -390,7 +392,7 @@
             // DCFVX03
             // 
             DCFVX03.Direction = UIValve.UIValveDirection.Top;
-            DCFVX03.Location = new Point(182, 609);
+            DCFVX03.Location = new Point(182, 620);
             DCFVX03.Name = "DCFVX03";
             DCFVX03.PipeSize = 15;
             DCFVX03.RectColor = Color.Gray;
@@ -401,11 +403,12 @@
             DCFVX03.ValveColor = Color.Gray;
             DCFVX03.ZoomScaleDisabled = true;
             DCFVX03.ActiveChanged += DCF_ActiveChanged;
+            DCFVX03.MouseDown += DCFVX01_MouseDown;
             // 
             // DCFVX05
             // 
             DCFVX05.Direction = UIValve.UIValveDirection.Top;
-            DCFVX05.Location = new Point(184, 419);
+            DCFVX05.Location = new Point(184, 430);
             DCFVX05.Name = "DCFVX05";
             DCFVX05.PipeSize = 15;
             DCFVX05.RectColor = Color.Gray;
@@ -416,11 +419,12 @@
             DCFVX05.ValveColor = Color.Gray;
             DCFVX05.ZoomScaleDisabled = true;
             DCFVX05.ActiveChanged += DCF_ActiveChanged;
+            DCFVX05.MouseDown += DCFVX01_MouseDown;
             // 
             // DCFVX08
             // 
             DCFVX08.Direction = UIValve.UIValveDirection.Top;
-            DCFVX08.Location = new Point(277, 275);
+            DCFVX08.Location = new Point(277, 286);
             DCFVX08.Name = "DCFVX08";
             DCFVX08.PipeSize = 15;
             DCFVX08.RectColor = Color.Gray;
@@ -431,11 +435,12 @@
             DCFVX08.ValveColor = Color.Gray;
             DCFVX08.ZoomScaleDisabled = true;
             DCFVX08.ActiveChanged += DCF_ActiveChanged;
+            DCFVX08.MouseDown += DCFVX01_MouseDown;
             // 
             // DCFVX10
             // 
             DCFVX10.Direction = UIValve.UIValveDirection.Top;
-            DCFVX10.Location = new Point(203, 77);
+            DCFVX10.Location = new Point(203, 88);
             DCFVX10.Name = "DCFVX10";
             DCFVX10.PipeSize = 15;
             DCFVX10.RectColor = Color.Gray;
@@ -446,12 +451,13 @@
             DCFVX10.ValveColor = Color.Gray;
             DCFVX10.ZoomScaleDisabled = true;
             DCFVX10.ActiveChanged += DCF_ActiveChanged;
+            DCFVX10.MouseDown += DCFVX01_MouseDown;
             // 
             // uiPipe32
             // 
             uiPipe32.Direction = UILine.LineDirection.Vertical;
             uiPipe32.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe32.Location = new Point(151, 553);
+            uiPipe32.Location = new Point(151, 564);
             uiPipe32.MinimumSize = new Size(1, 1);
             uiPipe32.Name = "uiPipe32";
             uiPipe32.Radius = 10;
@@ -465,7 +471,7 @@
             // DCFVX01
             // 
             DCFVX01.Direction = UIValve.UIValveDirection.Top;
-            DCFVX01.Location = new Point(545, 609);
+            DCFVX01.Location = new Point(545, 620);
             DCFVX01.Name = "DCFVX01";
             DCFVX01.PipeSize = 15;
             DCFVX01.RectColor = Color.Gray;
@@ -476,11 +482,12 @@
             DCFVX01.ValveColor = Color.Gray;
             DCFVX01.ZoomScaleDisabled = true;
             DCFVX01.ActiveChanged += DCF_ActiveChanged;
+            DCFVX01.MouseDown += DCFVX01_MouseDown;
             // 
             // DCFVX02
             // 
             DCFVX02.Direction = UIValve.UIValveDirection.Top;
-            DCFVX02.Location = new Point(281, 609);
+            DCFVX02.Location = new Point(281, 620);
             DCFVX02.Name = "DCFVX02";
             DCFVX02.PipeSize = 15;
             DCFVX02.RectColor = Color.Gray;
@@ -491,11 +498,12 @@
             DCFVX02.ValveColor = Color.Gray;
             DCFVX02.ZoomScaleDisabled = true;
             DCFVX02.ActiveChanged += DCF_ActiveChanged;
+            DCFVX02.MouseDown += DCFVX01_MouseDown;
             // 
             // DCFVX04
             // 
             DCFVX04.Direction = UIValve.UIValveDirection.Top;
-            DCFVX04.Location = new Point(281, 523);
+            DCFVX04.Location = new Point(281, 534);
             DCFVX04.Name = "DCFVX04";
             DCFVX04.PipeSize = 15;
             DCFVX04.RectColor = Color.Gray;
@@ -506,12 +514,13 @@
             DCFVX04.ValveColor = Color.Gray;
             DCFVX04.ZoomScaleDisabled = true;
             DCFVX04.ActiveChanged += DCF_ActiveChanged;
+            DCFVX04.MouseDown += DCFVX01_MouseDown;
             // 
             // uiPipe31
             // 
             uiPipe31.Direction = UILine.LineDirection.Vertical;
             uiPipe31.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe31.Location = new Point(155, 592);
+            uiPipe31.Location = new Point(155, 603);
             uiPipe31.MinimumSize = new Size(1, 1);
             uiPipe31.Name = "uiPipe31";
             uiPipe31.Radius = 12;
@@ -526,7 +535,7 @@
             // DCFVX11
             // 
             DCFVX11.Direction = UIValve.UIValveDirection.Top;
-            DCFVX11.Location = new Point(313, 24);
+            DCFVX11.Location = new Point(313, 35);
             DCFVX11.Name = "DCFVX11";
             DCFVX11.PipeSize = 15;
             DCFVX11.RectColor = Color.Gray;
@@ -537,12 +546,13 @@
             DCFVX11.ValveColor = Color.Gray;
             DCFVX11.ZoomScaleDisabled = true;
             DCFVX11.ActiveChanged += DCF_ActiveChanged;
+            DCFVX11.MouseDown += DCFVX01_MouseDown;
             // 
             // uiPipe8
             // 
             uiPipe8.Direction = UILine.LineDirection.Vertical;
             uiPipe8.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe8.Location = new Point(156, 76);
+            uiPipe8.Location = new Point(156, 87);
             uiPipe8.MinimumSize = new Size(1, 1);
             uiPipe8.Name = "uiPipe8";
             uiPipe8.Radius = 12;
@@ -557,24 +567,25 @@
             // DCFVX13
             // 
             DCFVX13.Direction = UIValve.UIValveDirection.Top;
-            DCFVX13.Location = new Point(595, 78);
+            DCFVX13.Location = new Point(595, 89);
             DCFVX13.Name = "DCFVX13";
             DCFVX13.PipeSize = 15;
             DCFVX13.RectColor = Color.Gray;
             DCFVX13.Size = new Size(60, 60);
             DCFVX13.TabIndex = 568;
-            DCFVX13.Tag = "20";
+            DCFVX13.Tag = "4";
             DCFVX13.Text = "uiValve1";
             DCFVX13.ValveColor = Color.Gray;
             DCFVX13.ZoomScaleDisabled = true;
             DCFVX13.ActiveChanged += DCF_ActiveChanged;
+            DCFVX13.MouseDown += DCFVX01_MouseDown;
             // 
             // uiLabel12
             // 
             uiLabel12.AutoSize = true;
             uiLabel12.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
             uiLabel12.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel12.Location = new Point(17, 643);
+            uiLabel12.Location = new Point(17, 654);
             uiLabel12.Name = "uiLabel12";
             uiLabel12.Size = new Size(37, 22);
             uiLabel12.TabIndex = 586;
@@ -585,7 +596,7 @@
             uiLabel11.AutoSize = true;
             uiLabel11.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
             uiLabel11.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel11.Location = new Point(17, 454);
+            uiLabel11.Location = new Point(17, 465);
             uiLabel11.Name = "uiLabel11";
             uiLabel11.Size = new Size(32, 22);
             uiLabel11.TabIndex = 587;
@@ -596,7 +607,7 @@
             uiLabel10.AutoSize = true;
             uiLabel10.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
             uiLabel10.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel10.Location = new Point(17, 111);
+            uiLabel10.Location = new Point(17, 122);
             uiLabel10.Name = "uiLabel10";
             uiLabel10.Size = new Size(32, 22);
             uiLabel10.TabIndex = 595;
@@ -609,7 +620,7 @@
             panel1.Controls.Add(uiLabel8);
             panel1.Controls.Add(uiLabel6);
             panel1.Controls.Add(uiLabel5);
-            panel1.Location = new Point(57, 52);
+            panel1.Location = new Point(57, 63);
             panel1.Name = "panel1";
             panel1.Size = new Size(49, 679);
             panel1.TabIndex = 596;
@@ -661,7 +672,7 @@
             // uiPipe4
             // 
             uiPipe4.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe4.Location = new Point(104, 116);
+            uiPipe4.Location = new Point(104, 127);
             uiPipe4.MinimumSize = new Size(1, 1);
             uiPipe4.Name = "uiPipe4";
             uiPipe4.Radius = 12;
@@ -677,7 +688,7 @@
             // uiPipe28
             // 
             uiPipe28.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe28.Location = new Point(94, 648);
+            uiPipe28.Location = new Point(94, 659);
             uiPipe28.MinimumSize = new Size(1, 1);
             uiPipe28.Name = "uiPipe28";
             uiPipe28.Radius = 12;
@@ -693,7 +704,7 @@
             // uiPipe24
             // 
             uiPipe24.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe24.Location = new Point(415, 458);
+            uiPipe24.Location = new Point(415, 469);
             uiPipe24.MinimumSize = new Size(1, 1);
             uiPipe24.Name = "uiPipe24";
             uiPipe24.Radius = 12;
@@ -708,7 +719,7 @@
             // uiPipe18
             // 
             uiPipe18.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe18.Location = new Point(94, 458);
+            uiPipe18.Location = new Point(94, 469);
             uiPipe18.MinimumSize = new Size(1, 1);
             uiPipe18.Name = "uiPipe18";
             uiPipe18.Radius = 12;
@@ -724,7 +735,7 @@
             // uiPipe1
             // 
             uiPipe1.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe1.Location = new Point(104, 313);
+            uiPipe1.Location = new Point(104, 324);
             uiPipe1.MinimumSize = new Size(1, 1);
             uiPipe1.Name = "uiPipe1";
             uiPipe1.Radius = 12;
@@ -741,7 +752,7 @@
             // 
             uiLabel1.Font = new Font("微软雅黑", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiLabel1.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel1.Location = new Point(824, 664);
+            uiLabel1.Location = new Point(824, 675);
             uiLabel1.Name = "uiLabel1";
             uiLabel1.Size = new Size(57, 17);
             uiLabel1.TabIndex = 588;
@@ -751,7 +762,7 @@
             // 
             uiPipe27.Direction = UILine.LineDirection.Vertical;
             uiPipe27.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe27.Location = new Point(518, 653);
+            uiPipe27.Location = new Point(518, 664);
             uiPipe27.MinimumSize = new Size(1, 1);
             uiPipe27.Name = "uiPipe27";
             uiPipe27.Radius = 12;
@@ -767,7 +778,7 @@
             // 
             uiPipe29.Direction = UILine.LineDirection.Vertical;
             uiPipe29.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe29.Location = new Point(260, 562);
+            uiPipe29.Location = new Point(260, 573);
             uiPipe29.MinimumSize = new Size(1, 1);
             uiPipe29.Name = "uiPipe29";
             uiPipe29.Radius = 12;
@@ -779,13 +790,12 @@
             uiPipe29.TabIndex = 539;
             uiPipe29.Text = "uiPipe1";
             uiPipe29.ZoomScaleDisabled = true;
-            uiPipe29.Click += uiPipe29_Click;
             // 
             // uiPipe25
             // 
             uiPipe25.Direction = UILine.LineDirection.Vertical;
             uiPipe25.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe25.Location = new Point(487, 458);
+            uiPipe25.Location = new Point(487, 469);
             uiPipe25.MinimumSize = new Size(1, 1);
             uiPipe25.Name = "uiPipe25";
             uiPipe25.Radius = 12;
@@ -802,7 +812,7 @@
             // 
             uiPipe6.Direction = UILine.LineDirection.Vertical;
             uiPipe6.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe6.Location = new Point(292, 63);
+            uiPipe6.Location = new Point(292, 74);
             uiPipe6.MinimumSize = new Size(1, 1);
             uiPipe6.Name = "uiPipe6";
             uiPipe6.Radius = 12;
@@ -818,7 +828,7 @@
             // uiPipe3
             // 
             uiPipe3.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe3.Location = new Point(788, 648);
+            uiPipe3.Location = new Point(788, 659);
             uiPipe3.MinimumSize = new Size(1, 1);
             uiPipe3.Name = "uiPipe3";
             uiPipe3.Radius = 12;
@@ -835,7 +845,7 @@
             // 
             uiPipe9.Direction = UILine.LineDirection.Vertical;
             uiPipe9.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe9.Location = new Point(522, 135);
+            uiPipe9.Location = new Point(522, 146);
             uiPipe9.MinimumSize = new Size(1, 1);
             uiPipe9.Name = "uiPipe9";
             uiPipe9.Radius = 12;
@@ -851,7 +861,7 @@
             // uiPipe30
             // 
             uiPipe30.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe30.Location = new Point(268, 562);
+            uiPipe30.Location = new Point(268, 573);
             uiPipe30.MinimumSize = new Size(1, 1);
             uiPipe30.Name = "uiPipe30";
             uiPipe30.Radius = 12;
@@ -867,7 +877,7 @@
             // uiPipe7
             // 
             uiPipe7.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe7.Location = new Point(299, 63);
+            uiPipe7.Location = new Point(299, 74);
             uiPipe7.MinimumSize = new Size(1, 1);
             uiPipe7.Name = "uiPipe7";
             uiPipe7.Radius = 12;
@@ -883,7 +893,7 @@
             // uiPipe12
             // 
             uiPipe12.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe12.Location = new Point(528, 313);
+            uiPipe12.Location = new Point(528, 324);
             uiPipe12.MinimumSize = new Size(1, 1);
             uiPipe12.Name = "uiPipe12";
             uiPipe12.Radius = 12;
@@ -900,7 +910,7 @@
             uiLabel7.AutoSize = true;
             uiLabel7.Font = new Font("微软雅黑", 10F);
             uiLabel7.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel7.Location = new Point(551, 663);
+            uiLabel7.Location = new Point(551, 674);
             uiLabel7.Name = "uiLabel7";
             uiLabel7.Size = new Size(43, 20);
             uiLabel7.TabIndex = 592;
@@ -911,7 +921,7 @@
             uiLabel35.AutoSize = true;
             uiLabel35.Font = new Font("微软雅黑", 10F);
             uiLabel35.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel35.Location = new Point(292, 662);
+            uiLabel35.Location = new Point(292, 673);
             uiLabel35.Name = "uiLabel35";
             uiLabel35.Size = new Size(43, 20);
             uiLabel35.TabIndex = 592;
@@ -922,7 +932,7 @@
             uiLabel36.AutoSize = true;
             uiLabel36.Font = new Font("微软雅黑", 10F);
             uiLabel36.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel36.Location = new Point(193, 662);
+            uiLabel36.Location = new Point(193, 673);
             uiLabel36.Name = "uiLabel36";
             uiLabel36.Size = new Size(43, 20);
             uiLabel36.TabIndex = 592;
@@ -933,7 +943,7 @@
             uiLabel37.AutoSize = true;
             uiLabel37.Font = new Font("微软雅黑", 10F);
             uiLabel37.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel37.Location = new Point(290, 576);
+            uiLabel37.Location = new Point(290, 587);
             uiLabel37.Name = "uiLabel37";
             uiLabel37.Size = new Size(43, 20);
             uiLabel37.TabIndex = 592;
@@ -944,7 +954,7 @@
             uiLabel39.AutoSize = true;
             uiLabel39.Font = new Font("微软雅黑", 10F);
             uiLabel39.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel39.Location = new Point(192, 471);
+            uiLabel39.Location = new Point(192, 482);
             uiLabel39.Name = "uiLabel39";
             uiLabel39.Size = new Size(43, 20);
             uiLabel39.TabIndex = 589;
@@ -955,7 +965,7 @@
             uiLabel40.AutoSize = true;
             uiLabel40.Font = new Font("微软雅黑", 10F);
             uiLabel40.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel40.Location = new Point(287, 327);
+            uiLabel40.Location = new Point(287, 338);
             uiLabel40.Name = "uiLabel40";
             uiLabel40.Size = new Size(43, 20);
             uiLabel40.TabIndex = 589;
@@ -966,7 +976,7 @@
             uiLabel41.AutoSize = true;
             uiLabel41.Font = new Font("微软雅黑", 10F);
             uiLabel41.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel41.Location = new Point(210, 130);
+            uiLabel41.Location = new Point(210, 141);
             uiLabel41.Name = "uiLabel41";
             uiLabel41.Size = new Size(43, 20);
             uiLabel41.TabIndex = 589;
@@ -977,7 +987,7 @@
             uiLabel42.AutoSize = true;
             uiLabel42.Font = new Font("微软雅黑", 10F);
             uiLabel42.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel42.Location = new Point(325, 77);
+            uiLabel42.Location = new Point(325, 88);
             uiLabel42.Name = "uiLabel42";
             uiLabel42.Size = new Size(43, 20);
             uiLabel42.TabIndex = 589;
@@ -988,7 +998,7 @@
             uiLabel13.AutoSize = true;
             uiLabel13.Font = new Font("微软雅黑", 10F);
             uiLabel13.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel13.Location = new Point(606, 130);
+            uiLabel13.Location = new Point(606, 141);
             uiLabel13.Name = "uiLabel13";
             uiLabel13.Size = new Size(43, 20);
             uiLabel13.TabIndex = 589;
@@ -1006,7 +1016,7 @@
             uiPanel24.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel24.ForeColor = Color.Black;
             uiPanel24.ForeDisableColor = Color.Black;
-            uiPanel24.Location = new Point(783, 526);
+            uiPanel24.Location = new Point(783, 537);
             uiPanel24.Margin = new Padding(4, 5, 4, 5);
             uiPanel24.MinimumSize = new Size(1, 1);
             uiPanel24.Name = "uiPanel24";
@@ -1058,7 +1068,7 @@
             // 
             uiPipe33.Direction = UILine.LineDirection.Vertical;
             uiPipe33.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe33.Location = new Point(837, 556);
+            uiPipe33.Location = new Point(837, 567);
             uiPipe33.MinimumSize = new Size(1, 1);
             uiPipe33.Name = "uiPipe33";
             uiPipe33.Radius = 12;
@@ -1074,7 +1084,7 @@
             // 
             uiPipe34.Direction = UILine.LineDirection.Vertical;
             uiPipe34.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe34.Location = new Point(406, 602);
+            uiPipe34.Location = new Point(406, 613);
             uiPipe34.MinimumSize = new Size(1, 1);
             uiPipe34.Name = "uiPipe34";
             uiPipe34.Radius = 12;
@@ -1090,7 +1100,7 @@
             // 
             uiPipe35.Direction = UILine.LineDirection.Vertical;
             uiPipe35.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe35.Location = new Point(440, 574);
+            uiPipe35.Location = new Point(440, 585);
             uiPipe35.MinimumSize = new Size(1, 1);
             uiPipe35.Name = "uiPipe35";
             uiPipe35.Radius = 10;
@@ -1113,7 +1123,7 @@
             uiPanel25.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel25.ForeColor = Color.Black;
             uiPanel25.ForeDisableColor = Color.Black;
-            uiPanel25.Location = new Point(362, 547);
+            uiPanel25.Location = new Point(362, 558);
             uiPanel25.Margin = new Padding(4, 5, 4, 5);
             uiPanel25.MinimumSize = new Size(1, 1);
             uiPanel25.Name = "uiPanel25";
@@ -1173,7 +1183,7 @@
             uiPanel7.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel7.ForeColor = Color.Black;
             uiPanel7.ForeDisableColor = Color.Black;
-            uiPanel7.Location = new Point(718, 28);
+            uiPanel7.Location = new Point(718, 39);
             uiPanel7.Margin = new Padding(4, 5, 4, 5);
             uiPanel7.MinimumSize = new Size(1, 1);
             uiPanel7.Name = "uiPanel7";
@@ -1225,7 +1235,7 @@
             // 
             uiPipe36.Direction = UILine.LineDirection.Vertical;
             uiPipe36.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe36.Location = new Point(763, 84);
+            uiPipe36.Location = new Point(763, 95);
             uiPipe36.MinimumSize = new Size(1, 1);
             uiPipe36.Name = "uiPipe36";
             uiPipe36.Radius = 10;
@@ -1240,7 +1250,7 @@
             // DCFVX07
             // 
             DCFVX07.Direction = UIValve.UIValveDirection.Top;
-            DCFVX07.Location = new Point(426, 419);
+            DCFVX07.Location = new Point(426, 430);
             DCFVX07.Name = "DCFVX07";
             DCFVX07.PipeSize = 15;
             DCFVX07.RectColor = Color.Gray;
@@ -1251,13 +1261,14 @@
             DCFVX07.ValveColor = Color.Gray;
             DCFVX07.ZoomScaleDisabled = true;
             DCFVX07.ActiveChanged += DCF_ActiveChanged;
+            DCFVX07.MouseDown += DCFVX01_MouseDown;
             // 
             // uiLabel2
             // 
             uiLabel2.AutoSize = true;
             uiLabel2.Font = new Font("微软雅黑", 10F);
             uiLabel2.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel2.Location = new Point(421, 473);
+            uiLabel2.Location = new Point(421, 484);
             uiLabel2.Name = "uiLabel2";
             uiLabel2.Size = new Size(67, 20);
             uiLabel2.TabIndex = 605;
@@ -1267,7 +1278,7 @@
             // 
             uiPipe13.Direction = UILine.LineDirection.Vertical;
             uiPipe13.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe13.Location = new Point(408, 118);
+            uiPipe13.Location = new Point(408, 129);
             uiPipe13.MinimumSize = new Size(1, 1);
             uiPipe13.Name = "uiPipe13";
             uiPipe13.Radius = 12;
@@ -1283,7 +1294,7 @@
             // DCFVX12
             // 
             DCFVX12.Direction = UIValve.UIValveDirection.Top;
-            DCFVX12.Location = new Point(434, 24);
+            DCFVX12.Location = new Point(434, 35);
             DCFVX12.Name = "DCFVX12";
             DCFVX12.PipeSize = 15;
             DCFVX12.RectColor = Color.Gray;
@@ -1294,13 +1305,14 @@
             DCFVX12.ValveColor = Color.Gray;
             DCFVX12.ZoomScaleDisabled = true;
             DCFVX12.ActiveChanged += DCF_ActiveChanged;
+            DCFVX12.MouseDown += DCFVX01_MouseDown;
             // 
             // uiLabel18
             // 
             uiLabel18.AutoSize = true;
             uiLabel18.Font = new Font("微软雅黑", 10F);
             uiLabel18.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel18.Location = new Point(446, 79);
+            uiLabel18.Location = new Point(446, 90);
             uiLabel18.Name = "uiLabel18";
             uiLabel18.Size = new Size(43, 20);
             uiLabel18.TabIndex = 609;
@@ -1309,7 +1321,7 @@
             // uiPipe14
             // 
             uiPipe14.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe14.Location = new Point(416, 63);
+            uiPipe14.Location = new Point(416, 74);
             uiPipe14.MinimumSize = new Size(1, 1);
             uiPipe14.Name = "uiPipe14";
             uiPipe14.Radius = 12;
@@ -1326,7 +1338,7 @@
             // 
             uiPipe15.Direction = UILine.LineDirection.Vertical;
             uiPipe15.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe15.Location = new Point(408, 63);
+            uiPipe15.Location = new Point(408, 74);
             uiPipe15.MinimumSize = new Size(1, 1);
             uiPipe15.Name = "uiPipe15";
             uiPipe15.Radius = 12;
@@ -1343,7 +1355,7 @@
             // 
             uiPipe11.Direction = UILine.LineDirection.Vertical;
             uiPipe11.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe11.Location = new Point(487, 561);
+            uiPipe11.Location = new Point(487, 572);
             uiPipe11.MinimumSize = new Size(1, 1);
             uiPipe11.Name = "uiPipe11";
             uiPipe11.Radius = 12;
@@ -1359,7 +1371,7 @@
             // 
             uiPipe16.Direction = UILine.LineDirection.Vertical;
             uiPipe16.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe16.Location = new Point(612, 313);
+            uiPipe16.Location = new Point(612, 324);
             uiPipe16.MinimumSize = new Size(1, 1);
             uiPipe16.Name = "uiPipe16";
             uiPipe16.Radius = 12;
@@ -1376,7 +1388,7 @@
             // 
             uiPipe17.Direction = UILine.LineDirection.Vertical;
             uiPipe17.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe17.Location = new Point(612, 389);
+            uiPipe17.Location = new Point(612, 400);
             uiPipe17.MinimumSize = new Size(1, 1);
             uiPipe17.Name = "uiPipe17";
             uiPipe17.Radius = 12;
@@ -1391,7 +1403,7 @@
             // DCFVX06
             // 
             DCFVX06.Direction = UIValve.UIValveDirection.Top;
-            DCFVX06.Location = new Point(612, 672);
+            DCFVX06.Location = new Point(612, 683);
             DCFVX06.Name = "DCFVX06";
             DCFVX06.PipeSize = 15;
             DCFVX06.RectColor = Color.Gray;
@@ -1402,11 +1414,12 @@
             DCFVX06.ValveColor = Color.Gray;
             DCFVX06.ZoomScaleDisabled = true;
             DCFVX06.ActiveChanged += DCF_ActiveChanged;
+            DCFVX06.MouseDown += DCFVX01_MouseDown;
             // 
             // uiPipe20
             // 
             uiPipe20.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe20.Location = new Point(680, 648);
+            uiPipe20.Location = new Point(680, 659);
             uiPipe20.MinimumSize = new Size(1, 1);
             uiPipe20.Name = "uiPipe20";
             uiPipe20.Radius = 12;
@@ -1421,7 +1434,7 @@
             // uiPipe22
             // 
             uiPipe22.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe22.Location = new Point(522, 711);
+            uiPipe22.Location = new Point(522, 722);
             uiPipe22.MinimumSize = new Size(1, 1);
             uiPipe22.Name = "uiPipe22";
             uiPipe22.Radius = 12;
@@ -1438,7 +1451,7 @@
             // 
             uiPipe21.Direction = UILine.LineDirection.Vertical;
             uiPipe21.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe21.Location = new Point(260, 586);
+            uiPipe21.Location = new Point(260, 597);
             uiPipe21.MinimumSize = new Size(1, 1);
             uiPipe21.Name = "uiPipe21";
             uiPipe21.Radius = 12;
@@ -1454,7 +1467,7 @@
             // 
             uiPipe23.Direction = UILine.LineDirection.Vertical;
             uiPipe23.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe23.Location = new Point(518, 678);
+            uiPipe23.Location = new Point(518, 689);
             uiPipe23.MinimumSize = new Size(1, 1);
             uiPipe23.Name = "uiPipe23";
             uiPipe23.Radius = 12;
@@ -1472,7 +1485,7 @@
             uiLabel4.AutoSize = true;
             uiLabel4.Font = new Font("微软雅黑", 10F);
             uiLabel4.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel4.Location = new Point(606, 725);
+            uiLabel4.Location = new Point(606, 736);
             uiLabel4.Name = "uiLabel4";
             uiLabel4.Size = new Size(67, 20);
             uiLabel4.TabIndex = 625;
@@ -1487,7 +1500,7 @@
             uiPanel1.FillDisableColor = Color.White;
             uiPanel1.Font = new Font("微软雅黑", 10.5F);
             uiPanel1.ForeColor = Color.White;
-            uiPanel1.Location = new Point(728, 101);
+            uiPanel1.Location = new Point(728, 112);
             uiPanel1.Margin = new Padding(4, 5, 4, 5);
             uiPanel1.MinimumSize = new Size(1, 1);
             uiPanel1.Name = "uiPanel1";
@@ -1508,7 +1521,7 @@
             uiPanel2.FillDisableColor = Color.White;
             uiPanel2.Font = new Font("微软雅黑", 10.5F);
             uiPanel2.ForeColor = Color.White;
-            uiPanel2.Location = new Point(369, 632);
+            uiPanel2.Location = new Point(369, 643);
             uiPanel2.Margin = new Padding(4, 5, 4, 5);
             uiPanel2.MinimumSize = new Size(1, 1);
             uiPanel2.Name = "uiPanel2";
@@ -1529,7 +1542,7 @@
             uiPanel6.FillDisableColor = Color.White;
             uiPanel6.Font = new Font("微软雅黑", 10.5F);
             uiPanel6.ForeColor = Color.White;
-            uiPanel6.Location = new Point(746, 635);
+            uiPanel6.Location = new Point(746, 646);
             uiPanel6.Margin = new Padding(4, 5, 4, 5);
             uiPanel6.MinimumSize = new Size(1, 1);
             uiPanel6.Name = "uiPanel6";
@@ -1545,7 +1558,7 @@
             // 
             uiPipe26.Direction = UILine.LineDirection.Vertical;
             uiPipe26.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe26.Location = new Point(522, 120);
+            uiPipe26.Location = new Point(522, 131);
             uiPipe26.MinimumSize = new Size(1, 1);
             uiPipe26.Name = "uiPipe26";
             uiPipe26.Radius = 12;
@@ -1561,7 +1574,7 @@
             // 
             uiPipe37.Direction = UILine.LineDirection.Vertical;
             uiPipe37.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            uiPipe37.Location = new Point(292, 99);
+            uiPipe37.Location = new Point(292, 110);
             uiPipe37.MinimumSize = new Size(1, 1);
             uiPipe37.Name = "uiPipe37";
             uiPipe37.Radius = 12;
@@ -1582,7 +1595,7 @@
             uiPanel5.FillDisableColor = Color.White;
             uiPanel5.Font = new Font("微软雅黑", 10.5F);
             uiPanel5.ForeColor = Color.White;
-            uiPanel5.Location = new Point(162, 294);
+            uiPanel5.Location = new Point(162, 305);
             uiPanel5.Margin = new Padding(4, 5, 4, 5);
             uiPanel5.MinimumSize = new Size(1, 1);
             uiPanel5.Name = "uiPanel5";
@@ -1599,7 +1612,7 @@
             uiLabel14.AutoSize = true;
             uiLabel14.Font = new Font("微软雅黑", 10F);
             uiLabel14.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel14.Location = new Point(555, 327);
+            uiLabel14.Location = new Point(555, 338);
             uiLabel14.Name = "uiLabel14";
             uiLabel14.Size = new Size(43, 20);
             uiLabel14.TabIndex = 632;
@@ -1608,7 +1621,7 @@
             // DCFVX09
             // 
             DCFVX09.Direction = UIValve.UIValveDirection.Top;
-            DCFVX09.Location = new Point(546, 275);
+            DCFVX09.Location = new Point(546, 286);
             DCFVX09.Name = "DCFVX09";
             DCFVX09.PipeSize = 15;
             DCFVX09.RectColor = Color.Gray;
@@ -1619,6 +1632,7 @@
             DCFVX09.ValveColor = Color.Gray;
             DCFVX09.ZoomScaleDisabled = true;
             DCFVX09.ActiveChanged += DCF_ActiveChanged;
+            DCFVX09.MouseDown += DCFVX01_MouseDown;
             // 
             // uiPanel8
             // 
@@ -1632,7 +1646,7 @@
             uiPanel8.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel8.ForeColor = Color.Black;
             uiPanel8.ForeDisableColor = Color.Black;
-            uiPanel8.Location = new Point(785, 456);
+            uiPanel8.Location = new Point(785, 467);
             uiPanel8.Margin = new Padding(4, 5, 4, 5);
             uiPanel8.MinimumSize = new Size(1, 1);
             uiPanel8.Name = "uiPanel8";

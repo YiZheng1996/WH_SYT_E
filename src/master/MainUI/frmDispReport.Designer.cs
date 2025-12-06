@@ -164,7 +164,6 @@ namespace MainUI
             Text = "试验结果";
             TitleColor = Color.FromArgb(65, 100, 204);
             TitleFont = new Font("思源黑体 CN Heavy", 15F, FontStyle.Bold);
-            TopMost = true;
             ZoomScaleRect = new Rectangle(15, 15, 903, 724);
             Load += frmDispReport_Load;
             ((System.ComponentModel.ISupportInitialize)inputNumber).EndInit();

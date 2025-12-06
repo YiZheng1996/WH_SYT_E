@@ -206,18 +206,13 @@ namespace MainUI.Procedure.User
             OPCHelper.DOgrp[Convert.ToInt32(pic.Tag)] = !pic.Active;
         }
 
-        private void uiSwitch1_MouseDown(object sender, MouseEventArgs e)
+        private void DCFVX01_MouseDown(object sender, MouseEventArgs e)
         {
-            //if (rbnAuto.Checked)
-            //{
-            //    MessageBox.Show("当前为自动控制，无法进行手动操作，如需操作请切换至手动控制", "系统提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            //    return;
-            //}
-        }
-
-        private void uiPipe29_Click(object sender, EventArgs e)
-        {
-
+            if (OPCHelper.TestCongrp[0].ToBool())
+            {
+                MessageHelper.MessageOK("当前为自动模式，请切换到手动模式后进行操作", AntdUI.TType.Info);
+                return;
+            }
         }
     }
 }

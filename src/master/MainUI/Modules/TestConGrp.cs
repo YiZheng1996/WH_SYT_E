@@ -34,7 +34,7 @@ namespace MainUI.Modules
             {
                 try
                 {
-                    string tag = index.ToString().PadLeft(3, '0');
+                    string tag = index.ToString().PadLeft(2, '0');
                     Write("TestCon.Test" + tag, value);
                 }
                 catch (Exception ex)

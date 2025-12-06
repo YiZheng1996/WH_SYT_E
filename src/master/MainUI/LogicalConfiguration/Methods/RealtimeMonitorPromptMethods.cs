@@ -95,12 +95,7 @@ namespace MainUI.LogicalConfiguration.Methods
 
                 // 检查变量是否存在
                 var variable = _variableManager.GetAllVariables()
-                    .FirstOrDefault(v => v.VarName == param.MonitorVariable);
-
-                if (variable == null)
-                {
-                    throw new InvalidOperationException($"监测变量不存在: {param.MonitorVariable}");
-                }
+                    .FirstOrDefault(v => v.VarName == param.MonitorVariable) ?? throw new InvalidOperationException($"监测变量不存在: {param.MonitorVariable}");
             }
             else // PLC
             {

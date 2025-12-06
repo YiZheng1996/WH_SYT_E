@@ -226,7 +226,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     // 检测工具
                     "条件判断" => await ExecuteDetection(step, cancellationToken),
                     "等待稳定" => await ExecuteWaitForStable(step, cancellationToken),
-                    "实时监控提示" => await ExecuteRealtimeMonitorPrompt(step, cancellationToken),
+                    "实时监控" => await ExecuteRealtimeMonitorPrompt(step, cancellationToken),
                     "检测工具" => await ExecuteCondition(step, cancellationToken),
                     "循环工具" => await ExecuteLoop(step, cancellationToken),
 
@@ -680,7 +680,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                         try
                         {
                             // 使用表达式引擎计算退出条件
-                            var exitResult = _expressionEngine.EvaluateExpression(param.ExitConditionExpression);
+                            var exitResult =await _expressionEngine.EvaluateExpressionAsync_Real(param.ExitConditionExpression);
 
                             // 添加详细日志
                             NlogHelper.Default.Info($"退出条件计算结果: Success={exitResult.Success}, Result={exitResult.Result}, ResultType={exitResult.Result?.GetType().Name ?? "null"}");

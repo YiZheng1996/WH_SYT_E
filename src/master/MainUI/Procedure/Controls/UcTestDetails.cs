@@ -154,7 +154,7 @@ namespace MainUI.Procedure.Controls
         {
             if (InvokeRequired)
             {
-                Invoke(new Action<int, ChildModel>(UpdateStepStatus), stepIndex, step);
+                BeginInvoke(new Action<int, ChildModel>(UpdateStepStatus), stepIndex, step);
                 return;
             }
 
@@ -209,9 +209,9 @@ namespace MainUI.Procedure.Controls
                         case 2:
                             statusText = "success";
                             // 步骤完成时移除开始时间
-                            if (_stepStartTimes.ContainsKey(stepIndex))
+                            if (_stepStartTimes.TryGetValue(stepIndex, out DateTime value))
                             {
-                                var elapsed = DateTime.Now - _stepStartTimes[stepIndex];
+                                var elapsed = DateTime.Now - value;
                                 Debug.WriteLine($"步骤 {stepIndex} 完成，用时: {elapsed:hh\\:mm\\:ss}");
                                 _stepStartTimes.Remove(stepIndex);
                                 Debug.WriteLine($"步骤 {stepIndex} 开始时间已清除");
