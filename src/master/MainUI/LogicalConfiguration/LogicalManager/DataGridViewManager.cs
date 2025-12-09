@@ -3,19 +3,13 @@
     /// <summary>
     /// DataGridView 管理器 - 只负责UI操作
     /// </summary>
-    public class DataGridViewManager
+    /// <remarks>
+    /// 构造函数
+    /// </remarks>
+    public class DataGridViewManager(DataGridView grid, ILogger logger = null)
     {
-        private readonly DataGridView _grid;
-        private readonly StepDetailsProvider _detailsProvider;
-
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        public DataGridViewManager(DataGridView grid, ILogger logger = null)
-        {
-            _grid = grid ?? throw new ArgumentNullException(nameof(grid));
-            _detailsProvider = new StepDetailsProvider((Microsoft.Extensions.Logging.ILogger)logger);
-        }
+        private readonly DataGridView _grid = grid ?? throw new ArgumentNullException(nameof(grid));
+        private readonly StepDetailsProvider _detailsProvider = new((Microsoft.Extensions.Logging.ILogger)logger);
 
         /// <summary>
         /// 获取选中行的索引
@@ -43,6 +37,17 @@
         /// <param name="steps">步骤列表</param>
         public void RefreshFromDataSource(List<ChildModel> steps)
         {
+            // 保存当前选中行索引
+            int selectedIndex = GetSelectedRowIndex();
+
+            // 保存滚动位置
+            int firstDisplayedRowIndex = -1;
+            if (_grid.FirstDisplayedScrollingRowIndex >= 0)
+            {
+                firstDisplayedRowIndex = _grid.FirstDisplayedScrollingRowIndex;
+            }
+
+            // 清空并重新填充
             _grid.Rows.Clear();
 
             foreach (var step in steps)
@@ -52,10 +57,35 @@
                     step.StepName,                                 // 步骤名称
                     GetStepTypeName(step),                         // 步骤类型
                     _detailsProvider.GetStepDetailsPreview(step),  // 步骤详情
-                    step.Remark ?? "",                             // 备注 - 新增
-                    GetStatusText(step.Status),                    // 状态
-                    "-"                                            // 执行时间
+                    step.Remark ?? string.Empty,                   // 备注
+                    step.Status                                    // 状态
                 );
+            }
+
+            // 恢复选中状态
+            if (selectedIndex >= 0 && selectedIndex < _grid.Rows.Count)
+            {
+                _grid.ClearSelection();
+                _grid.Rows[selectedIndex].Selected = true;
+
+                // 设置当前单元格，确保键盘导航正常
+                if (_grid.Rows[selectedIndex].Cells.Count > 0)
+                {
+                    _grid.CurrentCell = _grid.Rows[selectedIndex].Cells[0];
+                }
+            }
+
+            // 恢复滚动位置
+            if (firstDisplayedRowIndex >= 0 && firstDisplayedRowIndex < _grid.Rows.Count)
+            {
+                try
+                {
+                    _grid.FirstDisplayedScrollingRowIndex = firstDisplayedRowIndex;
+                }
+                catch
+                {
+                    // 某些情况下设置滚动位置可能失败，忽略即可
+                }
             }
         }
 
@@ -105,8 +135,8 @@
             {
                 "延时等待" => "逻辑控制",
                 "条件判断" => "逻辑控制",
-                "循环开始" => "逻辑控制",
-                "循环结束" => "逻辑控制",
+                "循环工具" => "逻辑控制",
+                "等待稳定" => "逻辑控制",
                 "变量赋值" => "数据操作",
                 "数据读取" => "数据操作",
                 "消息通知" => "数据操作",

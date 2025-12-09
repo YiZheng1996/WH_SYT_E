@@ -24,15 +24,27 @@ namespace MainUI.LogicalConfiguration.Methods.Core
         }
 
         /// <summary>
-        /// 执行方法并记录日志（无返回值）
+        /// 执行方法并返回详细结果（无返回值）
         /// </summary>
-        protected async Task ExecuteWithLogging(
+        protected async Task<DetailedResult> ExecuteWithDetailedResult(
             object parameter,
             Func<Task> action,
             [CallerMemberName] string methodName = "")
         {
-            await MethodExecutor.ExecuteAsync(methodName, parameter, action);
+            return await MethodExecutor.ExecuteWithDetailAsync(methodName, parameter, action);
         }
+
+        /// <summary>
+        /// 执行方法并返回详细结果（带返回值）
+        /// </summary>
+        protected async Task<DetailedResult> ExecuteWithDetailedResult<T>(
+            object parameter,
+            Func<Task<T>> action,
+            [CallerMemberName] string methodName = "")
+        {
+            return await MethodExecutor.ExecuteWithDetailAsync(methodName, parameter, action);
+        }
+
     }
 
     /// <summary>

@@ -216,7 +216,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "消息通知" => await ExecuteSystemPrompt(step, cancellationToken),
 
                     // 变量管理
-                    "变量定义" or "试验参数" => await ExecuteDefineVar(step, cancellationToken),
+                    "变量定义" => await ExecuteDefineVar(step, cancellationToken),
                     "变量赋值" => await ExecuteVariableAssignment(step, cancellationToken),
 
                     // PLC通信
@@ -304,8 +304,12 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             if (param == null) return ExecutionResult.Failed("参数转换失败");
 
             cancellationToken.ThrowIfCancellationRequested();
+            // 使用详细结果
             var result = await _variableMethods.VariableAssignment(param);
-            return result ? ExecutionResult.Success() : ExecutionResult.Failed("变量赋值失败");
+
+            return result.Success
+                ? ExecutionResult.Success()
+                : ExecutionResult.Failed(result.ErrorMessage);
         }
 
         /// <summary>
@@ -680,7 +684,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                         try
                         {
                             // 使用表达式引擎计算退出条件
-                            var exitResult =await _expressionEngine.EvaluateExpressionAsync_Real(param.ExitConditionExpression);
+                            var exitResult = await _expressionEngine.EvaluateExpressionAsync_Real(param.ExitConditionExpression);
 
                             // 添加详细日志
                             NlogHelper.Default.Info($"退出条件计算结果: Success={exitResult.Success}, Result={exitResult.Result}, ResultType={exitResult.Result?.GetType().Name ?? "null"}");

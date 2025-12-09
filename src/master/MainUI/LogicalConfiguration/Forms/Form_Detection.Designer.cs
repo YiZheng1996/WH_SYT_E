@@ -1040,6 +1040,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             chkShowResult.Style = UIStyle.Custom;
             chkShowResult.TabIndex = 12;
             chkShowResult.Text = "显示检测结果消息";
+            chkShowResult.Visible = false;
             // 
             // pnlButtons
             // 

@@ -38,9 +38,9 @@
         }
 
         /// <summary>
-        /// 执行异步方法（无返回值）
+        /// 执行异步方法并返回详细结果
         /// </summary>
-        public static async Task ExecuteAsync(
+        public static async Task<DetailedResult> ExecuteWithDetailAsync(
             string methodName,
             object parameter,
             Func<Task> action)
@@ -52,11 +52,36 @@
                 await action();
 
                 LogMethodSuccess(methodName, "执行完成");
+                return DetailedResult.Successful();
             }
             catch (Exception ex)
             {
                 LogMethodError(methodName, ex);
-                throw; // 无返回值的方法直接抛出异常
+                return DetailedResult.Failed(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 执行异步方法并返回详细结果（带返回值）
+        /// </summary>
+        public static async Task<DetailedResult> ExecuteWithDetailAsync<T>(
+            string methodName,
+            object parameter,
+            Func<Task<T>> action)
+        {
+            try
+            {
+                LogMethodStart(methodName, parameter);
+
+                var result = await action();
+
+                LogMethodSuccess(methodName, result);
+                return DetailedResult.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                LogMethodError(methodName, ex);
+                return DetailedResult.Failed(ex.Message);
             }
         }
 

@@ -46,14 +46,13 @@
             imageList1.Images.SetKeyName(4, "变量赋值.png");
             imageList1.Images.SetKeyName(5, "数据计算.png");
             imageList1.Images.SetKeyName(6, "消息通知.png");
-            imageList1.Images.SetKeyName(7, "循环开始.png");
-            imageList1.Images.SetKeyName(8, "循环结束.png");
-            imageList1.Images.SetKeyName(9, "报表读取.png");
-            imageList1.Images.SetKeyName(10, "报表写入.png");
-            imageList1.Images.SetKeyName(11, "读取PLC.png");
-            imageList1.Images.SetKeyName(12, "写入PLC.png");
-            imageList1.Images.SetKeyName(13, "等待稳定.png");
-            imageList1.Images.SetKeyName(14, "检测工具.png");
+            imageList1.Images.SetKeyName(7, "循环工具.png");
+            imageList1.Images.SetKeyName(8, "报表读取.png");
+            imageList1.Images.SetKeyName(9, "报表写入.png");
+            imageList1.Images.SetKeyName(10, "读取PLC.png");
+            imageList1.Images.SetKeyName(11, "写入PLC.png");
+            imageList1.Images.SetKeyName(12, "等待稳定.png");
+            imageList1.Images.SetKeyName(13, "检测工具.png");
             // 
             // ToolTreeViewControl
             // 

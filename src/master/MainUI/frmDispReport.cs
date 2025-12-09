@@ -43,7 +43,7 @@ namespace MainUI
         }
         private void BtnPrint_Click(object sender, EventArgs e)
         {
-            rWReport.Print(filename);
+            rWReport.Print();
         }
         private void BtnClose_Click(object sender, EventArgs e)
         {

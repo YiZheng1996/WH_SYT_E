@@ -137,13 +137,66 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 // 禁止的步骤类型(避免嵌套循环)
                 var disallowedSteps = new HashSet<string>
-                {
-                    "循环开始",
-                    "循环结束",
-                    "For循环",
-                    "While循环"
-                };
+        {
+            "LoopControlStart",  // 循环开始
+            "LoopControlStop",   // 循环结束
+            "Loop",              // 循环(如果有的话)
+        };
 
+                // 清空工具箱
+                _toolTreeControl.ClearTools();
+
+                // 逻辑控制组(排除循环相关)
+                TreeNode logicNode = _toolTreeControl.AddToolNode(
+                    "逻辑控制",
+                    "LogicControl",
+                    "文件夹.png"
+                );
+                _toolTreeControl.AddToolNode("延时等待", "DelayWait", "延时等待.png", logicNode);
+                _toolTreeControl.AddToolNode("条件判断", "ConditionJudge", "条件判断.png", logicNode);
+                _toolTreeControl.AddToolNode("等待稳定", "Waitingforstability", "等待稳定.png", logicNode);
+                _toolTreeControl.AddToolNode("循环工具", "CycleBegins", "等待稳定.png", logicNode);
+                _toolTreeControl.AddToolNode("实时监控", "MonitorTool", "检测工具.png", logicNode);
+
+                // 数据操作组
+                TreeNode dataNode = _toolTreeControl.AddToolNode(
+                    "数据操作",
+                    "DataOperation",
+                    "文件夹.png"
+                );
+                _toolTreeControl.AddToolNode("变量赋值", "VariableAssign", "变量赋值.png", dataNode);
+                _toolTreeControl.AddToolNode("消息通知", "", "消息通知.png", dataNode);
+
+                // PLC通信组
+                TreeNode plcNode = _toolTreeControl.AddToolNode(
+                    "通信操作",
+                    "PLCCommunication",
+                    "文件夹.png"
+                );
+                _toolTreeControl.AddToolNode("读取PLC", "PLCRead", "读取PLC.png", plcNode);
+                _toolTreeControl.AddToolNode("写入PLC", "PLCWrite", "写入PLC.png", plcNode);
+
+                // 检测工具组
+                TreeNode detectionNode = _toolTreeControl.AddToolNode(
+                    "检测工具",
+                    "DetectionTools",
+                    "文件夹.png"
+                );
+                _toolTreeControl.AddToolNode("AI检测", "AIDetection", "检测工具.png", detectionNode);
+
+                // 报表操作组
+                TreeNode reportNode = _toolTreeControl.AddToolNode(
+                    "报表工具",
+                    "ReportTools",
+                    "文件夹.png"
+                );
+                _toolTreeControl.AddToolNode("读取单元格", "ReadExcelCell", "报表读取.png", reportNode);
+                _toolTreeControl.AddToolNode("写入单元格", "WriteExcelCell", "报表写入.png", reportNode);
+
+                // 展开所有节点
+                _toolTreeControl.ExpandAll();
+
+                _logger?.LogDebug("工具箱初始化完成(已过滤循环控制步骤)");
             }
             catch (Exception ex)
             {

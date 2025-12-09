@@ -222,7 +222,8 @@ namespace MainUI.Service
                         StepName = s.StepName,
                         Status = s.Status,
                         StepNum = s.StepNum,
-                        StepParameter = s.StepParameter
+                        StepParameter = s.StepParameter,
+                        Remark = s.Remark
                     })];
                 }
 
@@ -334,7 +335,8 @@ namespace MainUI.Service
                         StepName = step.StepName,
                         Status = step.Status,
                         StepNum = step.StepNum,
-                        StepParameter = step.StepParameter
+                        StepParameter = step.StepParameter,
+                        Remark = step.Remark
                     });
                 }
 

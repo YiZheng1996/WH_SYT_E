@@ -350,7 +350,7 @@ namespace MainUI.Procedure.Controls
             // 调整进度条位置(如果有)
             if (progressBar.Visible)
             {
-                Height += 25;
+                Height += 15;
                 progressBar.Location = new Point(15, 73 + detailsPanel.Height + 8);
                 progressBar.Width = contentPanel.Width - 30;
             }
@@ -947,7 +947,7 @@ namespace MainUI.Procedure.Controls
             return yPosition + contentHeight + 2;
         }
         #endregion
-        
+
         /// <summary>
         /// 延时等待参数展示 - 表格式
         /// </summary>
@@ -1064,7 +1064,7 @@ namespace MainUI.Procedure.Controls
                 var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
                 var json = JObject.Parse(jsonStr);
 
-                yPosition = AddSubSectionTitle("🔌 PLC写入配置", yPosition);
+                yPosition = AddSubSectionTitle("PLC写入配置", yPosition);
 
                 // 检查是否有Items数组
                 var items = json["Items"];
@@ -1646,13 +1646,12 @@ namespace MainUI.Procedure.Controls
                 Text = content,
                 Font = new Font("微软雅黑", 8.5F),
                 ForeColor = textColor,
-                AutoSize = false,
+                AutoSize = true, // 设置为true让高度自适应
                 Location = new Point(5, yPosition),
                 Size = new Size(detailsPanel.Width - 10, 0), // 宽度固定，高度自动
                 MaximumSize = new Size(detailsPanel.Width - 10, 0),
-                //AutoSize = true, // 设置为true让高度自适应
                 Padding = new Padding(8, 6, 8, 6),
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = Color.Transparent,
             };
             detailsPanel.Controls.Add(lblContent);
 
@@ -1737,6 +1736,11 @@ namespace MainUI.Procedure.Controls
             {
                 lblStepTime.Location = new Point(contentPanel.Width - lblStepTime.Width - 15, 10);
             }
+        }
+
+        private void InitializeComponent()
+        {
+
         }
 
         private void CirclePanel_Paint(object sender, PaintEventArgs e)

@@ -1,4 +1,5 @@
 ﻿using MainUI.LogicalConfiguration.Engine;
+using MainUI.LogicalConfiguration.Infrastructure;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
@@ -40,16 +41,19 @@ namespace MainUI.LogicalConfiguration.Methods
             }, false);
         }
 
-        public async Task<bool> VariableAssignment(Parameter_VariableAssignment param)
+        /// <summary>
+        /// 变量赋值方法 - 使用新的详细结果返回
+        /// </summary>
+        public async Task<DetailedResult> VariableAssignment(Parameter_VariableAssignment param)
         {
-            return await ExecuteWithLogging(param, async () =>
+            return await ExecuteWithDetailedResult(param, async () =>
             {
                 // 1. 验证目标变量是否存在
-                var targetVar = _globalVariableManager.FindVariableByName(param.TargetVarName) ?? throw new ArgumentException(
-                        $"目标变量不存在: '{param.TargetVarName}");
-                NlogHelper.Default.Debug($"找到变量: {targetVar.VarName}, 类型: {targetVar.VarType}, 当前值: {targetVar.VarValue}");
+                var targetVar = _globalVariableManager.FindVariableByName(param.TargetVarName) ?? throw new ArgumentException($"目标变量不存在: '{param.TargetVarName}'");
+                NlogHelper.Default.Debug(
+                    $"找到变量: {targetVar.VarName}, 类型: {targetVar.VarType}, 当前值: {targetVar.VarValue}");
 
-                // 执行赋值
+                // 2. 执行赋值
                 var result = await _assignmentEngine.ExecuteAssignmentAsync(param);
                 if (!result.Success)
                 {
@@ -62,9 +66,7 @@ namespace MainUI.LogicalConfiguration.Methods
                     $"新值: {result.NewValue}, " +
                     $"旧值: {result.OldValue}, " +
                     $"耗时: {result.ExecutionTime.TotalMilliseconds}ms");
-
-                return true;
-            }, false);
+            });
         }
     }
 }

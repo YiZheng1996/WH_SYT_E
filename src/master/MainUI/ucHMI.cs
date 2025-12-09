@@ -1,13 +1,8 @@
 ﻿using AntdUI;
-using Google.Protobuf.WellKnownTypes;
 using MainUI.LogicalConfiguration;
-using MainUI.LogicalConfiguration.LogicalManager;
-using MainUI.LogicalConfiguration.Services;
 using MainUI.Procedure.Controls;
 using MainUI.Service;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 using Label = System.Windows.Forms.Label;
 
 namespace MainUI
@@ -115,6 +110,9 @@ namespace MainUI
 
             try
             {
+                // 更新TableItemPoint颜色状态为黄色(进行中)
+                UpdateItemPointColor(itemName, 1);
+
                 // 获取步骤列表
                 var steps = _workflowService.GetConfiguration(itemName);
                 if (steps != null)
@@ -146,6 +144,19 @@ namespace MainUI
 
             try
             {
+                // 根据成功/失败状态更新颜色
+                if (success)
+                {
+                    // 注释说 2=绿色
+                    UpdateItemPointColor(itemName, 2);
+                    _logger?.LogInformation("工作流完成成功: {ItemName}, 颜色设置为绿色", itemName);
+                }
+                else
+                {
+                    UpdateItemPointColor(itemName, 3); // 3 = 红色(失败)
+                    _logger?.LogWarning("工作流完成失败: {ItemName}, 颜色设置为红色", itemName);
+                }
+
                 ucTestDetails.TestCompleted(success);
             }
             catch (Exception ex)
@@ -155,7 +166,7 @@ namespace MainUI
         }
 
         /// <summary>
-        /// 步骤状态变化事件（更新）
+        /// 步骤状态变化事件
         /// </summary>
         private void OnWorkflowStepStatusChanged(ChildModel step, int stepIndex)
         {
@@ -173,6 +184,87 @@ namespace MainUI
             catch (Exception ex)
             {
                 NlogHelper.Default.Error("处理步骤状态变化失败", ex);
+            }
+        }
+        #endregion
+
+        #region 项点表格颜色更新
+        /// <summary>
+        /// 更新TableItemPoint中指定项目的颜色状态
+        /// </summary>
+        /// <param name="itemName">项目名称</param>
+        /// <param name="colorState">颜色状态: 0=默认, 1=绿色(成功), 2=黄色(进行中), 3=红色(失败)</param>
+        private void UpdateItemPointColor(string itemName, int colorState)
+        {
+            try
+            {
+                // 在数据源中查找对应的项目
+                var itemPoint = _itemPoints.FirstOrDefault(item =>
+                    item.ItemName == itemName);
+
+                if (itemPoint != null)
+                {
+                    // 更新颜色状态
+                    itemPoint.ColorState = colorState;
+
+                    // 刷新TableItemPoint显示
+                    RefreshTableItemPoint();
+                }
+                else
+                {
+                    _logger?.LogWarning("未找到项目: {ItemName}, 无法更新颜色", itemName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "更新项目颜色失败: {ItemName}", itemName);
+            }
+        }
+
+        /// <summary>
+        /// 刷新TableItemPoint显示
+        /// </summary>
+        private void RefreshTableItemPoint()
+        {
+            try
+            {
+                if (TableItemPoint.InvokeRequired)
+                {
+                    TableItemPoint.Invoke(new Action(RefreshTableItemPoint));
+                    return;
+                }
+
+                // 重新绑定数据源以刷新显示
+                TableItemPoint.DataSource = null;
+                TableItemPoint.DataSource = _itemPoints;
+
+                _logger?.LogDebug("TableItemPoint已刷新");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "刷新TableItemPoint失败");
+            }
+        }
+
+        /// <summary>
+        /// 重置所有项目的颜色状态为默认
+        /// </summary>
+        private void ResetAllItemPointColors()
+        {
+            try
+            {
+                foreach (var item in _itemPoints)
+                {
+                    item.ColorState = 0; // 0 = 默认颜色
+                }
+
+                RefreshTableItemPoint();
+
+                _logger?.LogInformation("已重置所有项目颜色为默认状态");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "重置项目颜色失败");
             }
         }
         #endregion
@@ -309,8 +401,12 @@ namespace MainUI
             _tableService.InittializeColumns(); // 初始化表格列
         }
 
+        // 标记是否允许勾选
+        private bool _allowCheckChange = true;
         private void TableItemPoint_CheckedChanged(object sender, TableCheckEventArgs e)
         {
+            if (!_allowCheckChange) return;
+
             _tableService.HandleCheckedChanged(e);
         }
 
@@ -331,7 +427,6 @@ namespace MainUI
 
             // 订阅 CountdownService 的时间更新事件
             _countdownService.TimingUpdated += CountdownService_TimingUpdated;
-
         }
 
         // CountdownService 时间更新事件处理
@@ -406,12 +501,23 @@ namespace MainUI
         {
             btnStopTest.Enabled = isTesting;  // 停止按钮在测试时启用
             btnStartTest.Enabled = !isTesting; // 开始按钮在测试时禁用
+            _allowCheckChange = !isTesting; // 测试时禁止更改勾选状态
+
+            // 找到Check列并设置AutoCheck属性
+            if (TableItemPoint.Columns != null)
+            {
+                // 查找 Check 列
+                var checkColumn = TableItemPoint.Columns
+                    .OfType<ColumnCheck>()
+                    .FirstOrDefault();
+
+                checkColumn.SetAutoCheck(!isTesting);
+            }
 
             // 在测试进行时禁用的控件组
             var controlsToDisable = new Control[]
             {
                 btnProductSelection, // 产品选择按钮
-                TableItemPoint,    // 测试项表格
                 panelHand         // 手动控制面板
             };
 
@@ -542,6 +648,14 @@ namespace MainUI
                 NavigationButtonStyles.BtnColor(btn, value.ToBool());
             }
         }
+
+        /// <summary>
+        /// 手自动切换
+        /// </summary>
+        private void RadioAuto_CheckedChanged(object sender, EventArgs e)
+        {
+            OPCHelper.TestCongrp[0] = RadioAuto.Checked;
+        }
         #endregion
 
         #region 参数
@@ -599,7 +713,7 @@ namespace MainUI
         {
             try
             {
-                // 1. 检查前置条件
+                //  检查前置条件
                 (bool Result, string txt) = FrmText();
                 if (!Result)
                 {
@@ -607,17 +721,20 @@ namespace MainUI
                     return;
                 }
 
-                // 2. 设置UI状态
+                //  设置UI状态
                 Disable(true);
                 TestStateChanged?.Invoke(true, true);
 
-                // 3. 初始化取消令牌
+                // 重置所有项目的颜色状态
+                ResetAllItemPointColors();
+
+                //  初始化取消令牌
                 _cancellationTokenSource = new CancellationTokenSource();
 
-                // 4. 启动计时器
+                //  启动计时器
                 _ = _countdownService.StartCountup(_cancellationTokenSource.Token);
 
-                // 5. 获取要执行的测试项
+                //  获取要执行的测试项
                 var checkedItems = GetCheckedTestItemNames();
 
                 // 6. 批量执行工作流
@@ -1059,10 +1176,5 @@ namespace MainUI
         }
 
         #endregion
-
-        private void RadioAuto_CheckedChanged(object sender, EventArgs e)
-        {
-            OPCHelper.TestCongrp[0] = RadioAuto.Checked;
-        }
     }
 }

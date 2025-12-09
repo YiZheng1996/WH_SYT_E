@@ -162,7 +162,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 logicNode.Nodes.Add(new TreeNode("等待稳定") { Tag = "Waitingforstability", ImageKey = "等待稳定.png" });
                 //logicNode.Nodes.Add(new TreeNode("检测工具") { Tag = "DetectionTool", ImageKey = "检测工具.png" });
                 logicNode.Nodes.Add(new TreeNode("实时监控") { Tag = "MonitorTool", ImageKey = "检测工具.png" });
-                logicNode.Nodes.Add(new TreeNode("循环工具") { Tag = "RealTimeMonitoring", ImageKey = "循环开始.png" });
+                logicNode.Nodes.Add(new TreeNode("循环工具") { Tag = "CycleBegins", ImageKey = "循环工具.png" });
                 _treeView.Nodes.Add(logicNode);
 
                 // 数据操作组
