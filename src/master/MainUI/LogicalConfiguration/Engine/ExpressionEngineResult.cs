@@ -56,14 +56,6 @@
             new() { Success = false, ErrorMessage = message };
     }
 
-    /// <summary>
-    /// 向后兼容的类型别名
-    /// </summary>
-    [Obsolete("请使用 AssignmentResult 代替，AssignmentExecutionResult 已被合并到 AssignmentResult 中")]
-    public class AssignmentExecutionResult : AssignmentResult
-    {
-    }
-
     #endregion
 
     #region 结果类定义

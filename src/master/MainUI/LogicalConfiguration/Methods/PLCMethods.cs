@@ -1,4 +1,5 @@
 ﻿using MainUI.LogicalConfiguration;
+using MainUI.LogicalConfiguration.Infrastructure;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
@@ -29,9 +30,9 @@ namespace MainUI.LogicalConfiguration.Methods
         /// <param name="param">读取参数</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>是否读取成功</returns>
-        public async Task<bool> ReadPLC(Parameter_ReadPLC param, CancellationToken cancellationToken = default)
+        public async Task<DetailedResult> ReadPLC(Parameter_ReadPLC param, CancellationToken cancellationToken = default)
         {
-            return await ExecuteWithLogging(param, async () =>
+            return await ExecuteWithDetailedResult(param, async () =>
             {
                 if (param?.Items == null || param.Items.Count == 0)
                 {
@@ -84,8 +85,7 @@ namespace MainUI.LogicalConfiguration.Methods
                 _logger.LogInformation("PLC读取操作完成: 成功 {SuccessCount}/{TotalCount} 项，结果: {Result}",
                     successCount, param.Items.Count, isSuccess ? "成功" : "失败");
 
-                return isSuccess;
-            }, false);
+            });
         }
 
         /// <summary>
@@ -94,9 +94,9 @@ namespace MainUI.LogicalConfiguration.Methods
         /// <param name="param">写入参数</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>是否写入成功</returns>
-        public async Task<bool> WritePLC(Parameter_WritePLC param, CancellationToken cancellationToken = default)
+        public async Task<DetailedResult> WritePLC(Parameter_WritePLC param, CancellationToken cancellationToken = default)
         {
-            return await ExecuteWithLogging(param, async () =>
+            return await ExecuteWithDetailedResult(param, async () =>
             {
                 if (param?.Items == null || param.Items.Count == 0)
                 {
@@ -153,8 +153,7 @@ namespace MainUI.LogicalConfiguration.Methods
                 _logger.LogInformation("PLC写入操作完成: 成功 {SuccessCount}/{TotalCount} 项，结果: {Result}",
                     successCount, param.Items.Count, isSuccess ? "成功" : "失败");
 
-                return isSuccess;
-            }, false);
+            });
         }
 
 

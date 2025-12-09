@@ -66,7 +66,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
                     // 从其他变量复制
                     VariableAssignmentType.VariableCopy =>
-                        _expressionEngine.AssignFromVariable(parameter.TargetVarName, parameter.DataSource.VariableName),
+                            _expressionEngine.AssignFromVariable(parameter.TargetVarName, parameter.DataSource.VariableName),
 
                     // 从PLC读取
                     VariableAssignmentType.PLCRead =>

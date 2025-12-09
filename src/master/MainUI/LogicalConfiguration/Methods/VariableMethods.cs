@@ -55,6 +55,7 @@ namespace MainUI.LogicalConfiguration.Methods
 
                 // 2. 执行赋值
                 var result = await _assignmentEngine.ExecuteAssignmentAsync(param);
+
                 if (!result.Success)
                 {
                     throw new InvalidOperationException($"变量赋值失败: {result.ErrorMessage}");

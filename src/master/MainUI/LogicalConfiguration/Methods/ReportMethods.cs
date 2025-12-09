@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.LogicalManager;
+﻿using MainUI.LogicalConfiguration.Infrastructure;
+using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
@@ -133,9 +134,9 @@ namespace MainUI.LogicalConfiguration.Methods
         /// 写入单元格方法
         /// 使用 ReportExpressionHelper 计算表达式
         /// </summary>
-        public async Task<bool> WriteCells(Parameter_WriteCells param)
+        public async Task<DetailedResult> WriteCells(Parameter_WriteCells param)
         {
-            return await ExecuteWithLogging(param, async () =>
+            return await ExecuteWithDetailedResult(param, async () =>
             {
                 if (param.Items == null || param.Items.Count == 0)
                     throw new ArgumentException("写入项列表不能为空");
@@ -171,9 +172,7 @@ namespace MainUI.LogicalConfiguration.Methods
                         throw new InvalidOperationException($"写入单元格 {item.CellAddress} 失败: {ex.Message}", ex);
                     }
                 }
-
-                return true;
-            }, false);
+            });
         }
 
         #endregion
