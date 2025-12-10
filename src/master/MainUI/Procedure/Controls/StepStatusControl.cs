@@ -187,7 +187,7 @@ namespace MainUI.Procedure.Controls
             currentStatus = status.ToLower();
             currentStepData = stepData;
 
-            Debug.WriteLine($"🔍 UpdateStatus - Status: {status}, StepData: {stepData?.StepName}");
+            Debug.WriteLine($"UpdateStatus - Status: {status}, StepData: {stepData?.StepName}");
 
             Color statusColor;
             Color bgColor;
