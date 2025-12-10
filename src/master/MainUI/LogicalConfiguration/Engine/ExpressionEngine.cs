@@ -1,11 +1,9 @@
 ﻿using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.Logging;
-using NLog;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace MainUI.LogicalConfiguration.Engine
 {
@@ -1088,39 +1086,6 @@ namespace MainUI.LogicalConfiguration.Engine
             });
         }
 
-        /// <summary>
-        /// 根据变量类型获取默认值
-        /// </summary>
-        private object GetDefaultValueForType(string varType)
-        {
-            return varType?.ToLower() switch
-            {
-                "string" => "",
-                "int" => 0,
-                "int32" => 0,
-                "long" => 0L,
-                "int64" => 0L,
-                "short" => (short)0,
-                "int16" => (short)0,
-                "byte" => (byte)0,
-                "uint" => 0U,
-                "uint32" => 0U,
-                "ulong" => 0UL,
-                "uint64" => 0UL,
-                "ushort" => (ushort)0,
-                "uint16" => (ushort)0,
-                "sbyte" => (sbyte)0,
-                "double" => 0.0,
-                "float" => 0.0f,
-                "single" => 0.0f,
-                "decimal" => 0.0m,
-                "bool" => false,
-                "boolean" => false,
-                "datetime" => DateTime.MinValue,
-                _ => "" // 默认返回空字符串
-            };
-        }
-
         #endregion
 
         #region 私有方法 - 表达式求值
@@ -1586,7 +1551,7 @@ namespace MainUI.LogicalConfiguration.Engine
             {
                 if (expression.Contains(op))
                 {
-                    var parts = expression.Split(new[] { op }, 2, StringSplitOptions.None);
+                    var parts = expression.Split([op], 2, StringSplitOptions.None);
                     var left = CalculateExpression(parts[0]);
                     var right = CalculateExpression(parts[1]);
 
@@ -1603,7 +1568,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 }
             }
 
-            // 处理数学运算符（修复关键）
+            // 处理数学运算符
             // 在抛出异常之前，尝试处理数学表达式
             if (TryEvaluateArithmeticExpression(expression, out var result))
             {
@@ -1612,6 +1577,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
             throw new InvalidOperationException($"无法计算表达式: {expression}");
         }
+
         /// <summary>
         /// 尝试计算数学表达式
         /// 处理加减乘除和括号
@@ -1634,6 +1600,13 @@ namespace MainUI.LogicalConfiguration.Engine
                     return false; // 不包含数学运算符
                 }
 
+                // 优先检测 DateTime 减法
+                if (TryEvaluateDateTimeSubtraction(expression, out var dateTimeDiff))
+                {
+                    result = dateTimeDiff;
+                    return true;
+                }
+
                 // 使用递归下降解析器处理运算符优先级
                 result = EvaluateArithmeticRecursive(expression);
                 return true;
@@ -1643,6 +1616,106 @@ namespace MainUI.LogicalConfiguration.Engine
                 return false;
             }
         }
+
+        /// <summary>
+        /// 尝试计算 DateTime 减法
+        /// </summary>
+        private bool TryEvaluateDateTimeSubtraction(string expression, out double result)
+        {
+            result = 0;
+            try
+            {
+                int minusIndex = FindDateTimeSubtractionOperator(expression);
+                if (minusIndex == -1) return false;
+
+                string leftStr = expression.Substring(0, minusIndex).Trim();
+                string rightStr = expression.Substring(minusIndex + 1).Trim();
+
+                if (!TryParseDateTimeString(leftStr, out DateTime leftDateTime)) return false;
+                if (!TryParseDateTimeString(rightStr, out DateTime rightDateTime)) return false;
+
+                TimeSpan difference = leftDateTime - rightDateTime;
+                result = difference.TotalSeconds;
+
+                _logger?.LogInformation($"DateTime减法: {leftDateTime:yyyy-MM-dd HH:mm:ss.fff} - " +
+                                $"{rightDateTime:yyyy-MM-dd HH:mm:ss.fff} = {result:F3}秒");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning($"DateTime减法计算失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 查找 DateTime 减法运算符位置
+        /// </summary>
+        private int FindDateTimeSubtractionOperator(string expression)
+        {
+            bool inString = false;
+            int quoteStart = -1;
+
+            for (int i = 0; i < expression.Length; i++)
+            {
+                char c = expression[i];
+
+                if (c == '"')
+                {
+                    if (!inString)
+                    {
+                        inString = true;
+                        quoteStart = i;
+                    }
+                    else
+                    {
+                        inString = false;
+                    }
+                }
+                else if (c == '-' && !inString && i > 0 && quoteStart > 0)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// 尝试将字符串解析为 DateTime
+        /// </summary>
+        private bool TryParseDateTimeString(string str, out DateTime dateTime)
+        {
+            dateTime = DateTime.MinValue;
+
+            if (string.IsNullOrWhiteSpace(str)) return false;
+
+            // 移除首尾引号
+            str = str.Trim();
+            if (str.StartsWith("\"") && str.EndsWith("\""))
+            {
+                str = str.Substring(1, str.Length - 2);
+            }
+
+            // 支持多种 DateTime 格式
+            string[] formats =
+            [
+                "yyyy-MM-dd HH:mm:ss.fff",
+                "yyyy-MM-dd HH:mm:ss.ff",
+                "yyyy-MM-dd HH:mm:ss.f",
+                "yyyy-MM-dd HH:mm:ss",
+                "yyyy/MM/dd HH:mm:ss.fff",
+                "yyyy/MM/dd HH:mm:ss",
+                "yyyy-MM-dd",
+                "yyyy/MM/dd"
+            ];
+
+            return DateTime.TryParseExact(str, formats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out dateTime) ||
+                DateTime.TryParse(str, out dateTime);
+        }
+
         /// <summary>
         /// 递归计算数学表达式（处理运算符优先级）
         /// </summary>
