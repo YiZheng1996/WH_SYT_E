@@ -992,7 +992,9 @@ namespace MainUI
 
                 if (!ConfirmSaveReport()) return;  // 提示确认
 
-                string saveFilePath = ReportService.BuildSaveFilePath(VarHelper.TestViewModel.ModelName); // 保存路径
+                string saveFilePath = ReportService.BuildSaveFilePath(
+                    VarHelper.TestViewModel.ModelTypeName,
+                    VarHelper.TestViewModel.ModelName); // 保存路径
 
                 var testRecord = new TestRecordModel
                 {

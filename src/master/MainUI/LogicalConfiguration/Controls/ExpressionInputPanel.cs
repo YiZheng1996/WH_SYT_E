@@ -1206,14 +1206,14 @@ namespace MainUI.LogicalConfiguration.Controls
             {
                 "⏱ 时间差值计算", new Dictionary<string, string>
                 {
-                    { "秒数差值", "DATEDIFF_SECONDS({结束时间}, {开始时间})" },
-                    { "秒数差值(2位)", "ROUND(DATEDIFF_SECONDS({结束时间}, {开始时间}), 2)" },
-                    { "毫秒差值", "DATEDIFF_MILLISECONDS({结束时间}, {开始时间})" },
-                    { "分钟差值", "DATEDIFF_MINUTES({结束时间}, {开始时间})" },
-                    { "小时差值", "DATEDIFF_HOURS({结束时间}, {开始时间})" },
-                    { "天数差值", "DATEDIFF_DAYS({结束时间}, {开始时间})" },
-                    { "距今秒数", "ELAPSED_SECONDS({开始时间})" },
-                    { "距今毫秒", "ELAPSED_MILLISECONDS({开始时间})" }
+                    { "秒数差值", "DATEDIFF.SECONDS({结束时间}, {开始时间})" },
+                    { "秒数差值(2位)", "ROUND(DATEDIFF.SECONDS({结束时间}, {开始时间}), 2)" },
+                    { "毫秒差值", "DATEDIFF.MILLISECONDS({结束时间}, {开始时间})" },
+                    { "分钟差值", "DATEDIFF.MINUTES({结束时间}, {开始时间})" },
+                    { "小时差值", "DATEDIFF.HOURS({结束时间}, {开始时间})" },
+                    { "天数差值", "DATEDIFF.DAYS({结束时间}, {开始时间})" },
+                    { "距今秒数", "ELAPSED.SECONDS({开始时间})" },
+                    { "距今毫秒", "ELAPSED.MILLISECONDS({开始时间})" }
                 }
             },
             {
@@ -1221,8 +1221,8 @@ namespace MainUI.LogicalConfiguration.Controls
                 {
                     { "四舍五入(保留2位)", "ROUND({数值}, 2)" },
                     { "绝对值", "ABS({数值})" },
-                    { "最大值", "MAX({数值1}, {数值2})" },
-                    { "最小值", "MIN({数值1}, {数值2})" },
+                    //{ "最大值", "MAX({数值1}, {数值2})" },
+                    //{ "最小值", "MIN({数值1}, {数值2})" },
                     { "向下取整", "FLOOR({数值})" },
                     { "向上取整", "CEILING({数值})" }
                 }

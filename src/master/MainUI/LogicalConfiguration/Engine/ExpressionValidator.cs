@@ -163,7 +163,20 @@ namespace MainUI.LogicalConfiguration.Engine
             foreach (Match match in functionMatches)
             {
                 var funcName = match.Groups[1].Value.ToUpper();
-                if (!_functionRegistry.IsSupported(funcName))
+                // 添加前缀处理
+                var normalizedNames = new[]
+                {
+                    funcName,
+                    funcName.Replace("MATH.", ""),
+                    funcName.Replace("STRING.", ""),
+                    funcName.Replace("DATETIME.", ""),
+                    funcName.Replace("ELAPSED.", ""),
+                    funcName.Replace("DATEDIFF.", ""),
+                    funcName.Replace("DATEDIFF.", "")
+                };
+
+                if (!normalizedNames.Any(n => _functionRegistry.IsSupported(n)))
+                //if (!_functionRegistry.IsSupported(funcName))
                 {
                     result.IsValid = false;
                     result.Message = $"不支持的函数: {funcName}";

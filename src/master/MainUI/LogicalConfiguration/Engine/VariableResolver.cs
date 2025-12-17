@@ -68,6 +68,9 @@ namespace MainUI.LogicalConfiguration.Engine
         /// </summary>
         public async Task<string> PreprocessExpressionAsync(string expression)
         {
+            // 先处理 DateTime.Now 表达式（原代码缺少这行）
+            expression = ProcessDateTimeNow(expression);
+
             var result = expression;
             var matches = _variablePattern.Matches(expression);
 
@@ -246,27 +249,79 @@ namespace MainUI.LogicalConfiguration.Engine
 
         /// <summary>
         /// 处理 DateTime.Now 表达式
+        /// 支持：
+        /// 1. DateTime.Now.ToString("format")
+        /// 2. DateTime.Today.ToString("format")  
+        /// 3. DateTime.Now
+        /// 4. DateTime.Today
         /// </summary>
         private string ProcessDateTimeNow(string expression)
         {
-            // 匹配 DateTime.Now.ToString("format")
-            var pattern = @"DateTime\.Now\.ToString\(""([^""]+)""\)";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+            if (string.IsNullOrWhiteSpace(expression))
+                return expression;
 
-            expression = regex.Replace(expression, match =>
+            _logger?.LogDebug($"[ProcessDateTimeNow] 输入: {expression}");
+
+            // 1. 匹配 DateTime.Now.ToString("format") - 带引号的格式字符串
+            var pattern1 = @"DateTime\.Now\.ToString\(""([^""]+)""\)";
+            var regex1 = new Regex(pattern1, RegexOptions.IgnoreCase);
+
+            expression = regex1.Replace(expression, match =>
             {
                 var format = match.Groups[1].Value;
                 var formattedDate = DateTime.Now.ToString(format);
+                _logger?.LogDebug($"[ProcessDateTimeNow] 匹配DateTime.Now.ToString: 格式={format}, 结果={formattedDate}");
                 return $"\"{formattedDate}\"";
             });
 
-            // 匹配单独的 DateTime.Now
-            expression = Regex.Replace(expression, @"DateTime\.Now\b",
-                $"\"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\"",
+            // 2. 匹配 DateTime.Today.ToString("format")
+            var pattern2 = @"DateTime\.Today\.ToString\(""([^""]+)""\)";
+            var regex2 = new Regex(pattern2, RegexOptions.IgnoreCase);
+
+            expression = regex2.Replace(expression, match =>
+            {
+                var format = match.Groups[1].Value;
+                var formattedDate = DateTime.Today.ToString(format);
+                _logger?.LogDebug($"[ProcessDateTimeNow] 匹配DateTime.Today.ToString: 格式={format}, 结果={formattedDate}");
+                return $"\"{formattedDate}\"";
+            });
+
+            // 3. 匹配 DateTime.Now.ToString('format') - 单引号版本（兼容性）
+            var pattern3 = @"DateTime\.Now\.ToString\('([^']+)'\)";
+            var regex3 = new Regex(pattern3, RegexOptions.IgnoreCase);
+
+            expression = regex3.Replace(expression, match =>
+            {
+                var format = match.Groups[1].Value;
+                var formattedDate = DateTime.Now.ToString(format);
+                _logger?.LogDebug($"[ProcessDateTimeNow] 匹配DateTime.Now.ToString(单引号): 格式={format}, 结果={formattedDate}");
+                return $"\"{formattedDate}\"";
+            });
+
+            // 4. 匹配单独的 DateTime.Now（不带参数）
+            expression = Regex.Replace(expression, @"\bDateTime\.Now\b(?!\s*\.)",
+                match =>
+                {
+                    var formattedDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    _logger?.LogDebug($"[ProcessDateTimeNow] 匹配DateTime.Now(无参数): 结果={formattedDate}");
+                    return $"\"{formattedDate}\"";
+                },
                 RegexOptions.IgnoreCase);
 
+            // 5. 匹配单独的 DateTime.Today
+            expression = Regex.Replace(expression, @"\bDateTime\.Today\b(?!\s*\.)",
+                match =>
+                {
+                    var formattedDate = DateTime.Today.ToString("yyyy-MM-dd");
+                    _logger?.LogDebug($"[ProcessDateTimeNow] 匹配DateTime.Today(无参数): 结果={formattedDate}");
+                    return $"\"{formattedDate}\"";
+                },
+                RegexOptions.IgnoreCase);
+
+            _logger?.LogDebug($"[ProcessDateTimeNow] 输出: {expression}");
             return expression;
         }
+
 
         #endregion
     }

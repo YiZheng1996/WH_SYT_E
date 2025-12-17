@@ -160,6 +160,14 @@ namespace MainUI.Service
         #region ===== 原有功能保持不变 =====
 
         /// <summary>
+        /// 报表保存路径
+        /// </summary>
+        public static string SaveReportPath()
+        {
+            return Path.Combine(Application.StartupPath, "Save\\");
+        }
+
+        /// <summary>
         /// 获取默认报表路径
         /// </summary>
         public static string GetDefaultReportPath()
@@ -178,9 +186,9 @@ namespace MainUI.Service
         /// <summary>
         /// 构建保存文件路径
         /// </summary>
-        public static string BuildSaveFilePath(string modelName)
+        public static string BuildSaveFilePath(string modeltype, string modelName)
         {
-            string savePath = Path.Combine(GetDefaultReportPath(),
+            string savePath = Path.Combine(SaveReportPath(),
                 DateTime.Now.ToString("yyyy"),
                 DateTime.Now.ToString("MM"));
 
@@ -189,7 +197,7 @@ namespace MainUI.Service
                 Directory.CreateDirectory(savePath);
             }
 
-            string fileName = $"{modelName}_{DateTime.Now:yyyyMMddHHmmss}.xls";
+            string fileName = $"{modeltype}_{modelName}_{DateTime.Now:yyyyMMddHHmmss}.xls";
             return Path.Combine(savePath, fileName);
         }
 

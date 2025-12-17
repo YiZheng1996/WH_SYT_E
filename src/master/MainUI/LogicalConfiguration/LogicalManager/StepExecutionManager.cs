@@ -163,7 +163,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     {
                         try
                         {
-                            await Task.Delay(50, _cancellationTokenSource.Token);
+                            await Task.Delay(10, _cancellationTokenSource.Token);
                         }
                         catch (OperationCanceledException)
                         {

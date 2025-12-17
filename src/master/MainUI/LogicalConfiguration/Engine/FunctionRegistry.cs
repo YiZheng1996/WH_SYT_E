@@ -166,11 +166,11 @@
             // 定义时间差计算的配置
             var dateDiffConfigs = new[]
             {
-                new { Names = new[] { "DATEDIFF_SECONDS", "DateDiff.Seconds" }, Unit = "TotalSeconds" },
-                new { Names = new[] { "DATEDIFF_MILLISECONDS", "DateDiff.Milliseconds" }, Unit = "TotalMilliseconds" },
-                new { Names = new[] { "DATEDIFF_MINUTES", "DateDiff.Minutes" }, Unit = "TotalMinutes" },
-                new { Names = new[] { "DATEDIFF_HOURS", "DateDiff.Hours" }, Unit = "TotalHours" },
-                new { Names = new[] { "DATEDIFF_DAYS", "DateDiff.Days" }, Unit = "TotalDays" }
+                new { Names = new[] { "DATEDIFF.SECONDS", "DateDiff.Seconds" }, Unit = "TotalSeconds" },
+                new { Names = new[] { "DATEDIFF.MILLISECONDS", "DateDiff.Milliseconds" }, Unit = "TotalMilliseconds" },
+                new { Names = new[] { "DATEDIFF.MINUTES", "DateDiff.Minutes" }, Unit = "TotalMinutes" },
+                new { Names = new[] { "DATEDIFF.HOURS", "DateDiff.Hours" }, Unit = "TotalHours" },
+                new { Names = new[] { "DATEDIFF.DAYS", "DateDiff.Days" }, Unit = "TotalDays" }
             };
 
             foreach (var config in dateDiffConfigs)
@@ -207,9 +207,9 @@
         {
             var elapsedConfigs = new[]
             {
-                new { Name = "ELAPSED_SECONDS", Unit = "TotalSeconds" },
-                new { Name = "ELAPSED_MILLISECONDS", Unit = "TotalMilliseconds" },
-                new { Name = "ELAPSED_MINUTES", Unit = "TotalMinutes" }
+                new { Name = "ELAPSED.SECONDS", Unit = "TotalSeconds" },
+                new { Name = "ELAPSED.MILLISECONDS", Unit = "TotalMilliseconds" },
+                new { Name = "ELAPSED.MINUTES", Unit = "TotalMinutes" }
             };
 
             foreach (var config in elapsedConfigs)
