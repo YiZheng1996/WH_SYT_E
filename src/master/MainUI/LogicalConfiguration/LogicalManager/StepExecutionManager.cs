@@ -385,7 +385,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 }
 
                 // 执行检测
-                var result = await _detectionMethods.Detection(param);
+                var result = await _detectionMethods.Detection(param, cancellationToken);
 
                 if (result)
                 {

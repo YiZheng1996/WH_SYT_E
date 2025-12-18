@@ -567,28 +567,33 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
             switch (detectionType)
             {
                 case DetectionType.ValueRange:
-                    // 值范围检测：显示最小值和最大值
+                    // 值范围检测:显示最小值和最大值
                     numMinValue.Visible = lblMinValue.Visible = true;
                     numMaxValue.Visible = lblMaxValue.Visible = true;
                     txtTargetValue.Visible = lblTargetValue.Visible = false;
                     numThreshold.Visible = lblThreshold.Visible = false;
+                    numTolerance.Visible = lblTolerance.Visible = false;
+                    cmbOperator.Visible = lblOperator.Visible = false;
                     break;
 
                 case DetectionType.Equality:
-                    // 值比较检测：显示目标值和容差
+                    // ✓ 修复: 相等性检测应该显示阈值和容差,支持比较操作符
                     numMinValue.Visible = lblMinValue.Visible = false;
                     numMaxValue.Visible = lblMaxValue.Visible = false;
-                    txtTargetValue.Visible = lblTargetValue.Visible = true;
+                    txtTargetValue.Visible = lblTargetValue.Visible = false;  // 隐藏文本框
+                    numThreshold.Visible = lblThreshold.Visible = true;        // 显示数值框
                     numTolerance.Visible = lblTolerance.Visible = true;
-                    numThreshold.Visible = lblThreshold.Visible = false;
+                    cmbOperator.Visible = lblOperator.Visible = true;          // 显示操作符
                     break;
 
                 case DetectionType.Status:
-                    // 阈值检测：显示阈值
+                    // 状态检测:显示目标值(文本框)
                     numMinValue.Visible = lblMinValue.Visible = false;
                     numMaxValue.Visible = lblMaxValue.Visible = false;
-                    txtTargetValue.Visible = lblTargetValue.Visible = false;
-                    numThreshold.Visible = lblThreshold.Visible = true;
+                    txtTargetValue.Visible = lblTargetValue.Visible = true;   // 文本框用于状态值
+                    numThreshold.Visible = lblThreshold.Visible = false;
+                    numTolerance.Visible = lblTolerance.Visible = false;
+                    cmbOperator.Visible = lblOperator.Visible = false;
                     break;
 
                 default:
@@ -598,6 +603,7 @@ namespace MainUI.Procedure.DSL.LogicalConfiguration.Forms
                     txtTargetValue.Visible = lblTargetValue.Visible = true;
                     numTolerance.Visible = lblTolerance.Visible = true;
                     numThreshold.Visible = lblThreshold.Visible = true;
+                    cmbOperator.Visible = lblOperator.Visible = true;
                     break;
             }
         }

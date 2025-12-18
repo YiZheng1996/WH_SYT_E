@@ -315,19 +315,48 @@ namespace MainUI.LogicalConfiguration.Methods
         }
 
         /// <summary>
-        /// 相等性检测
+        /// 相等性检测,支持操作符比较
         /// </summary>
         private async Task<bool> EvaluateEqualityDetection(object value, DetectionCondition condition)
         {
             await Task.CompletedTask;
 
             // 数值比较（包括BOOL转数值）
-            if (TryConvertToNumericValue(value, out double numValue) &&
-                TryConvertToNumericValue(condition.TargetValue, out double targetNum))
+            if (TryConvertToNumericValue(value, out double numValue))
             {
-                bool result = Math.Abs(numValue - targetNum) <= condition.Tolerance;
-                _logger.LogDebug("数值相等性检测: |{Value}({NumValue}) - {Target}({TargetNum})| <= {Tolerance}: {Result}",
-                    value, numValue, condition.TargetValue, targetNum, condition.Tolerance, result);
+                // 根据操作符进行不同的比较
+                bool result = condition.Operator switch
+                {
+                    ComparisonOperator.GreaterThan => numValue > condition.ThresholdValue,
+                    ComparisonOperator.GreaterThanOrEqual => numValue >= condition.ThresholdValue,
+                    ComparisonOperator.LessThan => numValue < condition.ThresholdValue,
+                    ComparisonOperator.LessThanOrEqual => numValue <= condition.ThresholdValue,
+                    ComparisonOperator.Equal => Math.Abs(numValue - condition.ThresholdValue) <= condition.Tolerance,
+                    ComparisonOperator.NotEqual => Math.Abs(numValue - condition.ThresholdValue) > condition.Tolerance,
+                    _ => false
+                };
+
+                _logger.LogDebug("数值比较检测: {Value}({NumValue}) {Operator} {Threshold}: {Result}",
+                    value, numValue, condition.Operator, condition.ThresholdValue, result);
+                return result;
+            }
+
+            // 尝试将TargetValue转换为数值(兼容旧配置)
+            if (TryConvertToNumericValue(condition.TargetValue, out double targetNum))
+            {
+                bool result = condition.Operator switch
+                {
+                    ComparisonOperator.GreaterThan => numValue > targetNum,
+                    ComparisonOperator.GreaterThanOrEqual => numValue >= targetNum,
+                    ComparisonOperator.LessThan => numValue < targetNum,
+                    ComparisonOperator.LessThanOrEqual => numValue <= targetNum,
+                    ComparisonOperator.Equal => Math.Abs(numValue - targetNum) <= condition.Tolerance,
+                    ComparisonOperator.NotEqual => Math.Abs(numValue - targetNum) > condition.Tolerance,
+                    _ => false
+                };
+
+                _logger.LogDebug("数值相等性检测(TargetValue): |{Value}({NumValue}) - {Target}({TargetNum})| {Operator}: {Result}",
+                    value, numValue, condition.TargetValue, targetNum, condition.Operator, result);
                 return result;
             }
 
