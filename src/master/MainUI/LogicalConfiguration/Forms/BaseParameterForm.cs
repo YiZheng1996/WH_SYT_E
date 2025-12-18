@@ -301,12 +301,32 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         protected virtual object ConvertParameter(object stepParameter)
         {
-            if (stepParameter == null)
-                return null;
-
             var parameterType = GetParameterType();
             if (parameterType == null)
                 return stepParameter;
+
+            // 处理 null 或数值类型（0, -1等初始值）
+            if (stepParameter == null ||
+                stepParameter is int ||
+                stepParameter is long ||
+                stepParameter is decimal ||
+                stepParameter is double ||
+                stepParameter is float ||
+                stepParameter is short ||
+                stepParameter is byte)
+            {
+                Logger?.LogDebug("参数为初始值({Value})，创建默认参数: {Type}",
+                    stepParameter, parameterType.Name);
+                try
+                {
+                    return Activator.CreateInstance(parameterType);
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogError(ex, "创建默认参数失败: {Type}", parameterType.Name);
+                    return null;
+                }
+            }
 
             // 1. 尝试直接类型转换
             if (parameterType.IsInstanceOfType(stepParameter))
@@ -315,7 +335,7 @@ namespace MainUI.LogicalConfiguration.Forms
             }
 
             // 2. 尝试 JSON 字符串反序列化
-            if (stepParameter is string json && !string.IsNullOrEmpty(json))
+            if (stepParameter is string json && !string.IsNullOrWhiteSpace(json))
             {
                 try
                 {
@@ -338,8 +358,17 @@ namespace MainUI.LogicalConfiguration.Forms
                 Logger?.LogWarning(ex, "对象转换失败，使用默认参数");
             }
 
-            // 4. 返回类型的默认实例
-            return Activator.CreateInstance(parameterType);
+            // 4. 最终兜底 - 创建默认实例
+            Logger?.LogDebug("所有转换方法失败，返回默认参数实例");
+            try
+            {
+                return Activator.CreateInstance(parameterType);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "创建默认参数实例失败");
+                return null;
+            }
         }
 
         #endregion

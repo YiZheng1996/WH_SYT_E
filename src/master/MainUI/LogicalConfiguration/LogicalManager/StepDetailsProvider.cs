@@ -398,6 +398,19 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             if (stepParameter == null)
                 return false;
 
+            // ⭐ 关键修复：处理数值类型（0, -1等初始值）
+            if (stepParameter is int ||
+                stepParameter is long ||
+                stepParameter is decimal ||
+                stepParameter is double ||
+                stepParameter is float ||
+                stepParameter is short ||
+                stepParameter is byte)
+            {
+                _logger?.LogDebug("参数为数值类型({Value})，跳过解析", stepParameter);
+                return false; // 返回false，显示"未配置"
+            }
+
             try
             {
                 // 直接类型转换
@@ -421,7 +434,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 return false;
             }
         }
-
         #endregion
     }
 }

@@ -2,6 +2,7 @@
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Windows.Forms;
 
 namespace MainUI.LogicalConfiguration.Controls
 {
@@ -169,7 +170,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 AllowUserToDeleteRows = false,
                 AllowUserToResizeColumns = false,
                 AllowUserToResizeRows = false,
-                MultiSelect = false,
+                MultiSelect = true,
 
                 // 背景和边框
                 BackgroundColor = Color.White,
@@ -181,7 +182,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 // 网格线
                 GridColor = Color.FromArgb(233, 236, 239),
 
-                // 边框 (Sunny.UI/AntdUI 特有)
+                // 边框
                 RectColor = Color.White,
 
                 // 行头
@@ -759,53 +760,111 @@ namespace MainUI.LogicalConfiguration.Controls
 
         #endregion
 
-        #region IDisposable 实现
+        #region 按钮事件处理
+
+        private void BtnInsertBefore_Click(object sender, EventArgs e)
+        {
+            _menuManager?.InsertBefore();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
+
+        private void BtnInsertAfter_Click(object sender, EventArgs e)
+        {
+            _menuManager?.InsertAfter();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
+
+        private void BtnDelete_Click(object sender, EventArgs e)
+        {
+            _menuManager?.Delete();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
+
+        private void BtnMoveUp_Click(object sender, EventArgs e)
+        {
+            _menuManager?.MoveUp();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
+
+        private void BtnMoveDown_Click(object sender, EventArgs e)
+        {
+            _menuManager?.MoveDown();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
+
+        private void BtnCopy_Click(object sender, EventArgs e)
+        {
+            _menuManager?.Copy();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
+
+        private void BtnCut_Click(object sender, EventArgs e)
+        {
+            _menuManager?.Cut();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
+
+        private void BtnPaste_Click(object sender, EventArgs e)
+        {
+            _menuManager?.Paste();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
+
+        private void BtnSelectAll_Click(object sender, EventArgs e)
+        {
+            _menuManager?.SelectAll();
+        }
+
+        private void BtnClearAll_Click(object sender, EventArgs e)
+        {
+            _menuManager?.ClearAll();
+            UpdateButtonStates(null, EventArgs.Empty);
+        }
 
         /// <summary>
-        /// 释放资源
+        /// 更新按钮可用状态
         /// </summary>
-        protected override void Dispose(bool disposing)
+        private void UpdateButtonStates(object sender, EventArgs e)
         {
-            if (!_isDisposed)
+            if (_menuManager == null) return;
+
+            try
             {
-                if (disposing && (components != null))
-                {
-                    try
-                    {
-                        // 取消事件订阅
-                        UnsubscribeFromWorkflowEvents();
+                int selectedIndex = _gridManager.GetSelectedRowIndex();
+                int totalRows = _dataGridView.Rows.Count;
+                bool hasSelection = selectedIndex >= 0;
+                bool hasCopiedData = _menuManager.HasCopiedData();
 
-                        // 释放菜单管理器
-                        _menuManager?.Dispose();
-                        _menuManager = null;
-
-                        // 释放DataGridView事件
-                        if (_dataGridView != null)
-                        {
-                            _dataGridView.CellDoubleClick -= DataGridView_CellDoubleClick;
-                            _dataGridView.DragEnter -= DataGridView_DragEnter;
-                            _dataGridView.DragDrop -= DataGridView_DragDrop;
-                            _dataGridView.SelectionChanged -= DataGridView_SelectionChanged;
-                            _dataGridView.CellBeginEdit -= DataGridView_CellBeginEdit;
-                            _dataGridView.CellEndEdit -= DataGridView_CellEndEdit;
-                        }
-
-                        _logger?.LogDebug("流程配置表格控件已释放");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogError(ex, "释放流程配置表格控件时发生错误");
-                    }
-                }
-
-                _isDisposed = true;
+                btnInsertBefore.Enabled = hasSelection;
+                btnInsertAfter.Enabled = hasSelection;
+                btnDelete.Enabled = hasSelection;
+                btnMoveUp.Enabled = hasSelection && selectedIndex > 0;
+                btnMoveDown.Enabled = hasSelection && selectedIndex < totalRows - 1;
+                btnCopy.Enabled = hasSelection;
+                btnCut.Enabled = hasSelection;
+                btnPaste.Enabled = hasCopiedData;
+                btnSelectAll.Enabled = totalRows > 0;
+                btnClearAll.Enabled = totalRows > 0;
             }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "更新按钮状态时发生错误");
+            }
+        }
 
-            base.Dispose(disposing);
+        /// <summary>
+        /// 键盘按键处理(支持快捷键)
+        /// </summary>
+        private void DataGridView_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (_menuManager != null && _menuManager.HandleKeyDown(e.KeyData))
+            {
+                e.Handled = true;
+                UpdateButtonStates(null, EventArgs.Empty);
+            }
         }
 
         #endregion
-
     }
 
     #region 事件参数类

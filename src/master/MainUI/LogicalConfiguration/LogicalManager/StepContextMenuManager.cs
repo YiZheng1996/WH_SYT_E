@@ -3,12 +3,11 @@ using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
 using ContextMenuStrip = System.Windows.Forms.ContextMenuStrip;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
-using Panel = System.Windows.Forms.Panel;
 
 namespace MainUI.LogicalConfiguration.LogicalManager
 {
     /// <summary>
-    /// 步骤右键菜单管理器 - 负责所有右键菜单相关的功能
+    /// 步骤右键菜单管理器 - 负责所有右键菜单相关的功能(支持右键菜单和按钮调用)
     /// </summary>
     public class StepContextMenuManager : IDisposable
     {
@@ -169,17 +168,150 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         #endregion
 
-        #region 插入功能
+        #region 公共方法 - 供按钮和快捷键调用
 
-        private void OnInsertBefore(object sender, EventArgs e)
+        /// <summary>
+        /// 检查是否有复制的数据
+        /// </summary>
+        public bool HasCopiedData() => _copiedStep != null;
+
+        /// <summary>
+        /// 在当前选中行之前插入步骤
+        /// </summary>
+        public void InsertBefore()
         {
             InsertStep(InsertPosition.Before);
         }
 
-        private void OnInsertAfter(object sender, EventArgs e)
+        /// <summary>
+        /// 在当前选中行之后插入步骤
+        /// </summary>
+        public void InsertAfter()
         {
             InsertStep(InsertPosition.After);
         }
+
+        /// <summary>
+        /// 删除当前选中的步骤
+        /// </summary>
+        public void Delete()
+        {
+            DeleteStep();
+        }
+
+        /// <summary>
+        /// 上移当前选中的步骤
+        /// </summary>
+        public void MoveUp()
+        {
+            MoveStep(MoveDirection.Up);
+        }
+
+        /// <summary>
+        /// 下移当前选中的步骤
+        /// </summary>
+        public void MoveDown()
+        {
+            MoveStep(MoveDirection.Down);
+        }
+
+        /// <summary>
+        /// 复制当前选中的步骤
+        /// </summary>
+        public void Copy()
+        {
+            CopyStep();
+        }
+
+        /// <summary>
+        /// 剪切当前选中的步骤
+        /// </summary>
+        public void Cut()
+        {
+            CutStep();
+        }
+
+        /// <summary>
+        /// 粘贴步骤
+        /// </summary>
+        public void Paste()
+        {
+            PasteStep();
+        }
+
+        /// <summary>
+        /// 全选所有步骤
+        /// </summary>
+        public void SelectAll()
+        {
+            _grid.SelectAll();
+        }
+
+        /// <summary>
+        /// 清空所有步骤
+        /// </summary>
+        public void ClearAll()
+        {
+            ClearAllSteps();
+        }
+
+        #endregion
+
+        #region 私有方法 - 右键菜单事件处理
+
+        private void OnInsertBefore(object sender, EventArgs e)
+        {
+            InsertBefore();
+        }
+
+        private void OnInsertAfter(object sender, EventArgs e)
+        {
+            InsertAfter();
+        }
+
+        private void OnDelete(object sender, EventArgs e)
+        {
+            Delete();
+        }
+
+        private void OnMoveUp(object sender, EventArgs e)
+        {
+            MoveUp();
+        }
+
+        private void OnMoveDown(object sender, EventArgs e)
+        {
+            MoveDown();
+        }
+
+        private void OnCopy(object sender, EventArgs e)
+        {
+            Copy();
+        }
+
+        private void OnCut(object sender, EventArgs e)
+        {
+            Cut();
+        }
+
+        private void OnPaste(object sender, EventArgs e)
+        {
+            Paste();
+        }
+
+        private void OnSelectAll(object sender, EventArgs e)
+        {
+            SelectAll();
+        }
+
+        private void OnClearAll(object sender, EventArgs e)
+        {
+            ClearAll();
+        }
+
+        #endregion
+
+        #region 插入功能
 
         private enum InsertPosition { Before, After }
 
@@ -197,7 +329,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 var stepName = ShowStepSelectionDialog();
                 if (string.IsNullOrEmpty(stepName)) return;
 
-                int insertIndex = position == InsertPosition.Before ? selectedIndex : selectedIndex + 1;
+                int insertIndex = position == InsertPosition.Before ?
+                    selectedIndex : selectedIndex + 1;
                 var steps = _workflowState.GetSteps();
 
                 var newStep = new ChildModel
@@ -243,7 +376,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         #region 删除功能
 
-        private void OnDelete(object sender, EventArgs e)
+        private void DeleteStep()
         {
             try
             {
@@ -257,7 +390,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 var selectedStep = _workflowState.GetStep(selectIndex);
                 string stepName = selectedStep?.StepName ?? "未知步骤";
 
-                if (MessageHelper.MessageYes(_ownerForm, $"确定要删除步骤 [{stepName}] 吗?") != DialogResult.OK)
+                if (MessageHelper.MessageYes(_ownerForm, $"确定要删除步骤 [{stepName}] 吗?")
+                    != DialogResult.OK)
                 {
                     return;
                 }
@@ -276,7 +410,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 // 删除指定步骤
                 steps.RemoveAt(selectIndex);
 
-                // 重新编号 - 关键步骤!
+                // 重新编号
                 for (int i = 0; i < steps.Count; i++)
                 {
                     steps[i].StepNum = i + 1;
@@ -289,7 +423,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     _workflowState.AddStep(step);
                 }
 
-                // 可选: 重新选中合适的行
+                // 重新选中合适的行
                 if (steps.Count > 0)
                 {
                     int newSelectIndex = Math.Min(selectIndex, steps.Count - 1);
@@ -312,16 +446,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         #endregion
 
         #region 移动功能
-
-        private void OnMoveUp(object sender, EventArgs e)
-        {
-            MoveStep(MoveDirection.Up);
-        }
-
-        private void OnMoveDown(object sender, EventArgs e)
-        {
-            MoveStep(MoveDirection.Down);
-        }
 
         private enum MoveDirection { Up, Down }
 
@@ -394,7 +518,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         #region 复制/剪切/粘贴功能
 
-        private void OnCopy(object sender, EventArgs e)
+        private void CopyStep()
         {
             try
             {
@@ -425,7 +549,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             }
         }
 
-        private void OnCut(object sender, EventArgs e)
+        private void CutStep()
         {
             try
             {
@@ -458,7 +582,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             }
         }
 
-        private void OnPaste(object sender, EventArgs e)
+        private void PasteStep()
         {
             try
             {
@@ -469,7 +593,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 }
 
                 int selectedIndex = _gridManager.GetSelectedRowIndex();
-                int insertIndex = selectedIndex >= 0 ? selectedIndex + 1 : _grid.Rows.Count;
+                int insertIndex = selectedIndex >= 0 ?
+                    selectedIndex + 1 : _grid.Rows.Count;
 
                 var steps = _workflowState.GetSteps();
 
@@ -519,12 +644,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         #region 全选和清空
 
-        private void OnSelectAll(object sender, EventArgs e)
-        {
-            _grid.SelectAll();
-        }
-
-        private void OnClearAll(object sender, EventArgs e)
+        private void ClearAllSteps()
         {
             try
             {
@@ -536,7 +656,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     return;
                 }
 
-                // 只操作数据层，UI刷新由 OnStepsChanged 事件自动触发
+                // 只操作数据层，UI刷新由事件自动触发
                 _workflowState.ClearSteps();
 
                 _logger.LogInformation("所有步骤已清空");
@@ -576,42 +696,43 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 Dock = DockStyle.Fill,
                 Font = new Font("微软雅黑", 12F),
                 Height = 30,
-                ItemHeight = 30
             };
 
-            listBox.Items.AddRange(
-            [
-                "延时等待", "条件判断", "循环开始", "循环结束",
-                "变量赋值", "数据读取", "数据计算", "消息通知",
-                "读取PLC", "写入PLC", "写入单元格", "读取单元格"
-            ]);
+            // 加载所有步骤类型
+            var stepTypes = new[]
+            {
+                "读取PLC",
+                "写入PLC",
+                "延时",
+                "提示窗",
+                "判断条件",
+                "循环控制",
+                "表达式计算",
+                "读取Excel",
+                "写入Excel",
+                "报表生成",
+                "数据库操作"
+            };
 
-            var btnPanel = new Panel { Dock = DockStyle.Bottom, Height = 50 };
+            listBox.Items.AddRange(stepTypes);
+
             var btnOK = new UIButton
             {
                 Text = "确定",
-                DialogResult = DialogResult.OK,
-                Width = 80,
-                Height = 35,
-                Location = new Point(110, 1)
+                Dock = DockStyle.Bottom,
+                Height = 40,
+                Font = new Font("微软雅黑", 11F)
             };
+
             var btnCancel = new UIButton
             {
                 Text = "取消",
-                DialogResult = DialogResult.Cancel,
-                Width = 80,
-                Height = 35,
-                Location = new Point(210, 1)
+                Dock = DockStyle.Bottom,
+                Height = 40,
+                Font = new Font("微软雅黑", 11F)
             };
 
-            btnPanel.Controls.AddRange([btnOK, btnCancel]);
-            form.Controls.Add(listBox);
-            form.Controls.Add(btnPanel);
-
-            form.AcceptButton = btnOK;
-            form.CancelButton = btnCancel;
-
-            listBox.DoubleClick += (s, e) =>
+            btnOK.Click += (s, e) =>
             {
                 if (listBox.SelectedItem != null)
                 {
@@ -620,9 +741,18 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 }
             };
 
-            VarHelper.ShowDialogWithOverlay(_ownerForm, form);
-            return form.DialogResult == DialogResult.OK && listBox.SelectedItem != null
-                ? listBox.SelectedItem.ToString()
+            btnCancel.Click += (s, e) =>
+            {
+                form.DialogResult = DialogResult.Cancel;
+                form.Close();
+            };
+
+            form.Controls.Add(listBox);
+            form.Controls.Add(btnOK);
+            form.Controls.Add(btnCancel);
+
+            return form.ShowDialog(_ownerForm) == DialogResult.OK
+                ? listBox.SelectedItem?.ToString()
                 : null;
         }
 
@@ -634,31 +764,31 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             switch (keyData)
             {
                 case Keys.Delete:
-                    OnDelete(null, EventArgs.Empty);
+                    Delete();
                     return true;
                 case Keys.Control | Keys.C:
-                    OnCopy(null, EventArgs.Empty);
+                    Copy();
                     return true;
                 case Keys.Control | Keys.X:
-                    OnCut(null, EventArgs.Empty);
+                    Cut();
                     return true;
                 case Keys.Control | Keys.V:
-                    OnPaste(null, EventArgs.Empty);
+                    Paste();
                     return true;
                 case Keys.Control | Keys.Up:
-                    OnMoveUp(null, EventArgs.Empty);
+                    MoveUp();
                     return true;
                 case Keys.Control | Keys.Down:
-                    OnMoveDown(null, EventArgs.Empty);
+                    MoveDown();
                     return true;
                 case Keys.Control | Keys.I:
-                    OnInsertBefore(null, EventArgs.Empty);
+                    InsertBefore();
                     return true;
                 case Keys.Control | Keys.Shift | Keys.I:
-                    OnInsertAfter(null, EventArgs.Empty);
+                    InsertAfter();
                     return true;
                 case Keys.Control | Keys.A:
-                    OnSelectAll(null, EventArgs.Empty);
+                    SelectAll();
                     return true;
             }
             return false;

@@ -423,7 +423,9 @@ namespace MainUI.LogicalConfiguration
             }
         }
 
-        // 表格拖放事件
+        /// <summary>
+        /// 表格拖放事件 - 添加步骤后自动打开配置窗口
+        /// </summary>
         private void OnProcessGridDragDrop(object sender, DragEventArgs e)
         {
             try
@@ -433,19 +435,47 @@ namespace MainUI.LogicalConfiguration
                     var node = (TreeNode)e.Data.GetData(typeof(TreeNode));
                     if (node?.Parent != null)
                     {
-                        _processGridControl.AddStep(new ChildModel
+                        string stepName = node.Text;
+                        int newStepIndex = _workflowState.GetStepCount();
+
+                        // 创建新步骤
+                        var newStep = new ChildModel
                         {
-                            StepName = node.Text,
+                            StepName = stepName,
                             Status = 0,
-                            StepNum = _processGridControl.StepCount + 1,
-                            StepParameter = null
-                        });
+                            StepNum = newStepIndex + 1,
+                            StepParameter = 0  // 保持为0，TryGetParameter会处理
+                        };
+
+                        // 添加步骤
+                        _workflowState.AddStep(newStep);
+
+                        _logger.LogDebug("拖拽添加步骤: {StepName}, 索引: {Index}", stepName, newStepIndex);
+
+                        // ⭐ 使用BeginInvoke异步打开配置窗口
+                        this.BeginInvoke(new Action(() =>
+                        {
+                            try
+                            {
+                                _workflowState.StepNum = newStepIndex;
+                                _workflowState.StepName = stepName;
+                                _formService.OpenFormByName(this, stepName, this);
+
+                                _logger.LogInformation("配置窗口已打开: {StepName}", stepName);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "打开配置窗口失败: {StepName}", stepName);
+                                MessageHelper.MessageOK($"打开配置失败：{ex.Message}", TType.Error);
+                            }
+                        }));
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "拖拽步骤错误");
+                _logger.LogError(ex, "拖拽添加步骤失败");
+                MessageHelper.MessageOK($"拖拽错误：{ex.Message}", TType.Error);
             }
         }
 
