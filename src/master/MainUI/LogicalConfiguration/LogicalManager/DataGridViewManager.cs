@@ -24,6 +24,30 @@
         }
 
         /// <summary>
+        /// 获取所有选中行的索引数组(按索引从小到大排序)
+        /// </summary>
+        /// <returns>选中行的索引数组,如果没有选中则返回空数组</returns>
+        public int[] GetSelectedRowIndices()
+        {
+            if (_grid.SelectedRows.Count == 0)
+                return [];
+
+            return [.. _grid.SelectedRows
+                .Cast<DataGridViewRow>()
+                .Select(row => row.Index)
+                .OrderBy(i => i)];
+        }
+
+        /// <summary>
+        /// 获取选中行数量
+        /// </summary>
+        /// <returns>选中行的数量</returns>
+        public int GetSelectedRowCount()
+        {
+            return _grid.SelectedRows.Count;
+        }
+
+        /// <summary>
         /// 清空表格
         /// </summary>
         public void Clear()

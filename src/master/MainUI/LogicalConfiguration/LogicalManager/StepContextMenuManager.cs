@@ -1,6 +1,7 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using ContextMenuStrip = System.Windows.Forms.ContextMenuStrip;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -32,8 +33,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private ToolStripMenuItem _menuItemSelectAll;
         private ToolStripMenuItem _menuItemClearAll;
 
-        // 复制/剪切的步骤
-        private ChildModel _copiedStep;
+        // 复制/剪切的步骤 - 改为支持多个
+        private List<ChildModel> _copiedSteps;
         private bool _isCut;
 
         #endregion
@@ -144,19 +145,30 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         {
             try
             {
+                int selectedCount = _gridManager.GetSelectedRowCount();
                 int selectedIndex = _gridManager.GetSelectedRowIndex();
                 int totalRows = _grid.Rows.Count;
-                bool hasSelection = selectedIndex >= 0;
-                bool hasCopiedData = _copiedStep != null;
+                bool hasSelection = selectedCount > 0;
+                bool hasCopiedData = HasCopiedData();
 
-                _menuItemInsertBefore.Enabled = hasSelection;
-                _menuItemInsertAfter.Enabled = hasSelection;
+                // 多选时只允许部分操作
+                bool isSingleSelection = selectedCount == 1;
+
+                // 插入操作仅单选时可用
+                _menuItemInsertBefore.Enabled = isSingleSelection;
+                _menuItemInsertAfter.Enabled = isSingleSelection;
+
+                // 删除/复制/剪切支持多选
                 _menuItemDelete.Enabled = hasSelection;
-                _menuItemMoveUp.Enabled = hasSelection && selectedIndex > 0;
-                _menuItemMoveDown.Enabled = hasSelection && selectedIndex < totalRows - 1;
                 _menuItemCopy.Enabled = hasSelection;
                 _menuItemCut.Enabled = hasSelection;
                 _menuItemPaste.Enabled = hasCopiedData;
+
+                // 上移/下移仅单选时可用
+                _menuItemMoveUp.Enabled = isSingleSelection && selectedIndex > 0;
+                _menuItemMoveDown.Enabled = isSingleSelection && selectedIndex < totalRows - 1;
+
+                // 全选/清空
                 _menuItemSelectAll.Enabled = totalRows > 0;
                 _menuItemClearAll.Enabled = totalRows > 0;
             }
@@ -168,12 +180,59 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         #endregion
 
+        #region 私有辅助方法
+
+        /// <summary>
+        /// 深拷贝步骤参数对象 - 避免引用复制导致的数据关联问题
+        /// </summary>
+        /// <param name="parameter">原始参数对象</param>
+        /// <returns>深拷贝后的新对象</returns>
+        private object DeepCloneParameter(object parameter)
+        {
+            if (parameter == null) return null;
+
+            try
+            {
+                // 使用JSON序列化实现深拷贝
+                string json = JsonConvert.SerializeObject(parameter);
+                return JsonConvert.DeserializeObject(json, parameter.GetType());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "参数深拷贝失败,返回null");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 深拷贝步骤对象
+        /// </summary>
+        /// <param name="step">原始步骤</param>
+        /// <returns>深拷贝后的新步骤</returns>
+        private ChildModel DeepCloneStep(ChildModel step)
+        {
+            if (step == null) return null;
+
+            return new ChildModel
+            {
+                StepName = step.StepName,
+                Status = 0,
+                StepNum = 0,
+                StepParameter = DeepCloneParameter(step.StepParameter),
+                Remark = step.Remark,
+                ErrorMessage = null  // 新步骤清空错误信息
+            };
+        }
+
+        #endregion
+
         #region 公共方法 - 供按钮和快捷键调用
 
         /// <summary>
         /// 检查是否有复制的数据
         /// </summary>
-        public bool HasCopiedData() => _copiedStep != null;
+        public bool HasCopiedData() => 
+            _copiedSteps != null && _copiedSteps.Count > 0;
 
         /// <summary>
         /// 在当前选中行之前插入步骤
@@ -376,70 +435,42 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         #region 删除功能
 
+        /// <summary>
+        /// 删除选中的步骤(支持多选)
+        /// </summary>
         private void DeleteStep()
         {
             try
             {
-                int selectIndex = _gridManager.GetSelectedRowIndex();
-                if (selectIndex < 0)
+                var selectedIndices = _gridManager.GetSelectedRowIndices();
+                if (selectedIndices.Length == 0)
                 {
                     MessageHelper.MessageOK("请先选择要删除的步骤!", TType.Warn);
                     return;
                 }
 
-                var selectedStep = _workflowState.GetStep(selectIndex);
-                string stepName = selectedStep?.StepName ?? "未知步骤";
+                // 构建确认消息
+                string confirmMessage = selectedIndices.Length == 1
+                    ? "确定要删除选中的步骤吗?"
+                    : $"确定要删除选中的 {selectedIndices.Length} 个步骤吗?";
 
-                if (MessageHelper.MessageYes(_ownerForm, $"确定要删除步骤 [{stepName}] 吗?")
-                    != DialogResult.OK)
-                {
+                if (MessageHelper.MessageYes(_ownerForm, confirmMessage)!= DialogResult.OK)
                     return;
-                }
 
-                // 获取所有步骤
-                var steps = _workflowState.GetSteps();
+                // 从大到小删除,避免索引变化
+                var sortedIndices = selectedIndices.OrderByDescending(i => i).ToArray();
 
-                // 验证索引
-                if (selectIndex < 0 || selectIndex >= steps.Count)
+                foreach (int index in sortedIndices)
                 {
-                    _logger.LogWarning("删除索引超出范围: {Index}", selectIndex);
-                    MessageHelper.MessageOK("步骤索引无效!", TType.Error);
-                    return;
+                    _workflowState.RemoveStepAt(index);
                 }
 
-                // 删除指定步骤
-                steps.RemoveAt(selectIndex);
-
-                // 重新编号
-                for (int i = 0; i < steps.Count; i++)
-                {
-                    steps[i].StepNum = i + 1;
-                }
-
-                // 刷新工作流状态
-                _workflowState.ClearSteps();
-                foreach (var step in steps)
-                {
-                    _workflowState.AddStep(step);
-                }
-
-                // 重新选中合适的行
-                if (steps.Count > 0)
-                {
-                    int newSelectIndex = Math.Min(selectIndex, steps.Count - 1);
-                    if (newSelectIndex >= 0 && newSelectIndex < _grid.Rows.Count)
-                    {
-                        _grid.ClearSelection();
-                        _grid.Rows[newSelectIndex].Selected = true;
-                    }
-                }
-
-                _logger.LogInformation("步骤删除成功: {StepName}, 剩余步骤已重新编号", stepName);
+                _logger.LogInformation("已删除 {Count} 个步骤", selectedIndices.Length);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "删除步骤时发生错误");
-                MessageHelper.MessageOK($"删除步骤错误: {ex.Message}", TType.Error);
+                MessageHelper.MessageOK($"删除失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -518,125 +549,150 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         #region 复制/剪切/粘贴功能
 
+        /// <summary>
+        /// 复制选中的步骤(支持多选)
+        /// </summary>
         private void CopyStep()
         {
             try
             {
-                int selectedIndex = _gridManager.GetSelectedRowIndex();
-                if (selectedIndex < 0)
+                var selectedIndices = _gridManager.GetSelectedRowIndices();
+                if (selectedIndices.Length == 0)
                 {
-                    MessageHelper.MessageOK("请先选择要复制的步骤！", TType.Warn);
+                    MessageHelper.MessageOK("请先选择要复制的步骤!", TType.Warn);
                     return;
                 }
 
-                var step = _workflowState.GetStep(selectedIndex);
-                if (step == null) return;
+                _copiedSteps = [];
 
-                _copiedStep = new ChildModel
+                foreach (int index in selectedIndices)
                 {
-                    StepName = step.StepName,
-                    Status = 0,
-                    StepNum = 0,
-                    StepParameter = step.StepParameter
-                };
+                    var step = _workflowState.GetStep(index);
+                    if (step != null)
+                    {
+                        _copiedSteps.Add(DeepCloneStep(step));
+                    }
+                }
 
                 _isCut = false;
-                _logger.LogDebug("复制步骤: {StepName}", step.StepName);
+
+                string message = selectedIndices.Length == 1
+                    ? $"已复制步骤: {_copiedSteps[0].StepName}"
+                    : $"已复制 {selectedIndices.Length} 个步骤";
+
+                _logger.LogDebug(message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "复制步骤时发生错误");
+                MessageHelper.MessageOK($"复制失败: {ex.Message}", TType.Error);
             }
         }
 
+        /// <summary>
+        /// 剪切选中的步骤(支持多选)
+        /// </summary>
         private void CutStep()
         {
             try
             {
-                int selectedIndex = _gridManager.GetSelectedRowIndex();
-                if (selectedIndex < 0)
+                var selectedIndices = _gridManager.GetSelectedRowIndices();
+                if (selectedIndices.Length == 0)
                 {
-                    MessageHelper.MessageOK("请先选择要剪切的步骤！", TType.Warn);
+                    MessageHelper.MessageOK("请先选择要剪切的步骤!", TType.Warn);
                     return;
                 }
 
-                var step = _workflowState.GetStep(selectedIndex);
-                if (step == null) return;
+                _copiedSteps = new List<ChildModel>();
 
-                _copiedStep = new ChildModel
+                // 先复制所有选中的步骤
+                foreach (int index in selectedIndices)
                 {
-                    StepName = step.StepName,
-                    Status = 0,
-                    StepNum = 0,
-                    StepParameter = step.StepParameter
-                };
+                    var step = _workflowState.GetStep(index);
+                    if (step != null)
+                    {
+                        _copiedSteps.Add(DeepCloneStep(step));
+                    }
+                }
+
+                // 从大到小删除,避免索引变化
+                var sortedIndices = selectedIndices.OrderByDescending(i => i).ToArray();
+                foreach (int index in sortedIndices)
+                {
+                    _workflowState.RemoveStepAt(index);
+                }
 
                 _isCut = true;
-                _workflowState.RemoveStepAt(selectedIndex);
 
-                _logger.LogDebug("剪切步骤: {StepName}", step.StepName);
+                string message = selectedIndices.Length == 1
+                    ? $"已剪切步骤: {_copiedSteps[0].StepName}"
+                    : $"已剪切 {selectedIndices.Length} 个步骤";
+
+                _logger.LogDebug(message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "剪切步骤时发生错误");
+                MessageHelper.MessageOK($"剪切失败: {ex.Message}", TType.Error);
             }
         }
 
+        /// <summary>
+        /// 粘贴步骤(支持多个步骤)
+        /// </summary>
         private void PasteStep()
         {
             try
             {
-                if (_copiedStep == null)
+                if (_copiedSteps == null || _copiedSteps.Count == 0)
                 {
-                    MessageHelper.MessageOK("没有可粘贴的步骤！", TType.Warn);
+                    MessageHelper.MessageOK("没有可粘贴的步骤!", TType.Warn);
                     return;
                 }
 
                 int selectedIndex = _gridManager.GetSelectedRowIndex();
-                int insertIndex = selectedIndex >= 0 ?
-                    selectedIndex + 1 : _grid.Rows.Count;
 
-                var steps = _workflowState.GetSteps();
+                // 获取当前所有步骤
+                var allSteps = _workflowState.GetSteps();
 
-                var newStep = new ChildModel
+                // 确定插入位置
+                int insertIndex = selectedIndex >= 0
+                    ? selectedIndex + 1
+                    : allSteps.Count;
+
+                // 在指定位置插入所有复制的步骤(再次深拷贝,确保多次粘贴互不影响)
+                foreach (var copiedStep in _copiedSteps)
                 {
-                    StepName = _copiedStep.StepName,
-                    Status = 0,
-                    StepNum = insertIndex + 1,
-                    StepParameter = _copiedStep.StepParameter
-                };
-
-                steps.Insert(insertIndex, newStep);
-
-                // 重新编号
-                for (int i = 0; i < steps.Count; i++)
-                {
-                    steps[i].StepNum = i + 1;
+                    var newStep = DeepCloneStep(copiedStep);
+                    allSteps.Insert(insertIndex++, newStep);
                 }
 
+                // 清空现有步骤并重新添加
                 _workflowState.ClearSteps();
-                foreach (var step in steps)
+                foreach (var step in allSteps)
                 {
+                    // 重新分配步骤号
+                    step.StepNum = allSteps.IndexOf(step) + 1;
                     _workflowState.AddStep(step);
                 }
 
+                // 如果是剪切操作,粘贴后清空复制内容
                 if (_isCut)
                 {
-                    _copiedStep = null;
+                    _copiedSteps = null;
                     _isCut = false;
                 }
 
-                if (insertIndex < _grid.Rows.Count)
-                {
-                    _grid.ClearSelection();
-                    _grid.Rows[insertIndex].Selected = true;
-                }
+                string message = _copiedSteps?.Count == 1
+                    ? $"已粘贴步骤"
+                    : $"已粘贴 {_copiedSteps?.Count ?? 0} 个步骤";
 
-                _logger.LogInformation("粘贴步骤成功");
+                _logger.LogDebug(message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "粘贴步骤时发生错误");
+                MessageHelper.MessageOK($"粘贴失败: {ex.Message}", TType.Error);
             }
         }
 

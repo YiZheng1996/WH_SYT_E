@@ -830,19 +830,28 @@ namespace MainUI.LogicalConfiguration.Controls
 
             try
             {
+                int selectedCount = _gridManager.GetSelectedRowCount();
                 int selectedIndex = _gridManager.GetSelectedRowIndex();
                 int totalRows = _dataGridView.Rows.Count;
-                bool hasSelection = selectedIndex >= 0;
+                bool hasSelection = selectedCount > 0;
+                bool isSingleSelection = selectedCount == 1;
                 bool hasCopiedData = _menuManager.HasCopiedData();
 
-                btnInsertBefore.Enabled = hasSelection;
-                btnInsertAfter.Enabled = hasSelection;
+                // 插入操作仅单选时可用
+                btnInsertBefore.Enabled = isSingleSelection;
+                btnInsertAfter.Enabled = isSingleSelection;
+
+                // 删除/复制/剪切支持多选
                 btnDelete.Enabled = hasSelection;
-                btnMoveUp.Enabled = hasSelection && selectedIndex > 0;
-                btnMoveDown.Enabled = hasSelection && selectedIndex < totalRows - 1;
                 btnCopy.Enabled = hasSelection;
                 btnCut.Enabled = hasSelection;
                 btnPaste.Enabled = hasCopiedData;
+
+                // 上移/下移仅单选时可用
+                btnMoveUp.Enabled = isSingleSelection && selectedIndex > 0;
+                btnMoveDown.Enabled = isSingleSelection && selectedIndex < totalRows - 1;
+
+                // 全选/清空
                 btnSelectAll.Enabled = totalRows > 0;
                 btnClearAll.Enabled = totalRows > 0;
             }
