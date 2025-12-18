@@ -742,7 +742,7 @@ namespace MainUI
                 {
                     //TODO:试验开始前排气暂时注释
                     // 试验前排空所有气压
-                    bool exhaustSuccess = await ExhaustkPaAsync(_cancellationTokenSource.Token);
+                    //bool exhaustSuccess = await ExhaustkPaAsync(_cancellationTokenSource.Token);
 
                     var results = await _workflowService.ExecuteMultipleWorkflowsAsync(
                         checkedItems,

@@ -291,11 +291,11 @@
             // _validationLabel
             // 
             _validationLabel.AutoSize = true;
-            _validationLabel.Font = new Font("微软雅黑", 9F);
+            _validationLabel.Font = new Font("微软雅黑", 10F);
             _validationLabel.ForeColor = Color.FromArgb(115, 115, 115);
-            _validationLabel.Location = new Point(8, 6);
+            _validationLabel.Location = new Point(8, 5);
             _validationLabel.Name = "_validationLabel";
-            _validationLabel.Size = new Size(69, 17);
+            _validationLabel.Size = new Size(79, 20);
             _validationLabel.TabIndex = 0;
             _validationLabel.Text = "✓ 准备就绪";
             // 
@@ -303,7 +303,7 @@
             // 
             _expressionTextBox.BackColor = Color.White;
             _expressionTextBox.Dock = DockStyle.Top;
-            _expressionTextBox.Font = new Font("Consolas", 11F);
+            _expressionTextBox.Font = new Font("微软雅黑", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
             _expressionTextBox.ForeColor = Color.FromArgb(38, 38, 38);
             _expressionTextBox.Location = new Point(0, 0);
             _expressionTextBox.Margin = new Padding(4, 5, 4, 5);

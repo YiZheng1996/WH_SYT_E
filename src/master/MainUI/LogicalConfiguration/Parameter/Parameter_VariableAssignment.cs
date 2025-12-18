@@ -1,4 +1,6 @@
-﻿namespace MainUI.LogicalConfiguration.Parameter
+﻿using System.ComponentModel;
+
+namespace MainUI.LogicalConfiguration.Parameter
 {
     /// <summary>
     /// 项点变量赋值参数
@@ -39,5 +41,26 @@
         /// 描述
         /// </summary>
         public string Description { get; set; }
+    }
+
+    /// <summary>
+    /// 数据源配置
+    /// </summary>
+    public class DataSourceConfig
+    {
+        /// <summary>
+        /// 数据源类型
+        /// </summary>
+        public DataSourceType SourceType { get; set; } = DataSourceType.Variable;
+
+        /// <summary>
+        /// 变量名（当数据源类型为变量时）
+        /// </summary>
+        public string VariableName { get; set; } = "";
+
+        /// <summary>
+        /// PLC地址配置（当数据源类型为PLC时）
+        /// </summary>
+        public PlcAddressConfig PlcConfig { get; set; } = new PlcAddressConfig();
     }
 }

@@ -663,38 +663,6 @@ namespace MainUI.Procedure.Controls
                     yPosition += 22;
                 }
 
-                // 📡 数据源配置
-                yPosition = AddSubSectionTitle("数据源", yPosition);
-
-                string dataSourceTypeName = param.DataSource?.SourceType switch
-                {
-                    DataSourceType.Variable => "系统变量",
-                    DataSourceType.PLC => "PLC地址",
-                    _ => "未知"
-                };
-                AddTableCell("数据源类型", yPosition, 0, col1Width, false);
-                AddTableCell(dataSourceTypeName, yPosition, col1Width, col2Width, false);
-                yPosition += 22;
-
-                // 显示具体的数据源信息
-                if (param.DataSource?.SourceType == DataSourceType.Variable)
-                {
-                    AddTableCell("变量名称", yPosition, 0, col1Width, false);
-                    AddTableCell(param.DataSource.VariableName ?? "(未设置)", yPosition, col1Width, col2Width, false,
-                        string.IsNullOrEmpty(param.DataSource.VariableName) ? Color.FromArgb(180, 180, 180) : null);
-                    yPosition += 22;
-                }
-                else if (param.DataSource?.SourceType == DataSourceType.PLC)
-                {
-                    AddTableCell("PLC模块", yPosition, 0, col1Width, false);
-                    AddTableCell(param.DataSource.PlcConfig?.ModuleName ?? "(未设置)", yPosition, col1Width, col2Width, false);
-                    yPosition += 22;
-
-                    AddTableCell("PLC地址", yPosition, 0, col1Width, false);
-                    AddTableCell(param.DataSource.PlcConfig?.Address ?? "(未设置)", yPosition, col1Width, col2Width, false);
-                    yPosition += 22;
-                }
-
                 // 🎯 检测条件（核心改造 - 显示表达式）
                 yPosition = AddSubSectionTitle("检测条件", yPosition);
 

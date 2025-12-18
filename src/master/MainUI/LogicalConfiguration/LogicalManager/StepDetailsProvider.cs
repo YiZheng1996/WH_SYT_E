@@ -171,12 +171,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             if (!TryGetParameter<Parameter_Detection>(step.StepParameter, out var param))
                 return "未配置";
 
-            // 获取数据源信息
-            var dataSource = param.DataSource?.SourceType == DataSourceType.PLC
-                ? $"PLC[{param.DataSource.PlcConfig?.ModuleName}.{param.DataSource.PlcConfig?.Address}]"
-                : $"@{param.DataSource?.VariableName}";
-
-
             // 添加失败处理信息
             var failureInfo = param.ResultHandling?.OnFailure switch
             {
@@ -185,7 +179,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 _ => ""
             };
 
-            return $"判断: {failureInfo}";
+            return $"判断: {param.ConditionExpression}";
         }
 
         /// <summary>

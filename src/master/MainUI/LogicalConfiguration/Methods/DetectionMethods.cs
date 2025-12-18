@@ -154,26 +154,20 @@ namespace MainUI.LogicalConfiguration.Methods
 
                 try
                 {
-                    // 读取数据源的值
-                    object currentValue = await ReadDataSourceValue(param.DataSource, cancellationToken);
-                    result.LastReadValue = currentValue;
+                    // 直接使用表达式引擎计算
+                    // 表达式引擎会自动解析并读取其中的变量和PLC地址
+                    var evalResult = await _expressionEngine.EvaluateExpressionAsync_Real(
+                        param.ConditionExpression);
 
-                    _logger.LogDebug("检测读取值: {Value}, 检测次数: {Attempts}",
-                        currentValue, result.DetectionAttempts);
-
-                    // 使用表达式引擎判断
-                    bool conditionMet = EvaluateConditionExpression(currentValue, param.ConditionExpression);
-
-                    if (conditionMet)
+                    if (evalResult.Result is bool conditionMet && conditionMet)
                     {
-                        _logger.LogDebug("检测条件满足: {DetectionName}, 值: {Value}",
-                            param.DetectionName, currentValue);
-                        result.FinalValue = currentValue;
+                        _logger.LogDebug("检测条件满足: {DetectionName}", param.DetectionName);
+                        result.FinalValue = evalResult.Result;
                         return true;
                     }
 
-                    // 重置重试计数（因为本次读取成功）
-                    retryCount = 0;
+                    // 记录当前表达式计算值用于调试
+                    result.LastReadValue = evalResult.Result;
                 }
                 catch (Exception ex)
                 {
@@ -202,65 +196,6 @@ namespace MainUI.LogicalConfiguration.Methods
                     await Task.Delay(waitTime, cancellationToken);
                 }
             }
-        }
-
-        #endregion
-
-        #region 数据源读取
-
-        /// <summary>
-        /// 读取数据源的值
-        /// </summary>
-        private async Task<object> ReadDataSourceValue(DataSourceConfig dataSource, CancellationToken cancellationToken)
-        {
-            if (dataSource == null)
-            {
-                throw new InvalidOperationException("数据源配置为空");
-            }
-
-            return dataSource.SourceType switch
-            {
-                DataSourceType.Variable => await ReadVariableValue(dataSource.VariableName),
-                DataSourceType.PLC => await ReadPLCValue(dataSource.PlcConfig, cancellationToken),
-                _ => throw new NotSupportedException($"不支持的数据源类型: {dataSource.SourceType}")
-            };
-        }
-
-        /// <summary>
-        /// 读取变量值
-        /// </summary>
-        private Task<object> ReadVariableValue(string variableName)
-        {
-            if (string.IsNullOrEmpty(variableName))
-            {
-                throw new InvalidOperationException("变量名为空");
-            }
-
-            var variable = _variableManager.TryFindVariableByName(variableName);
-            if (variable == null)
-            {
-                throw new InvalidOperationException($"变量 '{variableName}' 不存在");
-            }
-
-            return Task.FromResult(variable.VarValue);
-        }
-
-        /// <summary>
-        /// 读取PLC值
-        /// </summary>
-        private async Task<object> ReadPLCValue(PlcAddressConfig plcConfig, CancellationToken cancellationToken)
-        {
-            if (plcConfig == null)
-            {
-                throw new InvalidOperationException("PLC配置为空");
-            }
-
-            if (string.IsNullOrEmpty(plcConfig.ModuleName) || string.IsNullOrEmpty(plcConfig.Address))
-            {
-                throw new InvalidOperationException("PLC模块名或地址为空");
-            }
-
-            return await _plcManager.ReadPLCForDetectionAsync(plcConfig);
         }
 
         #endregion
@@ -493,45 +428,12 @@ namespace MainUI.LogicalConfiguration.Methods
         /// </summary>
         private void ValidateParameter(Parameter_Detection param)
         {
-            if (param == null)
-            {
-                throw new ArgumentNullException(nameof(param));
-            }
-
-            // 验证数据源
-            if (param.DataSource == null)
-            {
-                throw new InvalidOperationException("数据源配置不能为空");
-            }
-
-            if (param.DataSource.SourceType == DataSourceType.Variable)
-            {
-                if (string.IsNullOrEmpty(param.DataSource.VariableName))
-                {
-                    throw new InvalidOperationException("变量数据源必须指定变量名");
-                }
-            }
-            else if (param.DataSource.SourceType == DataSourceType.PLC)
-            {
-                if (param.DataSource.PlcConfig == null ||
-                    string.IsNullOrEmpty(param.DataSource.PlcConfig.ModuleName) ||
-                    string.IsNullOrEmpty(param.DataSource.PlcConfig.Address))
-                {
-                    throw new InvalidOperationException("PLC数据源必须指定模块名和地址");
-                }
-            }
+            ArgumentNullException.ThrowIfNull(param);
 
             // 验证表达式
             if (string.IsNullOrWhiteSpace(param.ConditionExpression))
             {
                 throw new InvalidOperationException("条件表达式不能为空");
-            }
-
-            // 验证表达式基本语法
-            var (isValid, message) = DetectionExpressionHelper.ValidateConditionExpression(param.ConditionExpression);
-            if (!isValid)
-            {
-                throw new InvalidOperationException($"条件表达式无效: {message}");
             }
         }
 

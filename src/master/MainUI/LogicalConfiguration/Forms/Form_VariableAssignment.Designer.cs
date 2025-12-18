@@ -265,6 +265,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             AutoScaleMode = AutoScaleMode.None;
             ClientSize = new Size(800, 560);
+            ControlBox = false;
             Controls.Add(pnlButtons);
             Controls.Add(grpBasicConfig);
             Font = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);

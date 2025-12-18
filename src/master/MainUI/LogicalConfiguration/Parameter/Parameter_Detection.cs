@@ -20,17 +20,6 @@ namespace MainUI.LogicalConfiguration.Parameter
 
         #endregion
 
-        #region 数据源配置
-
-        /// <summary>
-        /// 数据源配置 - 定义检测值的来源
-        /// </summary>
-        [DisplayName("数据源")]
-        [Description("配置检测数据的来源")]
-        public DataSourceConfig DataSource { get; set; } = new DataSourceConfig();
-
-        #endregion
-
         #region 检测条件
 
         /// <summary>
@@ -162,44 +151,6 @@ namespace MainUI.LogicalConfiguration.Parameter
 
         [Description("PLC地址")]
         PLC
-    }
-
-    /// <summary>
-    /// 数据源配置
-    /// </summary>
-    public class DataSourceConfig
-    {
-        /// <summary>
-        /// 数据源类型
-        /// </summary>
-        public DataSourceType SourceType { get; set; } = DataSourceType.Variable;
-
-        /// <summary>
-        /// 变量名（当SourceType为Variable时使用）
-        /// </summary>
-        public string VariableName { get; set; } = "";
-
-        /// <summary>
-        /// PLC配置（当SourceType为PLC时使用）
-        /// </summary>
-        public PlcAddressConfig PlcConfig { get; set; } = new PlcAddressConfig();
-
-        /// <summary>
-        /// 获取数据源描述
-        /// </summary>
-        [JsonIgnore]
-        public string Description
-        {
-            get
-            {
-                return SourceType switch
-                {
-                    DataSourceType.Variable => string.IsNullOrEmpty(VariableName) ? "未选择变量" : $"变量: {VariableName}",
-                    DataSourceType.PLC => string.IsNullOrEmpty(PlcConfig?.Address) ? "未配置PLC" : $"PLC: {PlcConfig.ModuleName}.{PlcConfig.Address}",
-                    _ => "未知"
-                };
-            }
-        }
     }
 
     /// <summary>

@@ -355,12 +355,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 }
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // 记录数据源信息
-                string dataSourceInfo = param.DataSource.SourceType == DataSourceType.PLC
-                    ? $"PLC: {param.DataSource.PlcConfig.ModuleName}.{param.DataSource.PlcConfig.Address}"
-                    : $"变量: {param.DataSource.VariableName}";
-
-                NlogHelper.Default.Info($"执行检测: {param.DetectionName}, 数据源: {dataSourceInfo}, 类型: {step.StepName}");
+                NlogHelper.Default.Info($"执行检测: {param.DetectionName}, 类型: {step.StepName}");
 
                 // 获取当前步骤索引（用于防死循环检查）
                 int currentStepIndex = _currentStepIndex;
