@@ -366,10 +366,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 int currentStepIndex = _currentStepIndex;
 
                 // 防死循环检查（针对条件判断）
-                if (param.ResultHandling.OnFailure == FailureAction.Jump)
+                if (param.ResultHandling.OnFailure == FailureAction.JumpToStep)
                 {
-                    int failureStep = param.ResultHandling.FailureStepIndex;
-                    int successStep = param.ResultHandling.SuccessStepIndex;
+                    int failureStep = param.ResultHandling.FailureJumpStep;
+                    int successStep = param.ResultHandling.SuccessJumpStep;
 
                     if (failureStep == currentStepIndex && successStep == currentStepIndex)
                     {
@@ -393,7 +393,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     NlogHelper.Default.Info($"检测成功: {param.DetectionName}");
 
                     // 检查是否需要跳转
-                    int successStep = param.ResultHandling.SuccessStepIndex;
+                    int successStep = param.ResultHandling.SuccessJumpStep;
                     if (successStep >= 0)
                     {
                         NlogHelper.Default.Info($"成功跳转到步骤: {successStep}");
@@ -415,8 +415,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                             NlogHelper.Default.Error("检测失败：停止流程执行");
                             return DetailedResult.Failed("检测失败，流程已停止");
 
-                        case FailureAction.Jump:
-                            int failureStep = param.ResultHandling.FailureStepIndex;
+                        case FailureAction.JumpToStep:
+                            int failureStep = param.ResultHandling.FailureJumpStep;
                             NlogHelper.Default.Info($"失败跳转到步骤: {failureStep}");
                             return DetailedResult.Jump(failureStep);
 
@@ -424,7 +424,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                             NlogHelper.Default.Info("检测失败：继续执行下一步");
                             return DetailedResult.Successful();
 
-                        case FailureAction.Confirm:
+                        case FailureAction.Retry:
                             NlogHelper.Default.Info("检测失败：需要用户确认");
                             // TODO: 实现用户确认对话框
                             return DetailedResult.Successful();

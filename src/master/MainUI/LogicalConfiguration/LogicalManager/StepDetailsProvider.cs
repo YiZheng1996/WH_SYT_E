@@ -176,33 +176,16 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 ? $"PLC[{param.DataSource.PlcConfig?.ModuleName}.{param.DataSource.PlcConfig?.Address}]"
                 : $"@{param.DataSource?.VariableName}";
 
-            // 获取条件类型和操作符
-            var condition = param.Type switch
-            {
-                DetectionType.ValueRange =>
-                    $"{param.Condition?.MinValue} ≤ {dataSource} ≤ {param.Condition?.MaxValue}",
-
-                DetectionType.Equality =>
-                    $"{dataSource} {GetOperatorSymbol(param.Condition?.Operator)} {param.Condition?.ThresholdValue}",
-
-                DetectionType.Status =>
-                    $"{dataSource} == {TruncateText(param.Condition?.TargetValue, 20)}",
-
-                //DetectionType.Expression =>
-                //    TruncateText(param.Condition?.TargetValue, 40),
-
-                _ => dataSource
-            };
 
             // 添加失败处理信息
             var failureInfo = param.ResultHandling?.OnFailure switch
             {
-                FailureAction.Jump => $" [失败→步骤{param.ResultHandling.FailureStepIndex}]",
+                FailureAction.JumpToStep => $" [失败→步骤{param.ResultHandling.FailureJumpStep}]",
                 FailureAction.Stop => " [失败→停止]",
                 _ => ""
             };
 
-            return $"判断: {condition}{failureInfo}";
+            return $"判断: {failureInfo}";
         }
 
         /// <summary>
@@ -377,23 +360,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 VariableAssignmentType.VariableCopy => "变量复制",
                 VariableAssignmentType.PLCRead => "PLC读取",
                 _ => "未知类型"
-            };
-        }
-
-        /// <summary>
-        /// 获取比较操作符的符号
-        /// </summary>
-        private string GetOperatorSymbol(ComparisonOperator? op)
-        {
-            return op switch
-            {
-                ComparisonOperator.Equal => "==",
-                ComparisonOperator.NotEqual => "!=",
-                ComparisonOperator.GreaterThan => ">",
-                ComparisonOperator.GreaterThanOrEqual => "≥",
-                ComparisonOperator.LessThan => "<",
-                ComparisonOperator.LessThanOrEqual => "≤",
-                _ => "?"
             };
         }
 

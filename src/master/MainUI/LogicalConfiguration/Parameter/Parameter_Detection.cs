@@ -1,12 +1,16 @@
 ﻿using System.ComponentModel;
+using Newtonsoft.Json;
 
 namespace MainUI.LogicalConfiguration.Parameter
 {
     /// <summary>
-    /// 检测工具参数类
+    /// 检测工具参数类 - 表达式化版本
+    /// 统一使用表达式进行检测条件配置
     /// </summary>
     public class Parameter_Detection
     {
+        #region 基本信息
+
         /// <summary>
         /// 检测项名称
         /// </summary>
@@ -14,33 +18,35 @@ namespace MainUI.LogicalConfiguration.Parameter
         [Description("用于标识此检测步骤的名称")]
         public string DetectionName { get; set; } = "";
 
-        /// <summary>
-        /// 检测类型
-        /// </summary>
-        [DisplayName("检测类型")]
-        [Description("选择检测的类型")]
-        public DetectionType Type { get; set; } = DetectionType.ValueRange;
+        #endregion
+
+        #region 数据源配置
 
         /// <summary>
-        /// 数据源配置
+        /// 数据源配置 - 定义检测值的来源
         /// </summary>
         [DisplayName("数据源")]
         [Description("配置检测数据的来源")]
         public DataSourceConfig DataSource { get; set; } = new DataSourceConfig();
 
-        /// <summary>
-        /// 检测条件配置
-        /// </summary>
-        [DisplayName("检测条件")]
-        [Description("配置检测的判断条件")]
-        public DetectionCondition Condition { get; set; } = new DetectionCondition();
+        #endregion
+
+        #region 检测条件
 
         /// <summary>
-        /// 结果处理配置
+        /// 检测条件表达式
+        /// 使用{value}代表数据源的值
+        /// 例如: {value} >= 440
+        ///      {value} >= 100 && {value} <= 200
+        ///      Math.Abs({value} - 440) <= 1.0
         /// </summary>
-        [DisplayName("结果处理")]
-        [Description("配置检测结果的处理方式")]
-        public ResultHandling ResultHandling { get; set; } = new ResultHandling();
+        [DisplayName("检测条件")]
+        [Description("布尔表达式，返回true表示检测成功。使用{value}代表数据源的值")]
+        public string ConditionExpression { get; set; } = "{value} >= 0";
+
+        #endregion
+
+        #region 超时和重试
 
         /// <summary>
         /// 刷新频率（毫秒）- 检测间隔时间
@@ -61,31 +67,101 @@ namespace MainUI.LogicalConfiguration.Parameter
         /// 重试次数
         /// </summary>
         [DisplayName("重试次数")]
-        [Description("检测失败时的重试次数")]
+        [Description("检测失败后的重试次数")]
         public int RetryCount { get; set; } = 0;
 
         /// <summary>
         /// 重试间隔（毫秒）
         /// </summary>
         [DisplayName("重试间隔")]
-        [Description("重试之间的等待时间，单位毫秒")]
+        [Description("每次重试之间的等待时间，单位毫秒")]
         public int RetryIntervalMs { get; set; } = 1000;
+
+        #endregion
+
+        #region 结果处理
+
+        /// <summary>
+        /// 结果处理配置
+        /// </summary>
+        [DisplayName("结果处理")]
+        [Description("配置检测结果的处理方式")]
+        public ResultHandling ResultHandling { get; set; } = new ResultHandling();
+
+        #endregion
+
+        #region 辅助方法
+
+        /// <summary>
+        /// 获取表达式的简短描述（用于UI显示）
+        /// </summary>
+        [JsonIgnore]
+        public string ExpressionDescription
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(ConditionExpression))
+                    return "(未设置)";
+
+                var expr = ConditionExpression;
+                if (expr.Length > 50)
+                    expr = expr.Substring(0, 47) + "...";
+
+                return expr;
+            }
+        }
+
+        /// <summary>
+        /// 获取表达式类型描述
+        /// </summary>
+        [JsonIgnore]
+        public string ExpressionTypeDescription
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(ConditionExpression))
+                    return "未配置";
+
+                if (ConditionExpression.Contains(">=") && ConditionExpression.Contains("<=") && ConditionExpression.Contains("&&"))
+                    return "范围检测";
+                if (ConditionExpression.Contains("Math.Abs"))
+                    return "容差检测";
+                if (ConditionExpression.Contains("&&"))
+                    return "多条件AND";
+                if (ConditionExpression.Contains("||"))
+                    return "多条件OR";
+                if (ConditionExpression.Contains(">="))
+                    return "大于等于";
+                if (ConditionExpression.Contains("<="))
+                    return "小于等于";
+                if (ConditionExpression.Contains(">"))
+                    return "大于";
+                if (ConditionExpression.Contains("<"))
+                    return "小于";
+                if (ConditionExpression.Contains("=="))
+                    return "相等";
+                if (ConditionExpression.Contains("!="))
+                    return "不等";
+
+                return "自定义";
+            }
+        }
+
+        #endregion
     }
 
+    #region 数据源相关类
+
     /// <summary>
-    /// 检测类型枚举
+    /// 数据源类型
     /// </summary>
-    public enum DetectionType
+    public enum DataSourceType
     {
-        [Description("数值范围检测")]
-        ValueRange,
+        [Description("系统变量")]
+        Variable,
 
-        [Description("相等性检测")]
-        Equality,
-
-        [Description("状态检测")]
-        Status,
-
+        [Description("PLC地址")]
+        PLC
     }
 
     /// <summary>
@@ -99,27 +175,31 @@ namespace MainUI.LogicalConfiguration.Parameter
         public DataSourceType SourceType { get; set; } = DataSourceType.Variable;
 
         /// <summary>
-        /// 变量名（当数据源类型为变量时）
+        /// 变量名（当SourceType为Variable时使用）
         /// </summary>
         public string VariableName { get; set; } = "";
 
         /// <summary>
-        /// PLC地址配置（当数据源类型为PLC时）
+        /// PLC配置（当SourceType为PLC时使用）
         /// </summary>
         public PlcAddressConfig PlcConfig { get; set; } = new PlcAddressConfig();
-    }
 
-    /// <summary>
-    /// 数据源类型
-    /// </summary>
-    public enum DataSourceType
-    {
-        [Description("系统变量")]
-        Variable,
-
-        [Description("PLC地址")]
-        PLC,
-
+        /// <summary>
+        /// 获取数据源描述
+        /// </summary>
+        [JsonIgnore]
+        public string Description
+        {
+            get
+            {
+                return SourceType switch
+                {
+                    DataSourceType.Variable => string.IsNullOrEmpty(VariableName) ? "未选择变量" : $"变量: {VariableName}",
+                    DataSourceType.PLC => string.IsNullOrEmpty(PlcConfig?.Address) ? "未配置PLC" : $"PLC: {PlcConfig.ModuleName}.{PlcConfig.Address}",
+                    _ => "未知"
+                };
+            }
+        }
     }
 
     /// <summary>
@@ -128,152 +208,22 @@ namespace MainUI.LogicalConfiguration.Parameter
     public class PlcAddressConfig
     {
         /// <summary>
-        /// PLC模块名
+        /// PLC模块名称
         /// </summary>
         public string ModuleName { get; set; } = "";
 
         /// <summary>
-        /// PLC地址/标签名
+        /// PLC地址
         /// </summary>
         public string Address { get; set; } = "";
-
-        /// <summary>
-        /// 数据类型
-        /// </summary>
-        public string DataType { get; set; } = "Float";
-
-        /// <summary>
-        /// 转换为PLC读取项（用于读取操作）
-        /// </summary>
-        /// <returns></returns>
-        public PlcReadItem ToPlcReadItem()
-        {
-            return new PlcReadItem
-            {
-                PlcModuleName = this.ModuleName,
-                PlcKeyName = this.Address
-            };
-        }
     }
 
-    /// <summary>
-    /// 检测条件配置
-    /// </summary>
-    public class DetectionCondition
-    {
-        /// <summary>
-        /// 最小值（范围检测时使用）
-        /// </summary>
-        public double MinValue { get; set; } = 0;
+    #endregion
 
-        /// <summary>
-        /// 最大值（范围检测时使用）
-        /// </summary>
-        public double MaxValue { get; set; } = 100;
-
-        /// <summary>
-        /// 目标值（相等性检测时使用）
-        /// </summary>
-        public string TargetValue { get; set; } = "";
-
-        /// <summary>
-        /// 阈值（阈值检测时使用）
-        /// </summary>
-        public double ThresholdValue { get; set; } = 0;
-
-        /// <summary>
-        /// 比较操作符
-        /// </summary>
-        public ComparisonOperator Operator { get; set; } = ComparisonOperator.GreaterThan;
-
-        /// <summary>
-        /// 自定义判断表达式
-        /// </summary>
-        //public string CustomExpression { get; set; } = "";
-
-        /// <summary>
-        /// 容差值
-        /// </summary>
-        public double Tolerance { get; set; } = 0.1;
-    }
+    #region 结果处理相关类
 
     /// <summary>
-    /// 比较操作符
-    /// </summary>
-    public enum ComparisonOperator
-    {
-        [Description("大于")]
-        GreaterThan,
-
-        [Description("大于等于")]
-        GreaterThanOrEqual,
-
-        [Description("小于")]
-        LessThan,
-
-        [Description("小于等于")]
-        LessThanOrEqual,
-
-        [Description("等于")]
-        Equal,
-
-        [Description("不等于")]
-        NotEqual
-    }
-
-    /// <summary>
-    /// 结果处理配置
-    /// </summary>
-    public class ResultHandling
-    {
-        /// <summary>
-        /// 是否保存检测结果到变量
-        /// </summary>
-        public bool SaveToVariable { get; set; } = true;
-
-        /// <summary>
-        /// 结果变量名
-        /// </summary>
-        public string ResultVariableName { get; set; } = "";
-
-        /// <summary>
-        /// 是否保存检测值到变量
-        /// </summary>
-        public bool SaveValueToVariable { get; set; } = false;
-
-        /// <summary>
-        /// 检测值变量名
-        /// </summary>
-        public string ValueVariableName { get; set; } = "";
-
-        /// <summary>
-        /// 检测失败时的行为
-        /// </summary>
-        public FailureAction OnFailure { get; set; } = FailureAction.Continue;
-
-        /// <summary>
-        /// 失败时跳转的步骤索引
-        /// </summary>
-        public int FailureStepIndex { get; set; } = -1;
-
-        /// <summary>
-        /// 成功时跳转的步骤索引
-        /// </summary>
-        public int SuccessStepIndex { get; set; } = -1;
-
-        /// <summary>
-        /// 是否显示检测结果
-        /// </summary>
-        public bool ShowResult { get; set; } = true;
-
-        /// <summary>
-        /// 自定义消息模板
-        /// </summary>
-        public string MessageTemplate { get; set; } = "检测项 {DetectionName}: {Result}";
-    }
-
-    /// <summary>
-    /// 失败处理行为
+    /// 失败后的处理行为
     /// </summary>
     public enum FailureAction
     {
@@ -283,10 +233,63 @@ namespace MainUI.LogicalConfiguration.Parameter
         [Description("停止流程")]
         Stop,
 
-        [Description("跳转步骤")]
-        Jump,
+        [Description("跳转到指定步骤")]
+        JumpToStep,
 
-        [Description("显示确认框")]
-        Confirm
+        [Description("重试")]
+        Retry
     }
+
+    /// <summary>
+    /// 结果处理配置
+    /// </summary>
+    public class ResultHandling
+    {
+        /// <summary>
+        /// 失败后的处理行为
+        /// </summary>
+        public FailureAction OnFailure { get; set; } = FailureAction.Continue;
+
+        /// <summary>
+        /// 是否保存结果到变量
+        /// </summary>
+        public bool SaveToVariable { get; set; } = false;
+
+        /// <summary>
+        /// 结果变量名（保存true/false）
+        /// </summary>
+        public string ResultVariableName { get; set; } = "";
+
+        /// <summary>
+        /// 是否保存检测值到变量
+        /// </summary>
+        public bool SaveValueToVariable { get; set; } = false;
+
+        /// <summary>
+        /// 值变量名（保存实际检测值）
+        /// </summary>
+        public string ValueVariableName { get; set; } = "";
+
+        /// <summary>
+        /// 是否显示结果
+        /// </summary>
+        public bool ShowResult { get; set; } = true;
+
+        /// <summary>
+        /// 消息模板
+        /// </summary>
+        public string MessageTemplate { get; set; } = "检测项 {DetectionName}: {Result}";
+
+        /// <summary>
+        /// 失败后跳转的步骤号（-1表示下一步）
+        /// </summary>
+        public int FailureJumpStep { get; set; } = -1;
+
+        /// <summary>
+        /// 成功后跳转的步骤号（-1表示下一步）
+        /// </summary>
+        public int SuccessJumpStep { get; set; } = -1;
+    }
+
+    #endregion
 }

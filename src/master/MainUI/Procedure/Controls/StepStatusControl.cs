@@ -1,4 +1,5 @@
 ﻿using MainUI.LogicalConfiguration;
+using MainUI.LogicalConfiguration.Infrastructure;
 using MainUI.LogicalConfiguration.Parameter;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -601,24 +602,48 @@ namespace MainUI.Procedure.Controls
 
         #region 条件判断显示
         /// <summary>
-        /// 条件判断参数展示 - 完整的中文化版本
-        /// 使用 Parameter_Detection 作为参数类型
+        /// 显示检测参数（表达式化版本）
         /// </summary>
+        /// <param name="stepParameter">步骤参数</param>
+        /// <param name="yPosition">起始Y坐标</param>
+        /// <returns>结束Y坐标</returns>
         private int DisplayConditionParameters(object stepParameter, int yPosition)
         {
             try
             {
-                // 尝试转换为强类型参数
-                var param = ConvertToParameter<Parameter_Detection>(stepParameter);
+                Parameter_Detection param = null;
+
+                // 尝试转换参数
+                if (stepParameter is Parameter_Detection directParam)
+                {
+                    param = directParam;
+                }
+                else if (stepParameter is string jsonStr && !string.IsNullOrEmpty(jsonStr))
+                {
+                    try
+                    {
+                        param = JsonConvert.DeserializeObject<Parameter_Detection>(jsonStr);
+                    }
+                    catch (JsonException)
+                    {
+                        // JSON解析失败，尝试从JObject显示
+                        var json = JObject.Parse(jsonStr);
+                        return DisplayConditionParametersFromJson(json, yPosition);
+                    }
+                }
+                else if (stepParameter != null)
+                {
+                    // 尝试序列化后反序列化
+                    var jsonStr2 = JsonConvert.SerializeObject(stepParameter);
+                    param = JsonConvert.DeserializeObject<Parameter_Detection>(jsonStr2);
+                }
 
                 if (param == null)
                 {
-                    // 如果转换失败,尝试JSON解析
-                    var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
-                    var json = JObject.Parse(jsonStr);
-                    return DisplayConditionParametersFromJson(json, yPosition);
+                    return DisplayGenericParameters(stepParameter, yPosition);
                 }
 
+                // 开始显示
                 yPosition = AddSubSectionTitle("🔍 检测条件配置", yPosition);
 
                 int col1Width = 120;
@@ -637,18 +662,6 @@ namespace MainUI.Procedure.Controls
                         Color.FromArgb(0, 102, 204));
                     yPosition += 22;
                 }
-
-                // 检测类型
-                string detectionTypeName = param.Type switch
-                {
-                    DetectionType.ValueRange => "数值范围检测",
-                    DetectionType.Equality => "相等性检测",
-                    DetectionType.Status => "状态检测",
-                    _ => "未知类型"
-                };
-                AddTableCell("检测类型", yPosition, 0, col1Width, false);
-                AddTableCell(detectionTypeName, yPosition, col1Width, col2Width, false);
-                yPosition += 22;
 
                 // 📡 数据源配置
                 yPosition = AddSubSectionTitle("数据源", yPosition);
@@ -682,269 +695,255 @@ namespace MainUI.Procedure.Controls
                     yPosition += 22;
                 }
 
-                // 检测条件
+                // 🎯 检测条件（核心改造 - 显示表达式）
                 yPosition = AddSubSectionTitle("检测条件", yPosition);
 
-                switch (param.Type)
+                // 显示条件表达式
+                string expression = param.ConditionExpression ?? "{value} >= 0";
+                AddTableCell("条件表达式", yPosition, 0, col1Width, false);
+
+                // 表达式可能较长，需要特殊处理
+                if (expression.Length > 40)
                 {
-                    case DetectionType.ValueRange:
-                        // 数值范围检测
-                        AddTableCell("最小值", yPosition, 0, col1Width, false);
-                        AddTableCell(param.Condition?.MinValue.ToString() ?? "0", yPosition, col1Width, col2Width, false);
-                        yPosition += 22;
+                    // 长表达式分行显示
+                    AddTableCell(expression.Substring(0, 40) + "...", yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(102, 51, 153));
+                    yPosition += 22;
 
-                        AddTableCell("最大值", yPosition, 0, col1Width, false);
-                        AddTableCell(param.Condition?.MaxValue.ToString() ?? "100", yPosition, col1Width, col2Width, false);
-                        yPosition += 22;
-
-                        // 显示条件描述
-                        string rangeDesc = $"{param.Condition?.MinValue} ≤ 值 ≤ {param.Condition?.MaxValue}";
-                        AddTableCell("范围条件", yPosition, 0, col1Width, false);
-                        AddTableCell(rangeDesc, yPosition, col1Width, col2Width, false,
-                            Color.FromArgb(40, 167, 69));
-                        yPosition += 22;
-                        break;
-
-                    case DetectionType.Equality:
-                        // 相等性检测
-                        string operatorSymbol = GetOperatorSymbol(param.Condition?.Operator);
-                        AddTableCell("比较操作符", yPosition, 0, col1Width, false);
-                        AddTableCell(operatorSymbol, yPosition, col1Width, col2Width, false);
-                        yPosition += 22;
-
-                        AddTableCell("阈值", yPosition, 0, col1Width, false);
-                        AddTableCell(param.Condition?.ThresholdValue.ToString() ?? "0", yPosition, col1Width, col2Width, false);
-                        yPosition += 22;
-
-                        if (param.Condition?.Tolerance > 0)
-                        {
-                            AddTableCell("容差", yPosition, 0, col1Width, false);
-                            AddTableCell($"± {param.Condition.Tolerance}", yPosition, col1Width, col2Width, false);
-                            yPosition += 22;
-                        }
-
-                        // 显示条件描述
-                        string equalityDesc = $"值 {operatorSymbol} {param.Condition?.ThresholdValue}";
-                        if (param.Condition?.Tolerance > 0)
-                        {
-                            equalityDesc += $" (容差 ±{param.Condition.Tolerance})";
-                        }
-                        AddTableCell("检测条件", yPosition, 0, col1Width, false);
-                        AddTableCell(equalityDesc, yPosition, col1Width, col2Width, false,
-                            Color.FromArgb(40, 167, 69));
-                        yPosition += 22;
-                        break;
-
-                    case DetectionType.Status:
-                        // 状态检测
-                        AddTableCell("目标值", yPosition, 0, col1Width, false);
-                        AddTableCell(param.Condition?.TargetValue ?? "(未设置)", yPosition, col1Width, col2Width, false);
-                        yPosition += 22;
-                        break;
+                    // 完整表达式作为附加信息
+                    AddTableCell("", yPosition, 0, col1Width, false);
+                    AddTableCell($"完整: {expression}", yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(100, 100, 100));
+                    yPosition += 22;
+                }
+                else
+                {
+                    AddTableCell(expression, yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(102, 51, 153));
+                    yPosition += 22;
                 }
 
-                // ⏱️ 超时和重试
+                // 显示表达式的简要说明
+                string expressionDesc = GetExpressionDescription(expression);
+                if (!string.IsNullOrEmpty(expressionDesc))
+                {
+                    AddTableCell("条件说明", yPosition, 0, col1Width, false);
+                    AddTableCell(expressionDesc, yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(40, 167, 69));
+                    yPosition += 22;
+                }
+
+                // ⏱ 超时和重试
                 yPosition = AddSubSectionTitle("超时和重试", yPosition);
 
                 AddTableCell("超时时间", yPosition, 0, col1Width, false);
-                AddTableCell($"{param.TimeoutMs} 毫秒 ({param.TimeoutMs / 1000.0:F1} 秒)",
-                    yPosition, col1Width, col2Width, false);
+                AddTableCell($"{param.TimeoutMs} ms", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                AddTableCell("刷新频率", yPosition, 0, col1Width, false);
+                AddTableCell($"{param.RefreshRateMs} ms", yPosition, col1Width, col2Width, false);
                 yPosition += 22;
 
                 if (param.RetryCount > 0)
                 {
                     AddTableCell("重试次数", yPosition, 0, col1Width, false);
-                    AddTableCell($"{param.RetryCount} 次", yPosition, col1Width, col2Width, false);
+                    AddTableCell(param.RetryCount.ToString(), yPosition, col1Width, col2Width, false);
                     yPosition += 22;
 
                     AddTableCell("重试间隔", yPosition, 0, col1Width, false);
-                    AddTableCell($"{param.RetryIntervalMs} 毫秒", yPosition, col1Width, col2Width, false);
+                    AddTableCell($"{param.RetryIntervalMs} ms", yPosition, col1Width, col2Width, false);
                     yPosition += 22;
                 }
 
-                if (param.RefreshRateMs > 0)
-                {
-                    AddTableCell("刷新频率", yPosition, 0, col1Width, false);
-                    AddTableCell($"{param.RefreshRateMs} 毫秒", yPosition, col1Width, col2Width, false);
-                    yPosition += 22;
-                }
+                // 📋 结果处理
+                yPosition = DisplayResultHandling(param.ResultHandling, yPosition, col1Width, col2Width);
 
-                // 🎯 结果处理
-                yPosition = AddSubSectionTitle("结果处理", yPosition);
-
-                // 失败处理
-                string failureActionName = param.ResultHandling?.OnFailure switch
-                {
-                    FailureAction.Continue => "继续执行",
-                    FailureAction.Stop => "停止流程",
-                    FailureAction.Jump => $"跳转到步骤 {param.ResultHandling.FailureStepIndex}",
-                    //FailureAction.Retry => "重试",
-                    FailureAction.Confirm => "等待确认",
-                    _ => "未知"
-                };
-                AddTableCell("失败时", yPosition, 0, col1Width, false);
-                Color failureColor = param.ResultHandling?.OnFailure == FailureAction.Stop
-                    ? StatusColors.Failed
-                    : StatusColors.Waiting;
-                AddTableCell(failureActionName, yPosition, col1Width, col2Width, false, failureColor);
-                yPosition += 22;
-
-                // 成功处理
-                if (param.ResultHandling?.SuccessStepIndex != null && param.ResultHandling.SuccessStepIndex > 0)
-                {
-                    AddTableCell("成功时", yPosition, 0, col1Width, false);
-                    AddTableCell($"跳转到步骤 {param.ResultHandling.SuccessStepIndex}",
-                        yPosition, col1Width, col2Width, false, StatusColors.Success);
-                    yPosition += 22;
-                }
-
-                // 结果保存
-                if (param.ResultHandling?.SaveToVariable == true)
-                {
-                    AddTableCell("保存结果到", yPosition, 0, col1Width, false);
-                    AddTableCell(param.ResultHandling.ResultVariableName ?? "(未指定)",
-                        yPosition, col1Width, col2Width, false);
-                    yPosition += 22;
-                }
-
-                if (param.ResultHandling?.SaveValueToVariable == true)
-                {
-                    AddTableCell("保存数值到", yPosition, 0, col1Width, false);
-                    AddTableCell(param.ResultHandling.ValueVariableName ?? "(未指定)",
-                        yPosition, col1Width, col2Width, false);
-                    yPosition += 22;
-                }
-
-                // 是否显示结果
-                if (param.ResultHandling?.ShowResult == true)
-                {
-                    AddTableCell("显示结果", yPosition, 0, col1Width, false);
-                    AddTableCell("✓ 是", yPosition, col1Width, col2Width, false, StatusColors.Success);
-                    yPosition += 22;
-                }
-
-                yPosition += 5;
-                return yPosition;
+                return yPosition + 5;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"DisplayConditionParameters 错误: {ex}");
+                System.Diagnostics.Debug.WriteLine($"DisplayConditionParameters 错误: {ex}");
                 return DisplayGenericParameters(stepParameter, yPosition);
             }
         }
 
         /// <summary>
-        /// 从JSON显示条件参数(备用方案)
+        /// 获取表达式的简要说明
         /// </summary>
-        private int DisplayConditionParametersFromJson(JObject json, int yPosition)
+        private string GetExpressionDescription(string expression)
         {
-            yPosition = AddSubSectionTitle("条件判断配置", yPosition);
+            if (string.IsNullOrEmpty(expression))
+                return null;
 
-            int col1Width = 120;
-            int col2Width = detailsPanel.Width - col1Width - 10;
-
-            // 表头
-            AddTableCell("配置项", yPosition, 0, col1Width, true);
-            AddTableCell("配置值", yPosition, col1Width, col2Width, true);
-            yPosition += 25;
-
-            // 遍历所有属性,显示中文名称
-            foreach (var property in json.Properties())
+            // 分析表达式类型并生成描述
+            if (expression.Contains(">=") && expression.Contains("<=") && expression.Contains("&&"))
             {
-                string chineseName = GetChinesePropertyName(property.Name);
-                string value = property.Value?.ToString() ?? "";
+                // 范围检测: {value} >= min && {value} <= max
+                return "范围检测";
+            }
+            else if (expression.Contains("Math.Abs"))
+            {
+                // 容差检测
+                return "容差检测";
+            }
+            else if (expression.Contains(">="))
+            {
+                return "大于等于检测";
+            }
+            else if (expression.Contains("<="))
+            {
+                return "小于等于检测";
+            }
+            else if (expression.Contains(">") && !expression.Contains(">="))
+            {
+                return "大于检测";
+            }
+            else if (expression.Contains("<") && !expression.Contains("<="))
+            {
+                return "小于检测";
+            }
+            else if (expression.Contains("=="))
+            {
+                return "相等检测";
+            }
+            else if (expression.Contains("!="))
+            {
+                return "不等检测";
+            }
+            else if (expression.Contains("&&"))
+            {
+                return "多条件AND检测";
+            }
+            else if (expression.Contains("||"))
+            {
+                return "多条件OR检测";
+            }
 
-                // 跳过复杂对象
-                if (property.Value?.Type == JTokenType.Object || property.Value?.Type == JTokenType.Array)
-                    continue;
+            return "自定义检测";
+        }
 
-                AddTableCell(chineseName, yPosition, 0, col1Width, false);
-                AddTableCell(value, yPosition, col1Width, col2Width, false);
+        /// <summary>
+        /// 显示结果处理配置
+        /// </summary>
+        private int DisplayResultHandling(ResultHandling handling, int yPosition, int col1Width, int col2Width)
+        {
+            if (handling == null)
+                return yPosition;
+
+            yPosition = AddSubSectionTitle("结果处理", yPosition);
+
+            // 失败处理
+            string failureActionName = handling.OnFailure switch
+            {
+                FailureAction.Continue => "继续执行",
+                FailureAction.Stop => "停止流程",
+                FailureAction.JumpToStep => "跳转到指定步骤",
+                FailureAction.Retry => "重试",
+                _ => "未知"
+            };
+            AddTableCell("失败处理", yPosition, 0, col1Width, false);
+            AddTableCell(failureActionName, yPosition, col1Width, col2Width, false);
+            yPosition += 22;
+
+            // 保存结果
+            if (handling.SaveToVariable)
+            {
+                AddTableCell("保存结果", yPosition, 0, col1Width, false);
+                AddTableCell($"是 → {handling.ResultVariableName}", yPosition, col1Width, col2Width, false);
                 yPosition += 22;
             }
 
-            return yPosition + 5;
-        }
-
-        /// <summary>
-        /// 获取操作符符号
-        /// </summary>
-        private string GetOperatorSymbol(ComparisonOperator? op)
-        {
-            return op switch
+            // 保存值
+            if (handling.SaveValueToVariable)
             {
-                ComparisonOperator.GreaterThan => "> (大于)",
-                ComparisonOperator.LessThan => "< (小于)",
-                ComparisonOperator.GreaterThanOrEqual => "≥ (大于等于)",
-                ComparisonOperator.LessThanOrEqual => "≤ (小于等于)",
-                ComparisonOperator.Equal => "= (等于)",
-                ComparisonOperator.NotEqual => "≠ (不等于)",
-                _ => "未知"
-            };
-        }
-
-        /// <summary>
-        /// 添加多行表格行 - 用于长文本内容
-        /// </summary>
-        private int AddMultiLineTableRow(string label, string content, int yPosition,
-            int col1Width, int col2Width, Color? contentColor = null)
-        {
-            // 左侧标签
-            AddTableCell(label, yPosition, 0, col1Width, false);
-
-            // 计算内容需要的高度
-            if (string.IsNullOrEmpty(content))
-            {
-                AddTableCell("(未设置)", yPosition, col1Width, col2Width, false,
-                    Color.FromArgb(180, 180, 180));
-                return yPosition + 22;
+                AddTableCell("保存值", yPosition, 0, col1Width, false);
+                AddTableCell($"是 → {handling.ValueVariableName}", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
             }
 
-            // 估算需要的行数(每行约50个字符)
-            int estimatedLines = (int)Math.Ceiling(content.Length / 50.0);
-            int contentHeight = Math.Max(20, Math.Min(estimatedLines * 18 + 10, 100));
-
-            // 创建内容标签
-            var lblContent = new Label
+            // 跳转步骤
+            if (handling.OnFailure == FailureAction.JumpToStep && handling.FailureJumpStep >= 0)
             {
-                Text = content,
-                Font = new Font("Consolas", 8.5F, FontStyle.Regular),
-                ForeColor = contentColor ?? Color.FromArgb(80, 80, 80),
-                Location = new Point(col1Width, yPosition),
-                Size = new Size(col2Width, contentHeight),
-                BackColor = Color.FromArgb(250, 252, 255),
-                TextAlign = ContentAlignment.TopLeft,
-                Padding = new Padding(8, 4, 5, 4),
-                AutoSize = false,
-                AutoEllipsis = false,
-                //BorderStyle = BorderStyle.FixedSingle
-            };
+                AddTableCell("失败跳转", yPosition, 0, col1Width, false);
+                AddTableCell($"步骤 {handling.FailureJumpStep}", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+            }
 
-            // 添加双击复制功能
-            lblContent.Cursor = Cursors.Hand;
-            lblContent.DoubleClick += (s, e) =>
+            if (handling.SuccessJumpStep >= 0)
             {
-                try
+                AddTableCell("成功跳转", yPosition, 0, col1Width, false);
+                AddTableCell($"步骤 {handling.SuccessJumpStep}", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+            }
+
+            return yPosition;
+        }
+
+        /// <summary>
+        /// 从JSON对象显示检测参数（兼容旧格式）
+        /// </summary>
+        private int DisplayConditionParametersFromJson(JObject json, int yPosition)
+        {
+            try
+            {
+                yPosition = AddSubSectionTitle("🔍 检测条件配置", yPosition);
+
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 检测名称
+                string detectionName = json["DetectionName"]?.ToString();
+                if (!string.IsNullOrEmpty(detectionName))
                 {
-                    Clipboard.SetText(content);
-                    MessageBox.Show("已复制到剪贴板!", "提示",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    AddTableCell("检测名称", yPosition, 0, col1Width, false);
+                    AddTableCell(detectionName, yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(0, 102, 204));
+                    yPosition += 22;
                 }
-                catch { }
-            };
 
-            // 添加工具提示
-            var tooltip = new ToolTip
+                // 优先显示表达式（新格式）
+                string conditionExpression = json["ConditionExpression"]?.ToString();
+                if (!string.IsNullOrEmpty(conditionExpression))
+                {
+                    AddTableCell("条件表达式", yPosition, 0, col1Width, false);
+                    AddTableCell(conditionExpression, yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(102, 51, 153));
+                    yPosition += 22;
+                }
+                else
+                {
+                    // 显示旧格式数据
+                    string detectionType = json["Type"]?.ToString();
+                    if (!string.IsNullOrEmpty(detectionType))
+                    {
+                        AddTableCell("检测类型(旧)", yPosition, 0, col1Width, false);
+                        AddTableCell(detectionType, yPosition, col1Width, col2Width, false,
+                            Color.FromArgb(255, 165, 0)); // 橙色表示旧格式
+                        yPosition += 22;
+                    }
+
+                    var condition = json["Condition"];
+                    if (condition != null)
+                    {
+                        AddTableCell("条件配置(旧)", yPosition, 0, col1Width, false);
+                        AddTableCell(condition.ToString(Formatting.None), yPosition, col1Width, col2Width, false,
+                            Color.FromArgb(255, 165, 0));
+                        yPosition += 22;
+                    }
+                }
+
+                return yPosition + 5;
+            }
+            catch (Exception ex)
             {
-                AutoPopDelay = 20000,
-                InitialDelay = 300,
-                ShowAlways = true
-            };
-            tooltip.SetToolTip(lblContent, "💡 双击可复制完整内容\n\n" + content);
-
-            detailsPanel.Controls.Add(lblContent);
-
-            return yPosition + contentHeight + 2;
+                System.Diagnostics.Debug.WriteLine($"DisplayConditionParametersFromJson 错误: {ex}");
+                return yPosition;
+            }
         }
         #endregion
 

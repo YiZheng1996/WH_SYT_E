@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration;
+﻿using MainUI.LogicalConfiguration.Engine;
+using MainUI.LogicalConfiguration.Infrastructure;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
@@ -9,34 +10,55 @@ using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
-    /// 等待检测工具方法集合
-    /// 默认等待直到条件为真，支持超时控制防止程序卡死
+    /// 检测方法类 - 表达式化版本
+    /// 使用表达式引擎执行检测判断
     /// </summary>
-    public class DetectionMethods(
-        IWorkflowStateService workflowState,
-        ILogger<DetectionMethods> logger,
-        GlobalVariableManager variableManager,
-        IPLCManager plcManager) : DSLMethodBase()
+    public class DetectionMethods : DSLMethodBase
     {
         #region 私有字段
-        private readonly IWorkflowStateService _workflowState = workflowState ?? throw new ArgumentNullException(nameof(workflowState));
-        private readonly ILogger<DetectionMethods> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly GlobalVariableManager _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
-        private readonly IPLCManager _plcManager = plcManager ?? throw new ArgumentNullException(nameof(plcManager));
+
+        private readonly IWorkflowStateService _workflowState;
+        private readonly ILogger<DetectionMethods> _logger;
+        private readonly GlobalVariableManager _variableManager;
+        private readonly IPLCManager _plcManager;
+        private readonly ExpressionEngine _expressionEngine;
 
         // 默认检测间隔100ms
         private const int DEFAULT_CHECK_INTERVAL_MS = 100;
+
+        #endregion
+
+        #region 构造函数
+
+        public DetectionMethods(
+            IWorkflowStateService workflowState,
+            ILogger<DetectionMethods> logger,
+            GlobalVariableManager variableManager,
+            IPLCManager plcManager,
+            ExpressionEngine expressionEngine = null)
+        {
+            _workflowState = workflowState ?? throw new ArgumentNullException(nameof(workflowState));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
+            _plcManager = plcManager ?? throw new ArgumentNullException(nameof(plcManager));
+
+            // 如果没有提供表达式引擎，创建一个新的
+            _expressionEngine = expressionEngine ?? new ExpressionEngine(variableManager, plcManager, null);
+        }
+
         #endregion
 
         #region 基类属性实现
+
         public override string Category => "等待检测工具";
-        public override string Description => "等待直到检测条件满足，支持超时控制";
+        public override string Description => "等待直到检测条件满足，支持表达式条件和超时控制";
+
         #endregion
 
         #region 主要检测方法
 
         /// <summary>
-        /// 等待检测方法 - 等待直到条件为真
+        /// 等待检测方法 - 等待直到条件表达式为真
         /// </summary>
         /// <param name="param">检测参数</param>
         /// <param name="cancellationToken">取消令牌</param>
@@ -54,8 +76,9 @@ namespace MainUI.LogicalConfiguration.Methods
                     StartTime = DateTime.Now
                 };
 
-                _logger.LogInformation("开始等待检测: {DetectionName}, 超时时间: {Timeout}ms, 刷新频率: {RefreshRate}ms",
-                param.DetectionName, param.TimeoutMs, param.RefreshRateMs);
+                _logger.LogInformation(
+                    "开始等待检测: {DetectionName}, 表达式: {Expression}, 超时: {Timeout}ms, 刷新频率: {RefreshRate}ms",
+                    param.DetectionName, param.ConditionExpression, param.TimeoutMs, param.RefreshRateMs);
 
                 try
                 {
@@ -68,343 +91,276 @@ namespace MainUI.LogicalConfiguration.Methods
                     // 处理检测结果
                     await ProcessDetectionResult(result, param);
 
-                    _logger.LogInformation("等待检测完成: {DetectionName}, 结果: {Result}, 总耗时: {Duration}ms, 检测次数: {Attempts}, 平均间隔: {AvgInterval}ms",
-                   param.DetectionName, success, result.Duration.TotalMilliseconds, result.DetectionAttempts,
-                   result.DetectionAttempts > 0 ? result.Duration.TotalMilliseconds / result.DetectionAttempts : 0);
+                    _logger.LogInformation(
+                        "等待检测完成: {DetectionName}, 结果: {Result}, 总耗时: {Duration}ms, 检测次数: {Attempts}",
+                        param.DetectionName, success, result.Duration.TotalMilliseconds, result.DetectionAttempts);
 
                     return success;
                 }
                 catch (OperationCanceledException)
                 {
+                    _logger.LogWarning("检测被取消: {DetectionName}", param.DetectionName);
                     result.IsSuccess = false;
                     result.EndTime = DateTime.Now;
                     result.ErrorMessage = "检测被取消";
-                    _logger.LogWarning("等待检测被取消: {DetectionName}", param.DetectionName);
+                    await ProcessDetectionResult(result, param);
                     throw;
                 }
-                catch (TimeoutException)
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "检测执行失败: {DetectionName}", param.DetectionName);
                     result.IsSuccess = false;
                     result.EndTime = DateTime.Now;
-                    result.ErrorMessage = "检测超时";
-                    _logger.LogWarning("等待检测超时: {DetectionName}, 超时时间: {Timeout}ms, 检测次数: {Attempts}, 刷新频率: {RefreshRate}ms",
-                        param.DetectionName, param.TimeoutMs, result.DetectionAttempts, param.RefreshRateMs);
-
-                    // 处理超时结果
+                    result.ErrorMessage = ex.Message;
                     await ProcessDetectionResult(result, param);
-                    return false;
+                    throw;
                 }
-            }, false, Category);
+            });
         }
 
         #endregion
 
-        #region 等待检测核心实现
+        #region 核心检测循环
 
         /// <summary>
-        /// 等待直到条件为真
+        /// 执行等待检测循环
         /// </summary>
-        private async Task<bool> ExecuteWaitUntilTrue(Parameter_Detection param, DetectionResult result, CancellationToken cancellationToken)
+        private async Task<bool> ExecuteWaitUntilTrue(
+            Parameter_Detection param,
+            DetectionResult result,
+            CancellationToken cancellationToken)
         {
-            // 设置超时
-            using var timeoutCts = new CancellationTokenSource();
-            if (param.TimeoutMs > 0)
+            var checkInterval = param.RefreshRateMs > 0 ? param.RefreshRateMs : DEFAULT_CHECK_INTERVAL_MS;
+            var timeout = param.TimeoutMs > 0 ? TimeSpan.FromMilliseconds(param.TimeoutMs) : TimeSpan.MaxValue;
+            var startTime = DateTime.Now;
+            var retryCount = 0;
+            var maxRetries = param.RetryCount;
+
+            while (true)
             {
-                // 仅当设置了正超时时间时启用超时取消
-                timeoutCts.CancelAfter(param.TimeoutMs);
-            }
+                cancellationToken.ThrowIfCancellationRequested();
 
-            // 组合取消令牌，支持外部取消和超时取消
-            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-
-            var startTime = DateTime.Now; // 项点开始时间
-            int attemptCount = 0; // 检测尝试次数
-            object lastValue = null; // 最后一次检测值
-            int refreshRate = param.RefreshRateMs; // 使用配置的刷新频率
-
-            _logger.LogDebug("开始等待循环，刷新频率: {RefreshRate}ms", refreshRate);
-            try
-            {
-                // 循环检测直到条件满足或取消
-                while (!combinedCts.Token.IsCancellationRequested)
+                // 检查超时
+                var elapsed = DateTime.Now - startTime;
+                if (elapsed >= timeout)
                 {
-                    attemptCount++;
+                    _logger.LogWarning("检测超时: {DetectionName}, 已等待 {Elapsed}ms",
+                        param.DetectionName, elapsed.TotalMilliseconds);
+                    result.TimeoutOccurred = true;
+                    return false;
+                }
 
-                    // 执行单次检测
-                    var (success, value) = await PerformSingleDetection(param, combinedCts.Token);
-                    lastValue = value;
+                result.DetectionAttempts++;
 
-                    _logger.LogDebug("等待检测尝试 #{Attempt}: 结果={Result}, 值={Value}",
-                        attemptCount, success, value);
+                try
+                {
+                    // 读取数据源的值
+                    object currentValue = await ReadDataSourceValue(param.DataSource, cancellationToken);
+                    result.LastReadValue = currentValue;
 
-                    // 如果条件满足，返回成功
-                    if (success)
+                    _logger.LogDebug("检测读取值: {Value}, 检测次数: {Attempts}",
+                        currentValue, result.DetectionAttempts);
+
+                    // 使用表达式引擎判断
+                    bool conditionMet = EvaluateConditionExpression(currentValue, param.ConditionExpression);
+
+                    if (conditionMet)
                     {
-                        result.DetectionAttempts = attemptCount;
-                        result.DetectedValue = lastValue;
-
-                        var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
-                        _logger.LogInformation("等待检测成功: 条件在第{Attempt}次尝试时满足, 耗时: {Duration}ms, 刷新频率: {RefreshRate}ms",
-                         attemptCount, elapsed, refreshRate);
+                        _logger.LogDebug("检测条件满足: {DetectionName}, 值: {Value}",
+                            param.DetectionName, currentValue);
+                        result.FinalValue = currentValue;
                         return true;
                     }
 
-                    // 重试机制
-                    if (attemptCount <= param.RetryCount)
-                    {
-                        _logger.LogDebug("条件未满足，{Interval}ms后重试", param.RetryIntervalMs);
-                        await Task.Delay(param.RetryIntervalMs, combinedCts.Token);
-                    }
-                    else
-                    {
-                        // 使用默认检测间隔继续等待
-                        await Task.Delay(refreshRate, combinedCts.Token);
-                    }
+                    // 重置重试计数（因为本次读取成功）
+                    retryCount = 0;
                 }
-            }
-            catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
-            {
-                result.DetectionAttempts = attemptCount;
-                result.DetectedValue = lastValue;
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "检测读取失败，尝试次数: {Attempts}/{MaxRetries}",
+                        retryCount + 1, maxRetries);
 
-                _logger.LogWarning("等待检测超时: {Timeout}ms, 尝试次数: {Attempts}, 最后检测值: {LastValue}",
-                    param.TimeoutMs, attemptCount, lastValue);
-                throw new TimeoutException($"等待检测超时: {param.TimeoutMs}ms");
-            }
+                    retryCount++;
+                    if (retryCount > maxRetries)
+                    {
+                        _logger.LogError("检测重试次数已用尽: {DetectionName}", param.DetectionName);
+                        result.ErrorMessage = $"检测失败，重试次数已用尽: {ex.Message}";
+                        return false;
+                    }
 
-            result.DetectionAttempts = attemptCount;
-            result.DetectedValue = lastValue;
-            return false;
-        }
+                    // 等待重试间隔
+                    await Task.Delay(param.RetryIntervalMs, cancellationToken);
+                    continue;
+                }
 
-        /// <summary>
-        /// 执行单次检测
-        /// </summary>
-        private async Task<(bool success, object value)> PerformSingleDetection(Parameter_Detection param, CancellationToken cancellationToken)
-        {
-            try
-            {
-                // 获取检测数据
-                object detectionValue = await GetDetectionValue(param.DataSource, cancellationToken);
+                // 等待下一次检测
+                var remainingTime = timeout - elapsed;
+                var waitTime = Math.Min(checkInterval, (int)remainingTime.TotalMilliseconds);
 
-                // 执行检测判断
-                bool success = await EvaluateDetection(detectionValue, param);
-
-                return (success, detectionValue);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "单次检测执行失败");
-                throw;
+                if (waitTime > 0)
+                {
+                    await Task.Delay(waitTime, cancellationToken);
+                }
             }
         }
 
         #endregion
 
-        #region 数据获取方法
+        #region 数据源读取
 
         /// <summary>
-        /// 获取检测数据值
+        /// 读取数据源的值
         /// </summary>
-        private async Task<object> GetDetectionValue(DataSourceConfig dataSource, CancellationToken cancellationToken = default)
+        private async Task<object> ReadDataSourceValue(DataSourceConfig dataSource, CancellationToken cancellationToken)
         {
+            if (dataSource == null)
+            {
+                throw new InvalidOperationException("数据源配置为空");
+            }
+
             return dataSource.SourceType switch
             {
-                DataSourceType.Variable => await GetVariableValue(dataSource.VariableName),
-                DataSourceType.PLC => await GetPlcValue(dataSource.PlcConfig, cancellationToken),
-                _ => throw new NotSupportedException($"不支持的数据源类型: {dataSource.SourceType}"),
+                DataSourceType.Variable => await ReadVariableValue(dataSource.VariableName),
+                DataSourceType.PLC => await ReadPLCValue(dataSource.PlcConfig, cancellationToken),
+                _ => throw new NotSupportedException($"不支持的数据源类型: {dataSource.SourceType}")
             };
         }
 
         /// <summary>
-        /// 获取变量值
+        /// 读取变量值
         /// </summary>
-        private async Task<object> GetVariableValue(string variableName)
+        private Task<object> ReadVariableValue(string variableName)
         {
             if (string.IsNullOrEmpty(variableName))
-                throw new ArgumentException("变量名不能为空", nameof(variableName));
+            {
+                throw new InvalidOperationException("变量名为空");
+            }
 
-            var variables = _variableManager.GetAllVariables();
-            var variable = variables.FirstOrDefault(v => v.VarName.Equals(variableName, StringComparison.OrdinalIgnoreCase)) ?? throw new ArgumentException($"变量 '{variableName}' 不存在");
-            await Task.CompletedTask;
+            var variable = _variableManager.TryFindVariableByName(variableName);
+            if (variable == null)
+            {
+                throw new InvalidOperationException($"变量 '{variableName}' 不存在");
+            }
 
-            _logger.LogDebug("获取变量值: {VariableName} = {Value}", variableName, variable.VarValue);
-            return variable.VarValue;
+            return Task.FromResult(variable.VarValue);
         }
 
         /// <summary>
-        /// 获取PLC值
+        /// 读取PLC值
         /// </summary>
-        private async Task<object> GetPlcValue(PlcAddressConfig plcConfig, CancellationToken cancellationToken = default)
+        private async Task<object> ReadPLCValue(PlcAddressConfig plcConfig, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(plcConfig);
+            if (plcConfig == null)
+            {
+                throw new InvalidOperationException("PLC配置为空");
+            }
 
-            if (string.IsNullOrEmpty(plcConfig.ModuleName))
-                throw new ArgumentException("PLC模块名不能为空");
+            if (string.IsNullOrEmpty(plcConfig.ModuleName) || string.IsNullOrEmpty(plcConfig.Address))
+            {
+                throw new InvalidOperationException("PLC模块名或地址为空");
+            }
 
-            if (string.IsNullOrEmpty(plcConfig.Address))
-                throw new ArgumentException("PLC地址不能为空");
+            return await _plcManager.ReadPLCForDetectionAsync(plcConfig);
+        }
 
-            _logger.LogDebug("读取PLC值: {ModuleName}.{Address}", plcConfig.ModuleName, plcConfig.Address);
+        #endregion
 
+        #region 表达式计算
+
+        /// <summary>
+        /// 计算条件表达式
+        /// </summary>
+        private bool EvaluateConditionExpression(object value, string expression)
+        {
             try
             {
-                var result = await _plcManager.ReadPLCForDetectionAsync(plcConfig, cancellationToken);
-                _logger.LogDebug("PLC读取成功: {ModuleName}.{Address} = {Value}",
-                    plcConfig.ModuleName, plcConfig.Address, result);
-                return result;
+                // 将值转换为字符串
+                string valueStr = ConvertValueToString(value);
+
+                // 替换{value}占位符
+                string evaluateExpression = expression.Replace("{value}", valueStr);
+
+                // 使用表达式引擎计算
+                var result = _expressionEngine.EvaluateExpression(evaluateExpression);
+
+                // 转换为布尔值
+                return ConvertToBoolean(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "PLC读取失败: {ModuleName}.{Address}",
-                    plcConfig.ModuleName, plcConfig.Address);
-                throw new InvalidOperationException($"PLC读取失败: {plcConfig.ModuleName}.{plcConfig.Address} - {ex.Message}", ex);
+                _logger.LogError(ex, "表达式计算失败: {Expression}, Value: {Value}",
+                    expression, value);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 将值转换为字符串（用于表达式替换）
+        /// </summary>
+        private string ConvertValueToString(object value)
+        {
+            if (value == null) return "null";
+
+            // 布尔值
+            if (value is bool boolVal)
+            {
+                return boolVal ? "true" : "false";
+            }
+
+            // 数值类型
+            if (value is IConvertible convertible)
+            {
+                try
+                {
+                    double numVal = Convert.ToDouble(value);
+                    return numVal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                }
+                catch
+                {
+                    // 非数值，继续处理
+                }
+            }
+
+            // 字符串需要加引号
+            if (value is string strVal)
+            {
+                return $"\"{strVal}\"";
+            }
+
+            return value.ToString();
+        }
+
+        /// <summary>
+        /// 将表达式结果转换为布尔值
+        /// </summary>
+        private bool ConvertToBoolean(object result)
+        {
+            if (result == null) return false;
+
+            if (result is bool boolResult)
+            {
+                return boolResult;
+            }
+
+            if (result is string strResult)
+            {
+                return strResult.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                       strResult.Equals("1", StringComparison.OrdinalIgnoreCase);
+            }
+
+            try
+            {
+                return Convert.ToBoolean(result);
+            }
+            catch
+            {
+                return false;
             }
         }
 
         #endregion
 
-        #region 检测判断方法
-
-        /// <summary>
-        /// 执行检测判断 - 支持BOOL类型参与条件计算
-        /// </summary>
-        private async Task<bool> EvaluateDetection(object value, Parameter_Detection param)
-        {
-            try
-            {
-                _logger.LogDebug("执行检测判断: 类型={DetectionType}, 值={Value}", param.Type, value);
-
-                var result = param.Type switch
-                {
-                    DetectionType.ValueRange => await EvaluateRangeDetection(value, param.Condition),
-                    DetectionType.Equality => await EvaluateEqualityDetection(value, param.Condition),
-                    DetectionType.Status => await EvaluateStatusDetection(value, param.Condition),
-                    _ => throw new NotSupportedException($"不支持的检测类型: {param.Type}"),
-                };
-
-                _logger.LogDebug("检测判断完成: {Result}", result);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "检测判断失败");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 范围检测
-        /// </summary>
-        private async Task<bool> EvaluateRangeDetection(object value, DetectionCondition condition)
-        {
-            if (!TryConvertToNumericValue(value, out double numValue))
-            {
-                _logger.LogWarning("范围检测: 无法将值 '{Value}' 转换为数值", value);
-                return false;
-            }
-
-            await Task.CompletedTask;
-
-            bool result = numValue >= condition.MinValue && numValue <= condition.MaxValue;
-
-            _logger.LogDebug("范围检测: {Value}({NumValue}) 在 [{MinValue}, {MaxValue}] 范围内: {Result}",
-                value, numValue, condition.MinValue, condition.MaxValue, result);
-
-            return result;
-        }
-
-        /// <summary>
-        /// 相等性检测,支持操作符比较
-        /// </summary>
-        private async Task<bool> EvaluateEqualityDetection(object value, DetectionCondition condition)
-        {
-            await Task.CompletedTask;
-
-            // 数值比较（包括BOOL转数值）
-            if (TryConvertToNumericValue(value, out double numValue))
-            {
-                // 根据操作符进行不同的比较
-                bool result = condition.Operator switch
-                {
-                    ComparisonOperator.GreaterThan => numValue > condition.ThresholdValue,
-                    ComparisonOperator.GreaterThanOrEqual => numValue >= condition.ThresholdValue,
-                    ComparisonOperator.LessThan => numValue < condition.ThresholdValue,
-                    ComparisonOperator.LessThanOrEqual => numValue <= condition.ThresholdValue,
-                    ComparisonOperator.Equal => Math.Abs(numValue - condition.ThresholdValue) <= condition.Tolerance,
-                    ComparisonOperator.NotEqual => Math.Abs(numValue - condition.ThresholdValue) > condition.Tolerance,
-                    _ => false
-                };
-
-                _logger.LogDebug("数值比较检测: {Value}({NumValue}) {Operator} {Threshold}: {Result}",
-                    value, numValue, condition.Operator, condition.ThresholdValue, result);
-                return result;
-            }
-
-            // 尝试将TargetValue转换为数值(兼容旧配置)
-            if (TryConvertToNumericValue(condition.TargetValue, out double targetNum))
-            {
-                bool result = condition.Operator switch
-                {
-                    ComparisonOperator.GreaterThan => numValue > targetNum,
-                    ComparisonOperator.GreaterThanOrEqual => numValue >= targetNum,
-                    ComparisonOperator.LessThan => numValue < targetNum,
-                    ComparisonOperator.LessThanOrEqual => numValue <= targetNum,
-                    ComparisonOperator.Equal => Math.Abs(numValue - targetNum) <= condition.Tolerance,
-                    ComparisonOperator.NotEqual => Math.Abs(numValue - targetNum) > condition.Tolerance,
-                    _ => false
-                };
-
-                _logger.LogDebug("数值相等性检测(TargetValue): |{Value}({NumValue}) - {Target}({TargetNum})| {Operator}: {Result}",
-                    value, numValue, condition.TargetValue, targetNum, condition.Operator, result);
-                return result;
-            }
-
-            // 字符串比较
-            var stringResult = string.Equals(value?.ToString(), condition.TargetValue, StringComparison.OrdinalIgnoreCase);
-            _logger.LogDebug("字符串相等性检测: '{Value}' == '{Target}': {Result}",
-                value, condition.TargetValue, stringResult);
-
-            return stringResult;
-        }
-
-        /// <summary>
-        /// 状态检测/阈值检测 - 支持BOOL类型参与条件计算
-        /// </summary>
-        private async Task<bool> EvaluateStatusDetection(object value, DetectionCondition condition)
-        {
-            await Task.CompletedTask;
-
-            // 统一转换为数值进行条件计算（包括BOOL类型）
-            if (TryConvertToNumericValue(value, out double numValue))
-            {
-                bool result = condition.Operator switch
-                {
-                    ComparisonOperator.GreaterThan => numValue > condition.ThresholdValue,
-                    ComparisonOperator.GreaterThanOrEqual => numValue >= condition.ThresholdValue,
-                    ComparisonOperator.LessThan => numValue < condition.ThresholdValue,
-                    ComparisonOperator.LessThanOrEqual => numValue <= condition.ThresholdValue,
-                    ComparisonOperator.Equal => Math.Abs(numValue - condition.ThresholdValue) <= condition.Tolerance,
-                    ComparisonOperator.NotEqual => Math.Abs(numValue - condition.ThresholdValue) > condition.Tolerance,
-                    _ => false
-                };
-
-                _logger.LogDebug("数值阈值检测: {Value}({NumValue}) {Operator} {Threshold}: {Result}",
-                    value, numValue, condition.Operator, condition.ThresholdValue, result);
-                return result;
-            }
-
-            // 字符串状态检测
-            var stringResult = string.Equals(value?.ToString(), condition.TargetValue, StringComparison.OrdinalIgnoreCase);
-            _logger.LogDebug("字符串状态检测: '{Value}' == '{Target}': {Result}",
-                value, condition.TargetValue, stringResult);
-
-            return stringResult;
-        }
-
-        #endregion
-
-        #region 结果处理方法
+        #region 结果处理
 
         /// <summary>
         /// 处理检测结果
@@ -413,32 +369,36 @@ namespace MainUI.LogicalConfiguration.Methods
         {
             try
             {
-                _logger.LogInformation("处理等待检测结果: {DetectionName}, 成功: {IsSuccess}, 刷新频率: {RefreshRate}ms",
-               result.DetectionName, result.IsSuccess, param.RefreshRateMs);
+                var handling = param.ResultHandling ?? new ResultHandling();
 
-                // 保存检测结果到变量
-                if (param.ResultHandling.SaveToVariable && !string.IsNullOrEmpty(param.ResultHandling.ResultVariableName))
+                // 保存结果到变量
+                if (handling.SaveToVariable && !string.IsNullOrEmpty(handling.ResultVariableName))
                 {
-                    await SaveOrUpdateVariable(param.ResultHandling.ResultVariableName, result.IsSuccess);
+                    await SaveToVariable(handling.ResultVariableName, result.IsSuccess);
+                    _logger.LogDebug("保存结果到变量: {VarName} = {Value}",
+                        handling.ResultVariableName, result.IsSuccess);
                 }
 
                 // 保存检测值到变量
-                if (param.ResultHandling.SaveValueToVariable && !string.IsNullOrEmpty(param.ResultHandling.ValueVariableName))
+                if (handling.SaveValueToVariable && !string.IsNullOrEmpty(handling.ValueVariableName))
                 {
-                    await SaveOrUpdateVariable(param.ResultHandling.ValueVariableName, result.DetectedValue);
+                    var valueToSave = result.FinalValue ?? result.LastReadValue;
+                    await SaveToVariable(handling.ValueVariableName, valueToSave);
+                    _logger.LogDebug("保存值到变量: {VarName} = {Value}",
+                        handling.ValueVariableName, valueToSave);
                 }
 
-                // 显示检测结果
-                if (param.ResultHandling.ShowResult)
+                // 显示结果消息
+                if (handling.ShowResult)
                 {
-                    string message = FormatResultMessage(param.ResultHandling.MessageTemplate, result, param);
-                    _logger.LogInformation("等待检测结果消息: {Message}", message);
+                    string message = FormatResultMessage(handling.MessageTemplate, param, result);
+                    _logger.LogInformation("检测结果: {Message}", message);
                 }
 
                 // 处理失败情况
                 if (!result.IsSuccess)
                 {
-                    await HandleDetectionFailure(param.ResultHandling, result);
+                    await HandleFailure(param, result, handling);
                 }
             }
             catch (Exception ex)
@@ -448,91 +408,130 @@ namespace MainUI.LogicalConfiguration.Methods
         }
 
         /// <summary>
+        /// 保存值到变量
+        /// </summary>
+        private Task SaveToVariable(string variableName, object value)
+        {
+            try
+            {
+                var variable = _variableManager.TryFindVariableByName(variableName);
+                if (variable != null)
+                {
+                    variable.VarValue = value;
+                    _logger.LogDebug("变量 '{VarName}' 已更新为: {Value}", variableName, value);
+                }
+                else
+                {
+                    _logger.LogWarning("变量 '{VarName}' 不存在，无法保存值", variableName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "保存值到变量失败: {VarName}", variableName);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         /// 格式化结果消息
         /// </summary>
-        private static string FormatResultMessage(string template, DetectionResult result, Parameter_Detection param)
+        private string FormatResultMessage(string template, Parameter_Detection param, DetectionResult result)
         {
             if (string.IsNullOrEmpty(template))
-                template = "等待检测 {DetectionName}: {Result}";
+            {
+                template = "检测项 {DetectionName}: {Result}";
+            }
 
             return template
-                .Replace("{DetectionName}", result.DetectionName ?? "未知")
-                .Replace("{Result}", result.IsSuccess ? "成功" : "失败")
-                .Replace("{Value}", result.DetectedValue?.ToString() ?? "无")
-                .Replace("{Duration}", $"{result.Duration.TotalMilliseconds:F0}ms")
-                .Replace("{Attempts}", result.DetectionAttempts.ToString())
-                .Replace("{RefreshRate}", param.RefreshRateMs.ToString())
-                .Replace("{AvgInterval}", result.DetectionAttempts > 0 ?
-                    $"{result.Duration.TotalMilliseconds / result.DetectionAttempts:F1}ms" : "0ms")
-                .Replace("{StartTime}", result.StartTime.ToString("yyyy-MM-dd HH:mm:ss"))
-                .Replace("{EndTime}", result.EndTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                .Replace("{DetectionName}", param.DetectionName ?? "")
+                .Replace("{Result}", result.IsSuccess ? "通过" : "未通过")
+                .Replace("{Value}", result.FinalValue?.ToString() ?? result.LastReadValue?.ToString() ?? "N/A")
+                .Replace("{Duration}", result.Duration.TotalMilliseconds.ToString("F0"))
+                .Replace("{Attempts}", result.DetectionAttempts.ToString());
         }
 
         /// <summary>
         /// 处理检测失败
         /// </summary>
-        private async Task HandleDetectionFailure(ResultHandling resultHandling, DetectionResult result)
+        private Task HandleFailure(Parameter_Detection param, DetectionResult result, ResultHandling handling)
         {
-            _logger.LogWarning("等待检测失败处理: {FailureAction}", resultHandling.OnFailure);
-
-            switch (resultHandling.OnFailure)
+            switch (handling.OnFailure)
             {
                 case FailureAction.Continue:
-                    _logger.LogInformation("等待检测失败但继续执行流程");
+                    _logger.LogDebug("检测失败，继续执行");
                     break;
 
                 case FailureAction.Stop:
-                    _logger.LogError("等待检测失败，停止流程执行");
-                    throw new InvalidOperationException($"等待检测失败，流程已停止: {result.DetectionName}");
-
-                case FailureAction.Jump:
-                    _logger.LogInformation("等待检测失败，准备跳转到步骤: {StepIndex}", resultHandling.FailureStepIndex);
+                    _logger.LogWarning("检测失败，停止流程");
+                    // _workflowState?.RequestStop("检测失败");
                     break;
 
-                case FailureAction.Confirm:
-                    _logger.LogInformation("等待检测失败，需要用户确认");
+                case FailureAction.JumpToStep:
+                    if (handling.FailureJumpStep >= 0)
+                    {
+                        _logger.LogDebug("检测失败，跳转到步骤: {Step}", handling.FailureJumpStep);
+                        // _workflowState?.SetNextStep(handling.FailureJumpStep);
+                    }
+                    break;
+
+                case FailureAction.Retry:
+                    _logger.LogDebug("检测失败，请求重试");
+                    // 重试逻辑已在主循环中处理
                     break;
             }
 
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
+        #endregion
+
+        #region 参数验证
+
         /// <summary>
-        /// 保存或更新变量
+        /// 验证参数
         /// </summary>
-        private async Task SaveOrUpdateVariable(string variableName, object value)
+        private void ValidateParameter(Parameter_Detection param)
         {
-            if (string.IsNullOrEmpty(variableName))
-                return;
-
-            try
+            if (param == null)
             {
-                var variables = _variableManager.GetAllVariables();
-                var existingVar = variables.FirstOrDefault(v => v.VarName.Equals(variableName, StringComparison.OrdinalIgnoreCase));
-
-                if (existingVar != null)
-                {
-                    existingVar.VarValue = value?.ToString() ?? "";
-                    _logger.LogDebug("更新变量: {VariableName} = {Value}", variableName, value);
-                }
-                else
-                {
-                    var newVar = new VarItem_Enhanced
-                    {
-                        VarName = variableName,
-                        VarValue = value?.ToString() ?? "",
-                        VarType = value?.GetType().Name ?? "String",
-                    };
-
-                    _variableManager.AddOrUpdateVariable(newVar);
-                    _logger.LogDebug("创建新变量: {VariableName} = {Value}", variableName, value);
-                }
-
-                await Task.CompletedTask;
+                throw new ArgumentNullException(nameof(param));
             }
-            catch (Exception ex)
+
+            // 验证数据源
+            if (param.DataSource == null)
             {
-                _logger.LogError(ex, "保存变量失败: {VariableName}", variableName);
+                throw new InvalidOperationException("数据源配置不能为空");
+            }
+
+            if (param.DataSource.SourceType == DataSourceType.Variable)
+            {
+                if (string.IsNullOrEmpty(param.DataSource.VariableName))
+                {
+                    throw new InvalidOperationException("变量数据源必须指定变量名");
+                }
+            }
+            else if (param.DataSource.SourceType == DataSourceType.PLC)
+            {
+                if (param.DataSource.PlcConfig == null ||
+                    string.IsNullOrEmpty(param.DataSource.PlcConfig.ModuleName) ||
+                    string.IsNullOrEmpty(param.DataSource.PlcConfig.Address))
+                {
+                    throw new InvalidOperationException("PLC数据源必须指定模块名和地址");
+                }
+            }
+
+            // 验证表达式
+            if (string.IsNullOrWhiteSpace(param.ConditionExpression))
+            {
+                throw new InvalidOperationException("条件表达式不能为空");
+            }
+
+            // 验证表达式基本语法
+            var (isValid, message) = DetectionExpressionHelper.ValidateConditionExpression(param.ConditionExpression);
+            if (!isValid)
+            {
+                throw new InvalidOperationException($"条件表达式无效: {message}");
             }
         }
 
@@ -541,137 +540,83 @@ namespace MainUI.LogicalConfiguration.Methods
         #region 辅助方法
 
         /// <summary>
-        /// 验证参数
+        /// 带日志记录的执行包装
         /// </summary>
-        private void ValidateParameter(Parameter_Detection param)
+        private async Task<T> ExecuteWithLogging<T>(Parameter_Detection param, Func<Task<T>> action)
         {
-            ArgumentNullException.ThrowIfNull(param);
+            var startTime = DateTime.Now;
 
-            if (string.IsNullOrEmpty(param.DetectionName))
-                throw new ArgumentException("检测名称不能为空");
-
-            if (param.TimeoutMs <= 0)
+            try
             {
-                _logger.LogWarning("超时时间设置为{Timeout}ms，将使用无限等待模式", param.TimeoutMs);
+                return await action();
             }
-
-            // 合理性检查：刷新频率不应该太接近超时时间
-            if (param.TimeoutMs > 0 && param.RefreshRateMs > param.TimeoutMs / 2)
+            finally
             {
-                _logger.LogWarning("刷新频率({RefreshRate}ms)相对于超时时间({Timeout}ms)较长，可能影响检测精度",
-                    param.RefreshRateMs, param.TimeoutMs);
-            }
-
-            if (param.DataSource == null)
-                throw new ArgumentException("数据源配置不能为空");
-
-            if (param.Condition == null)
-                throw new ArgumentException("检测条件不能为空");
-
-            if (param.ResultHandling == null)
-                throw new ArgumentException("结果处理配置不能为空");
-        }
-
-        /// <summary>
-        /// 尝试转换为double - 支持BOOL类型
-        /// </summary>
-        private static bool TryConvertToNumericValue(object value, out double result)
-        {
-            result = 0;
-
-            if (value == null)
-                return false;
-
-            // 直接的数值类型
-            if (value is double d) { result = d; return true; }
-            if (value is float f) { result = f; return true; }
-            if (value is int i) { result = i; return true; }
-            if (value is decimal dec) { result = (double)dec; return true; }
-            if (value is long l) { result = l; return true; }
-            if (value is short s) { result = s; return true; }
-
-            // 布尔类型转换 - 关键支持
-            if (value is bool boolValue)
-            {
-                result = boolValue ? 1.0 : 0.0;
-                return true;
-            }
-
-            // 字符串转换
-            if (value is string str)
-            {
-                if (double.TryParse(str, out result))
-                    return true;
-
-                if (TryParseBooleanString(str, out bool boolFromString))
-                {
-                    result = boolFromString ? 1.0 : 0.0;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 解析布尔字符串
-        /// </summary>
-        private static bool TryParseBooleanString(string str, out bool result)
-        {
-            result = false;
-
-            if (string.IsNullOrEmpty(str))
-                return false;
-
-            if (bool.TryParse(str, out result))
-                return true;
-
-            str = str.ToLowerInvariant().Trim();
-            switch (str)
-            {
-                case "1":
-                case "on":
-                case "yes":
-                case "enable":
-                case "enabled":
-                case "active":
-                case "high":
-                    result = true;
-                    return true;
-                case "0":
-                case "off":
-                case "no":
-                case "disable":
-                case "disabled":
-                case "inactive":
-                case "low":
-                    result = false;
-                    return true;
-                default:
-                    return false;
+                var duration = DateTime.Now - startTime;
+                _logger.LogDebug("检测 '{DetectionName}' 执行完成，耗时: {Duration}ms",
+                    param?.DetectionName ?? "未知", duration.TotalMilliseconds);
             }
         }
 
         #endregion
     }
 
-    #region 扩展的检测结果类
+    #region 检测结果类
 
     /// <summary>
-    /// 扩展的检测结果 - 包含等待相关信息
+    /// 检测结果
     /// </summary>
     public class DetectionResult
     {
-        public string DetectionName { get; set; } = "";
+        /// <summary>
+        /// 检测项名称
+        /// </summary>
+        public string DetectionName { get; set; }
+
+        /// <summary>
+        /// 是否成功
+        /// </summary>
         public bool IsSuccess { get; set; }
-        public object DetectedValue { get; set; }
-        public string ErrorMessage { get; set; } = "";
+
+        /// <summary>
+        /// 开始时间
+        /// </summary>
         public DateTime StartTime { get; set; }
+
+        /// <summary>
+        /// 结束时间
+        /// </summary>
         public DateTime EndTime { get; set; }
+
+        /// <summary>
+        /// 持续时间
+        /// </summary>
         public TimeSpan Duration => EndTime - StartTime;
 
-        // 等待相关属性
-        public int DetectionAttempts { get; set; } = 0;
+        /// <summary>
+        /// 检测尝试次数
+        /// </summary>
+        public int DetectionAttempts { get; set; }
+
+        /// <summary>
+        /// 最后读取的值
+        /// </summary>
+        public object LastReadValue { get; set; }
+
+        /// <summary>
+        /// 最终值（条件满足时的值）
+        /// </summary>
+        public object FinalValue { get; set; }
+
+        /// <summary>
+        /// 是否发生超时
+        /// </summary>
+        public bool TimeoutOccurred { get; set; }
+
+        /// <summary>
+        /// 错误消息
+        /// </summary>
+        public string ErrorMessage { get; set; }
     }
 
     #endregion

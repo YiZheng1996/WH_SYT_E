@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="LogicalConfiguration\Controls\ToolTreeViewControl.Designer.cs~RF57a68e8.TMP" />
+    <None Remove="LogicalConfiguration\Forms\Form_Detection.cs~RF13224ec.TMP" />
     <None Remove="LogicalConfiguration\Forms\Form_Loop.resx~RF69146fb.TMP" />
     <None Remove="LogicalConfiguration\Forms\kja3lzxb.b2v~" />
     <None Remove="Procedure\b0k3pdyj.on3~" />
