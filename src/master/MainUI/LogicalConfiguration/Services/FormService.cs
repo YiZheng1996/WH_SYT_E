@@ -179,10 +179,7 @@ namespace MainUI.LogicalConfiguration.Services
 
                 // PLC读取窗体
                 nameof(Form_ReadPLC) => (T)(object)new Form_ReadPLC(
-                    _workflowState,
-                    _variableManager,
-                    GetSpecificLogger<Form_ReadPLC>(),
-                    _plcManager),
+                    GetSpecificLogger<Form_ReadPLC>()),
 
                 // PLC写入窗体
                 nameof(Form_WritePLC) => (T)(object)new Form_WritePLC(

@@ -30,8 +30,6 @@ namespace MainUI.LogicalConfiguration.Parameter
         [Newtonsoft.Json.JsonIgnore]
         public VarItem_Enhanced TargetVariable { get; set; }
 
-        //private IWorkflowStateService _workflowStateService;
-
         // 这个属性需要重新设计，建议通过工厂模式或服务来解析
         public string TargetVarName
         {

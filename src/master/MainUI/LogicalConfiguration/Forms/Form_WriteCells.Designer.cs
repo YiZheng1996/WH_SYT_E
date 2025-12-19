@@ -37,6 +37,9 @@
             lblSheetName = new UILabel();
             panelMain = new Panel();
             DataGridViewDefineVar = new DataGridView();
+            ColIndex = new DataGridViewTextBoxColumn();
+            ColCellAddress = new DataGridViewTextBoxColumn();
+            ColVarText = new DataGridViewTextBoxColumn();
             panelButtons = new Panel();
             btnMoveDown = new UISymbolButton();
             btnMoveUp = new UISymbolButton();
@@ -45,9 +48,6 @@
             panelBottom = new Panel();
             btnCancel = new UIButton();
             btnSave = new UIButton();
-            ColIndex = new DataGridViewTextBoxColumn();
-            ColCellAddress = new DataGridViewTextBoxColumn();
-            ColVarText = new DataGridViewTextBoxColumn();
             panelFileConfig.SuspendLayout();
             panelMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)DataGridViewDefineVar).BeginInit();
@@ -154,6 +154,26 @@
             DataGridViewDefineVar.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             DataGridViewDefineVar.Size = new Size(742, 357);
             DataGridViewDefineVar.TabIndex = 1;
+            // 
+            // ColIndex
+            // 
+            ColIndex.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            ColIndex.HeaderText = "序号";
+            ColIndex.Name = "ColIndex";
+            ColIndex.ReadOnly = true;
+            // 
+            // ColCellAddress
+            // 
+            ColCellAddress.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            ColCellAddress.HeaderText = "单元格地址";
+            ColCellAddress.Name = "ColCellAddress";
+            ColCellAddress.Width = 150;
+            // 
+            // ColVarText
+            // 
+            ColVarText.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ColVarText.HeaderText = "内容 (点击配置)";
+            ColVarText.Name = "ColVarText";
             // 
             // panelButtons
             // 
@@ -296,26 +316,6 @@
             btnSave.TabIndex = 0;
             btnSave.Text = "保存";
             btnSave.TipsFont = new Font("微软雅黑", 9F);
-            // 
-            // ColIndex
-            // 
-            ColIndex.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            ColIndex.HeaderText = "序号";
-            ColIndex.Name = "ColIndex";
-            ColIndex.ReadOnly = true;
-            // 
-            // ColCellAddress
-            // 
-            ColCellAddress.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            ColCellAddress.HeaderText = "单元格地址";
-            ColCellAddress.Name = "ColCellAddress";
-            ColCellAddress.Width = 150;
-            // 
-            // ColVarText
-            // 
-            ColVarText.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            ColVarText.HeaderText = "内容 (点击配置)";
-            ColVarText.Name = "ColVarText";
             // 
             // Form_WriteCells
             // 

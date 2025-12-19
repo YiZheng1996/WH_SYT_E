@@ -182,7 +182,8 @@ namespace MainUI.LogicalConfiguration.Forms
             if (e.ColumnIndex == DataGridViewDefineVar.Columns["ColVarText"].Index)
             {
                 _editingRowIndex = e.RowIndex;
-                var currentValue = DataGridViewDefineVar.Rows[e.RowIndex].Cells["ColVarText"].Value?.ToString() ?? "";
+                var currentValue = DataGridViewDefineVar.Rows[e.RowIndex].
+                    Cells["ColVarText"].Value?.ToString() ?? "";
 
                 _tempValueTextBox.Text = currentValue;
 
