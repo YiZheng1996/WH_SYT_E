@@ -4,6 +4,7 @@ using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace MainUI.LogicalConfiguration
 {
@@ -168,6 +169,9 @@ namespace MainUI.LogicalConfiguration
                 BtnPointDefine.Click += BtnGeneral_Click;
                 BtnVariableMonitor.Click += BtnGeneral_Click;
                 BtnSystemParams.Click += BtnGeneral_Click;
+
+                // 窗体关闭事件
+                this.FormClosing += FrmLogicalConfiguration_FormClosing;
 
                 _logger.LogDebug("事件处理程序注册完成");
             }
@@ -696,6 +700,154 @@ namespace MainUI.LogicalConfiguration
             var button = sender as UIButton;
             AppendLog($"[{DateTime.Now:HH:mm:ss}] 打开{button.Text}界面");
             _formService.OpenFormByName(this, button.Text, this);
+        }
+
+        /// <summary>
+        /// 窗体关闭事件 - 检查未保存的配置
+        /// </summary>
+        private void FrmLogicalConfiguration_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                // 检查是否有未配置参数的步骤
+                var unconfiguredSteps = CheckUnconfiguredSteps();
+
+                if (unconfiguredSteps.Count > 0)
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine("检测到以下步骤尚未配置参数:");
+                    sb.AppendLine();
+
+                    int displayCount = Math.Min(unconfiguredSteps.Count, 10);
+                    for (int i = 0; i < displayCount; i++)
+                    {
+                        sb.AppendLine($"  • {unconfiguredSteps[i]}");
+                    }
+
+                    if (unconfiguredSteps.Count > 10)
+                    {
+                        sb.AppendLine($"  ... 还有 {unconfiguredSteps.Count - 10} 个步骤未配置");
+                    }
+
+                    sb.AppendLine();
+                    sb.AppendLine("是否确定退出? (未配置的参数将丢失)");
+
+                    var result = MessageHelper.MessageYes(this, sb.ToString());
+
+                    if (result != DialogResult.OK)
+                    {
+                        // 用户选择不退出
+                        e.Cancel = true;
+                        _logger.LogDebug("用户取消退出操作");
+                        return;
+                    }
+                }
+
+                _logger.LogInformation("窗体正常关闭");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "处理窗体关闭事件时发生错误");
+            }
+        }
+
+        #endregion
+
+
+        #region 参数完整性检查
+
+        /// <summary>
+        /// 检查所有步骤是否都配置了参数
+        /// </summary>
+        /// <returns>未配置参数的步骤列表</returns>
+        private List<string> CheckUnconfiguredSteps()
+        {
+            var unconfiguredSteps = new List<string>();
+
+            try
+            {
+                var steps = _workflowState.GetSteps();
+
+                if (steps == null || steps.Count == 0)
+                {
+                    return unconfiguredSteps;
+                }
+
+                for (int i = 0; i < steps.Count; i++)
+                {
+                    var step = steps[i];
+
+                    // 判断步骤是否需要配置参数
+                    if (IsStepRequiresParameter(step.StepName))
+                    {
+                        // 检查参数是否为空
+                        if (step.StepParameter == null || step.StepParameter.ToInt32() == 0)
+                        {
+                            unconfiguredSteps.Add($"步骤 {step.StepNum}: {step.StepName}");
+                        }
+                    }
+                }
+
+                _logger.LogDebug("检查到 {Count} 个未配置参数的步骤", unconfiguredSteps.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "检查步骤参数配置时发生错误");
+            }
+
+            return unconfiguredSteps;
+        }
+
+        /// <summary>
+        /// 判断步骤是否需要配置参数
+        /// 某些步骤(如循环开始/结束、跳转)可能不需要参数配置
+        /// </summary>
+        /// <param name="stepName">步骤名称</param>
+        /// <returns>true: 需要配置参数; false: 不需要配置</returns>
+        private bool IsStepRequiresParameter(string stepName)
+        {
+            // 不需要参数配置的步骤列表
+            var stepsWithoutParameters = new HashSet<string>
+    {
+        "循环结束",
+        "跳转",
+        // 可根据实际情况添加其他不需要参数的步骤
+    };
+
+            return !stepsWithoutParameters.Contains(stepName);
+        }
+
+        /// <summary>
+        /// 显示未配置步骤的提示信息
+        /// </summary>
+        /// <param name="unconfiguredSteps">未配置的步骤列表</param>
+        /// <returns>true: 用户选择继续; false: 用户选择返回配置</returns>
+        private bool ShowUnconfiguredStepsWarning(List<string> unconfiguredSteps)
+        {
+            if (unconfiguredSteps.Count == 0)
+                return true;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("以下步骤尚未配置参数:");
+            sb.AppendLine();
+
+            // 最多显示10个未配置的步骤
+            int displayCount = Math.Min(unconfiguredSteps.Count, 10);
+            for (int i = 0; i < displayCount; i++)
+            {
+                sb.AppendLine($"  • {unconfiguredSteps[i]}");
+            }
+
+            if (unconfiguredSteps.Count > 10)
+            {
+                sb.AppendLine($"  ... 还有 {unconfiguredSteps.Count - 10} 个步骤未配置");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("建议配置完整后再保存。是否仍要继续保存?");
+
+            var result = MessageHelper.MessageYes(this, sb.ToString());
+            return result == DialogResult.OK;
         }
 
         #endregion

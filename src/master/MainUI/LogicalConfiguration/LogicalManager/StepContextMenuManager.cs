@@ -76,7 +76,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
                 // 创建菜单项
                 _menuItemInsertBefore = CreateMenuItem("在此之前插入 (&B)", OnInsertBefore, Keys.Control | Keys.I);
-                _menuItemInsertAfter = CreateMenuItem("在此之后插入 (&A)", OnInsertAfter, Keys.Control | Keys.Shift | Keys.I);
+                _menuItemInsertAfter = CreateMenuItem("在此之后插入 (&A)", OnInsertAfter, Keys.Control | Keys.U);
                 _menuItemDelete = CreateMenuItem("删除步骤 (&D)", OnDelete, Keys.Delete);
                 _menuItemMoveUp = CreateMenuItem("上移 (&U)", OnMoveUp, Keys.Control | Keys.Up);
                 _menuItemMoveDown = CreateMenuItem("下移 (&N)", OnMoveDown, Keys.Control | Keys.Down);
@@ -231,7 +231,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         /// <summary>
         /// 检查是否有复制的数据
         /// </summary>
-        public bool HasCopiedData() => 
+        public bool HasCopiedData() =>
             _copiedSteps != null && _copiedSteps.Count > 0;
 
         /// <summary>
@@ -454,7 +454,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     ? "确定要删除选中的步骤吗?"
                     : $"确定要删除选中的 {selectedIndices.Length} 个步骤吗?";
 
-                if (MessageHelper.MessageYes(_ownerForm, confirmMessage)!= DialogResult.OK)
+                if (MessageHelper.MessageYes(_ownerForm, confirmMessage) != DialogResult.OK)
                     return;
 
                 // 从大到小删除,避免索引变化
@@ -729,6 +729,11 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
         /// <summary>
         /// 显示步骤选择对话框
+        /// 修改内容:
+        /// 1. 按钮不填充,左右摆放
+        /// 2. 支持双击列表项确认
+        /// 3. 支持ESC键退出
+        /// 4. 工具名称与ToolTreeViewControl保持一致
         /// </summary>
         private string ShowStepSelectionDialog()
         {
@@ -745,6 +750,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 ShowIcon = false,
                 TitleColor = Color.FromArgb(65, 100, 204),
                 RectColor = Color.FromArgb(65, 100, 204),
+                KeyPreview = true  // 启用键盘预览,用于捕获ESC键
             };
 
             var listBox = new ListBox
@@ -754,40 +760,55 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 Height = 30,
             };
 
-            // 加载所有步骤类型
+            // 加载所有步骤类型 - 与ToolTreeViewControl中的工具名称保持一致
             var stepTypes = new[]
             {
+                "延时等待",
+                "条件判断",
+                "等待稳定",
+                "实时监控",
+                "循环工具",
+                "变量赋值",
+                "消息通知",
                 "读取PLC",
                 "写入PLC",
-                "延时",
-                "提示窗",
-                "判断条件",
-                "循环控制",
-                "表达式计算",
-                "读取Excel",
-                "写入Excel",
-                "报表生成",
-                "数据库操作"
+                "读取单元格",
+                "写入单元格"
             };
 
             listBox.Items.AddRange(stepTypes);
 
+            // 创建底部按钮面板
+            var buttonPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 50,
+                Padding = new Padding(10, 5, 10, 5)
+            };
+
+            // 确定按钮
             var btnOK = new UIButton
             {
                 Text = "确定",
-                Dock = DockStyle.Bottom,
+                Width = 100,
                 Height = 40,
+                Location = new Point(buttonPanel.Width - 220, 5),
+                Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 Font = new Font("微软雅黑", 11F)
             };
 
+            // 取消按钮
             var btnCancel = new UIButton
             {
                 Text = "取消",
-                Dock = DockStyle.Bottom,
+                Width = 100,
                 Height = 40,
+                Location = new Point(buttonPanel.Width - 110, 5),
+                Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 Font = new Font("微软雅黑", 11F)
             };
 
+            // 确定按钮点击事件
             btnOK.Click += (s, e) =>
             {
                 if (listBox.SelectedItem != null)
@@ -797,15 +818,39 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 }
             };
 
+            // 取消按钮点击事件
             btnCancel.Click += (s, e) =>
             {
                 form.DialogResult = DialogResult.Cancel;
                 form.Close();
             };
 
+            // 双击列表项确认
+            listBox.DoubleClick += (s, e) =>
+            {
+                if (listBox.SelectedItem != null)
+                {
+                    form.DialogResult = DialogResult.OK;
+                    form.Close();
+                }
+            };
+
+            // ESC键退出
+            form.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Escape)
+                {
+                    form.DialogResult = DialogResult.Cancel;
+                    form.Close();
+                }
+            };
+
+            // 组装控件
+            buttonPanel.Controls.Add(btnOK);
+            buttonPanel.Controls.Add(btnCancel);
+
             form.Controls.Add(listBox);
-            form.Controls.Add(btnOK);
-            form.Controls.Add(btnCancel);
+            form.Controls.Add(buttonPanel);
 
             return form.ShowDialog(_ownerForm) == DialogResult.OK
                 ? listBox.SelectedItem?.ToString()

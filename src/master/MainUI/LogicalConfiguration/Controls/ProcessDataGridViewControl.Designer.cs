@@ -83,7 +83,7 @@ namespace MainUI.LogicalConfiguration.Controls
             btnInsertAfter = new AntdUI.Button();
             btnInsertBefore = new AntdUI.Button();
             panelToolbar.SuspendLayout();
-            this.SuspendLayout();
+            SuspendLayout();
             // 
             // panelToolbar
             // 
@@ -101,9 +101,108 @@ namespace MainUI.LogicalConfiguration.Controls
             panelToolbar.Dock = DockStyle.Bottom;
             panelToolbar.Location = new Point(0, 550);
             panelToolbar.Name = "panelToolbar";
-            panelToolbar.Padding = new Padding(8, 8, 8, 8);
+            panelToolbar.Padding = new Padding(8);
             panelToolbar.Size = new Size(1000, 50);
             panelToolbar.TabIndex = 0;
+            // 
+            // btnClearAll
+            // 
+            btnClearAll.Font = new Font("微软雅黑", 9F);
+            btnClearAll.Location = new Point(890, 8);
+            btnClearAll.Name = "btnClearAll";
+            btnClearAll.Size = new Size(100, 34);
+            btnClearAll.TabIndex = 9;
+            btnClearAll.Text = "清空所有";
+            btnClearAll.Type = AntdUI.TTypeMini.Warn;
+            btnClearAll.Click += BtnClearAll_Click;
+            // 
+            // btnSelectAll
+            // 
+            btnSelectAll.Font = new Font("微软雅黑", 9F);
+            btnSelectAll.Location = new Point(792, 8);
+            btnSelectAll.Name = "btnSelectAll";
+            btnSelectAll.Size = new Size(90, 34);
+            btnSelectAll.TabIndex = 8;
+            btnSelectAll.Text = "全选 (Ctrl+A)";
+            btnSelectAll.Type = AntdUI.TTypeMini.Success;
+            btnSelectAll.Click += BtnSelectAll_Click;
+            // 
+            // btnPaste
+            // 
+            btnPaste.Font = new Font("微软雅黑", 9F);
+            btnPaste.Location = new Point(694, 8);
+            btnPaste.Name = "btnPaste";
+            btnPaste.Size = new Size(90, 34);
+            btnPaste.TabIndex = 7;
+            btnPaste.Text = "粘贴 (Ctrl+V)";
+            btnPaste.Type = AntdUI.TTypeMini.Success;
+            btnPaste.Click += BtnPaste_Click;
+            // 
+            // btnCut
+            // 
+            btnCut.Font = new Font("微软雅黑", 9F);
+            btnCut.Location = new Point(596, 8);
+            btnCut.Name = "btnCut";
+            btnCut.Size = new Size(90, 34);
+            btnCut.TabIndex = 6;
+            btnCut.Text = "剪切 (Ctrl+X)";
+            btnCut.Type = AntdUI.TTypeMini.Success;
+            btnCut.Click += BtnCut_Click;
+            // 
+            // btnCopy
+            // 
+            btnCopy.Font = new Font("微软雅黑", 9F);
+            btnCopy.Location = new Point(498, 8);
+            btnCopy.Name = "btnCopy";
+            btnCopy.Size = new Size(90, 34);
+            btnCopy.TabIndex = 5;
+            btnCopy.Text = "复制 (Ctrl+C)";
+            btnCopy.Type = AntdUI.TTypeMini.Success;
+            btnCopy.Click += BtnCopy_Click;
+            // 
+            // btnMoveDown
+            // 
+            btnMoveDown.Font = new Font("微软雅黑", 9F);
+            btnMoveDown.Location = new Point(400, 8);
+            btnMoveDown.Name = "btnMoveDown";
+            btnMoveDown.Size = new Size(90, 34);
+            btnMoveDown.TabIndex = 4;
+            btnMoveDown.Text = "下移 ( (Ctrl+↓)";
+            btnMoveDown.Type = AntdUI.TTypeMini.Success;
+            btnMoveDown.Click += BtnMoveDown_Click;
+            // 
+            // btnMoveUp
+            // 
+            btnMoveUp.Font = new Font("微软雅黑", 9F);
+            btnMoveUp.Location = new Point(302, 8);
+            btnMoveUp.Name = "btnMoveUp";
+            btnMoveUp.Size = new Size(90, 34);
+            btnMoveUp.TabIndex = 3;
+            btnMoveUp.Text = "上移 (Ctrl+↑)";
+            btnMoveUp.Type = AntdUI.TTypeMini.Success;
+            btnMoveUp.Click += BtnMoveUp_Click;
+            // 
+            // btnDelete
+            // 
+            btnDelete.Font = new Font("微软雅黑", 9F);
+            btnDelete.Location = new Point(204, 8);
+            btnDelete.Name = "btnDelete";
+            btnDelete.Size = new Size(90, 34);
+            btnDelete.TabIndex = 2;
+            btnDelete.Text = "删除 (Del)";
+            btnDelete.Type = AntdUI.TTypeMini.Error;
+            btnDelete.Click += BtnDelete_Click;
+            // 
+            // btnInsertAfter
+            // 
+            btnInsertAfter.Font = new Font("微软雅黑", 9F);
+            btnInsertAfter.Location = new Point(106, 8);
+            btnInsertAfter.Name = "btnInsertAfter";
+            btnInsertAfter.Size = new Size(90, 34);
+            btnInsertAfter.TabIndex = 1;
+            btnInsertAfter.Text = "后插 (Ctrl+U)";
+            btnInsertAfter.Type = AntdUI.TTypeMini.Primary;
+            btnInsertAfter.Click += BtnInsertAfter_Click;
             // 
             // btnInsertBefore
             // 
@@ -116,107 +215,14 @@ namespace MainUI.LogicalConfiguration.Controls
             btnInsertBefore.Type = AntdUI.TTypeMini.Primary;
             btnInsertBefore.Click += BtnInsertBefore_Click;
             // 
-            // btnInsertAfter
-            // 
-            btnInsertAfter.Font = new Font("微软雅黑", 9F);
-            btnInsertAfter.Location = new Point(104, 8);
-            btnInsertAfter.Name = "btnInsertAfter";
-            btnInsertAfter.Size = new Size(110, 34);
-            btnInsertAfter.TabIndex = 1;
-            btnInsertAfter.Text = "后插 (Ctrl+Shift+I)";
-            btnInsertAfter.Type = AntdUI.TTypeMini.Primary;
-            btnInsertAfter.Click += BtnInsertAfter_Click;
-            // 
-            // btnDelete
-            // 
-            btnDelete.Font = new Font("微软雅黑", 9F);
-            btnDelete.Location = new Point(220, 8);
-            btnDelete.Name = "btnDelete";
-            btnDelete.Size = new Size(90, 34);
-            btnDelete.TabIndex = 2;
-            btnDelete.Text = "删除 (Del)";
-            btnDelete.Type = AntdUI.TTypeMini.Error;
-            btnDelete.Click += BtnDelete_Click;
-            // 
-            // btnMoveUp
-            // 
-            btnMoveUp.Font = new Font("微软雅黑", 9F);
-            btnMoveUp.Location = new Point(316, 8);
-            btnMoveUp.Name = "btnMoveUp";
-            btnMoveUp.Size = new Size(90, 34);
-            btnMoveUp.TabIndex = 3;
-            btnMoveUp.Text = "上移 (↑)";
-            btnMoveUp.Click += BtnMoveUp_Click;
-            // 
-            // btnMoveDown
-            // 
-            btnMoveDown.Font = new Font("微软雅黑", 9F);
-            btnMoveDown.Location = new Point(412, 8);
-            btnMoveDown.Name = "btnMoveDown";
-            btnMoveDown.Size = new Size(90, 34);
-            btnMoveDown.TabIndex = 4;
-            btnMoveDown.Text = "下移 (↓)";
-            btnMoveDown.Click += BtnMoveDown_Click;
-            // 
-            // btnCopy
-            // 
-            btnCopy.Font = new Font("微软雅黑", 9F);
-            btnCopy.Location = new Point(508, 8);
-            btnCopy.Name = "btnCopy";
-            btnCopy.Size = new Size(90, 34);
-            btnCopy.TabIndex = 5;
-            btnCopy.Text = "复制 (Ctrl+C)";
-            btnCopy.Click += BtnCopy_Click;
-            // 
-            // btnCut
-            // 
-            btnCut.Font = new Font("微软雅黑", 9F);
-            btnCut.Location = new Point(604, 8);
-            btnCut.Name = "btnCut";
-            btnCut.Size = new Size(90, 34);
-            btnCut.TabIndex = 6;
-            btnCut.Text = "剪切 (Ctrl+X)";
-            btnCut.Click += BtnCut_Click;
-            // 
-            // btnPaste
-            // 
-            btnPaste.Font = new Font("微软雅黑", 9F);
-            btnPaste.Location = new Point(700, 8);
-            btnPaste.Name = "btnPaste";
-            btnPaste.Size = new Size(90, 34);
-            btnPaste.TabIndex = 7;
-            btnPaste.Text = "粘贴 (Ctrl+V)";
-            btnPaste.Click += BtnPaste_Click;
-            // 
-            // btnSelectAll
-            // 
-            btnSelectAll.Font = new Font("微软雅黑", 9F);
-            btnSelectAll.Location = new Point(796, 8);
-            btnSelectAll.Name = "btnSelectAll";
-            btnSelectAll.Size = new Size(90, 34);
-            btnSelectAll.TabIndex = 8;
-            btnSelectAll.Text = "全选 (Ctrl+A)";
-            btnSelectAll.Click += BtnSelectAll_Click;
-            // 
-            // btnClearAll
-            // 
-            btnClearAll.Font = new Font("微软雅黑", 9F);
-            btnClearAll.Location = new Point(892, 8);
-            btnClearAll.Name = "btnClearAll";
-            btnClearAll.Size = new Size(100, 34);
-            btnClearAll.TabIndex = 9;
-            btnClearAll.Text = "清空所有";
-            btnClearAll.Type = AntdUI.TTypeMini.Warn;
-            btnClearAll.Click += BtnClearAll_Click;
-            // 
             // ProcessDataGridViewControl
             // 
-            this.AutoScaleMode = AutoScaleMode.None;
-            this.Controls.Add(panelToolbar);
-            this.Name = "ProcessDataGridViewControl";
-            this.Size = new Size(1000, 600);
+            AutoScaleMode = AutoScaleMode.None;
+            Controls.Add(panelToolbar);
+            Name = "ProcessDataGridViewControl";
+            Size = new Size(1000, 600);
             panelToolbar.ResumeLayout(false);
-            this.ResumeLayout(false);
+            ResumeLayout(false);
         }
 
         #endregion
