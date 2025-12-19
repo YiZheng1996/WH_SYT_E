@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Engine
 {
     /// <summary>
-    /// 统一的表达式引擎（重构版）
+    /// 统一的表达式引擎
     /// 整合了表达式验证、解析、求值和变量赋值功能
     /// </summary>
     public class ExpressionEngine
@@ -123,22 +123,12 @@ namespace MainUI.LogicalConfiguration.Engine
         }
 
         /// <summary>
-        /// 异步求值表达式（伪异步，保持向后兼容）
-        /// </summary>
-        public Task<EvaluationResult> EvaluateExpressionAsync(string expression)
-        {
-            // 注意：这是一个伪异步方法，实际上是同步执行
-            // 保持此方法是为了向后兼容，建议使用 EvaluateExpressionAsync_Real
-            return Task.FromResult(EvaluateExpression(expression));
-        }
-
-        /// <summary>
         /// 真正的异步求值表达式（支持PLC异步读取）
         /// 
         /// 注意：建议将此方法重命名为 EvaluateExpressionAsync，
         /// 并将原来的伪异步方法标记为 [Obsolete]，但为了兼容性暂时保留
         /// </summary>
-        public async Task<EvaluationResult> EvaluateExpressionAsync_Real(string expression)
+        public async Task<EvaluationResult> EvaluateExpressionAsync(string expression)
         {
             try
             {
@@ -265,7 +255,7 @@ namespace MainUI.LogicalConfiguration.Engine
         public async Task<AssignmentResult> AssignExpressionAsync(string targetVarName, string expression)
         {
             // 求值表达式
-            var evalResult = await EvaluateExpressionAsync_Real(expression);
+            var evalResult = await EvaluateExpressionAsync(expression);
             if (!evalResult.Success)
                 return AssignmentResult.Error($"表达式求值失败: {evalResult.ErrorMessage}");
 

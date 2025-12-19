@@ -679,7 +679,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                         try
                         {
                             // 使用表达式引擎计算退出条件
-                            var exitResult = await _expressionEngine.EvaluateExpressionAsync_Real(param.ExitConditionExpression);
+                            var exitResult = await _expressionEngine.EvaluateExpressionAsync(param.ExitConditionExpression);
 
                             // 添加详细日志
                             NlogHelper.Default.Info($"退出条件计算结果: Success={exitResult.Success}, Result={exitResult.Result}, ResultType={exitResult.Result?.GetType().Name ?? "null"}");

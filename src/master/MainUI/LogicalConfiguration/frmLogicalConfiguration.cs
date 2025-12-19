@@ -779,8 +779,23 @@ namespace MainUI.LogicalConfiguration
                     // 判断步骤是否需要配置参数
                     if (IsStepRequiresParameter(step.StepName))
                     {
-                        // 检查参数是否为空
-                        if (step.StepParameter == null || (int)step.StepParameter == 0)
+                        // 检查参数是否为空 - 安全处理多种数值类型
+                        bool isUnconfigured = step.StepParameter == null;
+
+                        if (!isUnconfigured && step.StepParameter is long longValue)
+                        {
+                            isUnconfigured = longValue == 0;
+                        }
+                        else if (!isUnconfigured && step.StepParameter is int intValue)
+                        {
+                            isUnconfigured = intValue == 0;
+                        }
+                        else if (!isUnconfigured && step.StepParameter is string strValue)
+                        {
+                            isUnconfigured = string.IsNullOrEmpty(strValue) || strValue == "0";
+                        }
+
+                        if (isUnconfigured)
                         {
                             unconfiguredSteps.Add($"步骤 {step.StepNum}: {step.StepName}");
                         }

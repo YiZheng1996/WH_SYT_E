@@ -156,7 +156,7 @@ namespace MainUI.LogicalConfiguration.Methods
                 {
                     // 直接使用表达式引擎计算
                     // 表达式引擎会自动解析并读取其中的变量和PLC地址
-                    var evalResult = await _expressionEngine.EvaluateExpressionAsync_Real(
+                    var evalResult = await _expressionEngine.EvaluateExpressionAsync(
                         param.ConditionExpression);
 
                     if (evalResult.Result is bool conditionMet && conditionMet)

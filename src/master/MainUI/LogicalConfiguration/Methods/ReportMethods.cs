@@ -271,7 +271,7 @@ namespace MainUI.LogicalConfiguration.Methods
         }
 
         /// <summary>
-        /// 计算表达式 - 使用 ReportExpressionHelper
+        /// 计算表达式（支持 PLC 引用）
         /// </summary>
         private async Task<object> EvaluateExpression(WriteCellItem item)
         {
@@ -283,7 +283,7 @@ namespace MainUI.LogicalConfiguration.Methods
 
             try
             {
-                // 使用报表表达式助手计算
+                // 使用异步方法处理表达式（支持 PLC 引用）
                 var result = await _expressionHelper.Value.EvaluateForReportAsync(item.Expression);
 
                 NlogHelper.Default.Debug($"表达式计算成功: {item.Expression} = {result}");

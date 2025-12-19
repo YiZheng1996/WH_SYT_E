@@ -87,7 +87,38 @@ namespace MainUI.LogicalConfiguration.Services
         /// <returns>计算结果或错误提示</returns>
         public async Task<object> EvaluateForReportAsync(string expression)
         {
-            return await Task.Run(() => EvaluateForReport(expression));
+            //return await Task.Run(() => EvaluateForReport(expression));
+            try
+            {
+                if (string.IsNullOrWhiteSpace(expression))
+                {
+                    _logger?.LogWarning("报表表达式为空");
+                    return string.Empty;
+                }
+
+                _logger?.LogDebug($"开始异步计算报表表达式: {expression}");
+
+                // 使用底层引擎的真正异步方法计算（支持 PLC 读取）
+                var result = await _engine.EvaluateExpressionAsync(expression);
+
+                if (result.Success)
+                {
+                    _logger?.LogDebug($"表达式计算成功: {expression} = {result.Result}");
+                    return result.Result ?? string.Empty;
+                }
+                else
+                {
+                    var errorMsg = FormatErrorMessage(expression, result.ErrorMessage);
+                    _logger?.LogWarning($"表达式计算失败: {expression}, 错误: {result.ErrorMessage}");
+                    return errorMsg;
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"[计算错误:{ex.Message}]";
+                _logger?.LogError(ex, $"报表表达式计算异常: {expression}");
+                return errorMsg;
+            }
         }
 
         /// <summary>

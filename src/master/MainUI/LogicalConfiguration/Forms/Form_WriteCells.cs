@@ -480,28 +480,30 @@ namespace MainUI.LogicalConfiguration.Forms
 
         /// <summary>
         /// 自动检测数据源类型
+        /// 支持: 固定值、变量、表达式、系统属性、PLC引用
         /// </summary>
         private CellsDataSourceType DetectSourceType(string content)
         {
             if (string.IsNullOrWhiteSpace(content))
                 return CellsDataSourceType.FixedValue;
 
-            content = content.Trim();
+            // 1. 检查是否为PLC引用: {PLC.模块.地址} 或 {PLC.xxx.yyy}
+            // 注意: 支持中文模块名和地址
+            if (Regex.IsMatch(content, @"^\s*\{PLC\.[^\}]+\}\s*$", RegexOptions.IgnoreCase))
+            {
+                return CellsDataSourceType.Expression; // 作为表达式处理
+            }
 
-            // 1. 检查是否为表达式（包含 {变量名} 或函数调用）
-            if (Regex.IsMatch(content, @"\{[\w\u4e00-\u9fa5]+\}") || // 包含 {变量名}
-                Regex.IsMatch(content, @"[A-Z_]+\s*\(.*\)", RegexOptions.IgnoreCase) || // 包含函数 FUNC(...)
-                content.Contains("DateTime.Now") || // 时间表达式
-                content.Contains("FORMAT(") || // 格式化函数
-                content.Contains("ADDDAYS(") || content.Contains("ADDHOURS(")) // 时间运算
+            // 2. 检查是否为表达式: 包含 {变量}、运算符或函数
+            if (Regex.IsMatch(content, @"\{[\w\u4e00-\u9fa5.]+\}") ||
+                Regex.IsMatch(content, @"[+\-*/()><=!&|]"))
             {
                 return CellsDataSourceType.Expression;
             }
 
-            // 2. 检查是否为系统属性路径（包含多个点号）
-            if (Regex.IsMatch(content, @"^[A-Za-z_][\w]*(\.[A-Za-z_][\w]*)+"))
+            // 3. 检查是否为系统属性路径（包含多个点号）
+            if (Regex.IsMatch(content, @"^[A-Za-z_][\w\u4e00-\u9fa5]*(\.[A-Za-z_][\w\u4e00-\u9fa5]*)+"))
             {
-                // 常见系统属性根对象
                 var systemRoots = new[] { "NewUsers", "VarHelper", "DateTime", "BaseTest", "Environment" };
                 if (systemRoots.Any(root => content.StartsWith(root + ".")))
                 {
@@ -509,17 +511,17 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
             }
 
-            // 3. 检查是否为单个变量名（只包含字母、数字、下划线、中文，无空格）
-            if (Regex.IsMatch(content, @"^[\w\u4e00-\u9fa5]+$") && !Regex.IsMatch(content, @"^\d+(\.\d+)?$"))
+            // 4. 检查是否为单个变量名
+            if (Regex.IsMatch(content, @"^[\w\u4e00-\u9fa5]+$") &&
+                !Regex.IsMatch(content, @"^\d+(\.\d+)?$"))
             {
-                // 进一步判断：如果变量管理器中存在该变量，则为变量类型
                 if (_globalVariable?.FindVariableByName(content) != null)
                 {
                     return CellsDataSourceType.Variable;
                 }
             }
 
-            // 4. 默认为固定值
+            // 5. 默认为固定值
             return CellsDataSourceType.FixedValue;
         }
 

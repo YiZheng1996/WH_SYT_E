@@ -59,8 +59,6 @@ namespace MainUI.LogicalConfiguration.Parameter
         [Newtonsoft.Json.JsonIgnore]
         public VarItem_Enhanced TargetVariable { get; set; }
 
-        private string _targetVarName;
-
         /// <summary>
         /// 解析目标变量（运行时调用）
         /// </summary>
