@@ -51,7 +51,10 @@ namespace MainUI.LogicalConfiguration.Methods
                         // 检查取消令牌
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        var targetVariable = variables.FirstOrDefault(v => v.VarName == plc.TargetVarName);
+                        // 先清理花括号
+                        var cleanVarName = CleanVariableName(plc.TargetVarName);
+
+                        var targetVariable = variables.FirstOrDefault(v => v.VarName == cleanVarName);
                         if (targetVariable == null)
                         {
                             _logger.LogWarning("目标变量不存在: {TargetVarName}", plc.TargetVarName);
@@ -284,6 +287,23 @@ namespace MainUI.LogicalConfiguration.Methods
             {
                 await Task.CompletedTask; // 保持异步签名
             }
+        }
+
+        //  新增辅助方法
+        private string CleanVariableName(string varName)
+        {
+            if (string.IsNullOrWhiteSpace(varName))
+                return string.Empty;
+
+            var cleanName = varName.Trim();
+
+            if (cleanName.StartsWith('{') && cleanName.EndsWith('}'))
+            {
+                cleanName = cleanName[1..^1].Trim();
+                _logger.LogDebug("清理变量名: {Original} → {Clean}", varName, cleanName);
+            }
+
+            return cleanName;
         }
     }
 }

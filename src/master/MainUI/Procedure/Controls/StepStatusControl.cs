@@ -409,6 +409,7 @@ namespace MainUI.Procedure.Controls
                 "条件判断" or "Condition" => DisplayConditionParameters(stepParameter, yPosition),
                 "延时等待" or "Delay" => DisplayDelayParameters(stepParameter, yPosition),
                 "写入PLC" or "WritePLC" => DisplayWritePLCParameters(stepParameter, yPosition),
+                "读取PLC" or "ReadPLC" => DisplayReadPLCParameters(stepParameter, yPosition),
                 "等待稳定" or "WaitForStable" => DisplayWaitForStableParameters(stepParameter, yPosition),
                 "实时监控提示" => DisplayRealtimeMonitorPromptParameters(stepParameter, yPosition),
                 "循环工具" => DisplayLoopParameters(stepParameter, yPosition),
@@ -960,7 +961,7 @@ namespace MainUI.Procedure.Controls
                 var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
                 var json = JObject.Parse(jsonStr);
 
-                yPosition = AddSubSectionTitle("🔌 PLC读取配置", yPosition);
+                yPosition = AddSubSectionTitle("PLC读取配置", yPosition);
 
                 // 检查是否有Items数组(多项读取)
                 var items = json["Items"];

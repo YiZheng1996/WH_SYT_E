@@ -456,7 +456,7 @@ namespace MainUI.LogicalConfiguration
 
                         _logger.LogDebug("拖拽添加步骤: {StepName}, 索引: {Index}", stepName, newStepIndex);
 
-                        // ⭐ 使用BeginInvoke异步打开配置窗口
+                        // 使用BeginInvoke异步打开配置窗口
                         this.BeginInvoke(new Action(() =>
                         {
                             try
@@ -464,7 +464,7 @@ namespace MainUI.LogicalConfiguration
                                 _workflowState.StepNum = newStepIndex;
                                 _workflowState.StepName = stepName;
                                 _formService.OpenFormByName(this, stepName, this);
-
+                                _processGridControl.RefreshGrid();
                                 _logger.LogInformation("配置窗口已打开: {StepName}", stepName);
                             }
                             catch (Exception ex)
@@ -753,7 +753,6 @@ namespace MainUI.LogicalConfiguration
 
         #endregion
 
-
         #region 参数完整性检查
 
         /// <summary>
@@ -781,7 +780,7 @@ namespace MainUI.LogicalConfiguration
                     if (IsStepRequiresParameter(step.StepName))
                     {
                         // 检查参数是否为空
-                        if (step.StepParameter == null || step.StepParameter.ToInt32() == 0)
+                        if (step.StepParameter == null || (int)step.StepParameter == 0)
                         {
                             unconfiguredSteps.Add($"步骤 {step.StepNum}: {step.StepName}");
                         }
@@ -808,46 +807,13 @@ namespace MainUI.LogicalConfiguration
         {
             // 不需要参数配置的步骤列表
             var stepsWithoutParameters = new HashSet<string>
-    {
-        "循环结束",
-        "跳转",
-        // 可根据实际情况添加其他不需要参数的步骤
-    };
+            {
+                "循环结束",
+                "跳转",
+                // 可根据实际情况添加其他不需要参数的步骤
+            };
 
             return !stepsWithoutParameters.Contains(stepName);
-        }
-
-        /// <summary>
-        /// 显示未配置步骤的提示信息
-        /// </summary>
-        /// <param name="unconfiguredSteps">未配置的步骤列表</param>
-        /// <returns>true: 用户选择继续; false: 用户选择返回配置</returns>
-        private bool ShowUnconfiguredStepsWarning(List<string> unconfiguredSteps)
-        {
-            if (unconfiguredSteps.Count == 0)
-                return true;
-
-            var sb = new StringBuilder();
-            sb.AppendLine("以下步骤尚未配置参数:");
-            sb.AppendLine();
-
-            // 最多显示10个未配置的步骤
-            int displayCount = Math.Min(unconfiguredSteps.Count, 10);
-            for (int i = 0; i < displayCount; i++)
-            {
-                sb.AppendLine($"  • {unconfiguredSteps[i]}");
-            }
-
-            if (unconfiguredSteps.Count > 10)
-            {
-                sb.AppendLine($"  ... 还有 {unconfiguredSteps.Count - 10} 个步骤未配置");
-            }
-
-            sb.AppendLine();
-            sb.AppendLine("建议配置完整后再保存。是否仍要继续保存?");
-
-            var result = MessageHelper.MessageYes(this, sb.ToString());
-            return result == DialogResult.OK;
         }
 
         #endregion

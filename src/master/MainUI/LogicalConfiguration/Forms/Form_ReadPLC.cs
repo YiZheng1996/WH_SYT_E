@@ -7,7 +7,8 @@ using Newtonsoft.Json;
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
-    /// 读取PLC参数配置表单 - 使用 ExpressionInputPanel
+    /// 读取PLC参数配置表单
+    /// 只修改逻辑，保持界面不变
     /// </summary>
     public partial class Form_ReadPLC : BaseParameterForm
     {
@@ -19,9 +20,22 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
+        #region 属性
+
+        /// <summary>
+        /// 参数对象属性
+        /// </summary>
+        public Parameter_ReadPLC Parameter
+        {
+            get => GetCurrentParameters();
+            set => LoadParameters(value);
+        }
+
+        #endregion
+
         #region 构造函数
 
-        public Form_ReadPLC(ILogger<Form_ReadPLC> logger)
+        public Form_ReadPLC(ILogger<Form_ReadPLC> logger) : base()
         {
             InitializeComponent();
 
@@ -55,80 +69,49 @@ namespace MainUI.LogicalConfiguration.Forms
             InitializeTempVarTextBox();
             BindEvents();
             LoadPLCModules();
+
+            // 加载当前步骤参数
             LoadParametersFromStep();
+
             UpdatePreview();
 
-            _logger?.LogInformation("Form_ReadPLC 增强版初始化完成");
+            _logger?.LogInformation("Form_ReadPLC 初始化完成");
         }
 
         private void InitializeDataGridView()
         {
+            // DataGridView 已在 Designer 中定义，这里只设置基本属性
             DataGridViewPLCList.AllowUserToAddRows = false;
-            DataGridViewPLCList.AllowUserToDeleteRows = false;
             DataGridViewPLCList.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             DataGridViewPLCList.MultiSelect = false;
-            DataGridViewPLCList.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            DataGridViewPLCList.EditMode = DataGridViewEditMode.EditOnEnter;
-            DataGridViewPLCList.RowTemplate.Height = 32;
         }
 
-        /// <summary>
-        /// 初始化隐藏的临时文本框用于 ExpressionInputPanel 附加
-        /// </summary>
         private void InitializeTempVarTextBox()
         {
-            try
+            // 初始化临时文本框用于 ExpressionInputPanel
+            _tempVarTextBox = new Sunny.UI.UITextBox
             {
-                _tempVarTextBox = new Sunny.UI.UITextBox
-                {
-                    Name = "_tempVarTextBox",
-                    Visible = false,
-                    Size = new Size(1, 1),
-                    Location = new Point(-100, -100)
-                };
+                Name = "tempVarTextBox",
+                Location = new Point(-100, -100),
+                Width = 1,
+                Visible = true
+            };
 
-                // 附加表达式输入面板 - 仅用于选择变量
-                ExpressionInputPanel.AttachTo(_tempVarTextBox, new InputPanelOptions
-                {
-                    Mode = InputMode.VariableOnly,
-                    EnabledModules = InputModules.Variable,
-                    Title = "选择目标变量",
-                    ShowValidation = false,
-                    ShowPreview = false,
-                    CloseOnSubmit = true
-                });
-
-                // 监听文本变化
-                _tempVarTextBox.TextChanged += (s, e) =>
-                {
-                    //if (!_isLoading && _editingRowIndex >= 0 && _editingRowIndex < DataGridViewPLCList.Rows.Count)
-                    //{
-                    //    DataGridViewPLCList.Rows[_editingRowIndex].Cells["ColTargetVar"].Value = _tempVarTextBox.Text;
-                    //    UpdatePreview();
-                    //    _logger?.LogDebug("目标变量已更新：行{Row}, 变量={Var}", _editingRowIndex, _tempVarTextBox.Text);
-                    //}
-
-                    if (!_isLoading && _editingRowIndex >= 0 && _editingRowIndex < DataGridViewPLCList.Rows.Count)
-                    {
-                        DataGridViewPLCList.Rows[_editingRowIndex].Cells["ColTargetVar"].Value = _tempVarTextBox.Text;
-
-                        // 转移焦点来强制刷新
-                        var currentCell = DataGridViewPLCList.CurrentCell;
-                        DataGridViewPLCList.CurrentCell = null;
-                        DataGridViewPLCList.CurrentCell = DataGridViewPLCList.Rows[_editingRowIndex].Cells["ColPLCAddress"];
-                        DataGridViewPLCList.Refresh();
-
-                        _logger?.LogDebug("单元格内容已更新：行{Row}, 值={Value}", _editingRowIndex, _tempVarTextBox.Text);
-                    }
-                };
-
-                this.Controls.Add(_tempVarTextBox);
-                _logger?.LogDebug("临时文本框初始化完成");
-            }
-            catch (Exception ex)
+            _tempVarTextBox.TextChanged += (s, e) =>
             {
-                _logger?.LogError(ex, "初始化临时文本框失败");
-            }
+                if (!_isLoading && _editingRowIndex >= 0 && _editingRowIndex < DataGridViewPLCList.Rows.Count)
+                {
+                    DataGridViewPLCList.Rows[_editingRowIndex].Cells["ColTargetVar"].Value = _tempVarTextBox.Text;
+                    // 转移焦点来强制刷新
+                    var currentCell = DataGridViewPLCList.CurrentCell;
+                    DataGridViewPLCList.CurrentCell = null;
+                    DataGridViewPLCList.CurrentCell = DataGridViewPLCList.Rows[_editingRowIndex].Cells["ColPLCAddress"];
+                    DataGridViewPLCList.Refresh();
+                    _logger?.LogDebug("单元格内容已更新：行{Row}, 值={Value}", _editingRowIndex, _tempVarTextBox.Text);
+                }
+            };
+
+            this.Controls.Add(_tempVarTextBox);
         }
 
         private void BindEvents()
@@ -146,29 +129,25 @@ namespace MainUI.LogicalConfiguration.Forms
             DataGridViewPLCList.RowsRemoved += (s, e) => UpdateRowIndices();
         }
 
-        #endregion
-
-        #region PLC 数据加载
-
         /// <summary>
-        /// 加载所有 PLC 模块
+        /// 加载PLC模块和点位地址
         /// </summary>
         private async void LoadPLCModules()
         {
             try
             {
-                if (_plcManager == null) return;
+                var moduleTags = await _plcManager.GetModuleTagsAsync();
 
-                var modules = await _plcManager.GetModuleTagsAsync();
-                var moduleNames = modules.Keys.ToArray();
-
+                // 填充模块下拉框
                 if (DataGridViewPLCList.Columns["ColPlcModule"] is DataGridViewComboBoxColumn moduleColumn)
                 {
                     moduleColumn.Items.Clear();
-                    moduleColumn.Items.AddRange(moduleNames);
+                    foreach (var moduleName in moduleTags.Keys)
+                    {
+                        moduleColumn.Items.Add(moduleName);
+                    }
                 }
-
-                _logger?.LogDebug("加载了 {Count} 个PLC模块", moduleNames.Length);
+                _logger?.LogDebug("已加载 {Count} 个PLC模块", moduleTags.Count);
             }
             catch (Exception ex)
             {
@@ -176,121 +155,20 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 加载指定模块的点位地址
-        /// </summary>
-        private async void LoadPLCAddresses(string moduleName, int rowIndex)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(moduleName) || _plcManager == null) return;
-
-                var modules = await _plcManager.GetModuleTagsAsync();
-                if (modules.TryGetValue(moduleName, out var addresses))
-                {
-                    if (DataGridViewPLCList.Columns["ColPlcAddress"] is DataGridViewComboBoxColumn addressColumn)
-                    {
-                        // 临时保存所有行的地址值
-                        var currentValues = new Dictionary<int, string>();
-                        foreach (DataGridViewRow row in DataGridViewPLCList.Rows)
-                        {
-                            if (row.Index != rowIndex)
-                            {
-                                currentValues[row.Index] = row.Cells["ColPlcAddress"].Value?.ToString() ?? "";
-                            }
-                        }
-
-                        // 更新地址列表
-                        addressColumn.Items.Clear();
-                        addressColumn.Items.AddRange(addresses.ToArray());
-
-                        // 恢复其他行的值
-                        foreach (var kvp in currentValues)
-                        {
-                            if (kvp.Key < DataGridViewPLCList.Rows.Count)
-                            {
-                                DataGridViewPLCList.Rows[kvp.Key].Cells["ColPlcAddress"].Value = kvp.Value;
-                            }
-                        }
-                    }
-
-                    _logger?.LogDebug("加载模块 {Module} 的 {Count} 个点位", moduleName, addresses.Count);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "加载PLC地址失败");
-            }
-        }
-
         #endregion
 
-        #region 参数加载和保存
+        #region 核心方法 - 参考 Form_WriteCells 模式
 
         /// <summary>
-        /// 从当前步骤加载参数
+        /// 从界面收集参数 - 参考 Form_WriteCells.GetCurrentParameters()
         /// </summary>
-        private void LoadParametersFromStep()
+        private Parameter_ReadPLC GetCurrentParameters()
         {
             try
             {
-                _isLoading = true;
-
-                var currentStep = GetCurrentStepSafely();
-                if (currentStep?.StepParameter != null)
+                var param = new Parameter_ReadPLC
                 {
-                    if (currentStep.StepParameter is Parameter_ReadPLC param)
-                    {
-                        _currentParameter = param;
-                    }
-                    else
-                    {
-                        var jsonString = JsonConvert.SerializeObject(currentStep.StepParameter);
-                        _currentParameter = JsonConvert.DeserializeObject<Parameter_ReadPLC>(jsonString) ?? new Parameter_ReadPLC();
-                    }
-
-                    // 加载到表格
-                    DataGridViewPLCList.Rows.Clear();
-                    foreach (var item in _currentParameter.Items ?? [])
-                    {
-                        int rowIndex = DataGridViewPLCList.Rows.Add(
-                            "",
-                            item.PlcModuleName,
-                            item.PlcKeyName,
-                            item.TargetVarName
-                        );
-
-                        // 异步加载该模块的地址
-                        if (!string.IsNullOrEmpty(item.PlcModuleName))
-                        {
-                            LoadPLCAddresses(item.PlcModuleName, rowIndex);
-                        }
-                    }
-
-                    UpdateRowIndices();
-                    _logger?.LogDebug("加载了 {Count} 个PLC读取项", _currentParameter.Items?.Count ?? 0);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "加载参数失败");
-            }
-            finally
-            {
-                _isLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// 保存参数
-        /// </summary>
-        protected override void SaveFormToParameter()
-        {
-            try
-            {
-                _currentParameter = new Parameter_ReadPLC
-                {
-                    Items = []
+                    Items = new List<PlcReadItem>()
                 };
 
                 foreach (DataGridViewRow row in DataGridViewPLCList.Rows)
@@ -301,9 +179,10 @@ namespace MainUI.LogicalConfiguration.Forms
                     string address = row.Cells["ColPlcAddress"].Value?.ToString() ?? "";
                     string targetVar = row.Cells["ColTargetVar"].Value?.ToString() ?? "";
 
+                    // 只添加有效的配置项
                     if (!string.IsNullOrEmpty(moduleName) && !string.IsNullOrEmpty(address))
                     {
-                        _currentParameter.Items.Add(new PlcReadItem
+                        param.Items.Add(new PlcReadItem
                         {
                             PlcModuleName = moduleName,
                             PlcKeyName = address,
@@ -312,7 +191,180 @@ namespace MainUI.LogicalConfiguration.Forms
                     }
                 }
 
+                _logger?.LogDebug("从界面获取参数，共 {Count} 项", param.Items.Count);
+                return param;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "获取当前参数时发生错误");
+                return new Parameter_ReadPLC();
+            }
+        }
+
+        /// <summary>
+        /// 加载参数到界面 - 参考 Form_WriteCells.LoadParameters()
+        /// </summary>
+        private void LoadParameters(Parameter_ReadPLC param)
+        {
+            try
+            {
+                _isLoading = true;
+                _currentParameter = param ?? new Parameter_ReadPLC();
+
+                DataGridViewPLCList.Rows.Clear();
+
+                if (_currentParameter.Items != null && _currentParameter.Items.Count > 0)
+                {
+                    foreach (var item in _currentParameter.Items)
+                    {
+                        int rowIndex = DataGridViewPLCList.Rows.Add();
+                        var row = DataGridViewPLCList.Rows[rowIndex];
+
+                        row.Cells["ColIndex"].Value = (rowIndex + 1).ToString();
+                        row.Cells["ColPlcModule"].Value = item.PlcModuleName ?? "";
+                        row.Cells["ColPlcAddress"].Value = item.PlcKeyName ?? "";
+                        row.Cells["ColTargetVar"].Value = item.TargetVarName ?? "";
+
+                        // 异步加载该模块的地址列表
+                        if (!string.IsNullOrEmpty(item.PlcModuleName))
+                        {
+                            LoadPLCAddressesForRow(item.PlcModuleName, rowIndex);
+                        }
+                    }
+                }
+
+                UpdateRowIndices();
+                _logger?.LogInformation("成功加载参数，包含 {Count} 项", _currentParameter.Items?.Count ?? 0);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "加载参数时发生错误");
+            }
+            finally
+            {
+                _isLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// 从当前步骤加载参数
+        /// </summary>
+        private void LoadParametersFromStep()
+        {
+            try
+            {
+                var currentStep = GetCurrentStepSafely();
+                if (currentStep?.StepParameter == null)
+                {
+                    _logger?.LogDebug("当前步骤无参数，使用默认值");
+                    LoadParameters(new Parameter_ReadPLC());
+                    return;
+                }
+
+                Parameter_ReadPLC loadedParameter = null;
+
+                // 尝试直接类型转换
+                if (currentStep.StepParameter is Parameter_ReadPLC param)
+                {
+                    loadedParameter = param;
+                }
+                // 尝试 JSON 反序列化
+                else
+                {
+                    try
+                    {
+                        string jsonString = currentStep.StepParameter is string s
+                            ? s
+                            : JsonConvert.SerializeObject(currentStep.StepParameter);
+                        loadedParameter = JsonConvert.DeserializeObject<Parameter_ReadPLC>(jsonString);
+                    }
+                    catch (JsonException ex)
+                    {
+                        _logger?.LogWarning(ex, "JSON反序列化失败");
+                        loadedParameter = null;
+                    }
+                }
+
+                // 加载成功则更新参数并刷新界面
+                if (loadedParameter != null)
+                {
+                    LoadParameters(loadedParameter);
+                }
+                else
+                {
+                    _logger?.LogWarning("参数加载失败，使用默认值");
+                    LoadParameters(new Parameter_ReadPLC());
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "加载步骤参数失败");
+                LoadParameters(new Parameter_ReadPLC());
+            }
+        }
+
+        private async void LoadPLCAddressesForRow(string moduleName, int rowIndex)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(moduleName)) return;
+
+                var addresses = await _plcManager.GetModuleTagsAsync(moduleName);
+
+                if (rowIndex >= 0 && rowIndex < DataGridViewPLCList.Rows.Count)
+                {
+                    var row = DataGridViewPLCList.Rows[rowIndex];
+                    if (row.Cells["ColPlcAddress"] is DataGridViewComboBoxCell addressCell)
+                    {
+                        // 保存当前值
+                        var currentValue = addressCell.Value;
+
+                        // 清空并填充
+                        addressCell.Items.Clear();
+                        foreach (var address in addresses)
+                        {
+                            addressCell.Items.Add(address);
+                        }
+
+                        // 恢复值（如果存在于列表中）
+                        if (currentValue != null && addressCell.Items.Contains(currentValue))
+                        {
+                            addressCell.Value = currentValue;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "加载PLC地址失败");
+            }
+        }
+
+        #endregion
+
+        #region BaseParameterForm 重写方法
+
+        /// <summary>
+        /// 加载参数到表单 - BaseParameterForm 要求实现
+        /// </summary>
+        protected override void LoadParameterToForm()
+        {
+            LoadParametersFromStep();
+        }
+
+        /// <summary>
+        /// 保存表单到参数
+        /// </summary>
+        protected override void SaveFormToParameter()
+        {
+            try
+            {
+                // 1. 从界面收集参数
+                _currentParameter = GetCurrentParameters();
+
+                // 2. 调用基类方法保存参数
                 SetParameterValue(_currentParameter);
+
                 _logger?.LogDebug("保存了 {Count} 个PLC读取项", _currentParameter.Items.Count);
             }
             catch (Exception ex)
@@ -322,18 +374,52 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        protected override void LoadParameterToForm()
+        /// <summary>
+        /// 验证输入
+        /// </summary>
+        protected override bool ValidateInput()
         {
-            LoadParametersFromStep();
+            if (DataGridViewPLCList.Rows.Count == 0)
+            {
+                MessageHelper.MessageOK("请至少添加一个PLC读取项！", TType.Warn);
+                return false;
+            }
+
+            for (int i = 0; i < DataGridViewPLCList.Rows.Count; i++)
+            {
+                var row = DataGridViewPLCList.Rows[i];
+                if (row.IsNewRow) continue;
+
+                string moduleName = row.Cells["ColPlcModule"].Value?.ToString() ?? "";
+                string address = row.Cells["ColPlcAddress"].Value?.ToString() ?? "";
+                string targetVar = row.Cells["ColTargetVar"].Value?.ToString() ?? "";
+
+                if (string.IsNullOrEmpty(moduleName))
+                {
+                    MessageHelper.MessageOK(this, $"第 {i + 1} 行：PLC模块不能为空！", TType.Warn);
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(address))
+                {
+                    MessageHelper.MessageOK(this, $"第 {i + 1} 行：点位地址不能为空！", TType.Warn);
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(targetVar))
+                {
+                    MessageHelper.MessageOK(this, $"第 {i + 1} 行：目标变量不能为空！", TType.Warn);
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         #endregion
 
-        #region DataGridView 事件处理
+        #region 事件处理
 
-        /// <summary>
-        /// 单元格点击事件 - 处理目标变量列
-        /// </summary>
         private void DataGridViewPLCList_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
@@ -346,12 +432,11 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 _tempVarTextBox.Text = currentValue;
 
-                // 临时移动_tempVarTextBox到正确位置以便面板正确定位
+                // 计算textbox位置
                 var cellRect = DataGridViewPLCList.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
                 var dgvLocation = DataGridViewPLCList.PointToScreen(new Point(cellRect.Left, cellRect.Bottom));
                 var formLocation = this.PointToClient(dgvLocation);
 
-                // 临时移动textbox到单元格位置
                 _tempVarTextBox.Location = formLocation;
                 _tempVarTextBox.Width = cellRect.Width;
 
@@ -359,24 +444,21 @@ namespace MainUI.LogicalConfiguration.Forms
                 ExpressionInputPanel.Show(_tempVarTextBox, new InputPanelOptions
                 {
                     Mode = InputMode.Expression,
-                    EnabledModules = InputModules.Variable,  // 所有模块
-                    Title = "配置单元格内容",
+                    EnabledModules = InputModules.Variable,
+                    Title = "选择目标变量",
                     ShowValidation = true,
                     ShowPreview = true,
                     CloseOnSubmit = true,
-                    InitialExpression = currentValue  // 传递当前值
+                    InitialExpression = currentValue
                 });
 
-                // 显示后恢复隐藏位置
+                // 恢复隐藏位置
                 _tempVarTextBox.Location = new Point(-100, -100);
                 _tempVarTextBox.Width = 1;
             }
         }
 
-        /// <summary>
-        /// 单元格值变化事件
-        /// </summary>
-        private void DataGridViewPLCList_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        private async void DataGridViewPLCList_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
             if (_isLoading || e.RowIndex < 0) return;
 
@@ -386,35 +468,60 @@ namespace MainUI.LogicalConfiguration.Forms
                 string moduleName = DataGridViewPLCList.Rows[e.RowIndex].Cells["ColPlcModule"].Value?.ToString();
                 if (!string.IsNullOrEmpty(moduleName))
                 {
-                    // 清空当前行的地址选择
-                    DataGridViewPLCList.Rows[e.RowIndex].Cells["ColPlcAddress"].Value = null;
-                    LoadPLCAddresses(moduleName, e.RowIndex);
+                    await LoadPLCAddressesForRowAsync(e.RowIndex, moduleName);
                 }
             }
-
-            UpdatePreview();
         }
 
-        #endregion
-
-        #region 按钮事件
-
-        private void BtnAdd_Click(object sender, EventArgs e)
+        private async Task LoadPLCAddressesForRowAsync(int rowIndex, string moduleName)
         {
             try
             {
-                int rowIndex = DataGridViewPLCList.Rows.Add("", "", "", "");
-                DataGridViewPLCList.ClearSelection();
-                DataGridViewPLCList.Rows[rowIndex].Selected = true;
-                UpdateRowIndices();
-                UpdatePreview();
-                _logger?.LogDebug("添加新行，索引: {Index}", rowIndex);
+                var addresses = await _plcManager.GetModuleTagsAsync();
+                if (addresses == null || addresses.Count == 0)
+                {
+                    Logger?.LogWarning("模块 {ModuleName} 没有可用地址", moduleName);
+                    return;
+                }
+
+                if (DataGridViewPLCList.Rows[rowIndex].Cells["ColPlcAddress"] is
+                    DataGridViewComboBoxCell addressCell)
+                {
+                    // 保存当前值
+                    var currentValue = addressCell.Value;
+
+                    // 清空并填充 Items
+                    addressCell.Items.Clear();
+                    if (addresses.TryGetValue(moduleName, out List<string> addresse))
+                    {
+                        foreach (var item in addresse)
+                        {
+                            addressCell.Items.Add(item);
+                        }
+                    }
+
+                    // 恢复或清空值
+                    if (currentValue != null && addressCell.Items.Contains(currentValue))
+                    {
+                        addressCell.Value = currentValue;
+                    }
+                    else
+                    {
+                        addressCell.Value = null;
+                    }
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "添加行失败");
-                MessageHelper.MessageOK($"添加行失败: {ex.Message}", TType.Error);
+                _logger?.LogError(ex, "加载地址列表失败");
             }
+        }
+
+        private void BtnAdd_Click(object sender, EventArgs e)
+        {
+            int rowIndex = DataGridViewPLCList.Rows.Add();
+            UpdateRowIndices();
+            _logger?.LogDebug("添加新的PLC读取项，行索引: {RowIndex}", rowIndex);
         }
 
         private void BtnDelete_Click(object sender, EventArgs e)
@@ -423,20 +530,17 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 if (DataGridViewPLCList.SelectedRows.Count == 0)
                 {
-                    MessageHelper.MessageOK("请先选择要删除的行！", TType.Warn);
+                    MessageHelper.MessageOK(this, "请选择要删除的行！", TType.Warn);
                     return;
                 }
 
-                int rowIndex = DataGridViewPLCList.SelectedRows[0].Index;
-                DataGridViewPLCList.Rows.RemoveAt(rowIndex);
+                DataGridViewPLCList.Rows.RemoveAt(DataGridViewPLCList.SelectedRows[0].Index);
                 UpdateRowIndices();
                 UpdatePreview();
-                _logger?.LogDebug("删除行，索引: {Index}", rowIndex);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "删除行失败");
-                MessageHelper.MessageOK($"删除行失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -444,14 +548,10 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                if (DataGridViewPLCList.SelectedRows.Count == 0)
-                {
-                    MessageHelper.MessageOK("请先选择要移动的行！", TType.Warn);
-                    return;
-                }
+                if (DataGridViewPLCList.SelectedRows.Count == 0) return;
 
                 int rowIndex = DataGridViewPLCList.SelectedRows[0].Index;
-                if (rowIndex == 0) return;
+                if (rowIndex <= 0) return;
 
                 SwapRows(rowIndex, rowIndex - 1);
                 DataGridViewPLCList.ClearSelection();
@@ -469,11 +569,7 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                if (DataGridViewPLCList.SelectedRows.Count == 0)
-                {
-                    MessageHelper.MessageOK("请先选择要移动的行！", TType.Warn);
-                    return;
-                }
+                if (DataGridViewPLCList.SelectedRows.Count == 0) return;
 
                 int rowIndex = DataGridViewPLCList.SelectedRows[0].Index;
                 if (rowIndex >= DataGridViewPLCList.Rows.Count - 1) return;
@@ -518,50 +614,8 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 验证和辅助方法
+        #region 辅助方法
 
-        protected override bool ValidateInput()
-        {
-            if (DataGridViewPLCList.Rows.Count == 0)
-            {
-                MessageHelper.MessageOK("请至少添加一个PLC读取项！", TType.Warn);
-                return false;
-            }
-
-            for (int i = 0; i < DataGridViewPLCList.Rows.Count; i++)
-            {
-                var row = DataGridViewPLCList.Rows[i];
-                if (row.IsNewRow) continue;
-
-                string moduleName = row.Cells["ColPlcModule"].Value?.ToString() ?? "";
-                string address = row.Cells["ColPlcAddress"].Value?.ToString() ?? "";
-                string targetVar = row.Cells["ColTargetVar"].Value?.ToString() ?? "";
-
-                if (string.IsNullOrEmpty(moduleName))
-                {
-                    MessageHelper.MessageOK(this, $"第 {i + 1} 行：PLC模块不能为空！", TType.Warn);
-                    return false;
-                }
-
-                if (string.IsNullOrEmpty(address))
-                {
-                    MessageHelper.MessageOK(this, $"第 {i + 1} 行：点位地址不能为空！", TType.Warn);
-                    return false;
-                }
-
-                if (string.IsNullOrEmpty(targetVar))
-                {
-                    MessageHelper.MessageOK(this, $"第 {i + 1} 行：目标变量不能为空！", TType.Warn);
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// 更新行号
-        /// </summary>
         private void UpdateRowIndices()
         {
             for (int i = 0; i < DataGridViewPLCList.Rows.Count; i++)
@@ -573,9 +627,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 交换两行
-        /// </summary>
         private void SwapRows(int index1, int index2)
         {
             if (index1 < 0 || index2 < 0 || index1 >= DataGridViewPLCList.Rows.Count || index2 >= DataGridViewPLCList.Rows.Count)
@@ -584,6 +635,7 @@ namespace MainUI.LogicalConfiguration.Forms
             var row1 = DataGridViewPLCList.Rows[index1];
             var row2 = DataGridViewPLCList.Rows[index2];
 
+            // 交换除了序号列之外的所有列
             for (int i = 1; i < DataGridViewPLCList.Columns.Count; i++)
             {
                 var temp = row1.Cells[i].Value;
@@ -592,9 +644,6 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 更新预览
-        /// </summary>
         private void UpdatePreview()
         {
             try
@@ -613,6 +662,8 @@ namespace MainUI.LogicalConfiguration.Forms
 
                     preview.AppendLine($"[{i + 1}] {moduleName}.{address} → {targetVar}");
                 }
+
+                _logger?.LogDebug("预览更新完成");
             }
             catch (Exception ex)
             {

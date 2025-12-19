@@ -9,17 +9,11 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     /// 步骤详情提供器 - 负责生成步骤配置的预览文本
     /// 用于在步骤表格中显示每个步骤的配置摘要
     /// </summary>
-    public class StepDetailsProvider
+    /// <remarks>
+    /// 构造函数
+    /// </remarks>
+    public class StepDetailsProvider(ILogger logger = null)
     {
-        private readonly ILogger _logger;
-
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        public StepDetailsProvider(ILogger logger = null)
-        {
-            _logger = logger;
-        }
 
         /// <summary>
         /// 获取步骤详情预览文本
@@ -53,7 +47,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "生成步骤详情预览失败: {StepName}", step.StepName);
+                logger?.LogWarning(ex, "生成步骤详情预览失败: {StepName}", step.StepName);
                 return "配置数据异常";
             }
         }
@@ -407,7 +401,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 stepParameter is short ||
                 stepParameter is byte)
             {
-                _logger?.LogDebug("参数为数值类型({Value})，跳过解析", stepParameter);
+                logger?.LogDebug("参数为数值类型({Value})，跳过解析", stepParameter);
                 return false; // 返回false，显示"未配置"
             }
 
@@ -430,7 +424,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             }
             catch (Exception ex)
             {
-                _logger?.LogDebug(ex, "参数解析失败: {ParameterType}", typeof(T).Name);
+                logger?.LogDebug(ex, "参数解析失败: {ParameterType}", typeof(T).Name);
                 return false;
             }
         }

@@ -43,6 +43,21 @@ namespace MainUI.CurrencyHelper
         }
 
         /// <summary>
+        /// 遮罩层显示对话框并返回结果
+        /// </summary>
+        /// <param name="parentForm">父窗体（背景遮罩的目标）</param>
+        /// <param name="dialogForm">要显示的对话框</param>
+        /// <returns>对话框的 DialogResult（OK、Cancel 等）</returns>
+        public static DialogResult ShowDialogWithOverlayEx(Form parentForm, Form dialogForm)
+        {
+            LayerForm layerForm = new(parentForm, dialogForm);
+            layerForm.ShowDialog();
+
+            // 返回实际对话框的 DialogResult
+            return dialogForm.DialogResult;
+        }
+
+        /// <summary>
         /// 量程转换
         /// </summary>
         /// <param name="input"></param>
