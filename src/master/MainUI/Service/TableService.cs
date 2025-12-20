@@ -15,11 +15,11 @@ namespace MainUI.Service
         {
             table.Columns =
             [
-               new ColumnCheck("Check"){ Checked = true },
+               new ColumnCheck("Check"){ Checked = true }/*.SetAutoCheck(false)*/,
                new Column("ItemName", "项点名称"){ Align = ColumnAlign.Left, Width = "210" },
                new Column("ItemKey", "Key"){ Visible = false ,Align = ColumnAlign.Left },
             ];
-            table.SetRowStyle += TableItemPoint_SetRowStyle;
+            table.SetRowStyle += table_SetRowStyle;
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace MainUI.Service
         /// <param name="sender"></param>
         /// <param name="e"></param>
         /// <returns></returns>
-        private Table.CellStyleInfo TableItemPoint_SetRowStyle(object sender, TableSetRowStyleEventArgs e)
+        private Table.CellStyleInfo table_SetRowStyle(object sender, TableSetRowStyleEventArgs e)
         {
             return SetRowStyle(e.Record);
         }
@@ -91,5 +91,117 @@ namespace MainUI.Service
                 }
             }
         }
+
+        #region 表格Check状态获取
+
+        /// <summary>
+        /// 设置Check列的AutoCheck属性
+        /// </summary>
+        /// <param name="enabled">是否启用自动勾选</param>
+        public void SetCheckColumnAutoCheck(bool enabled)
+        {
+            try
+            {
+                if (table?.Columns == null)
+                {
+                    NlogHelper.Default.Warn("table 或其列集合为空，无法设置 AutoCheck");
+                    return;
+                }
+
+                // 查找 Check 列
+                var checkColumn = table.Columns
+                    .OfType<ColumnCheck>()
+                    .FirstOrDefault();
+
+                if (checkColumn != null)
+                {
+                    checkColumn.SetAutoCheck(enabled);
+                    
+                    // 强制刷新表格显示
+                    table.Invalidate();
+                }
+                else
+                {
+                    NlogHelper.Default.Warn("未找到 ColumnCheck 类型的列");
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"设置 ColumnCheck AutoCheck 失败: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// 刷新表格显示
+        /// </summary>
+        public void RefreshTable()
+        {
+            try
+            {
+                if (table.InvokeRequired)
+                {
+                    table.Invoke(new Action(RefreshTable));
+                    return;
+                }
+
+                table.Invalidate();
+                table.Update();
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("刷新表格失败", ex);
+            }
+        }
+
+        #endregion
+
+        #region 刷新表格颜色使用
+        /// <summary>
+        /// 刷新 table 显示（重新绑定数据源）
+        /// </summary>
+        public void Refreshtable()
+        {
+            try
+            {
+                if (table.InvokeRequired)
+                {
+                    table.Invoke(new Action(Refreshtable));
+                    return;
+                }
+
+                // 重新绑定数据源以刷新显示
+                table.DataSource = null;
+                table.DataSource = itemPoints;
+
+                NlogHelper.Default.Debug("table 已刷新");
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("刷新 table 失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 重置所有项目的颜色状态为默认
+        /// </summary>
+        public void ResetAllItemPointColors()
+        {
+            try
+            {
+                foreach (var item in itemPoints)
+                {
+                    item.ColorState = 0; // 0 = 默认颜色
+                }
+
+                Refreshtable();
+
+                NlogHelper.Default.Info("已重置所有项目颜色为默认状态");
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("重置项目颜色失败", ex);
+            }
+        }
+        #endregion
     }
 }

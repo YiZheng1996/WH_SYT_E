@@ -143,5 +143,10 @@
         /// 项点配置数据变更
         /// </summary>
         TestStep = 7,
+
+        /// <summary>
+        /// 报表模板数据变更
+        /// </summary>
+        ReportTemplate = 8,
     }
 }

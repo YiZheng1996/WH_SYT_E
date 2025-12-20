@@ -1,10 +1,7 @@
-﻿using MainUI.LogicalConfiguration;
-using MainUI.LogicalConfiguration.LogicalManager;
-using MainUI.LogicalConfiguration.Services;
+﻿using AntdUI;
 using MainUI.Service;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
 
 namespace MainUI;
 public partial class frmMainMenu : Form
@@ -212,12 +209,132 @@ public partial class frmMainMenu : Form
 
     #region 功能按钮事件处理
 
-    private void BtnMainData_Click(object sender, EventArgs e)
+    /// <summary>
+    /// 参数设置按钮点击事件
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private async void BtnMainData_Click(object sender, EventArgs e)
     {
-        using var main = new frmSettingMain();
-        ConfigureMainDataNodes(main);
-        VarHelper.ShowDialogWithOverlay(this, main);
-        _hmi.ParaRefresh();
+        // 记录需要刷新的内容类型
+        bool needRefreshWorkflow = false;     // 是否需要刷新工作流
+        bool needRefreshReport = false;       // 是否需要刷新报表
+        bool needRefreshParams = false;       // 是否需要刷新参数
+
+        // 创建数据变更监听器
+        DataChangedEventManager.DataChangedWithType += (changeType) =>
+        {
+            switch (changeType)
+            {
+                case DataChangeType.TestStep:       // 工作流配置修改
+                    needRefreshWorkflow = true;
+                    NlogHelper.Default.Debug("检测到工作流配置变更");
+                    break;
+
+                case DataChangeType.TestProcess:    // 项点管理修改
+                    needRefreshParams = true;
+                    needRefreshWorkflow = true;
+                    NlogHelper.Default.Debug("检测到项点管理变更");
+                    break;
+
+                case DataChangeType.Model:          // 型号管理修改
+                case DataChangeType.ModelType:      // 类型管理修改
+                    needRefreshParams = true;
+                    needRefreshWorkflow = true;
+                    NlogHelper.Default.Debug($"检测到型号/类型变更: {changeType}");
+                    break;
+
+                case DataChangeType.ReportTemplate: // 报表模板修改
+                    needRefreshReport = true;
+                    NlogHelper.Default.Debug("检测到报表模板变更");
+                    break;
+
+                case DataChangeType.All:            // 全部刷新
+                    needRefreshParams = true;
+                    needRefreshWorkflow = true;
+                    needRefreshReport = true;
+                    NlogHelper.Default.Debug("检测到全部数据变更");
+                    break;
+            }
+        };
+
+        try
+        {
+            using var main = new frmSettingMain();
+            ConfigureMainDataNodes(main);
+            VarHelper.ShowDialogWithOverlay(this, main);
+
+            // 根据不同的变更类型执行对应的刷新
+            if (needRefreshParams || needRefreshWorkflow || needRefreshReport)
+            {
+                if (needRefreshParams)
+                {
+                    _hmi.RefreshParaConfig();
+                    _hmi.RefreshTestItems();
+                }
+
+                // 刷新工作流
+                if (needRefreshWorkflow)
+                {
+                    await _hmi.RefreshWorkflowConfigAsync();
+                }
+
+                // 刷新报表
+                if (needRefreshReport)
+                {
+                    _hmi.RefreshReport();
+                }
+
+                NlogHelper.Default.Info($"数据刷新完成 - 参数:{needRefreshParams} 工作流:{needRefreshWorkflow} 报表:{needRefreshReport}");
+            }
+            else
+            {
+                NlogHelper.Default.Debug("未检测到数据变更，跳过刷新操作");
+            }
+        }
+        catch (Exception ex)
+        {
+            NlogHelper.Default.Error($"主数据配置错误: {ex.Message}", ex);
+            MessageHelper.MessageOK(this, $"操作失败: {ex.Message}", TType.Error);
+        }
+        finally
+        {
+            DataChangedEventManager.DataChangedWithType -= (changeType) =>
+        {
+            switch (changeType)
+            {
+                case DataChangeType.TestStep:       // 工作流配置修改
+                    needRefreshWorkflow = true;
+                    NlogHelper.Default.Debug("检测到工作流配置变更");
+                    break;
+
+                case DataChangeType.TestProcess:    // 项点管理修改
+                    needRefreshParams = true;
+                    needRefreshWorkflow = true;
+                    NlogHelper.Default.Debug("检测到项点管理变更");
+                    break;
+
+                case DataChangeType.Model:          // 型号管理修改
+                case DataChangeType.ModelType:      // 类型管理修改
+                    needRefreshParams = true;
+                    needRefreshWorkflow = true;
+                    NlogHelper.Default.Debug($"检测到型号/类型变更: {changeType}");
+                    break;
+
+                case DataChangeType.ReportTemplate: // 报表模板修改（新增）
+                    needRefreshReport = true;
+                    NlogHelper.Default.Debug("检测到报表模板变更");
+                    break;
+
+                case DataChangeType.All:            // 全部刷新
+                    needRefreshParams = true;
+                    needRefreshWorkflow = true;
+                    needRefreshReport = true;
+                    NlogHelper.Default.Debug("检测到全部数据变更");
+                    break;
+            }
+        };
+        }
     }
 
     /// <summary>

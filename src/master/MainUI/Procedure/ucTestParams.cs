@@ -48,6 +48,10 @@ namespace MainUI.Procedure
                     MessageHelper.MessageOK($"型号未选择！");
                     return;
                 }
+
+                // 保存前的报表模板路径
+                string oldRptFile = paraconfig.RptFile;
+
                 paraconfig.SetSectionName(ModelName);
                 paraconfig.RptFile = txtTemplateRpt.Text;
                 paraconfig.Save();
@@ -56,6 +60,14 @@ namespace MainUI.Procedure
                 SaveRptconfig.Save();
 
                 MessageHelper.MessageOK("保存成功。");
+
+                // 检查报表模板是否变更
+                if (oldRptFile != txtTemplateRpt.Text)
+                {
+                    // 报表模板已变更，触发报表刷新事件
+                    DataChangedEventManager.NotifyDataChanged(DataChangeType.ReportTemplate);
+                    NlogHelper.Default.Info($"报表模板已变更: {oldRptFile} → {txtTemplateRpt.Text}");
+                }
             }
             catch (Exception ex)
             {

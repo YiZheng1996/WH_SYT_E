@@ -47,6 +47,7 @@ namespace MainUI
                 if (result)
                 {
                     MessageHelper.MessageOK(this, "保存成功！");
+                    DataChangedEventManager.NotifyDataChanged(DataChangeType.ModelType);
                     DialogResult = DialogResult.OK;
                     Close();
                 }

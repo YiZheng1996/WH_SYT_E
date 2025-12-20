@@ -26,7 +26,7 @@ namespace MainUI
         private readonly ReportService _reportService;
         private readonly TableService _tableService;
         private readonly CountdownService _countdownService;
-
+        private bool _isTestActuallyStarted = false; //  试验开始标志位
         // 添加依赖注入的字段
         private readonly WorkflowExecutionService _workflowService;
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
@@ -208,7 +208,7 @@ namespace MainUI
                     itemPoint.ColorState = colorState;
 
                     // 刷新TableItemPoint显示
-                    RefreshTableItemPoint();
+                    _tableService.Refreshtable();
                 }
                 else
                 {
@@ -218,53 +218,6 @@ namespace MainUI
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "更新项目颜色失败: {ItemName}", itemName);
-            }
-        }
-
-        /// <summary>
-        /// 刷新TableItemPoint显示
-        /// </summary>
-        private void RefreshTableItemPoint()
-        {
-            try
-            {
-                if (TableItemPoint.InvokeRequired)
-                {
-                    TableItemPoint.Invoke(new Action(RefreshTableItemPoint));
-                    return;
-                }
-
-                // 重新绑定数据源以刷新显示
-                TableItemPoint.DataSource = null;
-                TableItemPoint.DataSource = _itemPoints;
-
-                _logger?.LogDebug("TableItemPoint已刷新");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "刷新TableItemPoint失败");
-            }
-        }
-
-        /// <summary>
-        /// 重置所有项目的颜色状态为默认
-        /// </summary>
-        private void ResetAllItemPointColors()
-        {
-            try
-            {
-                foreach (var item in _itemPoints)
-                {
-                    item.ColorState = 0; // 0 = 默认颜色
-                }
-
-                RefreshTableItemPoint();
-
-                _logger?.LogInformation("已重置所有项目颜色为默认状态");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "重置项目颜色失败");
             }
         }
         #endregion
@@ -503,16 +456,8 @@ namespace MainUI
             btnStartTest.Enabled = !isTesting; // 开始按钮在测试时禁用
             _allowCheckChange = !isTesting; // 测试时禁止更改勾选状态
 
-            // 找到Check列并设置AutoCheck属性
-            if (TableItemPoint.Columns != null)
-            {
-                // 查找 Check 列
-                var checkColumn = TableItemPoint.Columns
-                    .OfType<ColumnCheck>()
-                    .FirstOrDefault();
-
-                checkColumn.SetAutoCheck(!isTesting);
-            }
+            //  TableService 处理表格列的状态
+            _tableService.SetCheckColumnAutoCheck(!isTesting);
 
             // 在测试进行时禁用的控件组
             var controlsToDisable = new Control[]
@@ -659,23 +604,162 @@ namespace MainUI
         #endregion
 
         #region 参数
+        //private void InitParaConfig()
+        //{
+        //    try
+        //    {
+        //        if (VarHelper.TestViewModel == null) return;
+
+        //        // 初始化和加载参数配置
+        //        paraconfig = new ParaConfig();
+        //        paraconfig.SetSectionName(VarHelper.ModelTypeName);
+        //        paraconfig.Load();
+        //        BaseTest.ParaConfig = paraconfig;
+
+        //        // 初始化测试项
+        //        _tableService.LoadTestItems();
+
+        //        // 初始化报表
+        //        InitializeReport(paraconfig.RptFile);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageHelper.MessageOK($"加载参数错误：{ex.Message}");
+        //        NlogHelper.Default.Error($"加载参数错误", ex);
+        //    }
+        //}
+
+        ////刷新型号
+        //public async void ParaRefresh()
+        //{
+        //    try
+        //    {
+        //        if (string.IsNullOrEmpty(txtModel.Text)) return;
+        //        // 加载参数
+        //        InitParaConfig();
+        //        // 加载工作流配置
+        //        if (_workflowService != null)
+        //        {
+        //            await _workflowService.LoadConfigurationsAsync(
+        //                VarHelper.TestViewModel.ModelTypeName,
+        //                VarHelper.TestViewModel.ModelName);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageHelper.MessageYes("刷新型号错误：" + ex.Message);
+        //    }
+        //}
+        #endregion
+
+        #region 刷新方法拆分
+
+        /// <summary>
+        /// 刷新参数配置
+        /// </summary>
+        public void RefreshParaConfig()
+        {
+            try
+            {
+                if (VarHelper.TestViewModel == null) return;
+
+                paraconfig = new ParaConfig();
+                paraconfig.SetSectionName(VarHelper.ModelTypeName);
+                paraconfig.Load();
+                BaseTest.ParaConfig = paraconfig;
+
+                NlogHelper.Default.Debug("参数配置已刷新");
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"刷新参数配置失败: {ex.Message}", ex);
+                MessageHelper.MessageOK($"刷新参数配置失败：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 刷新测试项列表
+        /// </summary>
+        public void RefreshTestItems()
+        {
+            try
+            {
+                _tableService.LoadTestItems();
+                NlogHelper.Default.Debug("测试项列表已刷新");
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"刷新测试项失败: {ex.Message}", ex);
+                MessageHelper.MessageOK($"刷新测试项失败：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 刷新工作流配置
+        /// </summary>
+        public async Task RefreshWorkflowConfigAsync()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(txtModel.Text)) return;
+
+                if (_workflowService != null)
+                {
+                    await _workflowService.LoadConfigurationsAsync(
+                        VarHelper.TestViewModel.ModelTypeName,
+                        VarHelper.TestViewModel.ModelName);
+
+                    NlogHelper.Default.Debug("工作流配置已刷新");
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"刷新工作流配置失败: {ex.Message}", ex);
+                MessageHelper.MessageOK($"刷新工作流配置失败：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 刷新报表
+        /// </summary>
+        public void RefreshReport()
+        {
+            try
+            {
+                if (VarHelper.TestViewModel == null) return;
+
+                // 重新加载参数以获取最新的报表文件名
+                paraconfig = new ParaConfig();
+                paraconfig.SetSectionName(VarHelper.ModelTypeName);
+                paraconfig.Load();
+
+                InitializeReport(paraconfig.RptFile);
+                NlogHelper.Default.Debug("报表已刷新");
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"刷新报表失败: {ex.Message}", ex);
+                MessageHelper.MessageOK($"刷新报表失败：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 完整刷新（原 InitParaConfig 方法）
+        /// </summary>
         private void InitParaConfig()
         {
             try
             {
                 if (VarHelper.TestViewModel == null) return;
 
-                // 初始化和加载参数配置
-                paraconfig = new ParaConfig();
-                paraconfig.SetSectionName(VarHelper.ModelTypeName);
-                paraconfig.Load();
-                BaseTest.ParaConfig = paraconfig;
+                // 刷新参数配置
+                RefreshParaConfig();
 
-                // 初始化测试项
-                _tableService.LoadTestItems();
+                // 刷新测试项
+                RefreshTestItems();
 
-                // 初始化报表
-                InitializeReport(paraconfig.RptFile);
+                // ❌ 移除报表刷新 - 只在特定场景下刷新
+                // InitializeReport(paraconfig.RptFile);
             }
             catch (Exception ex)
             {
@@ -684,33 +768,55 @@ namespace MainUI
             }
         }
 
-        //刷新型号
-        public async void ParaRefresh()
+        /// <summary>
+        /// 刷新型号相关配置（原 ParaRefresh 方法）
+        /// </summary>
+        /// <param name="includeReport">是否同时刷新报表</param>
+        public async Task ParaRefreshAsync(bool includeReport = false)
         {
             try
             {
                 if (string.IsNullOrEmpty(txtModel.Text)) return;
-                // 加载参数
-                InitParaConfig();
-                // 加载工作流配置
-                if (_workflowService != null)
+
+                // 刷新参数配置
+                RefreshParaConfig();
+
+                // 刷新测试项
+                RefreshTestItems();
+
+                // 刷新工作流配置
+                await RefreshWorkflowConfigAsync();
+
+                // 可选：刷新报表
+                if (includeReport)
                 {
-                    await _workflowService.LoadConfigurationsAsync(
-                        VarHelper.TestViewModel.ModelTypeName,
-                        VarHelper.TestViewModel.ModelName);
+                    RefreshReport();
                 }
+
+                NlogHelper.Default.Info($"型号刷新完成（报表刷新: {includeReport}）");
             }
             catch (Exception ex)
             {
-                MessageHelper.MessageYes("刷新型号错误：" + ex.Message);
+                NlogHelper.Default.Error($"刷新型号错误: {ex.Message}", ex);
+                MessageHelper.MessageYes($"刷新型号错误：{ex.Message}");
             }
         }
+
+        /// <summary>
+        /// 向后兼容的无参方法
+        /// </summary>
+        public async void ParaRefresh()
+        {
+            await ParaRefreshAsync(includeReport: false);
+        }
+
         #endregion
 
         #region 自动试验
         private CancellationTokenSource _cancellationTokenSource = new();
         private async void btnStartTest_Click(object sender, EventArgs e)
         {
+            _isTestActuallyStarted = false; // 初始化为false
             try
             {
                 //  检查前置条件
@@ -721,12 +827,15 @@ namespace MainUI
                     return;
                 }
 
+                // 前置条件满足，标记试验开始
+                _isTestActuallyStarted = true;
+
                 //  设置UI状态
                 Disable(true);
                 TestStateChanged?.Invoke(true, true);
 
                 // 重置所有项目的颜色状态
-                ResetAllItemPointColors();
+                _tableService.ResetAllItemPointColors();
 
                 //  初始化取消令牌
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -740,9 +849,8 @@ namespace MainUI
                 // 6. 批量执行工作流
                 if (_workflowService != null && checkedItems.Count > 0)
                 {
-                    //TODO:试验开始前排气暂时注释
                     // 试验前排空所有气压
-                    //bool exhaustSuccess = await ExhaustkPaAsync(_cancellationTokenSource.Token);
+                    bool exhaustSuccess = await ExhaustkPaAsync(_cancellationTokenSource.Token);
 
                     var results = await _workflowService.ExecuteMultipleWorkflowsAsync(
                         checkedItems,
@@ -761,8 +869,11 @@ namespace MainUI
             }
             finally
             {
-                // 结束测试
-                IsTestEnd();
+                // 只有试验真正开始了才执行结束逻辑
+                if (_isTestActuallyStarted)
+                {
+                    IsTestEnd();
+                }
             }
         }
 
@@ -932,7 +1043,7 @@ namespace MainUI
         }
 
         // 结束试验操作
-        private void IsTestEnd()
+        private async void IsTestEnd()
         {
             try
             {
@@ -941,10 +1052,12 @@ namespace MainUI
                 _cancellationTokenSource.Cancel();
                 _workflowService?.StopExecution();
                 _countdownService.StopCountdown();
-                //TODO:结束排气暂时注释
-                //await ExhaustkPaAsync(_cancellationTokenSource.Token);
+
+                await ExhaustkPaAsync(CancellationToken.None);
                 Disable(false);
                 TestStateChanged?.Invoke(false, false);
+
+                _isTestActuallyStarted = false; // 重置试验开始标志位
             }
             catch (OperationCanceledException ex)
             {
@@ -1133,7 +1246,7 @@ namespace MainUI
                 tabs1.SelectedIndex, controls);
         }
 
-        private void btnProductSelection_Click(object sender, EventArgs e)
+        private async void btnProductSelection_Click(object sender, EventArgs e)
         {
             using FrmSpec frmSpec = new();
             VarHelper.ShowDialogWithOverlay(frm, frmSpec);
@@ -1142,7 +1255,9 @@ namespace MainUI
                 txtModel.Text = VarHelper.TestViewModel.ModelName;
                 txtType.Text = VarHelper.TestViewModel.ModelTypeName;
                 txtDrawingNo.Text = VarHelper.TestViewModel.DrawingNo;
-                ParaRefresh();
+
+                //  选择新型号后，完整刷新（包括报表）
+                await ParaRefreshAsync(includeReport: true);
             }
         }
 

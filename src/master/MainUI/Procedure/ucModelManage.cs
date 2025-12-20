@@ -57,7 +57,6 @@ namespace MainUI.Procedure
                 DataChangedEventManager.NotifyDataChanged(DataChangeType.TestProcess);
                 DataChangedEventManager.NotifyDataChanged(DataChangeType.TestStep);
             }
-
         }
 
         private void btnAdd_Click(object sender, EventArgs e)

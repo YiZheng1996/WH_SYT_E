@@ -609,6 +609,7 @@ namespace MainUI.LogicalConfiguration
                 // 保存后刷新表格显示,更新步骤详情列
                 _processGridControl.RefreshGrid();
 
+                DataChangedEventManager.NotifyDataChanged(DataChangeType.TestStep);
                 _logger.LogInformation("工作流配置保存成功");
                 MessageHelper.MessageOK(this, "保存成功！", TType.Success);
             }
