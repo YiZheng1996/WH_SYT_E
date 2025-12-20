@@ -1,7 +1,8 @@
 ﻿namespace MainUI.LogicalConfiguration.Engine
 {
     /// <summary>
-    /// 函数注册表 - 管理所有支持的表达式函数
+    /// 函数注册表 - 优化版
+    /// 管理所有支持的表达式函数,消除重复的函数定义代码
     /// </summary>
     internal class FunctionRegistry
     {
@@ -13,12 +14,31 @@
             InitializeFunctions();
         }
 
+        #region 公共方法
+
         /// <summary>
         /// 获取函数实现
         /// </summary>
         public Func<List<object>, object> GetFunction(string name)
         {
-            return _functions.TryGetValue(name, out var func) ? func : null;
+            // 尝试规范化函数名(移除常见前缀)
+            var normalizedNames = new[]
+            {
+                name,
+                name.Replace("MATH.", ""),
+                name.Replace("STRING.", ""),
+                name.Replace("DATETIME.", ""),
+                name.Replace("ELAPSED.", ""),
+                name.Replace("DATEDIFF.", "")
+            };
+
+            foreach (var normalizedName in normalizedNames)
+            {
+                if (_functions.TryGetValue(normalizedName, out var func))
+                    return func;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -26,7 +46,7 @@
         /// </summary>
         public bool IsSupported(string name)
         {
-            return _functions.ContainsKey(name);
+            return GetFunction(name) != null;
         }
 
         /// <summary>
@@ -37,239 +57,280 @@
             return _functions.Keys;
         }
 
+        #endregion
+
+        #region 函数初始化
+
         /// <summary>
         /// 初始化所有支持的函数
         /// </summary>
         private void InitializeFunctions()
         {
-            // === 数学函数 ===
             RegisterMathFunctions();
-
-            // === 字符串函数 ===
             RegisterStringFunctions();
-
-            // === 日期时间函数 ===
             RegisterDateTimeFunctions();
-
-            // === 条件逻辑函数 ===
             RegisterLogicFunctions();
         }
 
-        #region 数学函数
+        #endregion
+
+        #region 数学函数注册
 
         private void RegisterMathFunctions()
         {
-            // 基础数学函数
-            _functions["ABS"] = args => Math.Abs(Convert.ToDouble(args[0]));
-            _functions["SQRT"] = args => Math.Sqrt(Convert.ToDouble(args[0]));
-            _functions["POW"] = args => Math.Pow(Convert.ToDouble(args[0]), Convert.ToDouble(args[1]));
-            _functions["ROUND"] = args => Math.Round(Convert.ToDouble(args[0]), args.Count > 1 ? Convert.ToInt32(args[1]) : 0);
-            _functions["FLOOR"] = args => Math.Floor(Convert.ToDouble(args[0]));
-            _functions["CEILING"] = args => Math.Ceiling(Convert.ToDouble(args[0]));
+            // 基础数学函数 - 使用统一的转换工具
+            RegisterFunction("ABS", args => Math.Abs(ExpressionUtils.ConvertToDouble(args[0])));
+            RegisterFunction("SQRT", args => Math.Sqrt(ExpressionUtils.ConvertToDouble(args[0])));
+            RegisterFunction("POW", args => Math.Pow(
+                ExpressionUtils.ConvertToDouble(args[0]),
+                ExpressionUtils.ConvertToDouble(args[1])));
+
+            RegisterFunction("ROUND", args => Math.Round(
+                ExpressionUtils.ConvertToDouble(args[0]),
+                args.Count > 1 ? Convert.ToInt32(args[1]) : 0));
+
+            RegisterFunction("FLOOR", args => Math.Floor(ExpressionUtils.ConvertToDouble(args[0])));
+            RegisterFunction("CEILING", args => Math.Ceiling(ExpressionUtils.ConvertToDouble(args[0])));
 
             // 三角函数
-            _functions["SIN"] = args => Math.Sin(Convert.ToDouble(args[0]));
-            _functions["COS"] = args => Math.Cos(Convert.ToDouble(args[0]));
-            _functions["TAN"] = args => Math.Tan(Convert.ToDouble(args[0]));
+            RegisterFunction("SIN", args => Math.Sin(ExpressionUtils.ConvertToDouble(args[0])));
+            RegisterFunction("COS", args => Math.Cos(ExpressionUtils.ConvertToDouble(args[0])));
+            RegisterFunction("TAN", args => Math.Tan(ExpressionUtils.ConvertToDouble(args[0])));
 
             // 统计函数
-            _functions["MAX"] = args => args.Max(x => Convert.ToDouble(x));
-            _functions["MIN"] = args => args.Min(x => Convert.ToDouble(x));
-            _functions["AVG"] = args => args.Average(x => Convert.ToDouble(x));
-            _functions["SUM"] = args => args.Sum(x => Convert.ToDouble(x));
+            RegisterFunction("MAX", args => args.Max(ExpressionUtils.ConvertToDouble));
+            RegisterFunction("MIN", args => args.Min(ExpressionUtils.ConvertToDouble));
+            RegisterFunction("AVG", args => args.Average(ExpressionUtils.ConvertToDouble));
+            RegisterFunction("SUM", args => args.Sum(ExpressionUtils.ConvertToDouble));
+
+            // 使用别名注册(同时支持MATH.前缀)
+            RegisterAlias("MATH.ABS", "ABS");
+            RegisterAlias("MATH.SQRT", "SQRT");
+            RegisterAlias("MATH.POW", "POW");
+            RegisterAlias("MATH.ROUND", "ROUND");
+            RegisterAlias("MATH.FLOOR", "FLOOR");
+            RegisterAlias("MATH.CEILING", "CEILING");
+            RegisterAlias("MATH.SIN", "SIN");
+            RegisterAlias("MATH.COS", "COS");
+            RegisterAlias("MATH.TAN", "TAN");
+            RegisterAlias("MATH.MAX", "MAX");
+            RegisterAlias("MATH.MIN", "MIN");
         }
 
         #endregion
 
-        #region 字符串函数
+        #region 字符串函数注册
 
         private void RegisterStringFunctions()
         {
-            _functions["LEN"] = args => args[0]?.ToString()?.Length ?? 0;
-            _functions["UPPER"] = args => args[0]?.ToString()?.ToUpper() ?? string.Empty;
-            _functions["LOWER"] = args => args[0]?.ToString()?.ToLower() ?? string.Empty;
-            _functions["TRIM"] = args => args[0]?.ToString()?.Trim() ?? string.Empty;
-
-            _functions["SUBSTRING"] = args =>
+            RegisterFunction("LEN", args => args[0]?.ToString()?.Length ?? 0);
+            RegisterFunction("UPPER", args => args[0]?.ToString()?.ToUpper() ?? "");
+            RegisterFunction("LOWER", args => args[0]?.ToString()?.ToLower() ?? "");
+            RegisterFunction("TRIM", args => args[0]?.ToString()?.Trim() ?? "");
+            RegisterFunction("LEFT", args =>
             {
-                var str = args[0]?.ToString() ?? string.Empty;
+                var str = args[0]?.ToString() ?? "";
+                var length = Convert.ToInt32(args[1]);
+                return str.Length <= length ? str : str.Substring(0, length);
+            });
+            RegisterFunction("RIGHT", args =>
+            {
+                var str = args[0]?.ToString() ?? "";
+                var length = Convert.ToInt32(args[1]);
+                return str.Length <= length ? str : str.Substring(str.Length - length);
+            });
+            RegisterFunction("SUBSTRING", args =>
+            {
+                var str = args[0]?.ToString() ?? "";
                 var start = Convert.ToInt32(args[1]);
                 var length = args.Count > 2 ? Convert.ToInt32(args[2]) : str.Length - start;
-                return str.Substring(start, length);
-            };
-
-            _functions["CONCAT"] = args => string.Join("", args.Select(a => a?.ToString() ?? ""));
-
-            _functions["REPLACE"] = args =>
+                return str.Substring(start, Math.Min(length, str.Length - start));
+            });
+            RegisterFunction("REPLACE", args =>
             {
-                var str = args[0]?.ToString() ?? string.Empty;
-                var oldValue = args[1]?.ToString() ?? string.Empty;
-                var newValue = args[2]?.ToString() ?? string.Empty;
+                var str = args[0]?.ToString() ?? "";
+                var oldValue = args[1]?.ToString() ?? "";
+                var newValue = args[2]?.ToString() ?? "";
                 return str.Replace(oldValue, newValue);
-            };
-
-            _functions["CONTAINS"] = args =>
+            });
+            RegisterFunction("CONCAT", args => string.Concat(args.Select(a => a?.ToString() ?? "")));
+            RegisterFunction("JOIN", args =>
             {
-                var str = args[0]?.ToString() ?? string.Empty;
-                var value = args[1]?.ToString() ?? string.Empty;
-                return str.Contains(value);
-            };
+                var separator = args[0]?.ToString() ?? "";
+                var items = args.Skip(1).Select(a => a?.ToString() ?? "");
+                return string.Join(separator, items);
+            });
+
+            // 使用别名注册
+            RegisterAlias("STRING.LEN", "LEN");
+            RegisterAlias("STRING.UPPER", "UPPER");
+            RegisterAlias("STRING.LOWER", "LOWER");
+            RegisterAlias("STRING.TRIM", "TRIM");
+            RegisterAlias("STRING.LEFT", "LEFT");
+            RegisterAlias("STRING.RIGHT", "RIGHT");
+            RegisterAlias("STRING.SUBSTRING", "SUBSTRING");
+            RegisterAlias("STRING.REPLACE", "REPLACE");
+            RegisterAlias("STRING.CONCAT", "CONCAT");
+            RegisterAlias("STRING.JOIN", "JOIN");
         }
 
         #endregion
 
-        #region 日期时间函数
+        #region 日期时间函数注册
 
         private void RegisterDateTimeFunctions()
         {
-            // 当前时间函数
-            _functions["NOW"] = args => DateTime.Now;
-            _functions["TODAY"] = args => DateTime.Today;
-            _functions["UTCNOW"] = args => DateTime.UtcNow;
+            // NOW函数
+            RegisterFunction("NOW", args => DateTime.Now);
+            RegisterFunction("DATETIME.NOW", args => DateTime.Now);
 
-            // 时间组件提取
-            _functions["YEAR"] = args => ConvertToDateTime(args[0]).Year;
-            _functions["MONTH"] = args => ConvertToDateTime(args[0]).Month;
-            _functions["DAY"] = args => ConvertToDateTime(args[0]).Day;
-            _functions["HOUR"] = args => ConvertToDateTime(args[0]).Hour;
-            _functions["MINUTE"] = args => ConvertToDateTime(args[0]).Minute;
-            _functions["SECOND"] = args => ConvertToDateTime(args[0]).Second;
-            _functions["DAYOFWEEK"] = args => (int)ConvertToDateTime(args[0]).DayOfWeek;
-            _functions["DAYOFYEAR"] = args => ConvertToDateTime(args[0]).DayOfYear;
-
-            // 时间加减
-            _functions["ADDDAYS"] = args => ConvertToDateTime(args[0]).AddDays(Convert.ToDouble(args[1]));
-            _functions["ADDHOURS"] = args => ConvertToDateTime(args[0]).AddHours(Convert.ToDouble(args[1]));
-            _functions["ADDMINUTES"] = args => ConvertToDateTime(args[0]).AddMinutes(Convert.ToDouble(args[1]));
-            _functions["ADDSECONDS"] = args => ConvertToDateTime(args[0]).AddSeconds(Convert.ToDouble(args[1]));
-
-            // 时间差计算 - 使用工厂方法生成
-            RegisterDateDiffFunctions();
-
-            // 经过时间计算
-            RegisterElapsedTimeFunctions();
-
-            // 时间格式化
-            _functions["FORMATDATE"] = args =>
+            // FORMAT函数
+            RegisterFunction("FORMAT", args =>
             {
-                var dt = ConvertToDateTime(args[0]);
+                var dt = ExpressionUtils.ConvertToDateTime(args[0]);
                 var format = args.Count > 1 ? args[1]?.ToString() : "yyyy-MM-dd HH:mm:ss";
                 return dt.ToString(format);
-            };
+            });
+            RegisterAlias("DATETIME.FORMAT", "FORMAT");
+
+            // 日期部分提取
+            RegisterFunction("YEAR", args => ExpressionUtils.ConvertToDateTime(args[0]).Year);
+            RegisterFunction("MONTH", args => ExpressionUtils.ConvertToDateTime(args[0]).Month);
+            RegisterFunction("DAY", args => ExpressionUtils.ConvertToDateTime(args[0]).Day);
+            RegisterFunction("HOUR", args => ExpressionUtils.ConvertToDateTime(args[0]).Hour);
+            RegisterFunction("MINUTE", args => ExpressionUtils.ConvertToDateTime(args[0]).Minute);
+            RegisterFunction("SECOND", args => ExpressionUtils.ConvertToDateTime(args[0]).Second);
+
+            // 使用配置化方式注册时间差函数 - 消除重复代码
+            RegisterDateDiffFunctions();
+
+            // 使用配置化方式注册经过时间函数 - 消除重复代码
+            RegisterElapsedTimeFunctions();
         }
 
         /// <summary>
-        /// 注册时间差计算函数（避免重复代码）
+        /// 注册时间差计算函数 - 配置化注册,避免重复代码
         /// </summary>
         private void RegisterDateDiffFunctions()
         {
-            // 定义时间差计算的配置
-            var dateDiffConfigs = new[]
+            var configs = new[]
             {
-                new { Names = new[] { "DATEDIFF.SECONDS", "DateDiff.Seconds" }, Unit = "TotalSeconds" },
-                new { Names = new[] { "DATEDIFF.MILLISECONDS", "DateDiff.Milliseconds" }, Unit = "TotalMilliseconds" },
-                new { Names = new[] { "DATEDIFF.MINUTES", "DateDiff.Minutes" }, Unit = "TotalMinutes" },
-                new { Names = new[] { "DATEDIFF.HOURS", "DateDiff.Hours" }, Unit = "TotalHours" },
-                new { Names = new[] { "DATEDIFF.DAYS", "DateDiff.Days" }, Unit = "TotalDays" }
+                ("SECONDS", "TotalSeconds"),
+                ("MILLISECONDS", "TotalMilliseconds"),
+                ("MINUTES", "TotalMinutes"),
+                ("HOURS", "TotalHours"),
+                ("DAYS", "TotalDays")
             };
 
-            foreach (var config in dateDiffConfigs)
+            foreach (var (suffix, property) in configs)
             {
-                Func<List<object>, object> func = args =>
-                {
-                    try
-                    {
-                        var endTime = ConvertToDateTime(args[0]);
-                        var startTime = ConvertToDateTime(args[1]);
-                        var diff = endTime - startTime;
-
-                        // 使用反射获取对应的属性值
-                        return (double)typeof(TimeSpan).GetProperty(config.Unit).GetValue(diff);
-                    }
-                    catch
-                    {
-                        return 0;
-                    }
-                };
-
-                // 注册所有别名
-                foreach (var name in config.Names)
-                {
-                    _functions[name] = func;
-                }
+                var func = CreateDateDiffFunction(property);
+                RegisterFunction($"DATEDIFF.{suffix}", func);
+                RegisterFunction($"DateDiff.{suffix}", func);
             }
         }
 
         /// <summary>
-        /// 注册经过时间函数（避免重复代码）
+        /// 创建时间差计算函数
+        /// </summary>
+        private Func<List<object>, object> CreateDateDiffFunction(string propertyName)
+        {
+            return args =>
+            {
+                try
+                {
+                    var endTime = ExpressionUtils.ConvertToDateTime(args[0]);
+                    var startTime = ExpressionUtils.ConvertToDateTime(args[1]);
+                    var diff = endTime - startTime;
+
+                    // 使用反射获取对应的属性值
+                    var property = typeof(TimeSpan).GetProperty(propertyName);
+                    return (double)property.GetValue(diff);
+                }
+                catch
+                {
+                    return 0.0;
+                }
+            };
+        }
+
+        /// <summary>
+        /// 注册经过时间函数 - 配置化注册,避免重复代码
         /// </summary>
         private void RegisterElapsedTimeFunctions()
         {
-            var elapsedConfigs = new[]
+            var configs = new[]
             {
-                new { Name = "ELAPSED.SECONDS", Unit = "TotalSeconds" },
-                new { Name = "ELAPSED.MILLISECONDS", Unit = "TotalMilliseconds" },
-                new { Name = "ELAPSED.MINUTES", Unit = "TotalMinutes" }
+                ("SECONDS", "TotalSeconds"),
+                ("MILLISECONDS", "TotalMilliseconds"),
+                ("MINUTES", "TotalMinutes")
             };
 
-            foreach (var config in elapsedConfigs)
+            foreach (var (suffix, property) in configs)
             {
-                _functions[config.Name] = args =>
-                {
-                    try
-                    {
-                        var startTime = ConvertToDateTime(args[0]);
-                        var elapsed = DateTime.Now - startTime;
-                        return (double)typeof(TimeSpan).GetProperty(config.Unit).GetValue(elapsed);
-                    }
-                    catch
-                    {
-                        return 0;
-                    }
-                };
+                RegisterFunction($"ELAPSED.{suffix}", CreateElapsedTimeFunction(property));
             }
         }
 
         /// <summary>
-        /// 将对象转换为 DateTime
+        /// 创建经过时间函数
         /// </summary>
-        private DateTime ConvertToDateTime(object value)
+        private Func<List<object>, object> CreateElapsedTimeFunction(string propertyName)
         {
-            if (value is DateTime dt)
-                return dt;
-
-            if (value is string str && DateTime.TryParse(str, out DateTime result))
-                return result;
-
-            try
+            return args =>
             {
-                return Convert.ToDateTime(value);
-            }
-            catch
-            {
-                return DateTime.MinValue;
-            }
+                try
+                {
+                    var startTime = ExpressionUtils.ConvertToDateTime(args[0]);
+                    var elapsed = DateTime.Now - startTime;
+
+                    var property = typeof(TimeSpan).GetProperty(propertyName);
+                    return (double)property.GetValue(elapsed);
+                }
+                catch
+                {
+                    return 0.0;
+                }
+            };
         }
 
         #endregion
 
-        #region 条件逻辑函数
+        #region 逻辑函数注册
 
         private void RegisterLogicFunctions()
         {
-            _functions["IF"] = args =>
+            RegisterFunction("IF", args =>
             {
-                var condition = Convert.ToBoolean(args[0]);
+                var condition = ExpressionUtils.ConvertToBool(args[0]);
                 return condition ? args[1] : args[2];
-            };
+            });
 
-            _functions["ISNULL"] = args => args[0] ?? args[1];
+            RegisterFunction("ISNULL", args => args[0] == null);
+            RegisterFunction("ISEMPTY", args => string.IsNullOrEmpty(args[0]?.ToString()));
+        }
 
-            _functions["ISEMPTY"] = args =>
+        #endregion
+
+        #region 辅助方法 - 简化注册流程
+
+        /// <summary>
+        /// 注册函数 - 简化注册代码
+        /// </summary>
+        private void RegisterFunction(string name, Func<List<object>, object> func)
+        {
+            _functions[name] = func;
+        }
+
+        /// <summary>
+        /// 注册别名 - 多个函数名指向同一个实现
+        /// </summary>
+        private void RegisterAlias(string alias, string targetName)
+        {
+            if (_functions.TryGetValue(targetName, out var func))
             {
-                var str = args[0]?.ToString();
-                return string.IsNullOrEmpty(str);
-            };
+                _functions[alias] = func;
+            }
         }
 
         #endregion

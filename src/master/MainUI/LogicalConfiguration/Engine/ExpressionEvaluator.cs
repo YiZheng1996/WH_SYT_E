@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -6,15 +7,21 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 namespace MainUI.LogicalConfiguration.Engine
 {
     /// <summary>
-    /// 表达式求值器 - 负责计算表达式的值
+    /// 表达式求值器 - 优化版
+    /// 负责计算表达式的值,使用共享工具消除重复代码
     /// </summary>
-    internal class ExpressionEvaluator(FunctionRegistry functionRegistry, ILogger logger = null)
+    internal class ExpressionEvaluator
     {
-        private readonly FunctionRegistry _functionRegistry = functionRegistry ?? throw new ArgumentNullException(nameof(functionRegistry));
-        private readonly ILogger _logger = logger;
+        private readonly FunctionRegistry _functionRegistry;
+        private readonly ILogger _logger;
 
-        // 正则表达式模式
-        private readonly Regex _functionPattern = new(@"([\w\.]+)\s*\(([^)]*)\)", RegexOptions.Compiled);
+        public ExpressionEvaluator(FunctionRegistry functionRegistry, ILogger logger = null)
+        {
+            _functionRegistry = functionRegistry ?? throw new ArgumentNullException(nameof(functionRegistry));
+            _logger = logger;
+        }
+
+        #region 公共方法 - 求值入口
 
         /// <summary>
         /// 求值已预处理的表达式
@@ -25,33 +32,21 @@ namespace MainUI.LogicalConfiguration.Engine
             {
                 _logger?.LogDebug("开始求值表达式: {Expression}", processedExpression);
 
-                // 先转换运算符（在处理函数前）
-                processedExpression = processedExpression
-                    .Replace("&&", " AND ")
-                    .Replace("||", " OR ")
-                    .Replace("==", "=")
-                    .Replace("!=", "<>");
+                // 转换运算符 - 使用共享工具
+                processedExpression = ExpressionUtils.ConvertToDataTableOperators(processedExpression);
 
                 // 处理函数调用
                 var expressionWithFunctions = ProcessFunctions(processedExpression);
 
                 // 检查是否是简单值
-                var trimmed = expressionWithFunctions.Trim();
+                var result = TryEvaluateSimpleValue(expressionWithFunctions);
+                if (result.IsSimple)
+                {
+                    return result.Value;
+                }
 
-                if (trimmed.StartsWith("\"") && trimmed.EndsWith("\""))
-                    return trimmed.Substring(1, trimmed.Length - 2).Replace("\\\"", "\"");
-
-                if (trimmed.Equals("true", StringComparison.OrdinalIgnoreCase))
-                    return true;
-                if (trimmed.Equals("false", StringComparison.OrdinalIgnoreCase))
-                    return false;
-                if (trimmed.Equals("null", StringComparison.OrdinalIgnoreCase))
-                    return null;
-
-                // 使用 DataTable 计算
-                using var dt = new DataTable();
-                dt.Locale = CultureInfo.InvariantCulture;
-                return dt.Compute(expressionWithFunctions, string.Empty);
+                // 使用 DataTable 计算复杂表达式
+                return EvaluateWithDataTable(expressionWithFunctions);
             }
             catch (Exception ex)
             {
@@ -60,17 +55,64 @@ namespace MainUI.LogicalConfiguration.Engine
             }
         }
 
-        #region 函数处理
+        #endregion
+
+        #region 私有方法 - 简单值处理
 
         /// <summary>
-        /// 处理表达式中的函数调用
+        /// 尝试求值简单值 - 统一的简单值处理
+        /// </summary>
+        private (bool IsSimple, object Value) TryEvaluateSimpleValue(string expression)
+        {
+            var trimmed = expression.Trim();
+
+            // 字符串字面量 - 使用共享工具
+            if (ExpressionUtils.IsStringLiteral(trimmed))
+            {
+                var content = trimmed.Substring(1, trimmed.Length - 2);
+                return (true, ExpressionUtils.UnescapeString(content));
+            }
+
+            // 布尔值
+            if (trimmed.Equals("true", StringComparison.OrdinalIgnoreCase))
+                return (true, true);
+            if (trimmed.Equals("false", StringComparison.OrdinalIgnoreCase))
+                return (true, false);
+
+            // null值
+            if (trimmed.Equals("null", StringComparison.OrdinalIgnoreCase))
+                return (true, null);
+
+            // 数字
+            if (double.TryParse(trimmed, NumberStyles.Any, CultureInfo.InvariantCulture, out var numValue))
+                return (true, numValue);
+
+            return (false, null);
+        }
+
+        /// <summary>
+        /// 使用DataTable求值
+        /// </summary>
+        private object EvaluateWithDataTable(string expression)
+        {
+            using var dt = new DataTable();
+            dt.Locale = CultureInfo.InvariantCulture;
+            return dt.Compute(expression, string.Empty);
+        }
+
+        #endregion
+
+        #region 私有方法 - 函数处理
+
+        /// <summary>
+        /// 处理表达式中的函数调用 - 从内向外处理嵌套
         /// </summary>
         private string ProcessFunctions(string expression)
         {
             var result = expression;
-            var matches = _functionPattern.Matches(expression);
+            var matches = ExpressionConstants.FunctionPattern.Matches(expression);
 
-            // 从内向外处理函数（处理嵌套）
+            // 从内向外处理函数(处理嵌套)
             while (matches.Count > 0)
             {
                 foreach (Match match in matches)
@@ -81,12 +123,12 @@ namespace MainUI.LogicalConfiguration.Engine
                     // 执行函数
                     var funcResult = ExecuteFunction(funcName, argsStr);
 
-                    // 替换函数调用为结果
-                    result = result.Replace(match.Value, FormatValue(funcResult));
+                    // 替换函数调用为结果 - 使用共享工具格式化
+                    result = result.Replace(match.Value, ExpressionUtils.FormatValueForExpression(funcResult));
                 }
 
-                // 重新匹配（处理嵌套函数）
-                matches = _functionPattern.Matches(result);
+                // 重新匹配(处理嵌套函数)
+                matches = ExpressionConstants.FunctionPattern.Matches(result);
             }
 
             return result;
@@ -97,10 +139,14 @@ namespace MainUI.LogicalConfiguration.Engine
         /// </summary>
         private object ExecuteFunction(string funcName, string argsStr)
         {
-            var func = _functionRegistry.GetFunction(funcName) ?? 
-                throw new InvalidOperationException($"未找到函数: {funcName}");
+            var func = _functionRegistry.GetFunction(funcName);
 
-            // 解析参数
+            if (func == null)
+            {
+                throw new InvalidOperationException($"不支持的函数: {funcName}");
+            }
+
+            // 解析参数 - 使用共享工具分割
             var args = ParseFunctionArguments(argsStr);
 
             // 执行函数
@@ -110,45 +156,39 @@ namespace MainUI.LogicalConfiguration.Engine
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"执行函数 {funcName} 失败: {ex.Message}", ex);
+                throw new InvalidOperationException($"函数 '{funcName}' 执行失败: {ex.Message}", ex);
             }
         }
 
         /// <summary>
-        /// 解析函数参数
+        /// 解析函数参数 - 统一的参数解析逻辑
         /// </summary>
         private List<object> ParseFunctionArguments(string argsStr)
         {
-            if (string.IsNullOrWhiteSpace(argsStr)) return [];
+            if (string.IsNullOrWhiteSpace(argsStr))
+                return new List<object>();
 
+            // 使用共享工具分割参数
+            var argStrings = ExpressionUtils.SplitArguments(argsStr);
             var args = new List<object>();
-            var parts = SplitArguments(argsStr);
 
-            foreach (var part in parts)
+            foreach (var argStr in argStrings)
             {
-                var trimmed = part.Trim();
+                var trimmed = argStr.Trim();
 
                 // 字符串字面量
-                if (trimmed.StartsWith("\"") && trimmed.EndsWith("\""))
+                if (ExpressionUtils.IsStringLiteral(trimmed))
                 {
-                    args.Add(trimmed.Substring(1, trimmed.Length - 2).Replace("\\\"", "\""));
+                    var content = trimmed.Substring(1, trimmed.Length - 2);
+                    args.Add(ExpressionUtils.UnescapeString(content));
                 }
                 // 布尔值
-                else if (trimmed.Equals("true", StringComparison.OrdinalIgnoreCase))
+                else if (bool.TryParse(trimmed, out var boolValue))
                 {
-                    args.Add(true);
-                }
-                else if (trimmed.Equals("false", StringComparison.OrdinalIgnoreCase))
-                {
-                    args.Add(false);
-                }
-                // null
-                else if (trimmed.Equals("null", StringComparison.OrdinalIgnoreCase))
-                {
-                    args.Add(null);
+                    args.Add(boolValue);
                 }
                 // 数字
-                else if (double.TryParse(trimmed, NumberStyles.Any, CultureInfo.InvariantCulture, out double numValue))
+                else if (double.TryParse(trimmed, NumberStyles.Any, CultureInfo.InvariantCulture, out var numValue))
                 {
                     args.Add(numValue);
                 }
@@ -161,121 +201,6 @@ namespace MainUI.LogicalConfiguration.Engine
             }
 
             return args;
-        }
-
-        /// <summary>
-        /// 分割函数参数（考虑嵌套括号和引号）
-        /// </summary>
-        private List<string> SplitArguments(string argsStr)
-        {
-            var args = new List<string>();
-            var current = new System.Text.StringBuilder();
-            int parentheses = 0;
-            bool inQuotes = false;
-            bool escaped = false;
-
-            foreach (char c in argsStr)
-            {
-                if (escaped)
-                {
-                    current.Append(c);
-                    escaped = false;
-                    continue;
-                }
-
-                if (c == '\\' && inQuotes)
-                {
-                    escaped = true;
-                    current.Append(c);
-                    continue;
-                }
-
-                if (c == '"')
-                {
-                    inQuotes = !inQuotes;
-                    current.Append(c);
-                }
-                else if (c == '(' && !inQuotes)
-                {
-                    parentheses++;
-                    current.Append(c);
-                }
-                else if (c == ')' && !inQuotes)
-                {
-                    parentheses--;
-                    current.Append(c);
-                }
-                else if (c == ',' && parentheses == 0 && !inQuotes)
-                {
-                    args.Add(current.ToString());
-                    current.Clear();
-                }
-                else
-                {
-                    current.Append(c);
-                }
-            }
-
-            if (current.Length > 0)
-            {
-                args.Add(current.ToString());
-            }
-
-            return args;
-        }
-
-        #endregion
-
-        #region DataTable 求值
-
-        /// <summary>
-        /// 使用 DataTable 计算表达式
-        /// </summary>
-        private object EvaluateWithDataTable(string expression)
-        {
-            try
-            {
-                using var dt = new DataTable();
-                dt.Locale = CultureInfo.InvariantCulture;
-                var result = dt.Compute(expression, string.Empty);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"计算表达式失败: {expression}", ex);
-            }
-        }
-
-        #endregion
-
-        #region 值格式化
-
-        /// <summary>
-        /// 将值格式化为字符串
-        /// </summary>
-        private string FormatValue(object value)
-        {
-            if (value == null)
-                return "null";
-
-            if (value is bool b)
-                return b ? "true" : "false";
-
-            if (value is string str)
-                return $"\"{str.Replace("\"", "\\\"")}\"";
-
-            if (value is DateTime dt)
-                return $"\"{dt:yyyy-MM-dd HH:mm:ss}\"";
-
-            // 数字类型使用 InvariantCulture
-            if (value is double || value is float || value is decimal)
-                return Convert.ToDouble(value).ToString(CultureInfo.InvariantCulture);
-
-            if (value is int || value is long || value is short || value is byte ||
-                value is uint || value is ulong || value is ushort || value is sbyte)
-                return Convert.ToInt64(value).ToString(CultureInfo.InvariantCulture);
-
-            return value.ToString();
         }
 
         #endregion

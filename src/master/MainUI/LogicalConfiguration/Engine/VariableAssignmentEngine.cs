@@ -56,9 +56,9 @@ namespace MainUI.LogicalConfiguration.Engine
                 // 2. 根据赋值类型执行不同的赋值操作
                 AssignmentResult assignResult = parameter.AssignmentType switch
                 {
-                    // 直接赋值
-                    VariableAssignmentType.DirectAssignment =>
-                        _expressionEngine.AssignDirectValue(parameter.TargetVarName, parameter.Expression),
+                    //// 直接赋值
+                    //VariableAssignmentType.DirectAssignment =>
+                    //    _expressionEngine.AssignDirectValue(parameter.TargetVarName, parameter.Expression),
 
                     // 表达式计算赋值
                     VariableAssignmentType.ExpressionCalculation =>
