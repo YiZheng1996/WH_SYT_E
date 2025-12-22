@@ -100,7 +100,7 @@ namespace MainUI.LogicalConfiguration.Engine
     }
 
     /// <summary>
-    /// 表达式工具类 - 统一的工具方法,消除各类中的重复代码
+    /// 表达式工具类
     /// </summary>
     internal static class ExpressionUtils
     {
@@ -211,14 +211,13 @@ namespace MainUI.LogicalConfiguration.Engine
         }
 
         /// <summary>
-        /// 获取无效字符列表 - 统一的检查逻辑
+        /// 获取无效字符列表 - 统一检查逻辑
         /// </summary>
         public static List<char> GetInvalidCharacters(string expression)
         {
-            return expression
+            return [.. expression
                 .Where(c => !ExpressionConstants.ValidCharacters.Contains(c) && !char.IsLetterOrDigit(c))
-                .Distinct()
-                .ToList();
+                .Distinct()];
         }
 
         /// <summary>
@@ -445,11 +444,10 @@ namespace MainUI.LogicalConfiguration.Engine
         /// </summary>
         public static List<string> GetReferencedVariables(string expression)
         {
-            return ExpressionConstants.VariablePattern.Matches(expression)
+            return [.. ExpressionConstants.VariablePattern.Matches(expression)
                 .Cast<Match>()
                 .Select(m => m.Groups[1].Value.Trim())
-                .Distinct()
-                .ToList();
+                .Distinct()];
         }
 
         /// <summary>
@@ -457,11 +455,10 @@ namespace MainUI.LogicalConfiguration.Engine
         /// </summary>
         public static List<string> GetReferencedFunctions(string expression)
         {
-            return ExpressionConstants.FunctionPattern.Matches(expression)
+            return [.. ExpressionConstants.FunctionPattern.Matches(expression)
                 .Cast<Match>()
                 .Select(m => m.Groups[1].Value)
-                .Distinct()
-                .ToList();
+                .Distinct()];
         }
 
         #endregion

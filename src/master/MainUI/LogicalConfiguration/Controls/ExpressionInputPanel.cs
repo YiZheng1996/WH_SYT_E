@@ -1277,10 +1277,10 @@ namespace MainUI.LogicalConfiguration.Controls
                         { "四舍五入 Round", "Math.Round(x, 2)" },
                         { "向上取整 Ceiling", "Math.Ceiling(x)" },
                         { "向下取整 Floor", "Math.Floor(x)" },
-                        { "最大值 Max", "Math.Max(a, b)" },
-                        { "最小值 Min", "Math.Min(a, b)" },
-                        { "幂运算 Pow", "Math.Pow(x, y)" },
-                        { "平方根 Sqrt", "Math.Sqrt(x)" }
+                        //{ "最大值 Max", "Math.Max(a, b)" },
+                        //{ "最小值 Min", "Math.Min(a, b)" },
+                        //{ "幂运算 Pow", "Math.Pow(x, y)" },
+                        //{ "平方根 Sqrt", "Math.Sqrt(x)" }
                     }
                 },
                 {
@@ -1349,12 +1349,12 @@ namespace MainUI.LogicalConfiguration.Controls
                 { "true (真)", "true" },
                 { "false (假)", "false" },
                 { "null (空)", "null" },
-                { "π (圆周率)", "Math.PI" },
-                { "e (自然常数)", "Math.E" },
-                { "空字符串", "\"\"" },
+                //{ "π (圆周率)", "Math.PI" },
+                //{ "e (自然常数)", "Math.E" },
+                //{ "空字符串", "\"\"" },
                 { "0 (零)", "0" },
                 { "1 (一)", "1" },
-                { "-1 (负一)", "-1" }
+                //{ "-1 (负一)", "-1" }
             };
 
             foreach (var constant in constants)

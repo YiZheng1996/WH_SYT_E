@@ -2,7 +2,6 @@
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace MainUI.LogicalConfiguration.Engine
@@ -12,21 +11,12 @@ namespace MainUI.LogicalConfiguration.Engine
     /// 负责解析和替换表达式中的变量引用,使用共享工具消除重复代码
     /// 正确处理 PLC.模块名.地址 格式的PLC引用
     /// </summary>
-    internal class VariableResolver
+    internal class VariableResolver(
+        GlobalVariableManager variableManager,
+        IPLCManager plcManager = null,
+        ILogger logger = null)
     {
-        private readonly GlobalVariableManager _variableManager;
-        private readonly IPLCManager _plcManager;
-        private readonly ILogger _logger;
-
-        public VariableResolver(
-            GlobalVariableManager variableManager,
-            IPLCManager plcManager = null,
-            ILogger logger = null)
-        {
-            _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
-            _plcManager = plcManager;
-            _logger = logger;
-        }
+        private readonly GlobalVariableManager _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
 
         #region 公共方法 - 表达式预处理
 
@@ -106,7 +96,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
             if (variable == null)
             {
-                _logger?.LogWarning("变量 '{VarName}' 不存在", varName);
+                logger?.LogWarning("变量 '{VarName}' 不存在", varName);
                 throw new InvalidOperationException($"变量 '{varName}' 不存在");
             }
 
@@ -115,13 +105,13 @@ namespace MainUI.LogicalConfiguration.Engine
         }
 
         /// <summary>
-        /// 替换PLC引用(同步版本) - 修复版: 使用ParsePLCReference正确解析
+        /// 替换PLC引用(同步版本) - 使用ParsePLCReference正确解析
         /// </summary>
         private async Task<string> ReplacePLCReference(string plcAddress)
         {
-            if (_plcManager == null)
+            if (plcManager == null)
             {
-                _logger?.LogWarning("PLCManager未初始化,无法读取PLC: {Address}", plcAddress);
+                logger?.LogWarning("PLCManager未初始化,无法读取PLC: {Address}", plcAddress);
                 throw new InvalidOperationException($"PLCManager未初始化,无法读取PLC: {plcAddress}");
             }
 
@@ -135,30 +125,30 @@ namespace MainUI.LogicalConfiguration.Engine
                     throw new InvalidOperationException($"无效的PLC地址格式: {plcAddress}");
                 }
 
-                _logger?.LogDebug("解析PLC引用: '{RawAddress}' -> 模块={Module}, 地址={Address}",
+                logger?.LogDebug("解析PLC引用: '{RawAddress}' -> 模块={Module}, 地址={Address}",
                     plcAddress, moduleName, address);
 
-                var value = await _plcManager.ReadPLCValueAsync(moduleName, address);
-                _logger?.LogDebug("读取PLC值: {Module}.{Address} = {Value}", moduleName, address, value);
+                var value = await plcManager.ReadPLCValueAsync(moduleName, address);
+                logger?.LogDebug("读取PLC值: {Module}.{Address} = {Value}", moduleName, address, value);
 
                 // 使用共享工具格式化值
                 return ExpressionUtils.FormatValueForExpression(value);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "读取PLC失败: {Address}", plcAddress);
+                logger?.LogError(ex, "读取PLC失败: {Address}", plcAddress);
                 throw new InvalidOperationException($"读取PLC失败: {plcAddress}", ex);
             }
         }
 
         /// <summary>
-        /// 替换PLC引用(异步版本) - 修复版: 使用ParsePLCReference正确解析
+        /// 替换PLC引用(异步版本) - 使用ParsePLCReference正确解析
         /// </summary>
         private async Task<string> ReplacePLCReferenceAsync(string plcAddress)
         {
-            if (_plcManager == null)
+            if (plcManager == null)
             {
-                _logger?.LogWarning("PLCManager未初始化,无法读取PLC: {Address}", plcAddress);
+                logger?.LogWarning("PLCManager未初始化,无法读取PLC: {Address}", plcAddress);
                 throw new InvalidOperationException($"PLCManager未初始化,无法读取PLC: {plcAddress}");
             }
 
@@ -172,18 +162,18 @@ namespace MainUI.LogicalConfiguration.Engine
                     throw new InvalidOperationException($"无效的PLC地址格式: {plcAddress}");
                 }
 
-                _logger?.LogDebug("解析PLC引用: '{RawAddress}' -> 模块={Module}, 地址={Address}",
+                logger?.LogDebug("解析PLC引用: '{RawAddress}' -> 模块={Module}, 地址={Address}",
                     plcAddress, moduleName, address);
 
-                var value = await _plcManager.ReadPLCValueAsync(moduleName, address);
-                _logger?.LogDebug("读取PLC值: {Module}.{Address} = {Value}", moduleName, address, value);
+                var value = await plcManager.ReadPLCValueAsync(moduleName, address);
+                logger?.LogDebug("读取PLC值: {Module}.{Address} = {Value}", moduleName, address, value);
 
                 // 使用共享工具格式化值
                 return ExpressionUtils.FormatValueForExpression(value);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "读取PLC失败: {Address}", plcAddress);
+                logger?.LogError(ex, "读取PLC失败: {Address}", plcAddress);
                 throw new InvalidOperationException($"读取PLC失败: {plcAddress}", ex);
             }
         }

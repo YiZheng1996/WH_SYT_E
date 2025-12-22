@@ -1,50 +1,50 @@
-using RW.UI.Controls.Report;
+ï»¿using RW.UI.Controls.Report;
 
 namespace MainUI.Service
 {
     /// <summary>
-    /// ±¨±í·şÎñÀà
-    /// Ìá¹©±¨±íÏà¹ØµÄÒµÎñÂß¼­´¦Àí,°üÀ¨±¨±í¿Ø¼ş¹ÜÀí¡¢ÎÄ¼ş²Ù×÷¡¢·­Ò³µÈ¹¦ÄÜ
+    /// æŠ¥è¡¨æœåŠ¡ç±»
+    /// æä¾›æŠ¥è¡¨ç›¸å…³çš„ä¸šåŠ¡é€»è¾‘å¤„ç†,åŒ…æ‹¬æŠ¥è¡¨æ§ä»¶ç®¡ç†ã€æ–‡ä»¶æ“ä½œã€ç¿»é¡µç­‰åŠŸèƒ½
     /// </summary>
     public class ReportService
     {
-        #region Ë½ÓĞ×Ö¶Î
+        #region ç§æœ‰å­—æ®µ
 
         private readonly string _reportPath;
         private readonly RWReport _report;
         private int _currentRows = 1;
         private const int MaxRows = 1000;
 
-        // ===== ĞÂÔö: ±¨±í¿Ø¼şµ¥Àı¹ÜÀí =====
+        // ===== æŠ¥è¡¨æ§ä»¶å•ä¾‹ç®¡ç† =====
         private static RWReport _sharedReportControl;
         private static readonly object _lock = new object();
 
         #endregion
 
-        #region ¹¹Ôìº¯Êı
+        #region æ„é€ å‡½æ•°
 
         /// <summary>
-        /// ¹¹Ôìº¯Êı
+        /// æ„é€ å‡½æ•°
         /// </summary>
-        /// <param name="reportPath">±¨±íÂ·¾¶</param>
-        /// <param name="report">±¨±í¿Ø¼ş</param>
+        /// <param name="reportPath">æŠ¥è¡¨è·¯å¾„</param>
+        /// <param name="report">æŠ¥è¡¨æ§ä»¶</param>
         public ReportService(string reportPath, RWReport report)
         {
             _reportPath = reportPath ?? throw new ArgumentNullException(nameof(reportPath));
             _report = report ?? throw new ArgumentNullException(nameof(report));
 
-            // ×¢²á±¨±í¿Ø¼şµ½¹²ÏíÊµÀı
+            // æ³¨å†ŒæŠ¥è¡¨æ§ä»¶åˆ°å…±äº«å®ä¾‹
             RegisterReportControl(report);
         }
 
         #endregion
 
-        #region ===== ĞÂÔö¹¦ÄÜ: ±¨±í¿Ø¼şµ¥Àı¹ÜÀí =====
+        #region ===== æŠ¥è¡¨æ§ä»¶å•ä¾‹ç®¡ç† =====
 
         /// <summary>
-        /// ×¢²á±¨±í¿Ø¼şµ½¹²ÏíÊµÀı
+        /// æ³¨å†ŒæŠ¥è¡¨æ§ä»¶åˆ°å…±äº«å®ä¾‹
         /// </summary>
-        /// <param name="report">±¨±í¿Ø¼şÊµÀı</param>
+        /// <param name="report">æŠ¥è¡¨æ§ä»¶å®ä¾‹</param>
         public static void RegisterReportControl(RWReport report)
         {
             lock (_lock)
@@ -53,19 +53,19 @@ namespace MainUI.Service
                 {
                     _sharedReportControl = report;
 
-                    // Í¬Ê±¸üĞÂ BaseTest.Report (±£³ÖÏòºó¼æÈİ)
+                    // åŒæ—¶æ›´æ–° BaseTest.Report
                     BaseTest.Report = report;
 
-                    NlogHelper.Default.Info($"±¨±í¿Ø¼şÒÑ×¢²áµ½È«¾Ö·şÎñ (ÊµÀı: {report?.GetHashCode()})");
+                    NlogHelper.Default.Info($"æŠ¥è¡¨æ§ä»¶å·²æ³¨å†Œåˆ°å…¨å±€æœåŠ¡ (å®ä¾‹: {report?.GetHashCode()})");
                 }
             }
         }
 
         /// <summary>
-        /// »ñÈ¡¹²ÏíµÄ±¨±í¿Ø¼şÊµÀı
+        /// è·å–å…±äº«çš„æŠ¥è¡¨æ§ä»¶å®ä¾‹
         /// </summary>
-        /// <returns>±¨±í¿Ø¼şÊµÀı</returns>
-        /// <exception cref="InvalidOperationException">±¨±í¿Ø¼şÎ´³õÊ¼»¯Ê±Å×³ö</exception>
+        /// <returns>æŠ¥è¡¨æ§ä»¶å®ä¾‹</returns>
+        /// <exception cref="InvalidOperationException">æŠ¥è¡¨æ§ä»¶æœªåˆå§‹åŒ–æ—¶æŠ›å‡º</exception>
         public static RWReport GetReportControl()
         {
             lock (_lock)
@@ -73,10 +73,10 @@ namespace MainUI.Service
                 if (_sharedReportControl == null || _sharedReportControl.IsDisposed)
                 {
                     throw new InvalidOperationException(
-                        "±¨±í¿Ø¼şÎ´³õÊ¼»¯,ÇëÈ·±£:\n" +
-                        "1. ÒÑÔÚHMI½çÃæ¼ÓÔØ±¨±í\n" +
-                        "2. UcHMI.Init() ÒÑÕıÈ·Ö´ĞĞ\n" +
-                        "3. ±¨±íÎÄ¼şÂ·¾¶ÕıÈ·");
+                        "æŠ¥è¡¨æ§ä»¶æœªåˆå§‹åŒ–,è¯·ç¡®ä¿:\n" +
+                        "1. å·²åœ¨HMIç•Œé¢åŠ è½½æŠ¥è¡¨\n" +
+                        "2. UcHMI.Init() å·²æ­£ç¡®æ‰§è¡Œ\n" +
+                        "3. æŠ¥è¡¨æ–‡ä»¶è·¯å¾„æ­£ç¡®");
                 }
 
                 return _sharedReportControl;
@@ -84,7 +84,7 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// ¼ì²é±¨±í¿Ø¼şÊÇ·ñ¿ÉÓÃ
+        /// æ£€æŸ¥æŠ¥è¡¨æ§ä»¶æ˜¯å¦å¯ç”¨
         /// </summary>
         public static bool IsReportAvailable
         {
@@ -98,11 +98,11 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// ÔÚUIÏß³Ì°²È«Ö´ĞĞ±¨±í²Ù×÷(ÓĞ·µ»ØÖµ)
+        /// åœ¨UIçº¿ç¨‹å®‰å…¨æ‰§è¡ŒæŠ¥è¡¨æ“ä½œ(æœ‰è¿”å›å€¼)
         /// </summary>
-        /// <typeparam name="T">·µ»ØÖµÀàĞÍ</typeparam>
-        /// <param name="action">ÒªÖ´ĞĞµÄ²Ù×÷</param>
-        /// <returns>²Ù×÷½á¹û</returns>
+        /// <typeparam name="T">è¿”å›å€¼ç±»å‹</typeparam>
+        /// <param name="action">è¦æ‰§è¡Œçš„æ“ä½œ</param>
+        /// <returns>æ“ä½œç»“æœ</returns>
         public static T InvokeOnReportControl<T>(Func<RWReport, T> action)
         {
             if (action == null)
@@ -121,13 +121,12 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// ÔÚUIÏß³Ì°²È«Ö´ĞĞ±¨±í²Ù×÷(ÎŞ·µ»ØÖµ)
+        /// åœ¨UIçº¿ç¨‹å®‰å…¨æ‰§è¡ŒæŠ¥è¡¨æ“ä½œ(æ— è¿”å›å€¼)
         /// </summary>
-        /// <param name="action">ÒªÖ´ĞĞµÄ²Ù×÷</param>
+        /// <param name="action">è¦æ‰§è¡Œçš„æ“ä½œ</param>
         public static void InvokeOnReportControl(Action<RWReport> action)
         {
-            if (action == null)
-                throw new ArgumentNullException(nameof(action));
+            ArgumentNullException.ThrowIfNull(action);
 
             var report = GetReportControl();
 
@@ -142,8 +141,8 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// Çå³ı¹²ÏíµÄ±¨±í¿Ø¼şÒıÓÃ
-        /// (Í¨³£ÔÚÓ¦ÓÃ³ÌĞò¹Ø±Õ»òÖØÖÃÊ±µ÷ÓÃ)
+        /// æ¸…é™¤å…±äº«çš„æŠ¥è¡¨æ§ä»¶å¼•ç”¨
+        /// (é€šå¸¸åœ¨åº”ç”¨ç¨‹åºå…³é—­æˆ–é‡ç½®æ—¶è°ƒç”¨)
         /// </summary>
         public static void ClearReportControl()
         {
@@ -151,16 +150,16 @@ namespace MainUI.Service
             {
                 _sharedReportControl = null;
                 BaseTest.Report = null;
-                NlogHelper.Default.Info("±¨±í¿Ø¼şÒıÓÃÒÑÇå³ı");
+                NlogHelper.Default.Info("æŠ¥è¡¨æ§ä»¶å¼•ç”¨å·²æ¸…é™¤");
             }
         }
 
         #endregion
 
-        #region ===== Ô­ÓĞ¹¦ÄÜ±£³Ö²»±ä =====
+        #region ===== åŸæœ‰åŠŸèƒ½ä¿æŒä¸å˜ =====
 
         /// <summary>
-        /// ±¨±í±£´æÂ·¾¶
+        /// æŠ¥è¡¨ä¿å­˜è·¯å¾„
         /// </summary>
         public static string SaveReportPath()
         {
@@ -168,7 +167,7 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// »ñÈ¡Ä¬ÈÏ±¨±íÂ·¾¶
+        /// è·å–é»˜è®¤æŠ¥è¡¨è·¯å¾„
         /// </summary>
         public static string GetDefaultReportPath()
         {
@@ -176,7 +175,7 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// »ñÈ¡¹¤×÷±¨±íÂ·¾¶
+        /// è·å–å·¥ä½œæŠ¥è¡¨è·¯å¾„
         /// </summary>
         public static string GetWorkingReportPath()
         {
@@ -184,25 +183,148 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// ¹¹½¨±£´æÎÄ¼şÂ·¾¶
+        /// æ„å»ºæŠ¥è¡¨ä¿å­˜è·¯å¾„(æ™ºèƒ½é€‰æ‹©åŸºç¡€ç›®å½•)
+        /// ä¼˜å…ˆä½¿ç”¨ç”¨æˆ·è®¾ç½®çš„ä¿å­˜è·¯å¾„,æœªè®¾ç½®åˆ™ä½¿ç”¨é»˜è®¤è·¯å¾„
+        /// ä¿å­˜ç»“æ„: [åŸºç¡€ç›®å½•]\å¹´\æœˆ\äº§å“ç±»å‹\æ–‡ä»¶å.xls
         /// </summary>
-        public static string BuildSaveFilePath(string modeltype, string modelName)
+        /// <param name="modelTypeName">äº§å“ç±»å‹</param>
+        /// <param name="modelName">äº§å“å‹å·</param>
+        /// <returns>å®Œæ•´çš„ä¿å­˜è·¯å¾„</returns>
+        public static string BuildSaveFilePath(string modelTypeName, string modelName)
         {
-            string savePath = Path.Combine(SaveReportPath(),
-                DateTime.Now.ToString("yyyy"),
-                DateTime.Now.ToString("MM"));
-
-            if (!Directory.Exists(savePath))
+            try
             {
-                Directory.CreateDirectory(savePath);
-            }
+                DateTime now = DateTime.Now;
 
-            string fileName = $"{modeltype}_{modelName}_{DateTime.Now:yyyyMMddHHmmss}.xls";
-            return Path.Combine(savePath, fileName);
+                // æ™ºèƒ½é€‰æ‹©åŸºç¡€ç›®å½•
+                string baseDirectory = GetBaseSaveDirectory();
+
+                // æ„å»ºç›®å½•ç»“æ„: [åŸºç¡€ç›®å½•]\å¹´\æœˆ\äº§å“ç±»å‹\
+                string yearMonth = Path.Combine(now.Year.ToString(), now.Month.ToString("D2"));
+                string directory = Path.Combine(baseDirectory, yearMonth, modelTypeName ?? "æœªçŸ¥ç±»å‹");
+
+                // ç¡®ä¿ç›®å½•å­˜åœ¨
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                    NlogHelper.Default.Info($"åˆ›å»ºæŠ¥è¡¨ä¿å­˜ç›®å½•: {directory}");
+                }
+
+                // æ„å»ºæ–‡ä»¶å: äº§å“å‹å·_å›¾å·_æ—¶é—´æˆ³.xls
+                string fileName = GenerateReportFileName(modelTypeName, modelName,
+                    VarHelper.TestViewModel?.DrawingNo);
+
+                string fullPath = Path.Combine(directory, fileName);
+                NlogHelper.Default.Info($"æ„å»ºæŠ¥è¡¨ä¿å­˜è·¯å¾„: {fullPath}");
+
+                return fullPath;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"æ„å»ºæŠ¥è¡¨è·¯å¾„å¤±è´¥: {ex.Message}", ex);
+                throw;
+            }
         }
 
         /// <summary>
-        /// ¼ì²éÎÄ¼şÊÇ·ñ´æÔÚ
+        /// è·å–æŠ¥è¡¨ä¿å­˜çš„åŸºç¡€ç›®å½•
+        /// ä¼˜å…ˆä½¿ç”¨ç”¨æˆ·è®¾ç½®çš„è·¯å¾„,æœªè®¾ç½®åˆ™ä½¿ç”¨é»˜è®¤è·¯å¾„ D:\è¯•éªŒæŠ¥å‘Š
+        /// </summary>
+        /// <returns>åŸºç¡€ç›®å½•è·¯å¾„</returns>
+        private static string GetBaseSaveDirectory()
+        {
+            try
+            {
+                // åŠ è½½ç”¨æˆ·é…ç½®
+                SaveReportConfig saveReportConfig = new();
+                saveReportConfig.Load();
+
+                // å¦‚æœç”¨æˆ·è®¾ç½®äº†ä¿å­˜è·¯å¾„
+                if (!string.IsNullOrEmpty(saveReportConfig.RptSaveFile))
+                {
+                    string userPath = saveReportConfig.RptSaveFile;
+
+                    // å¦‚æœç”¨æˆ·è®¾ç½®çš„æ˜¯ç›®å½•è·¯å¾„,ç›´æ¥ä½¿ç”¨
+                    if (Directory.Exists(userPath))
+                    {
+                        NlogHelper.Default.Info($"ä½¿ç”¨ç”¨æˆ·è®¾ç½®çš„ä¿å­˜ç›®å½•: {userPath}");
+                        return userPath;
+                    }
+
+                    // å¦‚æœç”¨æˆ·è®¾ç½®çš„æ˜¯æ–‡ä»¶è·¯å¾„,æå–ç›®å½•éƒ¨åˆ†
+                    string directory = Path.GetDirectoryName(userPath);
+                    if (!string.IsNullOrEmpty(directory))
+                    {
+                        // ç¡®ä¿ç›®å½•å­˜åœ¨
+                        if (!Directory.Exists(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                            NlogHelper.Default.Info($"åˆ›å»ºç”¨æˆ·è®¾ç½®ç›®å½•: {directory}");
+                        }
+                        NlogHelper.Default.Info($"ä½¿ç”¨ç”¨æˆ·è®¾ç½®çš„ä¿å­˜ç›®å½•: {directory}");
+                        return directory;
+                    }
+                }
+
+                // æœªè®¾ç½®æˆ–è®¾ç½®æ— æ•ˆ,ä½¿ç”¨é»˜è®¤è·¯å¾„
+                string defaultPath = SaveReportPath();
+                NlogHelper.Default.Info($"ä½¿ç”¨é»˜è®¤ä¿å­˜ç›®å½•: {defaultPath}");
+                return defaultPath;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"è·å–åŸºç¡€ä¿å­˜ç›®å½•å¤±è´¥,ä½¿ç”¨é»˜è®¤è·¯å¾„: {ex.Message}", ex);
+                return "D:\\è¯•éªŒæŠ¥å‘Š";
+            }
+        }
+
+        /// <summary>
+        /// ç”ŸæˆæŠ¥è¡¨æ–‡ä»¶å
+        /// æ ¼å¼: äº§å“ç±»å‹_äº§å“å‹å·_è¯•éªŒç¼–å·_æ—¶é—´æˆ³.xls
+        /// </summary>
+        /// <param name="modelTypeName">äº§å“ç±»å‹</param>
+        /// <param name="modelName">äº§å“å‹å·</param>
+        /// <param name="testID">è¯•éªŒç¼–å·(å¯é€‰)</param>
+        /// <returns>æ–‡ä»¶å</returns>
+        private static string GenerateReportFileName(string modelTypeName, string modelName, string testID = null)
+        {
+            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+
+            // æ¸…ç†æ–‡ä»¶åä¸­çš„éæ³•å­—ç¬¦
+            string safeModelType = CleanFileName(modelTypeName ?? "æœªçŸ¥ç±»å‹");
+            string safeModelName = CleanFileName(modelName ?? "æœªçŸ¥å‹å·");
+            string safeTestID = CleanFileName(testID ?? "");
+
+            // æ ¹æ®æ˜¯å¦æœ‰è¯•éªŒç¼–å·ç”Ÿæˆæ–‡ä»¶å
+            string fileName = string.IsNullOrEmpty(safeTestID)
+                ? $"{safeModelType}_{safeModelName}_{timestamp}.xls"
+                : $"{safeModelType}_{safeModelName}_{safeTestID}_{timestamp}.xls";
+
+            return fileName;
+        }
+
+        /// <summary>
+        /// æ¸…ç†æ–‡ä»¶åä¸­çš„éæ³•å­—ç¬¦
+        /// </summary>
+        /// <param name="fileName">åŸæ–‡ä»¶å</param>
+        /// <returns>æ¸…ç†åçš„æ–‡ä»¶å</returns>
+        private static string CleanFileName(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return fileName;
+
+            // Windowsæ–‡ä»¶åéæ³•å­—ç¬¦
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            foreach (char c in invalidChars)
+            {
+                fileName = fileName.Replace(c, '_');
+            }
+
+            return fileName;
+        }
+
+        /// <summary>
+        /// æ£€æŸ¥æ–‡ä»¶æ˜¯å¦å­˜åœ¨
         /// </summary>
         public bool FileExists(string fileName)
         {
@@ -210,7 +332,7 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// ¸´ÖÆ±¨±íÎÄ¼ş
+        /// å¤åˆ¶æŠ¥è¡¨æ–‡ä»¶
         /// </summary>
         public void CopyReportFile(string sourceFile, string destFile)
         {
@@ -222,30 +344,29 @@ namespace MainUI.Service
                 }
 
                 File.Copy(sourceFile, destFile, true);
-                NlogHelper.Default.Info($"±¨±íÎÄ¼şÒÑ¸´ÖÆ: {sourceFile} -> {destFile}");
+                NlogHelper.Default.Info($"æŠ¥è¡¨æ–‡ä»¶å·²å¤åˆ¶: {sourceFile} -> {destFile}");
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error($"¸´ÖÆ±¨±íÎÄ¼şÊ§°Ü: {ex.Message}", ex);
+                NlogHelper.Default.Error($"å¤åˆ¶æŠ¥è¡¨æ–‡ä»¶å¤±è´¥: {ex.Message}", ex);
                 throw;
             }
         }
 
         /// <summary>
-        /// ±£´æÊÔÑé¼ÇÂ¼
+        /// ä¿å­˜è¯•éªŒè®°å½•
         /// </summary>
         public static bool SaveTestRecord(TestRecordModel record)
         {
             try
             {
-                if (record == null)
-                    throw new ArgumentNullException(nameof(record));
+                ArgumentNullException.ThrowIfNull(record);
 
                 var result = VarHelper.fsql.Insert(record).ExecuteAffrows();
 
                 if (result > 0)
                 {
-                    NlogHelper.Default.Info($"ÊÔÑé¼ÇÂ¼±£´æ³É¹¦: {record.TestID}");
+                    NlogHelper.Default.Info($"è¯•éªŒè®°å½•ä¿å­˜æˆåŠŸ: {record.TestID}");
                     return true;
                 }
 
@@ -253,13 +374,13 @@ namespace MainUI.Service
             }
             catch (Exception ex)
             {
-                NlogHelper.Default.Error($"±£´æÊÔÑé¼ÇÂ¼Ê§°Ü: {ex.Message}", ex);
+                NlogHelper.Default.Error($"ä¿å­˜è¯•éªŒè®°å½•å¤±è´¥: {ex.Message}", ex);
                 return false;
             }
         }
 
         /// <summary>
-        /// ÏòÉÏ·­Ò³
+        /// å‘ä¸Šç¿»é¡µ
         /// </summary>
         public (int currentRows, bool upEnabled, bool downEnabled) PageUp(int pageSize)
         {
@@ -275,14 +396,14 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// ÏòÏÂ·­Ò³
+        /// å‘ä¸‹ç¿»é¡µ
         /// </summary>
         public (int currentRows, bool upEnabled, bool downEnabled) PageDown(int pageSize)
         {
             _currentRows += pageSize;
             if (_currentRows > MaxRows)
             {
-                _currentRows = 1; // Ñ­»·µ½µÚÒ»Ò³
+                _currentRows = 1; // å¾ªç¯åˆ°ç¬¬ä¸€é¡µ
             }
 
             _report?.ScrollIndex(_currentRows);

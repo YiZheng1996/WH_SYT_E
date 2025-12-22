@@ -1,7 +1,7 @@
 ﻿namespace MainUI.LogicalConfiguration.Engine
 {
     /// <summary>
-    /// 函数注册表 - 优化版
+    /// 函数注册表
     /// 管理所有支持的表达式函数,消除重复的函数定义代码
     /// </summary>
     internal class FunctionRegistry
@@ -201,10 +201,10 @@
             RegisterFunction("MINUTE", args => ExpressionUtils.ConvertToDateTime(args[0]).Minute);
             RegisterFunction("SECOND", args => ExpressionUtils.ConvertToDateTime(args[0]).Second);
 
-            // 使用配置化方式注册时间差函数 - 消除重复代码
+            // 使用配置化方式注册时间差函数
             RegisterDateDiffFunctions();
 
-            // 使用配置化方式注册经过时间函数 - 消除重复代码
+            // 使用配置化方式注册经过时间函数
             RegisterElapsedTimeFunctions();
         }
 

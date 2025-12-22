@@ -509,6 +509,12 @@ namespace MainUI
                     ProcessHelper.KillProcess("EXCEL");
                     Thread.Sleep(200);
 
+                    // 关闭WPS进程
+                    ProcessHelper.KillProcess("et");      // WPS表格
+                    //ProcessHelper.KillProcess("wps");     // WPS文字  
+                    //ProcessHelper.KillProcess("wpp");     // WPS演示
+                    Thread.Sleep(200);
+
                     // 复制文件到工作目录
                     _reportService.CopyReportFile(reportFileName, workingPath);
 
@@ -1035,10 +1041,14 @@ namespace MainUI
             {
                 return (false, "请注意，手动情况下无法启动自动试验!");
             }
-            //if (string.IsNullOrEmpty(paraconfig.SprayTime) || string.IsNullOrEmpty(paraconfig.ApplyPressure))
-            //{
-            //    return (false, "请注意，该型号试验参数未设置，无法启动自动试验!");
-            //}
+            if (string.IsNullOrEmpty(paraconfig.RptFile))
+            {
+                return (false, "请注意，该型号[试验报表模板]未设置，无法启动自动试验!\n请请往 [参数管理] ➡️[试验参数] ➡️[报表模板]中设置！");
+            }
+            if (_itemPoints == null || !_itemPoints.Any(item => item.Check))
+            {
+                return (false, "请至少选择一个测试项!");
+            }
             return (true, "");
         }
 

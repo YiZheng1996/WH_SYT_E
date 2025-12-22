@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -7,19 +6,12 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 namespace MainUI.LogicalConfiguration.Engine
 {
     /// <summary>
-    /// 表达式求值器 - 优化版
+    /// 表达式求值器
     /// 负责计算表达式的值,使用共享工具消除重复代码
     /// </summary>
-    internal class ExpressionEvaluator
+    internal class ExpressionEvaluator(FunctionRegistry functionRegistry, ILogger logger = null)
     {
-        private readonly FunctionRegistry _functionRegistry;
-        private readonly ILogger _logger;
-
-        public ExpressionEvaluator(FunctionRegistry functionRegistry, ILogger logger = null)
-        {
-            _functionRegistry = functionRegistry ?? throw new ArgumentNullException(nameof(functionRegistry));
-            _logger = logger;
-        }
+        private readonly FunctionRegistry _functionRegistry = functionRegistry ?? throw new ArgumentNullException(nameof(functionRegistry));
 
         #region 公共方法 - 求值入口
 
@@ -30,7 +22,7 @@ namespace MainUI.LogicalConfiguration.Engine
         {
             try
             {
-                _logger?.LogDebug("开始求值表达式: {Expression}", processedExpression);
+                logger?.LogDebug("开始求值表达式: {Expression}", processedExpression);
 
                 // 转换运算符 - 使用共享工具
                 processedExpression = ExpressionUtils.ConvertToDataTableOperators(processedExpression);
@@ -39,10 +31,10 @@ namespace MainUI.LogicalConfiguration.Engine
                 var expressionWithFunctions = ProcessFunctions(processedExpression);
 
                 // 检查是否是简单值
-                var result = TryEvaluateSimpleValue(expressionWithFunctions);
-                if (result.IsSimple)
+                var (IsSimple, Value) = TryEvaluateSimpleValue(expressionWithFunctions);
+                if (IsSimple)
                 {
-                    return result.Value;
+                    return Value;
                 }
 
                 // 使用 DataTable 计算复杂表达式
@@ -50,7 +42,7 @@ namespace MainUI.LogicalConfiguration.Engine
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "表达式求值失败: {Expression}", processedExpression);
+                logger?.LogError(ex, "表达式求值失败: {Expression}", processedExpression);
                 throw new InvalidOperationException($"求值失败: {ex.Message}", ex);
             }
         }
@@ -166,7 +158,7 @@ namespace MainUI.LogicalConfiguration.Engine
         private List<object> ParseFunctionArguments(string argsStr)
         {
             if (string.IsNullOrWhiteSpace(argsStr))
-                return new List<object>();
+                return [];
 
             // 使用共享工具分割参数
             var argStrings = ExpressionUtils.SplitArguments(argsStr);
