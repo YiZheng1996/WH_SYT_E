@@ -1105,14 +1105,14 @@ namespace MainUI.LogicalConfiguration.Controls
                 {
                     "⏱ 时间差值计算", new Dictionary<string, string>
                     {
-                        { "毫秒差值", "DATEDIFF_MILLISECONDS({结束时间}, {开始时间})" },
-                        { "秒数差值", "DATEDIFF_SECONDS({结束时间}, {开始时间})" },
-                        { "分钟差值", "DATEDIFF_MINUTES({结束时间}, {开始时间})" },
-                        { "小时差值", "DATEDIFF_HOURS({结束时间}, {开始时间})" },
-                        { "天数差值", "DATEDIFF_DAYS({结束时间}, {开始时间})" },
-                        { "距今秒数", "ELAPSED_SECONDS({开始时间})" },
-                        { "距今毫秒数", "ELAPSED_MILLISECONDS({开始时间})" },
-                        { "距今分钟数", "ELAPSED_MINUTES({开始时间})" }
+                        { "毫秒差值", "DATEDIFF.MILLISECONDS({结束时间}, {开始时间})" },
+                        { "秒数差值", "DATEDIFF.SECONDS({结束时间}, {开始时间})" },
+                        { "分钟差值", "DATEDIFF.MINUTES({结束时间}, {开始时间})" },
+                        { "小时差值", "DATEDIFF.HOURS({结束时间}, {开始时间})" },
+                        { "天数差值", "DATEDIFF.DAYS({结束时间}, {开始时间})" },
+                        { "距今秒数", "ELAPSED.SECONDS({开始时间})" },
+                        { "距今毫秒数", "ELAPSED.MILLISECONDS({开始时间})" },
+                        { "距今分钟数", "ELAPSED.MINUTES({开始时间})" }
                     }
             }
 
@@ -1238,8 +1238,10 @@ namespace MainUI.LogicalConfiguration.Controls
 
                 foreach (var property in category.Value)
                 {
-                    var propertyItem = new ToolStripMenuItem(property.Key);
-                    propertyItem.ToolTipText = $"插入: {property.Value}";
+                    var propertyItem = new ToolStripMenuItem(property.Key)
+                    {
+                        ToolTipText = $"插入: {property.Value}"
+                    };
                     propertyItem.Click += (s, e) =>
                     {
                         InsertText(property.Value);

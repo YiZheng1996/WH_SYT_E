@@ -56,7 +56,8 @@ namespace MainUI.LogicalConfiguration.Methods
                             _variableManager,
                             _plcManager);
 
-                        result = dialog.ShowDialog(mainForm);
+                        result = VarHelper.ShowDialogWithOverlayEx(mainForm, dialog);
+                        //result = dialog.ShowDialog(mainForm);
                     }));
                 }
                 else

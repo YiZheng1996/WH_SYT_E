@@ -151,26 +151,102 @@ namespace MainUI.LogicalConfiguration.Engine
         #region 值格式化 - 统一处理
 
         /// <summary>
-        /// 格式化值为表达式字符串 - 统一的格式化逻辑
+        /// 格式化值用于表达式 - 智能处理字符串类型的数值
         /// </summary>
         public static string FormatValueForExpression(object value)
         {
-            if (value == null) return "null";
-            if (value is string str) return $"\"{EscapeString(str)}\"";
-            if (value is bool b) return b.ToString().ToLower();
-            if (value is double d) return d.ToString(CultureInfo.InvariantCulture);
-            if (value is int i) return i.ToString(CultureInfo.InvariantCulture);
-            if (value is DateTime dt) return $"\"{dt:yyyy-MM-dd HH:mm:ss}\"";
-            return value.ToString();
+            if (value == null)
+                return "null";
+
+            return value switch
+            {
+                // 整数类型
+                int i => i.ToString(),
+                long l => l.ToString(),
+                short sh => sh.ToString(),
+                byte b => b.ToString(),
+
+                // 浮点数类型
+                double d => d.ToString(CultureInfo.InvariantCulture),
+                float f => f.ToString(CultureInfo.InvariantCulture),
+                decimal dec => dec.ToString(CultureInfo.InvariantCulture),
+
+                // 布尔类型
+                bool bo => bo.ToString().ToLower(),
+
+                // 字符串类型 - 智能判断
+                string s => FormatStringValue(s),
+
+                // 日期时间类型
+                DateTime dt => $"\"{dt:yyyy-MM-dd HH:mm:ss}\"",
+
+                // 其他类型
+                _ => FormatUnknownType(value)
+            };
+        }
+
+        /// <summary>
+        /// 智能格式化字符串值
+        /// 如果字符串是纯数值,不加引号;否则加引号
+        /// </summary>
+        private static string FormatStringValue(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+                return "\"\"";
+
+            // 尝试解析为数值
+            // 如果是纯数值字符串,返回不带引号的数值
+            if (double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var numValue))
+            {
+                // 返回格式化的数值（保持精度）
+                return numValue.ToString(CultureInfo.InvariantCulture);
+            }
+
+            // 尝试解析为布尔值
+            if (bool.TryParse(s, out var boolValue))
+            {
+                return boolValue.ToString().ToLower();
+            }
+
+            // 不是数值或布尔值,作为字符串处理(加引号并转义)
+            return $"\"{EscapeString(s)}\"";
         }
 
         /// <summary>
         /// 转义字符串中的特殊字符
         /// </summary>
-        public static string EscapeString(string str)
+        private static string EscapeString(string s)
         {
-            return str?.Replace("\"", "\\\"") ?? string.Empty;
+            return s.Replace("\\", "\\\\")  // 反斜杠
+                    .Replace("\"", "\\\"")  // 引号
+                    .Replace("\n", "\\n")   // 换行
+                    .Replace("\r", "\\r")   // 回车
+                    .Replace("\t", "\\t");  // 制表符
         }
+
+        /// <summary>
+        /// 格式化未知类型的值
+        /// </summary>
+        private static string FormatUnknownType(object value)
+        {
+            var str = value.ToString();
+
+            // 尝试解析为数值
+            if (double.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var numValue))
+            {
+                return numValue.ToString(CultureInfo.InvariantCulture);
+            }
+
+            // 尝试解析为布尔值
+            if (bool.TryParse(str, out var boolValue))
+            {
+                return boolValue.ToString().ToLower();
+            }
+
+            // 作为字符串处理
+            return $"\"{EscapeString(str)}\"";
+        }
+
 
         /// <summary>
         /// 反转义字符串

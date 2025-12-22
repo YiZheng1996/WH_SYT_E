@@ -9,7 +9,7 @@ using Panel = Sunny.UI.UIPanel;
 namespace MainUI.Procedure.Controls
 {
     /// <summary>
-    /// 步骤状态控件 - 完整可用版
+    /// 步骤状态控件
     /// 支持根据步骤类型动态显示参数和结果信息
     /// </summary>
     public class StepStatusControl : Panel
@@ -346,7 +346,7 @@ namespace MainUI.Procedure.Controls
             }
 
             detailsPanel.Height = yPosition + 10;
-            Height = 85 + detailsPanel.Height + 15;
+            Height = 70 + detailsPanel.Height + 15;
 
             // 调整进度条位置(如果有)
             if (progressBar.Visible)
@@ -411,7 +411,7 @@ namespace MainUI.Procedure.Controls
                 "写入PLC" or "WritePLC" => DisplayWritePLCParameters(stepParameter, yPosition),
                 "读取PLC" or "ReadPLC" => DisplayReadPLCParameters(stepParameter, yPosition),
                 "等待稳定" or "WaitForStable" => DisplayWaitForStableParameters(stepParameter, yPosition),
-                "实时监控提示" => DisplayRealtimeMonitorPromptParameters(stepParameter, yPosition),
+                "实时监控" => DisplayRealtimeMonitorPromptParameters(stepParameter, yPosition),
                 "循环工具" => DisplayLoopParameters(stepParameter, yPosition),
                 _ => DisplayGenericParameters(stepParameter, yPosition)
             };
@@ -602,12 +602,12 @@ namespace MainUI.Procedure.Controls
         }
 
         #region 条件判断显示
+
+        #region 条件判断
+
         /// <summary>
-        /// 显示检测参数（表达式化版本）
+        /// 条件判断参数展示
         /// </summary>
-        /// <param name="stepParameter">步骤参数</param>
-        /// <param name="yPosition">起始Y坐标</param>
-        /// <returns>结束Y坐标</returns>
         private int DisplayConditionParameters(object stepParameter, int yPosition)
         {
             try
@@ -627,14 +627,12 @@ namespace MainUI.Procedure.Controls
                     }
                     catch (JsonException)
                     {
-                        // JSON解析失败，尝试从JObject显示
                         var json = JObject.Parse(jsonStr);
                         return DisplayConditionParametersFromJson(json, yPosition);
                     }
                 }
                 else if (stepParameter != null)
                 {
-                    // 尝试序列化后反序列化
                     var jsonStr2 = JsonConvert.SerializeObject(stepParameter);
                     param = JsonConvert.DeserializeObject<Parameter_Detection>(jsonStr2);
                 }
@@ -664,18 +662,18 @@ namespace MainUI.Procedure.Controls
                     yPosition += 22;
                 }
 
-                // 🎯 检测条件（核心改造 - 显示表达式）
+                // 检测条件（显示表达式）
                 yPosition = AddSubSectionTitle("检测条件", yPosition);
 
-                // 显示条件表达式
+                // 显示条件表达式 - 修复之前被截断的代码
                 string expression = param.ConditionExpression ?? "{value} >= 0";
                 AddTableCell("条件表达式", yPosition, 0, col1Width, false);
 
-                // 表达式可能较长，需要特殊处理
+                // 表达式可能较长,需要特殊处理
                 if (expression.Length > 40)
                 {
                     // 长表达式分行显示
-                    AddTableCell(expression.Substring(0, 40) + "...", yPosition, col1Width, col2Width, false,
+                    AddTableCell(string.Concat(expression.AsSpan(0, 40), "..."), yPosition, col1Width, col2Width, false,
                         Color.FromArgb(102, 51, 153));
                     yPosition += 22;
 
@@ -692,8 +690,8 @@ namespace MainUI.Procedure.Controls
                     yPosition += 22;
                 }
 
-                // 显示表达式的简要说明
-                string expressionDesc = GetExpressionDescription(expression);
+                // 显示条件说明 - 添加辅助方法调用
+                string expressionDesc = GetExpressionDescription(param.ConditionExpression);
                 if (!string.IsNullOrEmpty(expressionDesc))
                 {
                     AddTableCell("条件说明", yPosition, 0, col1Width, false);
@@ -701,95 +699,145 @@ namespace MainUI.Procedure.Controls
                         Color.FromArgb(40, 167, 69));
                     yPosition += 22;
                 }
-
-                // ⏱ 超时和重试
+          
+                // 超时和重试
                 yPosition = AddSubSectionTitle("超时和重试", yPosition);
 
                 AddTableCell("超时时间", yPosition, 0, col1Width, false);
-                AddTableCell($"{param.TimeoutMs} ms", yPosition, col1Width, col2Width, false);
-                yPosition += 22;
-
-                AddTableCell("刷新频率", yPosition, 0, col1Width, false);
-                AddTableCell($"{param.RefreshRateMs} ms", yPosition, col1Width, col2Width, false);
+                AddTableCell($"{param.TimeoutMs} 毫秒 ({param.TimeoutMs / 1000.0:F1} 秒)",
+                    yPosition, col1Width, col2Width, false);
                 yPosition += 22;
 
                 if (param.RetryCount > 0)
                 {
                     AddTableCell("重试次数", yPosition, 0, col1Width, false);
-                    AddTableCell(param.RetryCount.ToString(), yPosition, col1Width, col2Width, false);
+                    AddTableCell($"{param.RetryCount} 次", yPosition, col1Width, col2Width, false);
                     yPosition += 22;
 
                     AddTableCell("重试间隔", yPosition, 0, col1Width, false);
-                    AddTableCell($"{param.RetryIntervalMs} ms", yPosition, col1Width, col2Width, false);
+                    AddTableCell($"{param.RetryIntervalMs} 毫秒", yPosition, col1Width, col2Width, false);
                     yPosition += 22;
                 }
 
-                // 📋 结果处理
-                yPosition = DisplayResultHandling(param.ResultHandling, yPosition, col1Width, col2Width);
+                if (param.RefreshRateMs > 0)
+                {
+                    AddTableCell("刷新频率", yPosition, 0, col1Width, false);
+                    AddTableCell($"{param.RefreshRateMs} 毫秒", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
 
-                return yPosition + 5;
+                // 结果处理
+                yPosition = AddSubSectionTitle("结果处理", yPosition);
+
+                // 失败处理
+                string failureActionName = param.ResultHandling?.OnFailure switch
+                {
+                    FailureAction.Continue => "继续执行",
+                    FailureAction.Stop => "停止流程",
+                    FailureAction.JumpToStep => $"跳转到步骤 {param.ResultHandling.FailureJumpStep}",
+                    //FailureAction.Confirm => "等待确认",
+                    _ => "未知"
+                };
+                AddTableCell("失败时", yPosition, 0, col1Width, false);
+                Color failureColor = param.ResultHandling?.OnFailure == FailureAction.Stop
+                    ? StatusColors.Failed
+                    : StatusColors.Waiting;
+                AddTableCell(failureActionName, yPosition, col1Width, col2Width, false, failureColor);
+                yPosition += 22;
+
+                // 成功处理
+                if (param.ResultHandling?.SuccessJumpStep != null && param.ResultHandling.SuccessJumpStep > 0)
+                {
+                    AddTableCell("成功时", yPosition, 0, col1Width, false);
+                    AddTableCell($"跳转到步骤 {param.ResultHandling.SuccessJumpStep}",
+                        yPosition, col1Width, col2Width, false, StatusColors.Success);
+                    yPosition += 22;
+                }
+
+                // 结果保存
+                if (param.ResultHandling?.SaveToVariable == true)
+                {
+                    AddTableCell("保存结果到", yPosition, 0, col1Width, false);
+                    AddTableCell(param.ResultHandling.ResultVariableName ?? "(未指定)",
+                        yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                if (param.ResultHandling?.SaveValueToVariable == true)
+                {
+                    AddTableCell("保存数值到", yPosition, 0, col1Width, false);
+                    AddTableCell(param.ResultHandling.ValueVariableName ?? "(未指定)",
+                        yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 是否显示结果
+                if (param.ResultHandling?.ShowResult == true)
+                {
+                    AddTableCell("显示结果", yPosition, 0, col1Width, false);
+                    AddTableCell("✓ 是", yPosition, col1Width, col2Width, false, StatusColors.Success);
+                    yPosition += 22;
+                }
+
+                yPosition += 5;
+                return yPosition;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"DisplayConditionParameters 错误: {ex}");
+                Debug.WriteLine($"DisplayConditionParameters 错误: {ex}");
                 return DisplayGenericParameters(stepParameter, yPosition);
             }
         }
 
         /// <summary>
-        /// 获取表达式的简要说明
+        /// 获取表达式的简要描述
         /// </summary>
+        /// <param name="expression">条件表达式</param>
+        /// <returns>中文描述</returns>
         private string GetExpressionDescription(string expression)
         {
             if (string.IsNullOrEmpty(expression))
-                return null;
+                return string.Empty;
 
-            // 分析表达式类型并生成描述
-            if (expression.Contains(">=") && expression.Contains("<=") && expression.Contains("&&"))
-            {
-                // 范围检测: {value} >= min && {value} <= max
-                return "范围检测";
-            }
-            else if (expression.Contains("Math.Abs"))
+            try
             {
                 // 容差检测
-                return "容差检测";
-            }
-            else if (expression.Contains(">="))
-            {
-                return "大于等于检测";
-            }
-            else if (expression.Contains("<="))
-            {
-                return "小于等于检测";
-            }
-            else if (expression.Contains(">") && !expression.Contains(">="))
-            {
-                return "大于检测";
-            }
-            else if (expression.Contains("<") && !expression.Contains("<="))
-            {
-                return "小于检测";
-            }
-            else if (expression.Contains("=="))
-            {
-                return "相等检测";
-            }
-            else if (expression.Contains("!="))
-            {
-                return "不等检测";
-            }
-            else if (expression.Contains("&&"))
-            {
-                return "多条件AND检测";
-            }
-            else if (expression.Contains("||"))
-            {
-                return "多条件OR检测";
-            }
+                if (expression.Contains("Math.Abs"))
+                    return "容差检测";
 
-            return "自定义检测";
+                // 多条件检测
+                if (expression.Contains("&&"))
+                    return "多条件AND";
+                if (expression.Contains("||"))
+                    return "多条件OR";
+
+                // 范围检测
+                if (expression.Contains(">=") && expression.Contains("<="))
+                    return "范围检测";
+
+                // 单一比较
+                if (expression.Contains(">="))
+                    return "大于等于";
+                if (expression.Contains("<="))
+                    return "小于等于";
+                if (expression.Contains(">"))
+                    return "大于";
+                if (expression.Contains("<"))
+                    return "小于";
+                if (expression.Contains("=="))
+                    return "等于";
+                if (expression.Contains("!="))
+                    return "不等于";
+
+                return "自定义表达式";
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
+
+        #endregion
 
         /// <summary>
         /// 显示结果处理配置
@@ -1243,15 +1291,18 @@ namespace MainUI.Procedure.Controls
                 AddTableCell("配置值", yPosition, col1Width, col2Width, true);
                 yPosition += 25;
 
+                // 窗体标题
                 AddTableCell("窗体标题", yPosition, 0, col1Width, false);
                 AddTableCell(param.Title, yPosition, col1Width, col2Width, false);
                 yPosition += 22;
 
+                // 监测源类型
                 string sourceType = param.MonitorSourceType == MonitorSourceType.Variable ? "全局变量" : "PLC点位";
                 AddTableCell("监测源类型", yPosition, 0, col1Width, false);
                 AddTableCell(sourceType, yPosition, col1Width, col2Width, false);
                 yPosition += 22;
 
+                // 监测源
                 string source = param.MonitorSourceType == MonitorSourceType.Variable
                     ? param.MonitorVariable
                     : $"{param.PlcModuleName}.{param.PlcAddress}";
@@ -1259,9 +1310,52 @@ namespace MainUI.Procedure.Controls
                 AddTableCell(source, yPosition, col1Width, col2Width, false);
                 yPosition += 22;
 
+                // 提示信息
                 AddTableCell("提示信息", yPosition, 0, col1Width, false);
                 AddTableCell(param.PromptMessage.Replace("\n", " "), yPosition, col1Width, col2Width, false);
                 yPosition += 22;
+
+                // === 新增显示 ===
+
+                // 数值单位
+                if (!string.IsNullOrEmpty(param.Unit))
+                {
+                    AddTableCell("数值单位", yPosition, 0, col1Width, false);
+                    AddTableCell(param.Unit, yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 显示格式
+                AddTableCell("显示格式", yPosition, 0, col1Width, false);
+                AddTableCell(param.DisplayFormat ?? "F1", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 刷新间隔
+                AddTableCell("刷新间隔", yPosition, 0, col1Width, false);
+                AddTableCell($"{param.RefreshInterval} 毫秒", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 按钮文本
+                AddTableCell("按钮文本", yPosition, 0, col1Width, false);
+                AddTableCell(param.ButtonText ?? "确定", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 超时设置
+                if (param.TimeoutSeconds > 0)
+                {
+                    AddTableCell("超时时间", yPosition, 0, col1Width, false);
+                    AddTableCell($"{param.TimeoutSeconds} 秒", yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(255, 165, 0));
+                    yPosition += 22;
+                }
+
+                // 数值标签
+                if (param.ShowValueLabel && !string.IsNullOrEmpty(param.ValueLabelText))
+                {
+                    AddTableCell("数值标签", yPosition, 0, col1Width, false);
+                    AddTableCell(param.ValueLabelText, yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
 
                 return yPosition;
             }

@@ -3,6 +3,8 @@ using MainUI.LogicalConfiguration;
 using MainUI.Procedure.Controls;
 using MainUI.Service;
 using Microsoft.Extensions.Logging;
+using MySqlX.XDevAPI.Relational;
+using System.Threading.Tasks;
 using Label = System.Windows.Forms.Label;
 
 namespace MainUI
@@ -452,12 +454,19 @@ namespace MainUI
         /// <param name="isTesting">是否正在测试中</param>
         private void Disable(bool isTesting)
         {
+            // 确保在UI线程执行
+            if (InvokeRequired)
+            {
+                Invoke(new Action<bool>(Disable), isTesting);
+                return;
+            }
+
             btnStopTest.Enabled = isTesting;  // 停止按钮在测试时启用
             btnStartTest.Enabled = !isTesting; // 开始按钮在测试时禁用
             _allowCheckChange = !isTesting; // 测试时禁止更改勾选状态
 
             //  TableService 处理表格列的状态
-            _tableService.SetCheckColumnAutoCheck(!isTesting);
+            //_tableService.SetCheckColumnAutoCheck(!isTesting);
 
             // 在测试进行时禁用的控件组
             var controlsToDisable = new Control[]
@@ -570,13 +579,14 @@ namespace MainUI
                     break;
             }
         }
-        public void DIgrp_DIGroupChanged(object sender, int index, bool value)
+
+        public async void DIgrp_DIGroupChanged(object sender, int index, bool value)
         {
             try
             {
                 if (index == 0)
                 {
-                    if (!value) IsTestEnd();
+                    if (!value) await IsTestEndAsync();
                     EmergencyStatusChanged?.Invoke(value);
                 }
             }
@@ -878,7 +888,7 @@ namespace MainUI
                 // 只有试验真正开始了才执行结束逻辑
                 if (_isTestActuallyStarted)
                 {
-                    IsTestEnd();
+                    await IsTestEndAsync();
                 }
             }
         }
@@ -1025,7 +1035,7 @@ namespace MainUI
             }
         }
 
-        private void btnStopTest_Click(object sender, EventArgs e) => IsTestEnd();
+        private async void btnStopTest_Click(object sender, EventArgs e) => await IsTestEndAsync();
 
         private (bool Result, string txt) FrmText()
         {
@@ -1053,21 +1063,31 @@ namespace MainUI
         }
 
         // 结束试验操作
-        private async void IsTestEnd()
+        private async Task IsTestEndAsync()
         {
             try
             {
                 AppendText("试验结束");
+
                 // 停止工作流执行
                 _cancellationTokenSource.Cancel();
                 _workflowService?.StopExecution();
                 _countdownService.StopCountdown();
 
                 await ExhaustkPaAsync(CancellationToken.None);
-                Disable(false);
-                TestStateChanged?.Invoke(false, false);
 
-                _isTestActuallyStarted = false; // 重置试验开始标志位
+                // 恢复UI状态 - 确保在UI线程
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(() => Disable(false)));
+                }
+                else
+                {
+                    Disable(false);
+                }
+
+                TestStateChanged?.Invoke(false, false);
+                _isTestActuallyStarted = false;
             }
             catch (OperationCanceledException ex)
             {
@@ -1079,6 +1099,7 @@ namespace MainUI
                 MessageHelper.MessageOK(frm, $"结束试验错误：{ex.Message}");
             }
         }
+
         #endregion
 
         #region 模拟量设置

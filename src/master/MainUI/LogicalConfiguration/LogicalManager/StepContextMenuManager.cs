@@ -740,6 +740,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             var form = new UIForm
             {
                 Text = "选择步骤类型",
+                Font = new Font("微软雅黑", 12F, FontStyle.Bold),
                 Width = 400,
                 Height = 500,
                 StartPosition = FormStartPosition.CenterParent,
@@ -753,11 +754,11 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 KeyPreview = true  // 启用键盘预览,用于捕获ESC键
             };
 
-            var listBox = new ListBox
+            var listBox = new UIListBox
             {
                 Dock = DockStyle.Fill,
                 Font = new Font("微软雅黑", 12F),
-                Height = 30,
+                Height = 35,
             };
 
             // 加载所有步骤类型 - 与ToolTreeViewControl中的工具名称保持一致
@@ -852,7 +853,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             form.Controls.Add(listBox);
             form.Controls.Add(buttonPanel);
 
-            return form.ShowDialog(_ownerForm) == DialogResult.OK
+            return VarHelper.ShowDialogWithOverlayEx(_ownerForm, form) == DialogResult.OK
                 ? listBox.SelectedItem?.ToString()
                 : null;
         }

@@ -243,15 +243,14 @@ namespace MainUI.CurrencyHelper
 
             try
             {
-                // ✅ 关键改进1：每次创建新的LogEventInfo对象
-                // 避免多线程环境下的竞争条件
+                // 每次创建新的LogEventInfo对象，避免多线程环境下的竞争条件
                 var logEvent = new LogEventInfo(level, _logger.Name, message)
                 {
                     Exception = exception,  // 设置异常对象
                     TimeStamp = DateTime.Now
                 };
 
-                // 关键改进2：不手动拼接异常信息
+                // 不手动拼接异常信息
                 // Message字段只包含传入的message
                 // 异常信息由NLog.config的layout自动添加：
                 // ${message}${onexception:${newline}${exception:format=tostring}}
@@ -308,7 +307,7 @@ namespace MainUI.CurrencyHelper
         }
 
         /// <summary>
-        /// 关键改进3：自动获取调用源信息（类名.方法名）
+        /// 自动获取调用源信息（类名.方法名）
         /// </summary>
         /// <param name="callerName">调用者方法名</param>
         /// <returns>格式: 类名.方法名</returns>
