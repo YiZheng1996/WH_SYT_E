@@ -286,11 +286,11 @@ namespace MainUI.LogicalConfiguration.Controls
                 SortMode = DataGridViewColumnSortMode.NotSortable
             });
 
-            // 第2列: StepName - 步骤名称
+            // 第2列: StepName - 工具名称
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStepName",
-                HeaderText = "操作名称",
+                HeaderText = "工具名称",
                 Width = 150,
                 ReadOnly = true,
                 SortMode = DataGridViewColumnSortMode.NotSortable
@@ -300,7 +300,7 @@ namespace MainUI.LogicalConfiguration.Controls
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStepType",
-                HeaderText = "类型",
+                HeaderText = "工具类型",
                 Width = 120,
                 ReadOnly = true,
                 SortMode = DataGridViewColumnSortMode.NotSortable
@@ -310,7 +310,7 @@ namespace MainUI.LogicalConfiguration.Controls
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStepDetails",
-                HeaderText = "详情",
+                HeaderText = "步骤详情",
                 Width = 300,
                 ReadOnly = true,
                 SortMode = DataGridViewColumnSortMode.NotSortable
@@ -320,7 +320,7 @@ namespace MainUI.LogicalConfiguration.Controls
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColRemark",
-                HeaderText = "备注",
+                HeaderText = "手动备注",
                 AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
                 ReadOnly = false,  // 允许编辑
                 SortMode = DataGridViewColumnSortMode.NotSortable

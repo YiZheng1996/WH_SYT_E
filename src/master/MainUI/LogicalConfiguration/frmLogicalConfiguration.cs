@@ -1,15 +1,32 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Controls;
+using MainUI.LogicalConfiguration.Controls.NodeEditor;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Text;
+using static Sunny.UI.UIComboTreeView;
+using Panel = System.Windows.Forms.Panel;
+using TabPage = System.Windows.Forms.TabPage;
 
 namespace MainUI.LogicalConfiguration
 {
     public partial class FrmLogicalConfiguration : UIForm
     {
+        #region 新增字段
+
+        // 标签页控件
+        private TabControl _viewTabControl;
+        private TabPage _tabListView;
+        private TabPage _tabGraphView;
+
+        // 节点编辑器控件
+        private WorkflowNodeEditorControl _nodeEditorControl;
+        private NodeEditorToolbar _nodeEditorToolbar;
+
+        #endregion
+
         #region 字段和属性
 
         // 状态颜色定义
@@ -100,45 +117,102 @@ namespace MainUI.LogicalConfiguration
         {
             try
             {
-                // 创建工具箱控件
+                // ========== 1. 创建工具箱控件（保持不变） ==========
                 var toolLogger = Program.ServiceProvider?.GetService<ILogger<ToolTreeViewControl>>();
                 _toolTreeControl = new ToolTreeViewControl(toolLogger)
                 {
                     Dock = DockStyle.Fill,
                     Title = "工具箱"
                 };
-
-                // 订阅工具箱事件
+                //_toolTreeControl.ToolDragging += TvTools_ItemDrag;
                 _toolTreeControl.AfterSelect += TvTools_AfterSelect;
-
-                // 添加到容器
                 panelToolBox.Controls.Clear();
                 panelToolBox.Controls.Add(_toolTreeControl);
 
-                _logger.LogDebug("工具箱控件已初始化");
+                // ========== 2. 创建视图切换TabControl（新增） ==========
+                _viewTabControl = new TabControl
+                {
+                    Dock = DockStyle.Fill,
+                    Font = new Font("微软雅黑", 10F),
+                    Padding = new Point(12, 4)
+                };
 
-                // 创建流程表格控件
+                // ========== 3. 创建列表视图标签页（原有控件） ==========
+                _tabListView = new TabPage
+                {
+                    Text = "📋 列表视图",
+                    UseVisualStyleBackColor = true
+                };
+
                 var gridLogger = Program.ServiceProvider?.GetService<ILogger<ProcessDataGridViewControl>>();
                 _processGridControl = new ProcessDataGridViewControl(_workflowState, gridLogger)
                 {
                     Dock = DockStyle.Fill,
-                    EnableContextMenu = true,    // 自动启用右键菜单
-                    AutoRefresh = true,          // 自动刷新
-                    AllowDragDrop = true         // 允许拖放
+                    EnableContextMenu = true,
+                    AutoRefresh = true,
+                    AllowDragDrop = true
                 };
 
-                // 订阅流程表格事件
+                // 订阅原有事件
                 _processGridControl.StepConfigRequested += OnStepConfigRequested;
                 _processGridControl.DragDropEvent += OnProcessGridDragDrop;
                 _processGridControl.SelectionChangedEvent += OnGridSelectionChanged;
                 _processGridControl.CellEndEditEvent += ProcessDataGridView_CellEndEdit;
                 _processGridControl.CellBeginEditEvent += ProcessDataGridView_CellBeginEdit;
 
+                _tabListView.Controls.Add(_processGridControl);
+
+                // ========== 4. 创建流程图视图标签页（新增） ==========
+                _tabGraphView = new TabPage
+                {
+                    Text = "🔷 流程图视图",
+                    UseVisualStyleBackColor = true
+                };
+
+                // 创建容器面板（包含工具栏和编辑器）
+                var graphContainer = new Panel { Dock = DockStyle.Fill };
+
+                // 创建节点编辑器工具栏
+                _nodeEditorToolbar = new NodeEditorToolbar
+                {
+                    Dock = DockStyle.Top
+                };
+
+                // 创建节点编辑器
+                var nodeLogger = Program.ServiceProvider?.GetService<ILogger<WorkflowNodeEditorControl>>();
+                _nodeEditorControl = new WorkflowNodeEditorControl(_workflowState, nodeLogger)
+                {
+                    Dock = DockStyle.Fill,
+                    ShowGrid = true,
+                    SnapToGrid = true,
+                    ShowMinimap = true,
+                    AutoLayoutMode = LayoutMode.Horizontal
+                };
+
+                // 订阅节点编辑器事件
+                _nodeEditorControl.NodeDoubleClicked += OnNodeDoubleClicked;
+                _nodeEditorControl.NodeSelected += OnNodeSelected;
+                _nodeEditorControl.AddNodeRequested += OnAddNodeRequested;
+                _nodeEditorControl.ZoomChanged += OnZoomChanged;
+
+                // 连接工具栏和编辑器
+                ConnectToolbarToEditor();
+
+                graphContainer.Controls.Add(_nodeEditorControl);
+                graphContainer.Controls.Add(_nodeEditorToolbar);
+
+                _tabGraphView.Controls.Add(graphContainer);
+
+                // ========== 5. 添加标签页并设置默认视图 ==========
+                _viewTabControl.TabPages.Add(_tabListView);
+                _viewTabControl.TabPages.Add(_tabGraphView);
+                _viewTabControl.SelectedIndexChanged += OnViewTabChanged;
+
                 // 添加到容器
                 panelProcess.Controls.Clear();
-                panelProcess.Controls.Add(_processGridControl);
+                panelProcess.Controls.Add(_viewTabControl);
 
-                _logger.LogDebug("流程表格控件已初始化");
+                _logger.LogDebug("自定义控件初始化完成，已添加流程图视图");
             }
             catch (Exception ex)
             {
@@ -146,6 +220,148 @@ namespace MainUI.LogicalConfiguration
                 throw;
             }
         }
+        #endregion
+
+        #region 工具栏连接
+
+        /// <summary>
+        /// 连接工具栏事件到节点编辑器
+        /// </summary>
+        private void ConnectToolbarToEditor()
+        {
+            _nodeEditorToolbar.ZoomInClicked += (s, e) =>
+                _nodeEditorControl.ZoomLevel += 0.1f;
+
+            _nodeEditorToolbar.ZoomOutClicked += (s, e) =>
+                _nodeEditorControl.ZoomLevel -= 0.1f;
+
+            _nodeEditorToolbar.FitViewClicked += (s, e) =>
+                _nodeEditorControl.FitToView();
+
+            _nodeEditorToolbar.ResetViewClicked += (s, e) =>
+                _nodeEditorControl.ResetView();
+
+            _nodeEditorToolbar.ZoomLevelChanged += (s, zoom) =>
+                _nodeEditorControl.ZoomLevel = zoom;
+
+            _nodeEditorToolbar.LayoutModeChanged += (s, mode) =>
+            {
+                _nodeEditorControl.AutoLayoutMode = mode;
+                _nodeEditorControl.AutoLayoutNodes();
+            };
+
+            _nodeEditorToolbar.ShowGridChanged += (s, show) =>
+                _nodeEditorControl.ShowGrid = show;
+
+            _nodeEditorToolbar.SnapToGridChanged += (s, snap) =>
+                _nodeEditorControl.SnapToGrid = snap;
+
+            _nodeEditorToolbar.ShowMinimapChanged += (s, show) =>
+                _nodeEditorControl.ShowMinimap = show;
+        }
+
+        #endregion
+
+        #region 新增事件处理
+
+        /// <summary>
+        /// 视图切换事件
+        /// </summary>
+        private void OnViewTabChanged(object sender, EventArgs e)
+        {
+            if (_viewTabControl.SelectedIndex == 1) // 流程图视图
+            {
+                // 切换到流程图视图时，同步数据并自动布局
+                _nodeEditorControl.SyncFromWorkflowState();
+            }
+        }
+
+        /// <summary>
+        /// 节点双击事件 - 打开配置窗口
+        /// </summary>
+        private void OnNodeDoubleClicked(object sender, NodeSelectedEventArgs e)
+        {
+            if (e.Node?.StepModel == null) return;
+
+            // 设置当前步骤索引
+            _workflowState.StepNum = e.Node.StepIndex;
+
+            // 打开配置窗口（复用原有逻辑）
+            //OpenStepConfigForm(e.Node.StepModel);
+            // 打开配置窗体
+            _formService.OpenFormByName(this, e.Node.StepModel.StepName, this);
+            _processGridControl.RefreshGrid();
+        }
+
+        /// <summary>
+        /// 节点选中事件
+        /// </summary>
+        private void OnNodeSelected(object sender, NodeSelectedEventArgs e)
+        {
+            if (e.Node != null)
+            {
+                _workflowState.StepNum = e.Node.StepIndex;
+
+                // 更新步骤详情面板
+                //UpdateStepDetailsPanel(e.Node.StepModel);
+                UpdateStepDetails(_workflowState.StepNum);
+            }
+        }
+
+        /// <summary>
+        /// 添加节点请求事件（从工具箱拖拽）
+        /// </summary>
+        private void OnAddNodeRequested(object sender, AddNodeRequestEventArgs e)
+        {
+            // 创建新步骤
+            var newStep = new ChildModel
+            {
+                StepName = e.ToolName,
+                Status = 0,
+                StepNum = _workflowState.GetStepCount() + 1,
+                StepParameter = 0
+            };
+
+            // 添加到工作流状态（会自动同步到两个视图）
+            _workflowState.AddStep(newStep);
+
+            _logger.LogInformation("通过流程图添加步骤: {StepName}", e.ToolName);
+        }
+
+        /// <summary>
+        /// 缩放变化事件
+        /// </summary>
+        private void OnZoomChanged(object sender, float zoom)
+        {
+            _nodeEditorToolbar.ZoomLevel = zoom;
+        }
+
+        #endregion
+
+        #region 执行时高亮支持
+
+        /// <summary>
+        /// 在工作流执行时高亮当前步骤
+        /// 在你的执行引擎中调用此方法
+        /// </summary>
+        public void HighlightCurrentStep(int stepIndex)
+        {
+            // 如果当前是流程图视图，高亮执行节点
+            if (_viewTabControl.SelectedIndex == 1)
+            {
+                _nodeEditorControl.HighlightExecutingNode(stepIndex);
+            }
+        }
+
+        /// <summary>
+        /// 更新步骤执行状态
+        /// </summary>
+        public void UpdateStepExecutionState(int stepIndex, bool success)
+        {
+            var state = success ? ExecutionState.Success : ExecutionState.Failed;
+            _nodeEditorControl.UpdateNodeState(stepIndex, state);
+        }
+
         #endregion
 
         #region 初始化方法

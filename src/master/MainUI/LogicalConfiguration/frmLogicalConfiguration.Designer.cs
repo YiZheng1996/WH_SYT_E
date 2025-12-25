@@ -533,7 +533,7 @@
             BtnSystemParams.FillSelectedColor = Color.FromArgb(149, 154, 164);
             BtnSystemParams.Font = new Font("微软雅黑", 12F);
             BtnSystemParams.Image = (Image)resources.GetObject("BtnSystemParams.Image");
-            BtnSystemParams.Location = new Point(373, 10);
+            BtnSystemParams.Location = new Point(239, 10);
             BtnSystemParams.MinimumSize = new Size(1, 1);
             BtnSystemParams.Name = "BtnSystemParams";
             BtnSystemParams.RectColor = Color.FromArgb(55, 71, 79);
@@ -546,6 +546,7 @@
             BtnSystemParams.TabIndex = 6;
             BtnSystemParams.Text = "系统参数";
             BtnSystemParams.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            BtnSystemParams.Visible = false;
             // 
             // BtnVariableMonitor
             // 
@@ -560,7 +561,7 @@
             BtnVariableMonitor.FillSelectedColor = Color.FromArgb(149, 154, 164);
             BtnVariableMonitor.Font = new Font("微软雅黑", 12F);
             BtnVariableMonitor.Image = (Image)resources.GetObject("BtnVariableMonitor.Image");
-            BtnVariableMonitor.Location = new Point(129, 10);
+            BtnVariableMonitor.Location = new Point(355, 10);
             BtnVariableMonitor.MinimumSize = new Size(1, 1);
             BtnVariableMonitor.Name = "BtnVariableMonitor";
             BtnVariableMonitor.RectColor = Color.FromArgb(55, 71, 79);
@@ -573,6 +574,7 @@
             BtnVariableMonitor.TabIndex = 5;
             BtnVariableMonitor.Text = "变量监控";
             BtnVariableMonitor.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            BtnVariableMonitor.Visible = false;
             // 
             // BtnPointDefine
             // 
@@ -587,7 +589,7 @@
             BtnPointDefine.FillSelectedColor = Color.FromArgb(149, 154, 164);
             BtnPointDefine.Font = new Font("微软雅黑", 12F);
             BtnPointDefine.Image = (Image)resources.GetObject("BtnPointDefine.Image");
-            BtnPointDefine.Location = new Point(251, 10);
+            BtnPointDefine.Location = new Point(123, 10);
             BtnPointDefine.MinimumSize = new Size(1, 1);
             BtnPointDefine.Name = "BtnPointDefine";
             BtnPointDefine.RectColor = Color.FromArgb(55, 71, 79);

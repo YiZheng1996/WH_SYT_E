@@ -117,7 +117,7 @@
             grpBasicConfig.Padding = new Padding(10, 32, 10, 10);
             grpBasicConfig.Radius = 8;
             grpBasicConfig.RectColor = Color.FromArgb(65, 100, 204);
-            grpBasicConfig.Size = new Size(670, 110);
+            grpBasicConfig.Size = new Size(670, 112);
             grpBasicConfig.TabIndex = 0;
             grpBasicConfig.Text = null;
             grpBasicConfig.TextAlignment = ContentAlignment.MiddleCenter;
@@ -170,7 +170,7 @@
             lblMonitorSourceType.BackColor = Color.Transparent;
             lblMonitorSourceType.Font = new Font("微软雅黑", 10F);
             lblMonitorSourceType.ForeColor = Color.Red;
-            lblMonitorSourceType.Location = new Point(15, 74);
+            lblMonitorSourceType.Location = new Point(15, 76);
             lblMonitorSourceType.Name = "lblMonitorSourceType";
             lblMonitorSourceType.Size = new Size(100, 23);
             lblMonitorSourceType.TabIndex = 3;
@@ -185,7 +185,7 @@
             cmbMonitorSourceType.Font = new Font("微软雅黑", 10F);
             cmbMonitorSourceType.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbMonitorSourceType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbMonitorSourceType.Location = new Point(130, 74);
+            cmbMonitorSourceType.Location = new Point(130, 76);
             cmbMonitorSourceType.Margin = new Padding(4, 5, 4, 5);
             cmbMonitorSourceType.MinimumSize = new Size(63, 0);
             cmbMonitorSourceType.Name = "cmbMonitorSourceType";
@@ -210,14 +210,14 @@
             grpMonitorSource.FillColor = Color.White;
             grpMonitorSource.FillColor2 = Color.White;
             grpMonitorSource.Font = new Font("微软雅黑", 9F);
-            grpMonitorSource.Location = new Point(15, 130);
+            grpMonitorSource.Location = new Point(15, 132);
             grpMonitorSource.Margin = new Padding(4, 5, 4, 5);
             grpMonitorSource.MinimumSize = new Size(1, 1);
             grpMonitorSource.Name = "grpMonitorSource";
             grpMonitorSource.Padding = new Padding(10, 32, 10, 10);
             grpMonitorSource.Radius = 8;
             grpMonitorSource.RectColor = Color.FromArgb(65, 100, 204);
-            grpMonitorSource.Size = new Size(670, 110);
+            grpMonitorSource.Size = new Size(670, 122);
             grpMonitorSource.TabIndex = 1;
             grpMonitorSource.Text = null;
             grpMonitorSource.TextAlignment = ContentAlignment.MiddleCenter;
@@ -309,7 +309,7 @@
             lblPlcAddress.BackColor = Color.Transparent;
             lblPlcAddress.Font = new Font("微软雅黑", 10F);
             lblPlcAddress.ForeColor = Color.Red;
-            lblPlcAddress.Location = new Point(15, 75);
+            lblPlcAddress.Location = new Point(15, 82);
             lblPlcAddress.Name = "lblPlcAddress";
             lblPlcAddress.Size = new Size(100, 23);
             lblPlcAddress.TabIndex = 5;
@@ -325,7 +325,7 @@
             cmbPlcAddress.Font = new Font("微软雅黑", 10F);
             cmbPlcAddress.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbPlcAddress.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbPlcAddress.Location = new Point(130, 75);
+            cmbPlcAddress.Location = new Point(130, 82);
             cmbPlcAddress.Margin = new Padding(4, 5, 4, 5);
             cmbPlcAddress.MinimumSize = new Size(63, 0);
             cmbPlcAddress.Name = "cmbPlcAddress";
@@ -351,14 +351,14 @@
             grpStabilityCriteria.FillColor = Color.White;
             grpStabilityCriteria.FillColor2 = Color.White;
             grpStabilityCriteria.Font = new Font("微软雅黑", 9F);
-            grpStabilityCriteria.Location = new Point(15, 245);
+            grpStabilityCriteria.Location = new Point(15, 259);
             grpStabilityCriteria.Margin = new Padding(4, 5, 4, 5);
             grpStabilityCriteria.MinimumSize = new Size(1, 1);
             grpStabilityCriteria.Name = "grpStabilityCriteria";
             grpStabilityCriteria.Padding = new Padding(10, 32, 10, 10);
             grpStabilityCriteria.Radius = 8;
             grpStabilityCriteria.RectColor = Color.FromArgb(65, 100, 204);
-            grpStabilityCriteria.Size = new Size(670, 145);
+            grpStabilityCriteria.Size = new Size(670, 154);
             grpStabilityCriteria.TabIndex = 2;
             grpStabilityCriteria.Text = null;
             grpStabilityCriteria.TextAlignment = ContentAlignment.MiddleCenter;
@@ -382,7 +382,7 @@
             lblStabilityThreshold.BackColor = Color.Transparent;
             lblStabilityThreshold.Font = new Font("微软雅黑", 10F);
             lblStabilityThreshold.ForeColor = Color.FromArgb(48, 48, 48);
-            lblStabilityThreshold.Location = new Point(15, 40);
+            lblStabilityThreshold.Location = new Point(15, 39);
             lblStabilityThreshold.Name = "lblStabilityThreshold";
             lblStabilityThreshold.Size = new Size(150, 23);
             lblStabilityThreshold.TabIndex = 1;
@@ -393,10 +393,10 @@
             // 
             numStabilityThreshold.DecimalPlaces = 4;
             numStabilityThreshold.Font = new Font("微软雅黑", 10F);
-            numStabilityThreshold.Location = new Point(170, 40);
+            numStabilityThreshold.Location = new Point(165, 31);
             numStabilityThreshold.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
             numStabilityThreshold.Name = "numStabilityThreshold";
-            numStabilityThreshold.Size = new Size(200, 29);
+            numStabilityThreshold.Size = new Size(200, 40);
             numStabilityThreshold.TabIndex = 2;
             numStabilityThreshold.Text = "0.1000";
             toolTip.SetToolTip(numStabilityThreshold, "变化率阈值，|当前值-上次值|/采样间隔≤此值时认为稳定");
@@ -407,7 +407,7 @@
             lblSamplingInterval.BackColor = Color.Transparent;
             lblSamplingInterval.Font = new Font("微软雅黑", 10F);
             lblSamplingInterval.ForeColor = Color.FromArgb(48, 48, 48);
-            lblSamplingInterval.Location = new Point(15, 75);
+            lblSamplingInterval.Location = new Point(15, 77);
             lblSamplingInterval.Name = "lblSamplingInterval";
             lblSamplingInterval.Size = new Size(150, 23);
             lblSamplingInterval.TabIndex = 3;
@@ -417,11 +417,11 @@
             // numSamplingInterval
             // 
             numSamplingInterval.Font = new Font("微软雅黑", 10F);
-            numSamplingInterval.Location = new Point(170, 75);
+            numSamplingInterval.Location = new Point(165, 69);
             numSamplingInterval.Maximum = new decimal(new int[] { 60, 0, 0, 0 });
             numSamplingInterval.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numSamplingInterval.Name = "numSamplingInterval";
-            numSamplingInterval.Size = new Size(200, 29);
+            numSamplingInterval.Size = new Size(200, 40);
             numSamplingInterval.TabIndex = 4;
             numSamplingInterval.Text = "1";
             toolTip.SetToolTip(numSamplingInterval, "每隔多少秒采样一次（建议1-5秒）");
@@ -432,7 +432,7 @@
             lblStableCount.BackColor = Color.Transparent;
             lblStableCount.Font = new Font("微软雅黑", 10F);
             lblStableCount.ForeColor = Color.FromArgb(48, 48, 48);
-            lblStableCount.Location = new Point(15, 110);
+            lblStableCount.Location = new Point(15, 113);
             lblStableCount.Name = "lblStableCount";
             lblStableCount.Size = new Size(150, 23);
             lblStableCount.TabIndex = 5;
@@ -442,11 +442,11 @@
             // numStableCount
             // 
             numStableCount.Font = new Font("微软雅黑", 10F);
-            numStableCount.Location = new Point(170, 110);
+            numStableCount.Location = new Point(165, 108);
             numStableCount.Maximum = new decimal(new int[] { 20, 0, 0, 0 });
             numStableCount.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numStableCount.Name = "numStableCount";
-            numStableCount.Size = new Size(200, 29);
+            numStableCount.Size = new Size(200, 40);
             numStableCount.TabIndex = 6;
             numStableCount.Text = "3";
             toolTip.SetToolTip(numStableCount, "连续多少次采样满足条件才算真正稳定");
@@ -464,7 +464,7 @@
             grpTimeoutConfig.FillColor = Color.White;
             grpTimeoutConfig.FillColor2 = Color.White;
             grpTimeoutConfig.Font = new Font("微软雅黑", 9F);
-            grpTimeoutConfig.Location = new Point(15, 395);
+            grpTimeoutConfig.Location = new Point(15, 419);
             grpTimeoutConfig.Margin = new Padding(4, 5, 4, 5);
             grpTimeoutConfig.MinimumSize = new Size(1, 1);
             grpTimeoutConfig.Name = "grpTimeoutConfig";
@@ -505,11 +505,11 @@
             // numTimeout
             // 
             numTimeout.Font = new Font("微软雅黑", 10F);
-            numTimeout.Location = new Point(170, 40);
+            numTimeout.Location = new Point(165, 30);
             numTimeout.Maximum = new decimal(new int[] { 3600, 0, 0, 0 });
             numTimeout.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
             numTimeout.Name = "numTimeout";
-            numTimeout.Size = new Size(200, 29);
+            numTimeout.Size = new Size(200, 40);
             numTimeout.TabIndex = 2;
             numTimeout.Text = "60";
             toolTip.SetToolTip(numTimeout, "最长等待时间（秒），0表示无限等待");
@@ -535,7 +535,7 @@
             cmbTimeoutAction.Font = new Font("微软雅黑", 10F);
             cmbTimeoutAction.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbTimeoutAction.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbTimeoutAction.Location = new Point(170, 75);
+            cmbTimeoutAction.Location = new Point(170, 73);
             cmbTimeoutAction.Margin = new Padding(4, 5, 4, 5);
             cmbTimeoutAction.MinimumSize = new Size(63, 0);
             cmbTimeoutAction.Name = "cmbTimeoutAction";
@@ -564,10 +564,10 @@
             // numTimeoutJumpStep
             // 
             numTimeoutJumpStep.Font = new Font("微软雅黑", 10F);
-            numTimeoutJumpStep.Location = new Point(170, 110);
+            numTimeoutJumpStep.Location = new Point(165, 103);
             numTimeoutJumpStep.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
             numTimeoutJumpStep.Name = "numTimeoutJumpStep";
-            numTimeoutJumpStep.Size = new Size(200, 29);
+            numTimeoutJumpStep.Size = new Size(200, 40);
             numTimeoutJumpStep.TabIndex = 6;
             numTimeoutJumpStep.Text = "-1";
             toolTip.SetToolTip(numTimeoutJumpStep, "超时后跳转的步骤号，-1表示下一步");
@@ -582,14 +582,14 @@
             grpResultHandling.FillColor = Color.White;
             grpResultHandling.FillColor2 = Color.White;
             grpResultHandling.Font = new Font("微软雅黑", 9F);
-            grpResultHandling.Location = new Point(15, 545);
+            grpResultHandling.Location = new Point(15, 570);
             grpResultHandling.Margin = new Padding(4, 5, 4, 5);
             grpResultHandling.MinimumSize = new Size(1, 1);
             grpResultHandling.Name = "grpResultHandling";
             grpResultHandling.Padding = new Padding(10, 32, 10, 10);
             grpResultHandling.Radius = 8;
             grpResultHandling.RectColor = Color.FromArgb(65, 100, 204);
-            grpResultHandling.Size = new Size(670, 75);
+            grpResultHandling.Size = new Size(670, 89);
             grpResultHandling.TabIndex = 4;
             grpResultHandling.Text = null;
             grpResultHandling.TextAlignment = ContentAlignment.MiddleCenter;
@@ -646,7 +646,7 @@
             lblValidationStatus.BackColor = Color.Transparent;
             lblValidationStatus.Font = new Font("微软雅黑", 9F);
             lblValidationStatus.ForeColor = Color.FromArgb(34, 197, 94);
-            lblValidationStatus.Location = new Point(15, 630);
+            lblValidationStatus.Location = new Point(15, 665);
             lblValidationStatus.Name = "lblValidationStatus";
             lblValidationStatus.Size = new Size(670, 20);
             lblValidationStatus.TabIndex = 5;
@@ -730,6 +730,7 @@
             StartPosition = FormStartPosition.CenterParent;
             Text = "等待变量稳定配置";
             TitleColor = Color.FromArgb(65, 100, 204);
+            TitleFont = new Font("微软雅黑", 14.25F, FontStyle.Bold);
             ZoomScaleRect = new Rectangle(15, 15, 700, 790);
             pnlMain.ResumeLayout(false);
             grpBasicConfig.ResumeLayout(false);
