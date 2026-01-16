@@ -39,11 +39,6 @@
             lblDescription = new UILabel();
             panelMain = new Panel();
             DataGridViewPLCList = new DataGridView();
-            ColIndex = new DataGridViewTextBoxColumn();
-            ColPLCModule = new DataGridViewComboBoxColumn();
-            ColPLCAddress = new DataGridViewComboBoxColumn();
-            ColWriteValue = new DataGridViewTextBoxColumn();
-            ColDescription = new DataGridViewTextBoxColumn();
             panelButtons = new Panel();
             btnMoveDown = new UISymbolButton();
             btnMoveUp = new UISymbolButton();
@@ -53,6 +48,10 @@
             btnHelp = new UIButton();
             btnCancel = new UIButton();
             btnSave = new UIButton();
+            ColIndex = new DataGridViewTextBoxColumn();
+            ColPLCModule = new DataGridViewComboBoxColumn();
+            ColPLCAddress = new DataGridViewComboBoxColumn();
+            ColWriteValue = new DataGridViewTextBoxColumn();
             panelDescription.SuspendLayout();
             panelMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)DataGridViewPLCList).BeginInit();
@@ -143,7 +142,7 @@
             DataGridViewPLCList.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             DataGridViewPLCList.ColumnHeadersHeight = 40;
             DataGridViewPLCList.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            DataGridViewPLCList.Columns.AddRange(new DataGridViewColumn[] { ColIndex, ColPLCModule, ColPLCAddress, ColWriteValue, ColDescription });
+            DataGridViewPLCList.Columns.AddRange(new DataGridViewColumn[] { ColIndex, ColPLCModule, ColPLCAddress, ColWriteValue });
             dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle3.BackColor = Color.White;
             dataGridViewCellStyle3.Font = new Font("微软雅黑", 9F);
@@ -174,47 +173,6 @@
             DataGridViewPLCList.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             DataGridViewPLCList.Size = new Size(853, 493);
             DataGridViewPLCList.TabIndex = 0;
-            // 
-            // ColIndex
-            // 
-            ColIndex.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.BackColor = Color.FromArgb(248, 249, 250);
-            ColIndex.DefaultCellStyle = dataGridViewCellStyle2;
-            ColIndex.HeaderText = "序号";
-            ColIndex.Name = "ColIndex";
-            ColIndex.ReadOnly = true;
-            ColIndex.Width = 60;
-            // 
-            // ColPLCModule
-            // 
-            ColPLCModule.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            ColPLCModule.DisplayStyle = DataGridViewComboBoxDisplayStyle.Nothing;
-            ColPLCModule.FlatStyle = FlatStyle.Flat;
-            ColPLCModule.HeaderText = "PLC模块";
-            ColPLCModule.Name = "ColPLCModule";
-            // 
-            // ColPLCAddress
-            // 
-            ColPLCAddress.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            ColPLCAddress.DisplayStyle = DataGridViewComboBoxDisplayStyle.Nothing;
-            ColPLCAddress.FillWeight = 120F;
-            ColPLCAddress.FlatStyle = FlatStyle.Flat;
-            ColPLCAddress.HeaderText = "PLC地址";
-            ColPLCAddress.Name = "ColPLCAddress";
-            // 
-            // ColWriteValue
-            // 
-            ColWriteValue.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            ColWriteValue.FillWeight = 120F;
-            ColWriteValue.HeaderText = "写入值（支持 {变量名}）";
-            ColWriteValue.Name = "ColWriteValue";
-            // 
-            // ColDescription
-            // 
-            ColDescription.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            ColDescription.HeaderText = "描述";
-            ColDescription.Name = "ColDescription";
             // 
             // panelButtons
             // 
@@ -367,6 +325,41 @@
             btnSave.Text = "保存";
             btnSave.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             // 
+            // ColIndex
+            // 
+            ColIndex.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = Color.FromArgb(248, 249, 250);
+            ColIndex.DefaultCellStyle = dataGridViewCellStyle2;
+            ColIndex.HeaderText = "序号";
+            ColIndex.Name = "ColIndex";
+            ColIndex.ReadOnly = true;
+            ColIndex.Width = 60;
+            // 
+            // ColPLCModule
+            // 
+            ColPLCModule.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ColPLCModule.DisplayStyle = DataGridViewComboBoxDisplayStyle.Nothing;
+            ColPLCModule.FlatStyle = FlatStyle.Flat;
+            ColPLCModule.HeaderText = "PLC模块";
+            ColPLCModule.Name = "ColPLCModule";
+            // 
+            // ColPLCAddress
+            // 
+            ColPLCAddress.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ColPLCAddress.DisplayStyle = DataGridViewComboBoxDisplayStyle.Nothing;
+            ColPLCAddress.FillWeight = 120F;
+            ColPLCAddress.FlatStyle = FlatStyle.Flat;
+            ColPLCAddress.HeaderText = "PLC地址";
+            ColPLCAddress.Name = "ColPLCAddress";
+            // 
+            // ColWriteValue
+            // 
+            ColWriteValue.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ColWriteValue.FillWeight = 120F;
+            ColWriteValue.HeaderText = "写入值（支持 {变量名}）";
+            ColWriteValue.Name = "ColWriteValue";
+            // 
             // Form_WritePLC
             // 
             AutoScaleMode = AutoScaleMode.None;
@@ -403,11 +396,6 @@
         private Sunny.UI.UICheckBox chkEnabled;
         private System.Windows.Forms.Panel panelMain;
         private System.Windows.Forms.DataGridView DataGridViewPLCList;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColIndex;
-        private System.Windows.Forms.DataGridViewComboBoxColumn ColPLCModule;
-        private System.Windows.Forms.DataGridViewComboBoxColumn ColPLCAddress;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColWriteValue;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColDescription;
         private System.Windows.Forms.Panel panelButtons;
         private Sunny.UI.UISymbolButton btnAdd;
         private Sunny.UI.UISymbolButton btnDelete;
@@ -417,5 +405,9 @@
         private Sunny.UI.UIButton btnSave;
         private Sunny.UI.UIButton btnCancel;
         private Sunny.UI.UIButton btnHelp;
+        private DataGridViewTextBoxColumn ColIndex;
+        private DataGridViewComboBoxColumn ColPLCModule;
+        private DataGridViewComboBoxColumn ColPLCAddress;
+        private DataGridViewTextBoxColumn ColWriteValue;
     }
 }

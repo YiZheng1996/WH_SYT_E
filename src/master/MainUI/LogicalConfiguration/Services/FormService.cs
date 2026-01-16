@@ -87,7 +87,7 @@ namespace MainUI.LogicalConfiguration.Services
                         form = CreateForm<Form_SystemPrompt>();
                         break;
                     case "条件判断":
-                        form = CreateForm<Form_Detection>();
+                        form = CreateForm<Form_Condition>();
                         break;
                     case "变量监控":
                         form = CreateForm<Form_VariableMonitor>();
@@ -102,7 +102,7 @@ namespace MainUI.LogicalConfiguration.Services
                         form = CreateForm<Form_RealtimeMonitorPromptConfig>();
                         break;
                     case "检测工具":
-                        form = CreateForm<Form_Condition>();
+                        form = CreateForm<Form_Detection>();
                         break;
                     case "循环工具":
                         form = CreateForm<Form_Loop>();

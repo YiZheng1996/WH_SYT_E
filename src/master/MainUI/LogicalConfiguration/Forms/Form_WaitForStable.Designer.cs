@@ -47,19 +47,19 @@
             grpStabilityCriteria = new UIPanel();
             uiLine3 = new UILine();
             lblStabilityThreshold = new UILabel();
-            numStabilityThreshold = new AntdUI.InputNumber();
+            numStabilityThreshold = new UITextBox();
             lblSamplingInterval = new UILabel();
-            numSamplingInterval = new AntdUI.InputNumber();
+            numSamplingInterval = new UITextBox();
             lblStableCount = new UILabel();
-            numStableCount = new AntdUI.InputNumber();
+            numStableCount = new UITextBox();
             grpTimeoutConfig = new UIPanel();
             uiLine4 = new UILine();
             lblTimeout = new UILabel();
-            numTimeout = new AntdUI.InputNumber();
+            numTimeout = new UITextBox();
             lblTimeoutAction = new UILabel();
             cmbTimeoutAction = new UIComboBox();
             lblTimeoutJumpStep = new UILabel();
-            numTimeoutJumpStep = new AntdUI.InputNumber();
+            numTimeoutJumpStep = new UITextBox();
             grpResultHandling = new UIPanel();
             uiLine5 = new UILine();
             lblAssignToVariable = new UILabel();
@@ -95,7 +95,7 @@
             pnlMain.Padding = new Padding(10);
             pnlMain.Radius = 0;
             pnlMain.RectColor = Color.FromArgb(65, 100, 204);
-            pnlMain.Size = new Size(700, 700);
+            pnlMain.Size = new Size(700, 720);
             pnlMain.TabIndex = 0;
             pnlMain.Text = null;
             pnlMain.TextAlignment = ContentAlignment.MiddleCenter;
@@ -117,7 +117,7 @@
             grpBasicConfig.Padding = new Padding(10, 32, 10, 10);
             grpBasicConfig.Radius = 8;
             grpBasicConfig.RectColor = Color.FromArgb(65, 100, 204);
-            grpBasicConfig.Size = new Size(670, 110);
+            grpBasicConfig.Size = new Size(670, 116);
             grpBasicConfig.TabIndex = 0;
             grpBasicConfig.Text = null;
             grpBasicConfig.TextAlignment = ContentAlignment.MiddleCenter;
@@ -157,7 +157,6 @@
             txtDescription.MinimumSize = new Size(1, 16);
             txtDescription.Name = "txtDescription";
             txtDescription.Padding = new Padding(5);
-            txtDescription.RectColor = Color.FromArgb(65, 100, 204);
             txtDescription.ShowText = false;
             txtDescription.Size = new Size(525, 29);
             txtDescription.TabIndex = 2;
@@ -170,7 +169,7 @@
             lblMonitorSourceType.BackColor = Color.Transparent;
             lblMonitorSourceType.Font = new Font("微软雅黑", 10F);
             lblMonitorSourceType.ForeColor = Color.Red;
-            lblMonitorSourceType.Location = new Point(15, 74);
+            lblMonitorSourceType.Location = new Point(15, 77);
             lblMonitorSourceType.Name = "lblMonitorSourceType";
             lblMonitorSourceType.Size = new Size(100, 23);
             lblMonitorSourceType.TabIndex = 3;
@@ -185,12 +184,11 @@
             cmbMonitorSourceType.Font = new Font("微软雅黑", 10F);
             cmbMonitorSourceType.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbMonitorSourceType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbMonitorSourceType.Location = new Point(130, 74);
+            cmbMonitorSourceType.Location = new Point(130, 77);
             cmbMonitorSourceType.Margin = new Padding(4, 5, 4, 5);
             cmbMonitorSourceType.MinimumSize = new Size(63, 0);
             cmbMonitorSourceType.Name = "cmbMonitorSourceType";
             cmbMonitorSourceType.Padding = new Padding(0, 0, 30, 2);
-            cmbMonitorSourceType.RectColor = Color.FromArgb(65, 100, 204);
             cmbMonitorSourceType.Size = new Size(200, 29);
             cmbMonitorSourceType.SymbolSize = 24;
             cmbMonitorSourceType.TabIndex = 4;
@@ -210,14 +208,14 @@
             grpMonitorSource.FillColor = Color.White;
             grpMonitorSource.FillColor2 = Color.White;
             grpMonitorSource.Font = new Font("微软雅黑", 9F);
-            grpMonitorSource.Location = new Point(15, 130);
+            grpMonitorSource.Location = new Point(15, 138);
             grpMonitorSource.Margin = new Padding(4, 5, 4, 5);
             grpMonitorSource.MinimumSize = new Size(1, 1);
             grpMonitorSource.Name = "grpMonitorSource";
             grpMonitorSource.Padding = new Padding(10, 32, 10, 10);
             grpMonitorSource.Radius = 8;
             grpMonitorSource.RectColor = Color.FromArgb(65, 100, 204);
-            grpMonitorSource.Size = new Size(670, 110);
+            grpMonitorSource.Size = new Size(670, 127);
             grpMonitorSource.TabIndex = 1;
             grpMonitorSource.Text = null;
             grpMonitorSource.TextAlignment = ContentAlignment.MiddleCenter;
@@ -261,7 +259,6 @@
             cmbMonitorVariable.MinimumSize = new Size(63, 0);
             cmbMonitorVariable.Name = "cmbMonitorVariable";
             cmbMonitorVariable.Padding = new Padding(0, 0, 30, 2);
-            cmbMonitorVariable.RectColor = Color.FromArgb(65, 100, 204);
             cmbMonitorVariable.Size = new Size(525, 29);
             cmbMonitorVariable.SymbolSize = 24;
             cmbMonitorVariable.TabIndex = 2;
@@ -309,7 +306,7 @@
             lblPlcAddress.BackColor = Color.Transparent;
             lblPlcAddress.Font = new Font("微软雅黑", 10F);
             lblPlcAddress.ForeColor = Color.Red;
-            lblPlcAddress.Location = new Point(15, 75);
+            lblPlcAddress.Location = new Point(15, 80);
             lblPlcAddress.Name = "lblPlcAddress";
             lblPlcAddress.Size = new Size(100, 23);
             lblPlcAddress.TabIndex = 5;
@@ -325,12 +322,11 @@
             cmbPlcAddress.Font = new Font("微软雅黑", 10F);
             cmbPlcAddress.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbPlcAddress.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbPlcAddress.Location = new Point(130, 75);
+            cmbPlcAddress.Location = new Point(130, 80);
             cmbPlcAddress.Margin = new Padding(4, 5, 4, 5);
             cmbPlcAddress.MinimumSize = new Size(63, 0);
             cmbPlcAddress.Name = "cmbPlcAddress";
             cmbPlcAddress.Padding = new Padding(0, 0, 30, 2);
-            cmbPlcAddress.RectColor = Color.FromArgb(65, 100, 204);
             cmbPlcAddress.Size = new Size(525, 29);
             cmbPlcAddress.SymbolSize = 24;
             cmbPlcAddress.TabIndex = 6;
@@ -351,14 +347,14 @@
             grpStabilityCriteria.FillColor = Color.White;
             grpStabilityCriteria.FillColor2 = Color.White;
             grpStabilityCriteria.Font = new Font("微软雅黑", 9F);
-            grpStabilityCriteria.Location = new Point(15, 245);
+            grpStabilityCriteria.Location = new Point(15, 271);
             grpStabilityCriteria.Margin = new Padding(4, 5, 4, 5);
             grpStabilityCriteria.MinimumSize = new Size(1, 1);
             grpStabilityCriteria.Name = "grpStabilityCriteria";
             grpStabilityCriteria.Padding = new Padding(10, 32, 10, 10);
             grpStabilityCriteria.Radius = 8;
             grpStabilityCriteria.RectColor = Color.FromArgb(65, 100, 204);
-            grpStabilityCriteria.Size = new Size(670, 145);
+            grpStabilityCriteria.Size = new Size(670, 153);
             grpStabilityCriteria.TabIndex = 2;
             grpStabilityCriteria.Text = null;
             grpStabilityCriteria.TextAlignment = ContentAlignment.MiddleCenter;
@@ -394,13 +390,18 @@
             numStabilityThreshold.DecimalPlaces = 4;
             numStabilityThreshold.Font = new Font("微软雅黑", 10F);
             numStabilityThreshold.Location = new Point(170, 40);
-            numStabilityThreshold.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            numStabilityThreshold.Margin = new Padding(4, 5, 4, 5);
+            numStabilityThreshold.MinimumSize = new Size(1, 16);
             numStabilityThreshold.Name = "numStabilityThreshold";
-            numStabilityThreshold.Size = new Size(200, 29);
+            numStabilityThreshold.Padding = new Padding(5);
+            numStabilityThreshold.ShowText = false;
+            numStabilityThreshold.Size = new Size(215, 29);
             numStabilityThreshold.TabIndex = 2;
-            numStabilityThreshold.Text = "0.1000";
+            numStabilityThreshold.Text = "0.0000";
+            numStabilityThreshold.TextAlignment = ContentAlignment.MiddleLeft;
             toolTip.SetToolTip(numStabilityThreshold, "变化率阈值，|当前值-上次值|/采样间隔≤此值时认为稳定");
-            numStabilityThreshold.Value = new decimal(new int[] { 1000, 0, 0, 262144 });
+            numStabilityThreshold.Type = UITextBox.UIEditType.Double;
+            numStabilityThreshold.Watermark = "变化率阈值，|当前值-上次值|/采样间隔≤此值时认为稳定";
             // 
             // lblSamplingInterval
             // 
@@ -418,14 +419,18 @@
             // 
             numSamplingInterval.Font = new Font("微软雅黑", 10F);
             numSamplingInterval.Location = new Point(170, 75);
-            numSamplingInterval.Maximum = new decimal(new int[] { 60, 0, 0, 0 });
-            numSamplingInterval.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numSamplingInterval.Margin = new Padding(4, 5, 4, 5);
+            numSamplingInterval.MinimumSize = new Size(1, 16);
             numSamplingInterval.Name = "numSamplingInterval";
-            numSamplingInterval.Size = new Size(200, 29);
+            numSamplingInterval.Padding = new Padding(5);
+            numSamplingInterval.ShowText = false;
+            numSamplingInterval.Size = new Size(215, 29);
             numSamplingInterval.TabIndex = 4;
-            numSamplingInterval.Text = "1";
+            numSamplingInterval.Text = "0";
+            numSamplingInterval.TextAlignment = ContentAlignment.MiddleLeft;
             toolTip.SetToolTip(numSamplingInterval, "每隔多少秒采样一次（建议1-5秒）");
-            numSamplingInterval.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            numSamplingInterval.Type = UITextBox.UIEditType.Integer;
+            numSamplingInterval.Watermark = "每隔多少秒采样一次（建议1-5秒）";
             // 
             // lblStableCount
             // 
@@ -443,14 +448,18 @@
             // 
             numStableCount.Font = new Font("微软雅黑", 10F);
             numStableCount.Location = new Point(170, 110);
-            numStableCount.Maximum = new decimal(new int[] { 20, 0, 0, 0 });
-            numStableCount.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numStableCount.Margin = new Padding(4, 5, 4, 5);
+            numStableCount.MinimumSize = new Size(1, 16);
             numStableCount.Name = "numStableCount";
-            numStableCount.Size = new Size(200, 29);
+            numStableCount.Padding = new Padding(5);
+            numStableCount.ShowText = false;
+            numStableCount.Size = new Size(215, 29);
             numStableCount.TabIndex = 6;
-            numStableCount.Text = "3";
+            numStableCount.Text = "0";
+            numStableCount.TextAlignment = ContentAlignment.MiddleLeft;
             toolTip.SetToolTip(numStableCount, "连续多少次采样满足条件才算真正稳定");
-            numStableCount.Value = new decimal(new int[] { 3, 0, 0, 0 });
+            numStableCount.Type = UITextBox.UIEditType.Integer;
+            numStableCount.Watermark = "连续多少次采样满足条件才算真正稳定";
             // 
             // grpTimeoutConfig
             // 
@@ -464,14 +473,14 @@
             grpTimeoutConfig.FillColor = Color.White;
             grpTimeoutConfig.FillColor2 = Color.White;
             grpTimeoutConfig.Font = new Font("微软雅黑", 9F);
-            grpTimeoutConfig.Location = new Point(15, 395);
+            grpTimeoutConfig.Location = new Point(15, 431);
             grpTimeoutConfig.Margin = new Padding(4, 5, 4, 5);
             grpTimeoutConfig.MinimumSize = new Size(1, 1);
             grpTimeoutConfig.Name = "grpTimeoutConfig";
             grpTimeoutConfig.Padding = new Padding(10, 32, 10, 10);
             grpTimeoutConfig.Radius = 8;
             grpTimeoutConfig.RectColor = Color.FromArgb(65, 100, 204);
-            grpTimeoutConfig.Size = new Size(670, 145);
+            grpTimeoutConfig.Size = new Size(670, 167);
             grpTimeoutConfig.TabIndex = 3;
             grpTimeoutConfig.Text = null;
             grpTimeoutConfig.TextAlignment = ContentAlignment.MiddleCenter;
@@ -506,21 +515,25 @@
             // 
             numTimeout.Font = new Font("微软雅黑", 10F);
             numTimeout.Location = new Point(170, 40);
-            numTimeout.Maximum = new decimal(new int[] { 3600, 0, 0, 0 });
-            numTimeout.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            numTimeout.Margin = new Padding(4, 5, 4, 5);
+            numTimeout.MinimumSize = new Size(1, 16);
             numTimeout.Name = "numTimeout";
+            numTimeout.Padding = new Padding(5);
+            numTimeout.ShowText = false;
             numTimeout.Size = new Size(200, 29);
             numTimeout.TabIndex = 2;
-            numTimeout.Text = "60";
+            numTimeout.Text = "0";
+            numTimeout.TextAlignment = ContentAlignment.MiddleLeft;
             toolTip.SetToolTip(numTimeout, "最长等待时间（秒），0表示无限等待");
-            numTimeout.Value = new decimal(new int[] { 60, 0, 0, 0 });
+            numTimeout.Type = UITextBox.UIEditType.Integer;
+            numTimeout.Watermark = "最长等待时间（秒），0表示无限等待";
             // 
             // lblTimeoutAction
             // 
             lblTimeoutAction.BackColor = Color.Transparent;
             lblTimeoutAction.Font = new Font("微软雅黑", 10F);
             lblTimeoutAction.ForeColor = Color.FromArgb(48, 48, 48);
-            lblTimeoutAction.Location = new Point(15, 75);
+            lblTimeoutAction.Location = new Point(15, 82);
             lblTimeoutAction.Name = "lblTimeoutAction";
             lblTimeoutAction.Size = new Size(150, 23);
             lblTimeoutAction.TabIndex = 3;
@@ -535,12 +548,11 @@
             cmbTimeoutAction.Font = new Font("微软雅黑", 10F);
             cmbTimeoutAction.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbTimeoutAction.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbTimeoutAction.Location = new Point(170, 75);
+            cmbTimeoutAction.Location = new Point(170, 82);
             cmbTimeoutAction.Margin = new Padding(4, 5, 4, 5);
             cmbTimeoutAction.MinimumSize = new Size(63, 0);
             cmbTimeoutAction.Name = "cmbTimeoutAction";
             cmbTimeoutAction.Padding = new Padding(0, 0, 30, 2);
-            cmbTimeoutAction.RectColor = Color.FromArgb(65, 100, 204);
             cmbTimeoutAction.Size = new Size(485, 29);
             cmbTimeoutAction.SymbolSize = 24;
             cmbTimeoutAction.TabIndex = 4;
@@ -553,7 +565,7 @@
             lblTimeoutJumpStep.BackColor = Color.Transparent;
             lblTimeoutJumpStep.Font = new Font("微软雅黑", 10F);
             lblTimeoutJumpStep.ForeColor = Color.FromArgb(48, 48, 48);
-            lblTimeoutJumpStep.Location = new Point(15, 110);
+            lblTimeoutJumpStep.Location = new Point(15, 126);
             lblTimeoutJumpStep.Name = "lblTimeoutJumpStep";
             lblTimeoutJumpStep.Size = new Size(150, 23);
             lblTimeoutJumpStep.TabIndex = 5;
@@ -563,16 +575,23 @@
             // 
             // numTimeoutJumpStep
             // 
+            numTimeoutJumpStep.DoubleValue = -1D;
             numTimeoutJumpStep.Font = new Font("微软雅黑", 10F);
-            numTimeoutJumpStep.Location = new Point(170, 110);
-            numTimeoutJumpStep.Minimum = new decimal(new int[] { 1, 0, 0, int.MinValue });
+            numTimeoutJumpStep.IntValue = -1;
+            numTimeoutJumpStep.Location = new Point(170, 123);
+            numTimeoutJumpStep.Margin = new Padding(4, 5, 4, 5);
+            numTimeoutJumpStep.MinimumSize = new Size(1, 16);
             numTimeoutJumpStep.Name = "numTimeoutJumpStep";
+            numTimeoutJumpStep.Padding = new Padding(5);
+            numTimeoutJumpStep.ShowText = false;
             numTimeoutJumpStep.Size = new Size(200, 29);
             numTimeoutJumpStep.TabIndex = 6;
             numTimeoutJumpStep.Text = "-1";
+            numTimeoutJumpStep.TextAlignment = ContentAlignment.MiddleLeft;
             toolTip.SetToolTip(numTimeoutJumpStep, "超时后跳转的步骤号，-1表示下一步");
-            numTimeoutJumpStep.Value = new decimal(new int[] { 1, 0, 0, int.MinValue });
+            numTimeoutJumpStep.Type = UITextBox.UIEditType.Integer;
             numTimeoutJumpStep.Visible = false;
+            numTimeoutJumpStep.Watermark = "";
             // 
             // grpResultHandling
             // 
@@ -582,14 +601,14 @@
             grpResultHandling.FillColor = Color.White;
             grpResultHandling.FillColor2 = Color.White;
             grpResultHandling.Font = new Font("微软雅黑", 9F);
-            grpResultHandling.Location = new Point(15, 545);
+            grpResultHandling.Location = new Point(15, 603);
             grpResultHandling.Margin = new Padding(4, 5, 4, 5);
             grpResultHandling.MinimumSize = new Size(1, 1);
             grpResultHandling.Name = "grpResultHandling";
             grpResultHandling.Padding = new Padding(10, 32, 10, 10);
             grpResultHandling.Radius = 8;
             grpResultHandling.RectColor = Color.FromArgb(65, 100, 204);
-            grpResultHandling.Size = new Size(670, 75);
+            grpResultHandling.Size = new Size(670, 87);
             grpResultHandling.TabIndex = 4;
             grpResultHandling.Text = null;
             grpResultHandling.TextAlignment = ContentAlignment.MiddleCenter;
@@ -600,7 +619,7 @@
             uiLine5.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             uiLine5.ForeColor = Color.FromArgb(48, 48, 48);
             uiLine5.LineColor = Color.FromArgb(65, 100, 204);
-            uiLine5.Location = new Point(15, 5);
+            uiLine5.Location = new Point(15, 4);
             uiLine5.MinimumSize = new Size(1, 1);
             uiLine5.Name = "uiLine5";
             uiLine5.Size = new Size(640, 25);
@@ -646,7 +665,7 @@
             lblValidationStatus.BackColor = Color.Transparent;
             lblValidationStatus.Font = new Font("微软雅黑", 9F);
             lblValidationStatus.ForeColor = Color.FromArgb(34, 197, 94);
-            lblValidationStatus.Location = new Point(15, 630);
+            lblValidationStatus.Location = new Point(13, 695);
             lblValidationStatus.Name = "lblValidationStatus";
             lblValidationStatus.Size = new Size(670, 20);
             lblValidationStatus.TabIndex = 5;
@@ -658,7 +677,7 @@
             // 
             btnOK.Cursor = Cursors.Hand;
             btnOK.Font = new Font("微软雅黑", 10F);
-            btnOK.Location = new Point(320, 745);
+            btnOK.Location = new Point(330, 766);
             btnOK.MinimumSize = new Size(1, 1);
             btnOK.Name = "btnOK";
             btnOK.Radius = 8;
@@ -672,7 +691,7 @@
             // 
             btnCancel.Cursor = Cursors.Hand;
             btnCancel.Font = new Font("微软雅黑", 10F);
-            btnCancel.Location = new Point(410, 745);
+            btnCancel.Location = new Point(420, 766);
             btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
             btnCancel.Radius = 8;
@@ -686,7 +705,7 @@
             // 
             btnTest.Cursor = Cursors.Hand;
             btnTest.Font = new Font("微软雅黑", 10F);
-            btnTest.Location = new Point(500, 745);
+            btnTest.Location = new Point(510, 766);
             btnTest.MinimumSize = new Size(1, 1);
             btnTest.Name = "btnTest";
             btnTest.Radius = 8;
@@ -700,7 +719,7 @@
             // 
             btnHelp.Cursor = Cursors.Hand;
             btnHelp.Font = new Font("微软雅黑", 10F);
-            btnHelp.Location = new Point(590, 745);
+            btnHelp.Location = new Point(600, 766);
             btnHelp.MinimumSize = new Size(1, 1);
             btnHelp.Name = "btnHelp";
             btnHelp.Radius = 8;
@@ -714,7 +733,7 @@
             // 
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(700, 790);
+            ClientSize = new Size(700, 810);
             Controls.Add(btnHelp);
             Controls.Add(btnTest);
             Controls.Add(btnCancel);
@@ -730,6 +749,7 @@
             StartPosition = FormStartPosition.CenterParent;
             Text = "等待变量稳定配置";
             TitleColor = Color.FromArgb(65, 100, 204);
+            TitleFont = new Font("微软雅黑", 12F, FontStyle.Bold);
             ZoomScaleRect = new Rectangle(15, 15, 700, 790);
             pnlMain.ResumeLayout(false);
             grpBasicConfig.ResumeLayout(false);
@@ -761,19 +781,19 @@
         private Sunny.UI.UIPanel grpStabilityCriteria;
         private Sunny.UI.UILine uiLine3;
         private Sunny.UI.UILabel lblStabilityThreshold;
-        private AntdUI.InputNumber numStabilityThreshold;
+        private Sunny.UI.UITextBox numStabilityThreshold;
         private Sunny.UI.UILabel lblSamplingInterval;
-        private AntdUI.InputNumber numSamplingInterval;
+        private Sunny.UI.UITextBox numSamplingInterval;
         private Sunny.UI.UILabel lblStableCount;
-        private AntdUI.InputNumber numStableCount;
+        private Sunny.UI.UITextBox numStableCount;
         private Sunny.UI.UIPanel grpTimeoutConfig;
         private Sunny.UI.UILine uiLine4;
         private Sunny.UI.UILabel lblTimeout;
-        private AntdUI.InputNumber numTimeout;
+        private Sunny.UI.UITextBox numTimeout;
         private Sunny.UI.UILabel lblTimeoutAction;
         private Sunny.UI.UIComboBox cmbTimeoutAction;
         private Sunny.UI.UILabel lblTimeoutJumpStep;
-        private AntdUI.InputNumber numTimeoutJumpStep;
+        private Sunny.UI.UITextBox numTimeoutJumpStep;
         private Sunny.UI.UIPanel grpResultHandling;
         private Sunny.UI.UILine uiLine5;
         private Sunny.UI.UILabel lblAssignToVariable;

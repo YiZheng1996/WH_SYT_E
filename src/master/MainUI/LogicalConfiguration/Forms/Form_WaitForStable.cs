@@ -188,10 +188,10 @@ namespace MainUI.LogicalConfiguration.Forms
             InitializeTimeoutActionComboBox();
 
             // 设置默认值
-            numStabilityThreshold.Value = 0.1m;
-            numSamplingInterval.Value = 1;
-            numStableCount.Value = 3;
-            numTimeout.Value = 60;
+            numStabilityThreshold.DoubleValue = 0.1;
+            numSamplingInterval.IntValue = 1;
+            numStableCount.IntValue = 3;
+            numTimeout.IntValue = 60;
         }
 
         /// <summary>
@@ -342,17 +342,17 @@ namespace MainUI.LogicalConfiguration.Forms
             cmbPlcAddress.SelectedIndexChanged += (s, e) => OnParameterChanged();
 
             // 数值变更事件
-            numStabilityThreshold.ValueChanged += (s, v) => OnParameterChanged();
-            numSamplingInterval.ValueChanged += (s, v) => OnParameterChanged();
-            numStableCount.ValueChanged += (s, v) => OnParameterChanged();
-            numTimeout.ValueChanged += (s, v) => OnParameterChanged();
+            numStabilityThreshold.TextChanged += (s, v) => OnParameterChanged();
+            numSamplingInterval.TextChanged += (s, v) => OnParameterChanged();
+            numStableCount.TextChanged += (s, v) => OnParameterChanged();
+            numTimeout.TextChanged += (s, v) => OnParameterChanged();
 
             // 赋值目标变更
             cmbAssignToVariable.SelectedIndexChanged += (s, e) => OnParameterChanged();
 
             // 超时动作变更
             cmbTimeoutAction.SelectedIndexChanged += CmbTimeoutAction_SelectedIndexChanged;
-            numTimeoutJumpStep.ValueChanged += (s, v) => OnParameterChanged();
+            numTimeoutJumpStep.TextChanged += (s, v) => OnParameterChanged();
 
             // 按钮事件
             btnOK.Click += BtnOK_Click;
@@ -594,17 +594,17 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
 
                 // 验证稳定判据
-                if (numStabilityThreshold.Value < 0)
+                if (numStabilityThreshold.IntValue < 0)
                 {
                     errors.Add("稳定阈值不能为负数");
                 }
 
-                if (numSamplingInterval.Value < 1)
+                if (numSamplingInterval.IntValue < 1)
                 {
                     errors.Add("采样间隔必须大于0秒");
                 }
 
-                if (numStableCount.Value < 1)
+                if (numStableCount.IntValue < 1)
                 {
                     errors.Add("连续稳定次数必须大于0");
                 }
@@ -614,7 +614,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (selectedAction?.Value is TimeoutAction action &&
                     action == TimeoutAction.JumpToStep)
                 {
-                    if (numTimeoutJumpStep.Value < 1)
+                    if (numTimeoutJumpStep.IntValue < 1)
                     {
                         errors.Add("跳转步骤号必须大于0");
                     }
@@ -830,7 +830,7 @@ namespace MainUI.LogicalConfiguration.Forms
         #region 辅助方法
 
         /// <summary>
-        /// 设置ComboBox选中值
+        /// 设置ComboBox选中值(支持通过Value或Text匹配)
         /// </summary>
         private void SetComboBoxValue(UIComboBox comboBox, string value)
         {
@@ -838,40 +838,45 @@ namespace MainUI.LogicalConfiguration.Forms
 
             try
             {
-                // 方法1：先尝试在Items中查找匹配项
+                // 优先通过 ComboItem.Value 查找匹配项
                 for (int i = 0; i < comboBox.Items.Count; i++)
                 {
-                    if (comboBox.Items[i].ToString().Equals(value, StringComparison.OrdinalIgnoreCase))
+                    if (comboBox.Items[i] is ComboItem item)
+                    {
+                        // 先比较 Value
+                        if (item.Value?.ToString().Equals(value, StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            comboBox.SelectedIndex = i;
+                            return;
+                        }
+                        // 再比较 Text
+                        if (item.Text?.Equals(value, StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            comboBox.SelectedIndex = i;
+                            return;
+                        }
+                    }
+                    // 兼容普通字符串项
+                    else if (comboBox.Items[i]?.ToString().Equals(value, StringComparison.OrdinalIgnoreCase) == true)
                     {
                         comboBox.SelectedIndex = i;
                         return;
                     }
                 }
 
-                // 方法2：如果没有找到匹配项，且ComboBox允许编辑，则设置Text属性
+                // 如果没有找到匹配项,且ComboBox允许编辑,则设置Text属性
                 if (comboBox.DropDownStyle == UIDropDownStyle.DropDown)
                 {
                     comboBox.Text = value;
                 }
                 else
                 {
-                    // 方法3：对于DropDownList类型，如果找不到匹配项，添加该项
-                    comboBox.Items.Add(value);
-                    comboBox.SelectedItem = value;
+                    Logger?.LogWarning($"ComboBox中找不到匹配项: {value}");
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Logger?.LogWarning("设置ComboBox值失败: {value}", value);
-                // 最后的备用方案
-                try
-                {
-                    comboBox.Text = value;
-                }
-                catch
-                {
-                    // 忽略最终的设置失败
-                }
+                Logger?.LogWarning(ex, $"设置ComboBox值失败: {value}");
             }
         }
         #endregion
@@ -918,14 +923,14 @@ namespace MainUI.LogicalConfiguration.Forms
                 UpdateMonitorSourceVisibility();
 
                 // 稳定判据
-                numStabilityThreshold.Value = (decimal)Parameter.StabilityThreshold;
-                numSamplingInterval.Value = Parameter.SamplingInterval;
-                numStableCount.Value = Parameter.StableCount;
+                numStabilityThreshold.DoubleValue = Parameter.StabilityThreshold;
+                numSamplingInterval.IntValue = Parameter.SamplingInterval;
+                numStableCount.IntValue = Parameter.StableCount;
 
                 // 超时配置
-                numTimeout.Value = Parameter.TimeoutSeconds;
+                numTimeout.IntValue = Parameter.TimeoutSeconds;
                 SetComboBoxValue(cmbTimeoutAction, Parameter.OnTimeout.ToString());
-                numTimeoutJumpStep.Value = Parameter.TimeoutJumpToStep;
+                numTimeoutJumpStep.IntValue = Parameter.TimeoutJumpToStep;
 
                 // 结果处理
                 cmbAssignToVariable.Text = Parameter.AssignToVariable ?? "";
@@ -980,18 +985,18 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
 
                 // 稳定判据
-                Parameter.StabilityThreshold = (double)numStabilityThreshold.Value;
-                Parameter.SamplingInterval = (int)numSamplingInterval.Value;
-                Parameter.StableCount = (int)numStableCount.Value;
+                Parameter.StabilityThreshold = numStabilityThreshold.DoubleValue;
+                Parameter.SamplingInterval = numSamplingInterval.IntValue;
+                Parameter.StableCount = numStableCount.IntValue;
 
                 // 超时配置
-                Parameter.TimeoutSeconds = (int)numTimeout.Value;
+                Parameter.TimeoutSeconds = numTimeout.IntValue;
                 var selectedAction = cmbTimeoutAction.SelectedItem as ComboItem;
                 if (selectedAction?.Value is TimeoutAction action)
                 {
                     Parameter.OnTimeout = action;
                 }
-                Parameter.TimeoutJumpToStep = (int)numTimeoutJumpStep.Value;
+                Parameter.TimeoutJumpToStep = numTimeoutJumpStep.IntValue;
 
                 // 结果处理
                 Parameter.AssignToVariable = cmbAssignToVariable.Text;

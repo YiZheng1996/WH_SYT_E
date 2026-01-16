@@ -1,4 +1,5 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
@@ -31,6 +32,17 @@ namespace MainUI.LogicalConfiguration.Forms
                 }
             }
         }
+
+        /// <summary>
+        /// 当前编辑行索引
+        /// </summary>
+        private int _editingRowIndex = -1;
+
+        /// <summary>
+        /// 临时文本框 - 用于 ExpressionInputPanel 附加
+        /// </summary>
+        private Sunny.UI.UITextBox _tempValueTextBox;
+
         #endregion
 
         #region 私有字段
@@ -116,6 +128,8 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 // 绑定事件
                 BindEvents();
+
+                InitializeTempTextBox();
             }
             catch (Exception ex)
             {
@@ -125,6 +139,53 @@ namespace MainUI.LogicalConfiguration.Forms
             finally
             {
                 _isInitializing = false;
+            }
+        }
+
+        private void InitializeTempTextBox()
+        {
+            try
+            {
+                _tempValueTextBox = new Sunny.UI.UITextBox
+                {
+                    Visible = false,
+                    Size = new Size(1, 1),
+                    Location = new Point(-100, -100)
+                };
+
+                ExpressionInputPanel.AttachTo(_tempValueTextBox, new InputPanelOptions
+                {
+                    Mode = InputMode.Expression,
+                    EnabledModules = InputModules.All,
+                    Title = "配置单元格内容",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true
+                });
+
+                // 监听文本变化 - 当面板确认后会更新_tempValueTextBox.Text
+                _tempValueTextBox.TextChanged += (s, e) =>
+                {
+                    if ( _editingRowIndex >= 0 && _editingRowIndex < DataGridViewPLCList.Rows.Count)
+                    {
+                        DataGridViewPLCList.Rows[_editingRowIndex].Cells["ColWriteValue"].Value = _tempValueTextBox.Text;
+
+                        // 转移焦点来强制刷新
+                        var currentCell = DataGridViewPLCList.CurrentCell;
+                        DataGridViewPLCList.CurrentCell = null;
+                        DataGridViewPLCList.CurrentCell = DataGridViewPLCList.Rows[_editingRowIndex].Cells["ColPLCAddress"];
+                        DataGridViewPLCList.Refresh();
+
+                        _logger?.LogDebug("单元格内容已更新：行{Row}, 值={Value}", _editingRowIndex, _tempValueTextBox.Text);
+                    }
+                };
+
+                this.Controls.Add(_tempValueTextBox);
+                _logger?.LogDebug("临时文本框初始化完成");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "初始化临时文本框失败");
             }
         }
 
@@ -164,6 +225,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 // 添加 DataError 事件处理
                 DataGridViewPLCList.DataError += DataGridViewPLCList_DataError;
+                DataGridViewPLCList.CellClick += DataGridViewPLCList_CellClick;
 
                 Logger?.LogDebug("DataGridView额外配置完成");
             }
@@ -344,7 +406,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
                         // 写入值和描述（TextBox，直接设置）
                         row.Cells["ColWriteValue"].Value = item.PlcValue ?? "";
-                        row.Cells["ColDescription"].Value = item.Description ?? "";
+                        //row.Cells["ColDescription"].Value = item.Description ?? "";
                     }
                 }
 
@@ -398,7 +460,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         PlcModuleName = module,
                         PlcKeyName = address,
                         PlcValue = value ?? "",
-                        Description = row.Cells["ColDescription"].Value?.ToString() ?? ""
+                        //Description = row.Cells["ColDescription"].Value?.ToString() ?? ""
                     });
                 }
 
@@ -601,6 +663,47 @@ namespace MainUI.LogicalConfiguration.Forms
 
             _hasUnsavedChanges = true;
         }
+
+        /// <summary>
+        /// 单元格点击事件 - 处理内容列的 ExpressionInputPanel
+        /// </summary>
+        private void DataGridViewPLCList_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            if (e.ColumnIndex != DataGridViewPLCList.Columns["ColWriteValue"].Index) return;
+            _editingRowIndex = e.RowIndex;
+            var currentValue = DataGridViewPLCList.Rows[e.RowIndex].
+                Cells["ColWriteValue"].Value?.ToString() ?? "";
+
+            _tempValueTextBox.Text = currentValue;
+
+            // 临时移动_tempValueTextBox到正确位置以便面板正确定位
+            var cellRect = DataGridViewPLCList.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
+            var dgvLocation = DataGridViewPLCList.PointToScreen(new Point(cellRect.Left, cellRect.Bottom));
+            var formLocation = this.PointToClient(dgvLocation);
+
+            // 临时移动textbox到单元格位置
+            _tempValueTextBox.Location = formLocation;
+            _tempValueTextBox.Width = cellRect.Width;
+
+            // 显示面板
+            ExpressionInputPanel.Show(_tempValueTextBox, new InputPanelOptions
+            {
+                Mode = InputMode.Expression,
+                EnabledModules = InputModules.All,  // 所有模块
+                Title = "配置单元格内容",
+                ShowValidation = true,
+                ShowPreview = true,
+                CloseOnSubmit = true,
+                InitialExpression = currentValue  // 传递当前值
+            });
+
+            // 显示后恢复隐藏位置
+            _tempValueTextBox.Location = new Point(-100, -100);
+            _tempValueTextBox.Width = 1;
+        }
+
 
         /// <summary>
         /// DataGridView数据错误事件

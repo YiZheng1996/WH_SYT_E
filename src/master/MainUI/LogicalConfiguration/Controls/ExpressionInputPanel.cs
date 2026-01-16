@@ -328,7 +328,7 @@ namespace MainUI.LogicalConfiguration.Controls
             AddKeyButton(_keyboardGrid, "+", 3, 3, () => InsertText(" + "));
             AddKeyButton(_keyboardGrid, "%", 3, 4, () => InsertText(" % "));
             AddKeyButton(_keyboardGrid, "!", 3, 5, () => InsertText("!"));
-            AddKeyButton(_keyboardGrid, "&", 3, 6, () => InsertText(" & "));
+            AddKeyButton(_keyboardGrid, "&&", 3, 6, () => InsertText(" & "));
             AddKeyButton(_keyboardGrid, "|", 3, 7, () => InsertText(" | "));
             AddKeyButton(_keyboardGrid, "^", 3, 8, () => InsertText(" ^ "));
             AddKeyButton(_keyboardGrid, "~", 3, 9, () => InsertText("~"));

@@ -267,26 +267,6 @@ namespace MainUI.LogicalConfiguration.Forms
                     MessageHelper.MessageOK("当前没有可用的变量", TType.Info);
                     return;
                 }
-
-                // 创建变量选择对话框
-                var dialog = new VariableSelectionDialog(globalVariableManager);
-                if (dialog.ShowDialog(this) == DialogResult.OK)
-                {
-                    string selectedVar = dialog.SelectedVariable.Name;
-                    if (!string.IsNullOrEmpty(selectedVar))
-                    {
-                        // 在当前光标位置插入变量引用
-                        int selectionStart = textBox.SelectionStart;
-                        string currentText = textBox.Text ?? "";
-                        string varReference = $"{{{selectedVar}}}";
-
-                        textBox.Text = currentText.Insert(selectionStart, varReference);
-                        textBox.SelectionStart = selectionStart + varReference.Length;
-                        textBox.Focus();
-
-                        _hasUnsavedChanges = true;
-                    }
-                }
             }
             catch (Exception ex)
             {

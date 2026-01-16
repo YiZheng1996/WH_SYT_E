@@ -544,10 +544,12 @@ namespace MainUI.LogicalConfiguration.Forms
             MinimizeBox = false;
             Name = "Form_Condition";
             RectColor = Color.FromArgb(65, 100, 204);
+            ShowIcon = false;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
             Text = "条件判断配置";
             TitleColor = Color.FromArgb(65, 100, 204);
+            TitleFont = new Font("微软雅黑", 12F, FontStyle.Bold);
             ZoomScaleRect = new Rectangle(15, 15, 900, 660);
             panelDescription.ResumeLayout(false);
             panelMain.ResumeLayout(false);
