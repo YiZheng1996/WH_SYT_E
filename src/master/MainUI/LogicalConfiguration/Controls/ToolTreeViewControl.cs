@@ -185,6 +185,8 @@ namespace MainUI.LogicalConfiguration.Controls
                 };
                 plcNode.Nodes.Add(new TreeNode("读取PLC") { Tag = "PLCRead", ImageKey = "读取PLC.png" });
                 plcNode.Nodes.Add(new TreeNode("写入PLC") { Tag = "PLCWrite", ImageKey = "写入PLC.png" });
+                plcNode.Nodes.Add(new TreeNode("以太网发送") { Tag = "EthernetSend", ImageKey = "以太网.png" });
+                plcNode.Nodes.Add(new TreeNode("串口发送") { Tag = "SerialPortSend", ImageKey = "串口.png" });
                 _treeView.Nodes.Add(plcNode);
 
                 // 报表操作组

@@ -4,6 +4,7 @@ using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace MainUI.LogicalConfiguration.LogicalManager
 {
@@ -26,7 +27,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     LoopMethods loopMethods,
     IWorkflowStateService workflowState,
     ExpressionEngine expressionEngine,
-    GlobalVariableManager globalVariableManager)
+    GlobalVariableManager globalVariableManager,
+    CommunicationMethods communicationMethods)
     {
         #region 字段和属性
 
@@ -43,6 +45,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private readonly LoopMethods _loopMethods = loopMethods;
         private readonly GlobalVariableManager _globalVariableManager = globalVariableManager
        ?? throw new ArgumentNullException(nameof(globalVariableManager));
+        private readonly CommunicationMethods _communicationMethods = communicationMethods
+        ?? throw new ArgumentNullException(nameof(communicationMethods));
         private readonly IWorkflowStateService _workflowStateService = workflowState;
         private readonly ExpressionEngine _expressionEngine = expressionEngine;
 
@@ -223,6 +227,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     // PLC通信
                     "读取PLC" => await ExecuteReadPLC(step, cancellationToken),
                     "写入PLC" => await ExecuteWritePLC(step, cancellationToken),
+                    "以太网发送" => await ExecuteEthernetSend(step, cancellationToken),
+                    "串口发送" => await ExecuteSerialPortSend(step, cancellationToken),
 
                     // 检测工具
                     "条件判断" => await ExecuteDetection(step, cancellationToken),
@@ -818,6 +824,24 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             }
         }
 
+        // 添加执行方法
+        private async Task<DetailedResult> ExecuteEthernetSend(ChildModel step, CancellationToken cancellationToken)
+        {
+            var param = ConvertParameter<Parameter_EthernetSend>(step.StepParameter);
+            if (param == null) return DetailedResult.Failed("参数转换失败");
+
+            var result = await _communicationMethods.ExecuteEthernetSend(param, cancellationToken);
+            return result ? DetailedResult.Successful() : DetailedResult.Failed("以太网发送失败");
+        }
+
+        private async Task<DetailedResult> ExecuteSerialPortSend(ChildModel step, CancellationToken cancellationToken)
+        {
+            var param = ConvertParameter<Parameter_SerialPortSend>(step.StepParameter);
+            if (param == null) return DetailedResult.Failed("参数转换失败");
+
+            var result = await _communicationMethods.ExecuteSerialPortSend(param, cancellationToken);
+            return result ? DetailedResult.Successful() : DetailedResult.Failed("串口发送失败");
+        }
         #endregion
 
         #region 辅助方法
