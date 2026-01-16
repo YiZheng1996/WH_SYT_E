@@ -579,7 +579,7 @@ namespace MainUI.LogicalConfiguration
         #endregion
 
         #region 事件处理方法
-
+         
         /// <summary>
         /// 步骤序号变更事件处理
         /// </summary>
