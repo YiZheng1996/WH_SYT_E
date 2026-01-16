@@ -265,8 +265,11 @@ namespace MainUI.LogicalConfiguration.Controls
             _dataGridView.CellBeginEdit += DataGridView_CellBeginEdit;
             _dataGridView.CellEndEdit += DataGridView_CellEndEdit;
 
+            // 将 DataGridView 添加到 Panel 中
+            panelDataGrid.Controls.Add(_dataGridView);
 
-            Controls.Add(_dataGridView);
+            //// 将 Panel 添加到控件中
+            //Controls.Add(panelDataGrid);
         }
 
         /// <summary>

@@ -265,6 +265,18 @@ namespace MainUI.LogicalConfiguration.Services
         #region 步骤管理实现
 
         /// <summary>
+        /// 重新编号所有步骤
+        /// 此方法必须在持有 _stepsLock 写锁的情况下调用
+        /// </summary>
+        private void RenumberSteps()
+        {
+            for (int i = 0; i < _steps.Count; i++)
+            {
+                _steps[i].StepNum = i + 1;
+            }
+        }
+
+        /// <summary>
         /// 添加工作流步骤的线程安全实现
         /// 
         /// 实现步骤：
@@ -290,6 +302,8 @@ namespace MainUI.LogicalConfiguration.Services
             try
             {
                 _steps.Add(step);
+                // 重新编号,确保连续性
+                RenumberSteps();
             }
             finally
             {
@@ -318,6 +332,7 @@ namespace MainUI.LogicalConfiguration.Services
             try
             {
                 removed = _steps.Remove(step);
+                if (removed) RenumberSteps();
             }
             finally
             {
@@ -362,6 +377,9 @@ namespace MainUI.LogicalConfiguration.Services
                     removedStep = _steps[index];
                     _steps.RemoveAt(index);
                     removed = true;
+
+                    // 重新编号逻辑
+                    RenumberSteps();
                 }
             }
             finally

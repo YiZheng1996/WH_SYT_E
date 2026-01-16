@@ -95,7 +95,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 LoadVariables();
 
                 // 加载参数到界面
-                LoadParametersFromWorkflow();
+                LoadParameterToForm();
             }
             finally
             {
@@ -114,9 +114,6 @@ namespace MainUI.LogicalConfiguration.Forms
 
             // 删除行按钮
             BtnDelete.Click += BtnDelete_Click;
-
-            // 预览按钮
-            btnPreview.Click += BtnPreview_Click;
 
             // 保存按钮
             btnSave.Click += BtnSave_Click;
@@ -150,13 +147,10 @@ namespace MainUI.LogicalConfiguration.Forms
                 .ToList();
 
             // 更新保存到变量列的下拉选项
-            if (DataGridViewDefineVar.Columns["ColSaveToVar"] is DataGridViewComboBoxColumn colSaveToVar)
-            {
-                colSaveToVar.Items.Clear();
-                colSaveToVar.Items.AddRange([.. variables]);
-            }
+            if (DataGridViewDefineVar.Columns["ColSaveToVar"] is not DataGridViewComboBoxColumn colSaveToVar) return;
+            colSaveToVar.Items.Clear();
+            colSaveToVar.Items.AddRange([.. variables]);
         }
-
        
         /// <summary>
         /// 获取当前参数
@@ -237,68 +231,7 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        /// <summary>
-        /// 预览按钮点击 - 测试读取功能
-        /// </summary>
-        private async void BtnPreview_Click(object sender, EventArgs e)
-        {
-            if (!ValidateInput())
-            {
-                return;
-            }
-
-            try
-            {
-                btnPreview.Enabled = false;
-                btnPreview.Text = "读取中...";
-
-                var param = GetCurrentParameters();
-
-                var reportMethods = Program.ServiceProvider.GetService<ReportMethods>();
-                if (reportMethods == null)
-                {
-                    MessageHelper.MessageOK("报表服务未初始化", TType.Error);
-                    return;
-                }
-
-                //  逐个读取单元格
-                foreach (var item in param.ReadItems)
-                {
-                    // 为每个单元格创建单独的参数
-                    var readParam = new Parameter_ReadCells
-                    {
-                        SheetName = param.SheetName,
-                        ReadItems = [item]
-                    };
-
-                    // 调用读取方法
-                    var value = await reportMethods.ReadCells(readParam);
-
-                    // 更新预览值
-                    foreach (DataGridViewRow row in DataGridViewDefineVar.Rows)
-                    {
-                        if (row.Cells["ColCellAddress"].Value?.ToString() == item.CellAddress)
-                        {
-                            row.Cells["ColPreview"].Value = value?.ToString() ?? "(空值)";
-                            break;
-                        }
-                    }
-                }
-
-                MessageHelper.MessageOK(this, "预览读取完成!", TType.Success);
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error($"预览读取失败: {ex.Message}", ex);
-                MessageHelper.MessageOK($"预览读取失败:\n{ex.Message}", TType.Error);
-            }
-            finally
-            {
-                btnPreview.Enabled = true;
-                btnPreview.Text = "预览读取";
-            }
-        }
-
+     
         /// <summary>
         /// 保存按钮点击
         /// </summary>
@@ -398,7 +331,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 从参数对象加载到表单
         /// </summary>
-        protected override void LoadParametersFromWorkflow()
+        protected override void LoadParameterToForm()
         {
             if (_parameter == null) return;
 

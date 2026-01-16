@@ -53,6 +53,9 @@ namespace MainUI.LogicalConfiguration
             {
                 InitializeComponent();
 
+                // 隐藏底部整个区域（步骤详情和执行日志）
+                splitContainerRight.Panel2Collapsed = true;
+
                 _logger.LogDebug("开始初始化配置: {ModelType}/{ModelName}/{ProcessName}",
                     modelType, modelName, processName);
 
@@ -60,7 +63,7 @@ namespace MainUI.LogicalConfiguration
                 JsonManager.FilePath = path;
 
                 // 更新窗体标题
-                Text = $"产品类型：{modelType}，产品型号：{modelName}，项点名称：{processName}";
+                Text = $@"产品类型：{modelType}，产品型号：{modelName}，项点名称：{processName}";
 
                 // 更新全局变量
                 TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelType, modelName);

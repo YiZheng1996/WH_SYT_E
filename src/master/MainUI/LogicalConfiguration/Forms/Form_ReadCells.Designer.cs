@@ -39,18 +39,16 @@
             uiGroupBox2 = new UIPanel();
             btnCancel = new UISymbolButton();
             btnSave = new UISymbolButton();
-            btnPreview = new UISymbolButton();
             uiLabel3 = new UILabel();
             btnAddRow = new UISymbolButton();
             BtnDelete = new UISymbolButton();
             DataGridViewDefineVar = new UIDataGridView();
+            uiLine2 = new UILine();
+            uiLine1 = new UILine();
             ColCellAddress = new DataGridViewTextBoxColumn();
             ColSaveToVar = new DataGridViewComboBoxColumn();
             ColDataType = new DataGridViewComboBoxColumn();
             ColDefaultValue = new DataGridViewTextBoxColumn();
-            ColPreview = new DataGridViewTextBoxColumn();
-            uiLine2 = new UILine();
-            uiLine1 = new UILine();
             uiGroupBox1.SuspendLayout();
             uiGroupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)DataGridViewDefineVar).BeginInit();
@@ -106,7 +104,6 @@
             // 
             uiGroupBox2.Controls.Add(btnCancel);
             uiGroupBox2.Controls.Add(btnSave);
-            uiGroupBox2.Controls.Add(btnPreview);
             uiGroupBox2.Controls.Add(uiLabel3);
             uiGroupBox2.Controls.Add(btnAddRow);
             uiGroupBox2.Controls.Add(BtnDelete);
@@ -162,25 +159,6 @@
             btnSave.TabIndex = 5;
             btnSave.Text = "保存";
             btnSave.TipsFont = new Font("微软雅黑", 9F);
-            // 
-            // btnPreview
-            // 
-            btnPreview.Cursor = Cursors.Hand;
-            btnPreview.FillColor = Color.FromArgb(220, 155, 40);
-            btnPreview.FillHoverColor = Color.FromArgb(227, 175, 83);
-            btnPreview.FillPressColor = Color.FromArgb(176, 124, 32);
-            btnPreview.FillSelectedColor = Color.FromArgb(176, 124, 32);
-            btnPreview.Font = new Font("微软雅黑", 9F);
-            btnPreview.Location = new Point(275, 439);
-            btnPreview.MinimumSize = new Size(1, 1);
-            btnPreview.Name = "btnPreview";
-            btnPreview.RectColor = Color.FromArgb(220, 155, 40);
-            btnPreview.RectHoverColor = Color.FromArgb(227, 175, 83);
-            btnPreview.Size = new Size(110, 38);
-            btnPreview.Symbol = 61550;
-            btnPreview.TabIndex = 4;
-            btnPreview.Text = "预览读取";
-            btnPreview.TipsFont = new Font("微软雅黑", 9F);
             // 
             // uiLabel3
             // 
@@ -250,7 +228,7 @@
             DataGridViewDefineVar.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             DataGridViewDefineVar.ColumnHeadersHeight = 40;
             DataGridViewDefineVar.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            DataGridViewDefineVar.Columns.AddRange(new DataGridViewColumn[] { ColCellAddress, ColSaveToVar, ColDataType, ColDefaultValue, ColPreview });
+            DataGridViewDefineVar.Columns.AddRange(new DataGridViewColumn[] { ColCellAddress, ColSaveToVar, ColDataType, ColDefaultValue });
             dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle3.BackColor = SystemColors.Window;
             dataGridViewCellStyle3.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
@@ -283,50 +261,6 @@
             DataGridViewDefineVar.StripeEvenColor = Color.Empty;
             DataGridViewDefineVar.TabIndex = 1;
             // 
-            // ColCellAddress
-            // 
-            ColCellAddress.HeaderText = "单元格地址";
-            ColCellAddress.MinimumWidth = 100;
-            ColCellAddress.Name = "ColCellAddress";
-            ColCellAddress.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColCellAddress.Width = 120;
-            // 
-            // ColSaveToVar
-            // 
-            ColSaveToVar.DisplayStyle = DataGridViewComboBoxDisplayStyle.ComboBox;
-            ColSaveToVar.HeaderText = "保存到变量";
-            ColSaveToVar.MinimumWidth = 150;
-            ColSaveToVar.Name = "ColSaveToVar";
-            ColSaveToVar.Resizable = DataGridViewTriState.True;
-            ColSaveToVar.SortMode = DataGridViewColumnSortMode.Automatic;
-            ColSaveToVar.Width = 200;
-            // 
-            // ColDataType
-            // 
-            ColDataType.DisplayStyle = DataGridViewComboBoxDisplayStyle.ComboBox;
-            ColDataType.HeaderText = "数据类型";
-            ColDataType.Items.AddRange(new object[] { "字符串", "整数", "小数", "布尔", "日期时间" });
-            ColDataType.MinimumWidth = 100;
-            ColDataType.Name = "ColDataType";
-            ColDataType.Resizable = DataGridViewTriState.True;
-            ColDataType.SortMode = DataGridViewColumnSortMode.Automatic;
-            ColDataType.Width = 120;
-            // 
-            // ColDefaultValue
-            // 
-            ColDefaultValue.HeaderText = "默认值";
-            ColDefaultValue.MinimumWidth = 120;
-            ColDefaultValue.Name = "ColDefaultValue";
-            ColDefaultValue.SortMode = DataGridViewColumnSortMode.NotSortable;
-            ColDefaultValue.Width = 170;
-            // 
-            // ColPreview
-            // 
-            ColPreview.HeaderText = "预览值";
-            ColPreview.MinimumWidth = 120;
-            ColPreview.Name = "ColPreview";
-            ColPreview.Width = 170;
-            // 
             // uiLine2
             // 
             uiLine2.BackColor = Color.Transparent;
@@ -356,6 +290,43 @@
             uiLine1.TabIndex = 446;
             uiLine1.Text = "📄 Excel文件配置";
             uiLine1.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // ColCellAddress
+            // 
+            ColCellAddress.HeaderText = "单元格地址";
+            ColCellAddress.MinimumWidth = 100;
+            ColCellAddress.Name = "ColCellAddress";
+            ColCellAddress.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColCellAddress.Width = 200;
+            // 
+            // ColSaveToVar
+            // 
+            ColSaveToVar.DisplayStyle = DataGridViewComboBoxDisplayStyle.ComboBox;
+            ColSaveToVar.HeaderText = "保存到变量";
+            ColSaveToVar.MinimumWidth = 150;
+            ColSaveToVar.Name = "ColSaveToVar";
+            ColSaveToVar.Resizable = DataGridViewTriState.True;
+            ColSaveToVar.SortMode = DataGridViewColumnSortMode.Automatic;
+            ColSaveToVar.Width = 300;
+            // 
+            // ColDataType
+            // 
+            ColDataType.DisplayStyle = DataGridViewComboBoxDisplayStyle.ComboBox;
+            ColDataType.HeaderText = "数据类型";
+            ColDataType.Items.AddRange(new object[] { "字符串", "整数", "小数", "布尔", "日期时间" });
+            ColDataType.MinimumWidth = 100;
+            ColDataType.Name = "ColDataType";
+            ColDataType.Resizable = DataGridViewTriState.True;
+            ColDataType.SortMode = DataGridViewColumnSortMode.Automatic;
+            ColDataType.Width = 120;
+            // 
+            // ColDefaultValue
+            // 
+            ColDefaultValue.HeaderText = "默认值";
+            ColDefaultValue.MinimumWidth = 120;
+            ColDefaultValue.Name = "ColDefaultValue";
+            ColDefaultValue.SortMode = DataGridViewColumnSortMode.NotSortable;
+            ColDefaultValue.Width = 160;
             // 
             // Form_ReadCells
             // 
@@ -392,7 +363,6 @@
         private Sunny.UI.UIDataGridView DataGridViewDefineVar;
         private Sunny.UI.UISymbolButton btnAddRow;
         private Sunny.UI.UISymbolButton BtnDelete;
-        private Sunny.UI.UISymbolButton btnPreview;
         private Sunny.UI.UISymbolButton btnSave;
         private Sunny.UI.UISymbolButton btnCancel;
         private UILine uiLine2;
@@ -401,6 +371,5 @@
         private DataGridViewComboBoxColumn ColSaveToVar;
         private DataGridViewComboBoxColumn ColDataType;
         private DataGridViewTextBoxColumn ColDefaultValue;
-        private DataGridViewTextBoxColumn ColPreview;
     }
 }
