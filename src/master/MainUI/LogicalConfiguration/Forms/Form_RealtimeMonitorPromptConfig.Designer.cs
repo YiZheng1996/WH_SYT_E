@@ -97,7 +97,7 @@
             panelMain.Name = "panelMain";
             panelMain.Padding = new Padding(15, 10, 15, 10);
             panelMain.RectColor = Color.FromArgb(220, 220, 220);
-            panelMain.Size = new Size(700, 784);
+            panelMain.Size = new Size(700, 776);
             panelMain.TabIndex = 0;
             panelMain.Text = null;
             panelMain.TextAlignment = ContentAlignment.MiddleCenter;
@@ -111,7 +111,7 @@
             grpButtonConfig.FillColor = Color.White;
             grpButtonConfig.FillColor2 = Color.White;
             grpButtonConfig.Font = new Font("微软雅黑", 11F, FontStyle.Bold);
-            grpButtonConfig.Location = new Point(20, 667);
+            grpButtonConfig.Location = new Point(20, 655);
             grpButtonConfig.Margin = new Padding(4, 5, 4, 5);
             grpButtonConfig.MinimumSize = new Size(1, 1);
             grpButtonConfig.Name = "grpButtonConfig";
@@ -142,7 +142,6 @@
             // 
             // lblIconType
             // 
-            lblIconType.BackColor = Color.Transparent;
             lblIconType.Font = new Font("微软雅黑", 10F);
             lblIconType.ForeColor = Color.FromArgb(48, 48, 48);
             lblIconType.Location = new Point(15, 75);
@@ -170,7 +169,6 @@
             // 
             // lblButtonText
             // 
-            lblButtonText.BackColor = Color.Transparent;
             lblButtonText.Font = new Font("微软雅黑", 10F);
             lblButtonText.ForeColor = Color.FromArgb(48, 48, 48);
             lblButtonText.Location = new Point(15, 40);
@@ -194,7 +192,7 @@
             grpDisplayConfig.FillColor = Color.White;
             grpDisplayConfig.FillColor2 = Color.White;
             grpDisplayConfig.Font = new Font("微软雅黑", 11F, FontStyle.Bold);
-            grpDisplayConfig.Location = new Point(20, 468);
+            grpDisplayConfig.Location = new Point(20, 455);
             grpDisplayConfig.Margin = new Padding(4, 5, 4, 5);
             grpDisplayConfig.MinimumSize = new Size(1, 1);
             grpDisplayConfig.Name = "grpDisplayConfig";
@@ -223,7 +221,6 @@
             // 
             // lblRefreshInterval
             // 
-            lblRefreshInterval.BackColor = Color.Transparent;
             lblRefreshInterval.Font = new Font("微软雅黑", 10F);
             lblRefreshInterval.ForeColor = Color.FromArgb(48, 48, 48);
             lblRefreshInterval.Location = new Point(15, 148);
@@ -250,7 +247,6 @@
             // 
             // lblValueLabelText
             // 
-            lblValueLabelText.BackColor = Color.Transparent;
             lblValueLabelText.Font = new Font("微软雅黑", 10F);
             lblValueLabelText.ForeColor = Color.FromArgb(48, 48, 48);
             lblValueLabelText.Location = new Point(200, 113);
@@ -262,7 +258,6 @@
             // 
             // chkShowValueLabel
             // 
-            chkShowValueLabel.BackColor = Color.Transparent;
             chkShowValueLabel.Checked = true;
             chkShowValueLabel.Font = new Font("微软雅黑", 10F);
             chkShowValueLabel.ForeColor = Color.FromArgb(48, 48, 48);
@@ -292,7 +287,6 @@
             // 
             // lblDisplayFormat
             // 
-            lblDisplayFormat.BackColor = Color.Transparent;
             lblDisplayFormat.Font = new Font("微软雅黑", 10F);
             lblDisplayFormat.ForeColor = Color.FromArgb(48, 48, 48);
             lblDisplayFormat.Location = new Point(15, 75);
@@ -319,7 +313,6 @@
             // 
             // lblUnit
             // 
-            lblUnit.BackColor = Color.Transparent;
             lblUnit.Font = new Font("微软雅黑", 10F);
             lblUnit.ForeColor = Color.FromArgb(48, 48, 48);
             lblUnit.Location = new Point(15, 40);
@@ -336,7 +329,7 @@
             grpPromptConfig.FillColor = Color.White;
             grpPromptConfig.FillColor2 = Color.White;
             grpPromptConfig.Font = new Font("微软雅黑", 11F, FontStyle.Bold);
-            grpPromptConfig.Location = new Point(20, 322);
+            grpPromptConfig.Location = new Point(20, 305);
             grpPromptConfig.Margin = new Padding(4, 5, 4, 5);
             grpPromptConfig.MinimumSize = new Size(1, 1);
             grpPromptConfig.Name = "grpPromptConfig";
@@ -362,7 +355,6 @@
             // 
             // lblPromptMessage
             // 
-            lblPromptMessage.BackColor = Color.Transparent;
             lblPromptMessage.Font = new Font("微软雅黑", 10F);
             lblPromptMessage.ForeColor = Color.FromArgb(48, 48, 48);
             lblPromptMessage.Location = new Point(15, 40);
@@ -386,7 +378,7 @@
             grpMonitorSource.MinimumSize = new Size(1, 1);
             grpMonitorSource.Name = "grpMonitorSource";
             grpMonitorSource.Padding = new Padding(0, 32, 0, 0);
-            grpMonitorSource.Size = new Size(655, 176);
+            grpMonitorSource.Size = new Size(655, 150);
             grpMonitorSource.TabIndex = 1;
             grpMonitorSource.Text = "监测源配置";
             grpMonitorSource.TextAlignment = ContentAlignment.MiddleLeft;
@@ -399,7 +391,7 @@
             pnlPlcSource.Controls.Add(lblPlcModule);
             pnlPlcSource.Location = new Point(15, 80);
             pnlPlcSource.Name = "pnlPlcSource";
-            pnlPlcSource.Size = new Size(625, 81);
+            pnlPlcSource.Size = new Size(625, 65);
             pnlPlcSource.TabIndex = 3;
             pnlPlcSource.Visible = false;
             // 
@@ -411,7 +403,7 @@
             cmbPlcAddress.Font = new Font("微软雅黑", 10F);
             cmbPlcAddress.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbPlcAddress.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbPlcAddress.Location = new Point(125, 47);
+            cmbPlcAddress.Location = new Point(125, 34);
             cmbPlcAddress.Margin = new Padding(4, 5, 4, 5);
             cmbPlcAddress.MinimumSize = new Size(63, 0);
             cmbPlcAddress.Name = "cmbPlcAddress";
@@ -424,10 +416,9 @@
             // 
             // lblPlcAddress
             // 
-            lblPlcAddress.BackColor = Color.Transparent;
             lblPlcAddress.Font = new Font("微软雅黑", 10F);
             lblPlcAddress.ForeColor = Color.FromArgb(48, 48, 48);
-            lblPlcAddress.Location = new Point(3, 49);
+            lblPlcAddress.Location = new Point(3, 36);
             lblPlcAddress.Name = "lblPlcAddress";
             lblPlcAddress.Size = new Size(103, 23);
             lblPlcAddress.TabIndex = 2;
@@ -442,7 +433,7 @@
             cmbPlcModule.Font = new Font("微软雅黑", 10F);
             cmbPlcModule.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbPlcModule.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbPlcModule.Location = new Point(125, 10);
+            cmbPlcModule.Location = new Point(125, 3);
             cmbPlcModule.Margin = new Padding(4, 5, 4, 5);
             cmbPlcModule.MinimumSize = new Size(63, 0);
             cmbPlcModule.Name = "cmbPlcModule";
@@ -456,10 +447,9 @@
             // 
             // lblPlcModule
             // 
-            lblPlcModule.BackColor = Color.Transparent;
             lblPlcModule.Font = new Font("微软雅黑", 10F);
             lblPlcModule.ForeColor = Color.FromArgb(48, 48, 48);
-            lblPlcModule.Location = new Point(3, 12);
+            lblPlcModule.Location = new Point(3, 5);
             lblPlcModule.Name = "lblPlcModule";
             lblPlcModule.Size = new Size(100, 23);
             lblPlcModule.TabIndex = 0;
@@ -528,7 +518,6 @@
             // 
             // lblMonitorSourceType
             // 
-            lblMonitorSourceType.BackColor = Color.Transparent;
             lblMonitorSourceType.Font = new Font("微软雅黑", 10F);
             lblMonitorSourceType.ForeColor = Color.FromArgb(48, 48, 48);
             lblMonitorSourceType.Location = new Point(15, 40);
@@ -574,7 +563,6 @@
             // 
             // lblDescription
             // 
-            lblDescription.BackColor = Color.Transparent;
             lblDescription.Font = new Font("微软雅黑", 10F);
             lblDescription.ForeColor = Color.FromArgb(48, 48, 48);
             lblDescription.Location = new Point(15, 77);
@@ -601,7 +589,6 @@
             // 
             // lblTitle
             // 
-            lblTitle.BackColor = Color.Transparent;
             lblTitle.Font = new Font("微软雅黑", 10F);
             lblTitle.ForeColor = Color.FromArgb(48, 48, 48);
             lblTitle.Location = new Point(15, 40);
@@ -618,16 +605,15 @@
             panelBottom.Controls.Add(btnSave);
             panelBottom.Controls.Add(btnTest);
             panelBottom.Dock = DockStyle.Bottom;
-            panelBottom.Location = new Point(0, 819);
+            panelBottom.Location = new Point(0, 811);
             panelBottom.Name = "panelBottom";
             panelBottom.Padding = new Padding(15, 10, 15, 15);
-            panelBottom.Size = new Size(700, 67);
+            panelBottom.Size = new Size(700, 75);
             panelBottom.TabIndex = 1;
             // 
             // btnCancel
             // 
             btnCancel.Cursor = Cursors.Hand;
-            btnCancel.DialogResult = DialogResult.Cancel;
             btnCancel.Font = new Font("微软雅黑", 10F);
             btnCancel.Location = new Point(570, 18);
             btnCancel.MinimumSize = new Size(1, 1);
@@ -636,6 +622,7 @@
             btnCancel.TabIndex = 2;
             btnCancel.Text = "取消";
             btnCancel.TipsFont = new Font("微软雅黑", 9F);
+            btnCancel.DialogResult = DialogResult.Cancel;
             // 
             // btnSave
             // 
