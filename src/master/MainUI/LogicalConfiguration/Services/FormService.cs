@@ -80,17 +80,11 @@ namespace MainUI.LogicalConfiguration.Services
                     case "写入单元格":
                         form = CreateForm<Form_WriteCells>();
                         break;
-                    case "保存报表":
-                        form = CreateForm<Form_SaveReport>();
-                        break;
                     case "消息通知":
                         form = CreateForm<Form_SystemPrompt>();
                         break;
                     case "条件判断":
                         form = CreateForm<Form_Condition>();
-                        break;
-                    case "变量监控":
-                        form = CreateForm<Form_VariableMonitor>();
                         break;
                     case "点位定义":
                         form = CreateForm<Form_DefinePoint>();
@@ -200,11 +194,7 @@ namespace MainUI.LogicalConfiguration.Services
 
                 // 写入单元格 配置窗体
                 nameof(Form_WriteCells) => (T)(object)new Form_WriteCells(),
-
-                // 保存报表 配置窗体
-                nameof(Form_SaveReport) => (T)(object)new Form_SaveReport(_workflowState,
-                    GetSpecificLogger<Form_SaveReport>()),
-
+ 
                 // 系统提示窗体
                 nameof(Form_SystemPrompt) => (T)(object)new Form_SystemPrompt(
                     _workflowState,  // 预加载的服务
@@ -212,13 +202,7 @@ namespace MainUI.LogicalConfiguration.Services
 
                 // 检测工具窗体
                 nameof(Form_Detection) => (T)(object)new Form_Detection(),
-
-                // 变量监控
-                nameof(Form_VariableMonitor) => (T)(object)new Form_VariableMonitor(
-                    _workflowState,
-                    _variableManager,
-                    GetSpecificLogger<Form_VariableMonitor>()),
-
+           
                 // 点位定义
                 nameof(Form_DefinePoint) => (T)(object)new Form_DefinePoint(
                     _plcConfigService,
@@ -334,17 +318,11 @@ namespace MainUI.LogicalConfiguration.Services
                     case "写入单元格":
                         form = CreateForm<Form_WriteCells>();
                         break;
-                    case "保存报表":
-                        form = CreateForm<Form_SaveReport>();
-                        break;
                     case "消息通知":
                         form = CreateForm<Form_SystemPrompt>();
                         break;
                     case "条件判断":
                         form = CreateForm<Form_Detection>();
-                        break;
-                    case "变量监控":
-                        form = CreateForm<Form_VariableMonitor>();
                         break;
                     case "点位定义":
                         form = CreateForm<Form_DefinePoint>();

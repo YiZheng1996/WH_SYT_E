@@ -43,7 +43,7 @@
             panelToolBox.Dock = DockStyle.Left;
             panelToolBox.Location = new Point(0, 35);
             panelToolBox.Name = "panelToolBox";
-            panelToolBox.Size = new Size(250, 605);
+            panelToolBox.Size = new Size(250, 881);
             panelToolBox.TabIndex = 0;
             // 
             // panelProcess
@@ -53,22 +53,22 @@
             panelProcess.Location = new Point(250, 35);
             panelProcess.Name = "panelProcess";
             panelProcess.Padding = new Padding(10);
-            panelProcess.Size = new Size(950, 605);
+            panelProcess.Size = new Size(1030, 881);
             panelProcess.TabIndex = 1;
             // 
             // panelButtons
             // 
             panelButtons.BackColor = Color.FromArgb(248, 249, 250);
             panelButtons.Dock = DockStyle.Bottom;
-            panelButtons.Location = new Point(0, 640);
+            panelButtons.Location = new Point(0, 916);
             panelButtons.Name = "panelButtons";
-            panelButtons.Size = new Size(1200, 60);
+            panelButtons.Size = new Size(1280, 60);
             panelButtons.TabIndex = 2;
             // 
             // Form_ChildStepsConfig
             // 
             AutoScaleMode = AutoScaleMode.None;
-            ClientSize = new Size(1200, 700);
+            ClientSize = new Size(1280, 976);
             ControlBox = false;
             Controls.Add(panelProcess);
             Controls.Add(panelToolBox);

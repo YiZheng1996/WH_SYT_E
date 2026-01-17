@@ -1,10 +1,8 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.Engine;
-using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Asn1.Ocsp;
 
@@ -69,10 +67,6 @@ namespace MainUI.LogicalConfiguration.Forms
             ILogger<Form_Condition> logger)
             : base(workflowState, logger)
         {
-
-            // 获取表达式引擎
-            _expressionEngine = ServiceLocator.Current?.GetService<ExpressionEngine>();
-
             InitializeComponent();
             InitializeForm();
         }
@@ -257,7 +251,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         AllowFunctionCalls = true,
                         AllowPlcReferences = true,
                         StrictMode = false,
-                        RuntimeVariableWhitelist = GetRuntimeVariableWhitelist()
+                        RuntimeVariableWhitelist = GetRuntimeVariableWhitelist().ToList()
                     };
 
                     // 使用ExpressionEngine进行验证
@@ -403,11 +397,29 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                var trueSteps = Parameter.TrueSteps ?? new List<Parent>();
-                ConfigureChildSteps(ref trueSteps, "满足条件时执行", true);
-                Parameter.TrueSteps = trueSteps;
-                UpdateStepsCount();
-                MarkAsChanged();
+                // 保存当前界面数据到参数对象
+                SaveFormToParameter();
+
+                // 确保 TrueSteps 不为 null
+                Parameter.TrueSteps ??= [];
+
+                // 直接使用 Form_ChildStepsConfig，与 Form_Loop 保持一致
+                var configForm = new Form_ChildStepsConfig(Parameter.TrueSteps)
+                {
+                    Text = "满足条件时执行的步骤"
+                };
+
+                if (configForm.ShowDialog(this) == DialogResult.OK)
+                {
+                    // 直接使用返回的结果更新 Parameter
+                    Parameter.TrueSteps = configForm._childSteps;
+
+                    // 更新步骤计数显示
+                    UpdateStepsCount();
+                    MarkAsChanged();
+
+                    Logger?.LogDebug("满足条件步骤配置完成，数量: {Count}", Parameter.TrueSteps?.Count ?? 0);
+                }
             }
             catch (Exception ex)
             {
@@ -423,59 +435,32 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                var falseSteps = Parameter.FalseSteps ?? new List<Parent>();
-                ConfigureChildSteps(ref falseSteps, "不满足条件时执行", false);
-                Parameter.FalseSteps = falseSteps;
+                // 保存当前界面数据到参数对象
+                SaveFormToParameter();
+
+                // 确保 FalseSteps 不为 null
+                Parameter.FalseSteps ??= [];
+
+                // 直接使用 Form_ChildStepsConfig
+                var configForm = new Form_ChildStepsConfig(Parameter.FalseSteps)
+                {
+                    Text = "不满足条件时执行的步骤"
+                };
+
+                if (configForm.ShowDialog(this) != DialogResult.OK) return;
+                // 直接使用返回的结果更新 Parameter
+                Parameter.FalseSteps = configForm._childSteps;
+
+                // 更新步骤计数显示
                 UpdateStepsCount();
                 MarkAsChanged();
+
+                Logger?.LogDebug("不满足条件步骤配置完成，数量: {Count}", Parameter.FalseSteps?.Count ?? 0);
             }
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "配置不满足条件步骤失败");
                 MessageHelper.MessageOK($"配置失败：{ex.Message}", TType.Error);
-            }
-        }
-
-        /// <summary>
-        /// 配置子步骤
-        /// </summary>
-        private void ConfigureChildSteps(ref List<Parent> steps, string title, bool isTrueBranch)
-        {
-            try
-            {
-                // 尝试使用子步骤配置窗体
-                var formService = ServiceLocator.Current?.GetService<FormService>();
-                if (formService != null)
-                {
-                    // 创建子步骤配置窗体
-                    using var configForm = ServiceLocator.Current?.GetService<Form_ChildStepsConfig>();
-                    if (configForm != null)
-                    {
-                        configForm.Text = title;
-                        configForm.Steps = steps ?? new List<Parent>();
-
-                        VarHelper.ShowDialogWithOverlay(this, configForm);
-
-                        if (configForm.DialogResult == DialogResult.OK)
-                        {
-                            steps = configForm.Steps;
-                            Logger?.LogDebug("{Title} 步骤配置完成，共 {Count} 个步骤", title, steps?.Count ?? 0);
-                        }
-                        return;
-                    }
-                }
-
-                // 降级方案：显示提示信息
-                string branchType = isTrueBranch ? "满足条件" : "不满足条件";
-                string message = $"【{title}】的子步骤配置\n\n" +
-                                 $"当前已配置: {steps?.Count ?? 0} 个步骤\n\n" +
-                                 $"提示：请确保子步骤配置窗体已正确注册到依赖注入容器";
-                MessageHelper.MessageOK(this, message, TType.Info);
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex, "配置子步骤失败: {Title}", title);
-                MessageHelper.MessageOK($"配置子步骤失败：{ex.Message}", TType.Error);
             }
         }
 
@@ -487,9 +472,10 @@ namespace MainUI.LogicalConfiguration.Forms
             int trueCount = Parameter?.TrueSteps?.Count ?? 0;
             int falseCount = Parameter?.FalseSteps?.Count ?? 0;
 
-            lblTrueStepsCount.Text = $"当条件为 True 时执行的步骤 ({trueCount} 个)";
-            lblFalseStepsCount.Text = $"当条件为 False 时执行的步骤 ({falseCount} 个)";
+            lblTrueStepsCount.Text = $"满足条件时执行的步骤 ({trueCount} 个)";
+            lblFalseStepsCount.Text = $"不满足条件时执行的步骤 ({falseCount} 个)";
         }
+
 
         #endregion
 
@@ -595,10 +581,7 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 _isInitializing = true;
-
-                // 尝试迁移旧版本参数
-                Parameter.MigrateFromLegacy();
-
+ 
                 // 加载基本信息
                 txtDescription.Text = Parameter.Description ?? "";
                 chkEnabled.Checked = Parameter.IsEnabled;

@@ -6,16 +6,14 @@ using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
-    /// 条件判断执行方法 - 适配简化后的参数格式
-    /// 直接使用ConditionExpression进行条件判断
+    /// 条件判断执行方法 - 简化版本
+    /// 直接使用 ConditionExpression 进行条件判断
+    /// TrueSteps 和 FalseSteps 类型统一为 List&lt;ChildModel&gt;
     /// </summary>
     public class ConditionMethods(
         ExpressionEngine expressionEngine,
         ILogger<ConditionMethods> logger) : DSLMethodBase
     {
-        private readonly ExpressionEngine _expressionEngine = expressionEngine;
-        private readonly ILogger<ConditionMethods> _logger = logger;
-
         public override string Category => "条件判断工具";
         public override string Description => "条件判断";
 
@@ -29,7 +27,7 @@ namespace MainUI.LogicalConfiguration.Methods
                 // 检查是否启用
                 if (!parameter.IsEnabled)
                 {
-                    _logger.LogInformation("条件判断已禁用，跳过执行: {Description}", parameter.Description);
+                    logger.LogInformation("条件判断已禁用，跳过执行: {Description}", parameter.Description);
                     return new ConditionEvaluationResult
                     {
                         ConditionMet = true,
@@ -39,20 +37,17 @@ namespace MainUI.LogicalConfiguration.Methods
                     };
                 }
 
-                _logger.LogInformation("开始条件判断: {Description}", parameter.Description);
-                _logger.LogDebug("条件表达式: {Expression}", parameter.ConditionExpression);
-
-                // 尝试迁移旧版本参数
-                parameter.MigrateFromLegacy();
+                logger.LogInformation("开始条件判断: {Description}", parameter.Description);
+                logger.LogDebug("条件表达式: {Expression}", parameter.ConditionExpression);
 
                 // 计算条件结果
-                bool conditionResult = EvaluateConditionExpression(parameter.ConditionExpression);
+                var conditionResult = EvaluateConditionExpression(parameter.ConditionExpression);
 
-                _logger.LogInformation("条件判断结果: {Result} ({Expression})",
+                logger.LogInformation("条件判断结果: {Result} ({Expression})",
                     conditionResult ? "满足条件" : "不满足条件",
                     parameter.ConditionExpression);
 
-                // 根据结果选择执行分支
+                // 根据结果选择执行分支 - 直接返回 List<ChildModel>
                 var stepsToExecute = conditionResult ? parameter.TrueSteps : parameter.FalseSteps;
 
                 return new ConditionEvaluationResult
@@ -65,7 +60,7 @@ namespace MainUI.LogicalConfiguration.Methods
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "条件判断异常: {Message}", ex.Message);
+                logger.LogError(ex, "条件判断异常: {Message}", ex.Message);
                 return new ConditionEvaluationResult
                 {
                     ConditionMet = false,
@@ -83,19 +78,19 @@ namespace MainUI.LogicalConfiguration.Methods
         {
             if (string.IsNullOrWhiteSpace(expression))
             {
-                _logger.LogWarning("条件表达式为空，默认返回 false");
+                logger.LogWarning("条件表达式为空，默认返回 false");
                 return false;
             }
 
             try
             {
                 // 使用表达式引擎计算
-                var result = _expressionEngine.EvaluateExpression(expression);
+                var result = expressionEngine.EvaluateExpression(expression);
 
                 if (!result.Success)
                 {
-                    _logger.LogError("条件表达式计算失败: {Expression}, 错误: {Error}",
-                        expression, result.Message);
+                    logger.LogError("条件表达式计算失败: {Expression}, 错误: {Error}",
+                        expression, result.ErrorMessage);
                     return false;
                 }
 
@@ -108,30 +103,28 @@ namespace MainUI.LogicalConfiguration.Methods
                 // 尝试转换为布尔值
                 if (result.Result != null)
                 {
-                    // 数值类型：非零为true
-                    if (result.Result is int intValue)
-                        return intValue != 0;
-                    if (result.Result is double doubleValue)
-                        return Math.Abs(doubleValue) > double.Epsilon;
-                    if (result.Result is decimal decimalValue)
-                        return decimalValue != 0;
-
-                    // 字符串类型：非空为true
-                    if (result.Result is string strValue)
-                        return !string.IsNullOrWhiteSpace(strValue) &&
-                               !strValue.Equals("false", StringComparison.OrdinalIgnoreCase) &&
-                               strValue != "0";
+                    return result.Result switch
+                    {
+                        // 数值类型：非零为true
+                        int intValue => intValue != 0,
+                        double doubleValue => Math.Abs(doubleValue) > double.Epsilon,
+                        decimal decimalValue => decimalValue != 0,
+                        // 字符串类型：非空为true
+                        string strValue => !string.IsNullOrWhiteSpace(strValue) &&
+                                           !strValue.Equals("false", StringComparison.OrdinalIgnoreCase) &&
+                                           strValue != "0",
+                        _ => Convert.ToBoolean(result.Result)
+                    };
 
                     // 尝试通用转换
-                    return Convert.ToBoolean(result.Result);
                 }
 
-                _logger.LogWarning("条件表达式结果为 null，默认返回 false");
+                logger.LogWarning("条件表达式结果为 null，默认返回 false");
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "计算条件表达式时发生异常: {Expression}", expression);
+                logger.LogError(ex, "计算条件表达式时发生异常: {Expression}", expression);
                 return false;
             }
         }
@@ -148,9 +141,9 @@ namespace MainUI.LogicalConfiguration.Methods
         public bool ConditionMet { get; set; }
 
         /// <summary>
-        /// 需要执行的步骤列表
+        /// 需要执行的步骤列表 - 直接是 List&lt;ChildModel&gt;
         /// </summary>
-        public List<Parent> StepsToExecute { get; set; }
+        public List<ChildModel> StepsToExecute { get; set; }
 
         /// <summary>
         /// 条件描述

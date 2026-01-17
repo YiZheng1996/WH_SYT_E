@@ -116,7 +116,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 Text = "循环体子步骤配置";
                 TitleColor = PrimaryBlue;
                 ShowRadius = false;
-                Size = new Size(1200, 700);
+                //Size = new Size(1200, 700);
                 StartPosition = FormStartPosition.CenterParent;
 
                 _logger?.LogDebug("自定义UI初始化完成");
@@ -156,10 +156,11 @@ namespace MainUI.LogicalConfiguration.Forms
                 _toolTreeControl.AddToolNode("条件判断", "ConditionJudge", "条件判断.png", logicNode);
                 _toolTreeControl.AddToolNode("等待稳定", "Waitingforstability", "等待稳定.png", logicNode);
                 _toolTreeControl.AddToolNode("循环工具", "CycleBegins", "循环工具.png", logicNode);
+                _toolTreeControl.AddToolNode("检测工具", "DetectionTool", "检测工具.png", logicNode);
                 _toolTreeControl.AddToolNode("实时监控", "MonitorTool", "实时监控.png", logicNode);
 
                 // 数据操作组
-                TreeNode dataNode = _toolTreeControl.AddToolNode(
+                var dataNode = _toolTreeControl.AddToolNode(
                     "数据操作",
                     "DataOperation",
                     "文件夹.png"
@@ -177,14 +178,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 _toolTreeControl.AddToolNode("写入PLC", "PLCWrite", "写入PLC.png", plcNode);
                 _toolTreeControl.AddToolNode("以太网发送", "EthernetSend", "以太网.png", plcNode); 
                 _toolTreeControl.AddToolNode("串口发送", "SerialPortSend", "串口助手.png", plcNode); 
-
-                // 检测工具组
-                TreeNode detectionNode = _toolTreeControl.AddToolNode(
-                    "检测工具",
-                    "DetectionTools",
-                    "文件夹.png"
-                );
-                _toolTreeControl.AddToolNode("AI检测", "AIDetection", "检测工具.png", detectionNode);
 
                 // 报表操作组
                 TreeNode reportNode = _toolTreeControl.AddToolNode(

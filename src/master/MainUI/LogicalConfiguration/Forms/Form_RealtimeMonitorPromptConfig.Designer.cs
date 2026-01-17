@@ -142,6 +142,7 @@
             // 
             // lblIconType
             // 
+            lblIconType.BackColor = Color.Transparent;
             lblIconType.Font = new Font("微软雅黑", 10F);
             lblIconType.ForeColor = Color.FromArgb(48, 48, 48);
             lblIconType.Location = new Point(15, 75);
@@ -169,6 +170,7 @@
             // 
             // lblButtonText
             // 
+            lblButtonText.BackColor = Color.Transparent;
             lblButtonText.Font = new Font("微软雅黑", 10F);
             lblButtonText.ForeColor = Color.FromArgb(48, 48, 48);
             lblButtonText.Location = new Point(15, 40);
@@ -221,6 +223,7 @@
             // 
             // lblRefreshInterval
             // 
+            lblRefreshInterval.BackColor = Color.Transparent;
             lblRefreshInterval.Font = new Font("微软雅黑", 10F);
             lblRefreshInterval.ForeColor = Color.FromArgb(48, 48, 48);
             lblRefreshInterval.Location = new Point(15, 148);
@@ -247,6 +250,7 @@
             // 
             // lblValueLabelText
             // 
+            lblValueLabelText.BackColor = Color.Transparent;
             lblValueLabelText.Font = new Font("微软雅黑", 10F);
             lblValueLabelText.ForeColor = Color.FromArgb(48, 48, 48);
             lblValueLabelText.Location = new Point(200, 113);
@@ -258,6 +262,7 @@
             // 
             // chkShowValueLabel
             // 
+            chkShowValueLabel.BackColor = Color.Transparent;
             chkShowValueLabel.Checked = true;
             chkShowValueLabel.Font = new Font("微软雅黑", 10F);
             chkShowValueLabel.ForeColor = Color.FromArgb(48, 48, 48);
@@ -287,6 +292,7 @@
             // 
             // lblDisplayFormat
             // 
+            lblDisplayFormat.BackColor = Color.Transparent;
             lblDisplayFormat.Font = new Font("微软雅黑", 10F);
             lblDisplayFormat.ForeColor = Color.FromArgb(48, 48, 48);
             lblDisplayFormat.Location = new Point(15, 75);
@@ -313,6 +319,7 @@
             // 
             // lblUnit
             // 
+            lblUnit.BackColor = Color.Transparent;
             lblUnit.Font = new Font("微软雅黑", 10F);
             lblUnit.ForeColor = Color.FromArgb(48, 48, 48);
             lblUnit.Location = new Point(15, 40);
@@ -355,6 +362,7 @@
             // 
             // lblPromptMessage
             // 
+            lblPromptMessage.BackColor = Color.Transparent;
             lblPromptMessage.Font = new Font("微软雅黑", 10F);
             lblPromptMessage.ForeColor = Color.FromArgb(48, 48, 48);
             lblPromptMessage.Location = new Point(15, 40);
@@ -518,6 +526,7 @@
             // 
             // lblMonitorSourceType
             // 
+            lblMonitorSourceType.BackColor = Color.Transparent;
             lblMonitorSourceType.Font = new Font("微软雅黑", 10F);
             lblMonitorSourceType.ForeColor = Color.FromArgb(48, 48, 48);
             lblMonitorSourceType.Location = new Point(15, 40);
@@ -563,6 +572,7 @@
             // 
             // lblDescription
             // 
+            lblDescription.BackColor = Color.Transparent;
             lblDescription.Font = new Font("微软雅黑", 10F);
             lblDescription.ForeColor = Color.FromArgb(48, 48, 48);
             lblDescription.Location = new Point(15, 77);
@@ -589,6 +599,7 @@
             // 
             // lblTitle
             // 
+            lblTitle.BackColor = Color.Transparent;
             lblTitle.Font = new Font("微软雅黑", 10F);
             lblTitle.ForeColor = Color.FromArgb(48, 48, 48);
             lblTitle.Location = new Point(15, 40);
@@ -614,6 +625,7 @@
             // btnCancel
             // 
             btnCancel.Cursor = Cursors.Hand;
+            btnCancel.DialogResult = DialogResult.Cancel;
             btnCancel.Font = new Font("微软雅黑", 10F);
             btnCancel.Location = new Point(570, 18);
             btnCancel.MinimumSize = new Size(1, 1);
@@ -622,7 +634,6 @@
             btnCancel.TabIndex = 2;
             btnCancel.Text = "取消";
             btnCancel.TipsFont = new Font("微软雅黑", 9F);
-            btnCancel.DialogResult = DialogResult.Cancel;
             // 
             // btnSave
             // 

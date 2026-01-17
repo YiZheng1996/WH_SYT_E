@@ -231,10 +231,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "串口发送" => await ExecuteSerialPortSend(step, cancellationToken),
 
                     // 检测工具
-                    "条件判断" => await ExecuteDetection(step, cancellationToken),
+                    "检测工具" => await ExecuteDetection(step, cancellationToken),
                     "等待稳定" => await ExecuteWaitForStable(step, cancellationToken),
                     "实时监控" => await ExecuteRealtimeMonitorPrompt(step, cancellationToken),
-                    //"检测工具" => await ExecuteCondition(step, cancellationToken),
+                    "条件判断" => await ExecuteCondition(step, cancellationToken),
                     "循环工具" => await ExecuteLoop(step, cancellationToken),
 
                     // 报表工具
@@ -346,7 +346,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         }
 
         /// <summary>
-        /// 条件判断 - 支持跳转逻辑
+        /// 监测工具 - 支持跳转逻辑
         /// </summary>
         /// <param name="step">当前步骤信息</param>
         private async Task<DetailedResult> ExecuteDetection(ChildModel step, CancellationToken cancellationToken)
@@ -356,7 +356,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 var param = ConvertParameter<Parameter_Detection>(step.StepParameter);
                 if (param == null)
                 {
-                    NlogHelper.Default.Error("检测/条件判断参数转换失败");
+                    NlogHelper.Default.Error("检测工具参数转换失败");
                     return DetailedResult.Failed("参数转换失败");
                 }
                 cancellationToken.ThrowIfCancellationRequested();
@@ -441,20 +441,6 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 NlogHelper.Default.Error($"检测/条件判断异常: {ex.Message}", ex);
                 return DetailedResult.Failed($"执行异常: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// 保存报表
-        /// </summary>
-        /// <param name="step">当前步骤信息</param>
-        private async Task<DetailedResult> ExecuteSaveReport(ChildModel step, CancellationToken cancellationToken)
-        {
-            var param = ConvertParameter<Parameter_SaveReport>(step.StepParameter);
-            if (param == null) return DetailedResult.Failed("参数转换失败");
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var result = await _reportMethods.SaveReport(param);
-            return result ? DetailedResult.Successful() : DetailedResult.Failed("报表保存失败");
         }
 
         /// <summary>
@@ -588,40 +574,35 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     return DetailedResult.Failed($"条件判断失败: {result.ErrorMessage}");
                 }
 
+                // 检查是否有步骤需要执行
                 if (result.StepsToExecute != null && result.StepsToExecute.Count > 0)
                 {
-                    NlogHelper.Default.Info($"执行{(result.ConditionMet ? "满足" : "不满足")}条件的步骤，共 {result.StepsToExecute.Count} 个分支");
+                    string branchName = result.ConditionMet ? "满足条件" : "不满足条件";
+                    NlogHelper.Default.Info($"执行【{branchName}】分支，共 {result.StepsToExecute.Count} 个步骤");
 
-                    // 执行子步骤
-                    foreach (var parentStep in result.StepsToExecute)
+                    // 直接遍历子步骤执行（StepsToExecute 已经是 List<ChildModel>）
+                    foreach (var childStep in result.StepsToExecute)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        if (parentStep.ChildSteps != null && parentStep.ChildSteps.Count > 0)
+                        NlogHelper.Default.Info($"  执行子步骤: [{childStep.StepNum}] {childStep.StepName}");
+
+                        // 递归调用执行子步骤
+                        var childResult = await ExecuteStepAsync(childStep, cancellationToken);
+
+                        if (!childResult.Success)
                         {
-                            NlogHelper.Default.Info($"执行分支 [{parentStep.ItemName}] 中的 {parentStep.ChildSteps.Count} 个步骤");
-
-                            foreach (var childStep in parentStep.ChildSteps)
-                            {
-                                cancellationToken.ThrowIfCancellationRequested();
-
-                                // 递归调用执行子步骤
-                                var childResult = await ExecuteStepAsync(childStep, cancellationToken);
-
-                                if (!childResult.Success)
-                                {
-                                    NlogHelper.Default.Warn($"条件分支子步骤执行失败: {childStep.StepName}, 原因: {childResult.Message}");
-                                    // 根据策略决定是否继续（这里选择继续）
-                                }
-                            }
+                            NlogHelper.Default.Warn($"  条件分支子步骤执行失败: {childStep.StepName}, 原因: {childResult.Message}");
+                            // 根据策略决定是否继续（这里选择继续执行后续步骤）
                         }
                     }
 
-                    NlogHelper.Default.Info($"{(result.ConditionMet ? "满足" : "不满足")}条件的步骤执行完成");
+                    NlogHelper.Default.Info($"【{branchName}】分支执行完成");
                 }
                 else
                 {
-                    NlogHelper.Default.Info($"{(result.ConditionMet ? "满足" : "不满足")}条件时无需执行子步骤");
+                    string branchName = result.ConditionMet ? "满足条件" : "不满足条件";
+                    NlogHelper.Default.Info($"【{branchName}】分支无子步骤需要执行");
                 }
 
                 return DetailedResult.Successful();

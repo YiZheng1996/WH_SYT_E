@@ -141,15 +141,15 @@ namespace MainUI.LogicalConfiguration.Forms
                 });
                 txtCondition.Watermark = "可选，如：{Status} == 'Ready' (按F2打开面板)";
 
-                // 响应变量名输入框 - 仅支持变量选择
-                ExpressionInputPanel.AttachTo(cmbResponseVariable, new InputPanelOptions
-                {
-                    Mode = InputMode.VariableOnly,
-                    EnabledModules = InputModules.Variable,
-                    Title = "选择响应保存变量",
-                    ShowValidation = false,
-                    CloseOnSubmit = true
-                });
+                //// 响应变量名输入框 - 仅支持变量选择
+                //ExpressionInputPanel.AttachTo(cmbResponseVariable, new InputPanelOptions
+                //{
+                //    Mode = InputMode.VariableOnly,
+                //    EnabledModules = InputModules.Variable,
+                //    Title = "选择响应保存变量",
+                //    ShowValidation = false,
+                //    CloseOnSubmit = true
+                //});
 
                 Logger?.LogDebug("以太网发送表达式输入面板设置完成");
             }

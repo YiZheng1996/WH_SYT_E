@@ -415,7 +415,7 @@ namespace MainUI.LogicalConfiguration.Forms
             btnCancel.Cursor = Cursors.Hand;
             btnCancel.FillColor = Color.FromArgb(230, 80, 80);
             btnCancel.Font = new Font("微软雅黑", 10F);
-            btnCancel.Location = new Point(572, 13);
+            btnCancel.Location = new Point(682, 13);
             btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
             btnCancel.RectColor = Color.FromArgb(230, 80, 80);
@@ -433,7 +433,7 @@ namespace MainUI.LogicalConfiguration.Forms
             btnSave.Cursor = Cursors.Hand;
             btnSave.FillColor = Color.FromArgb(65, 100, 204);
             btnSave.Font = new Font("微软雅黑", 10F);
-            btnSave.Location = new Point(682, 13);
+            btnSave.Location = new Point(567, 13);
             btnSave.MinimumSize = new Size(1, 1);
             btnSave.Name = "btnSave";
             btnSave.RectColor = Color.FromArgb(65, 100, 204);
@@ -450,6 +450,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             AutoScaleMode = AutoScaleMode.None;
             ClientSize = new Size(800, 680);
+            ControlBox = false;
             Controls.Add(panelMain);
             Controls.Add(panelBottom);
             Controls.Add(panelDescription);

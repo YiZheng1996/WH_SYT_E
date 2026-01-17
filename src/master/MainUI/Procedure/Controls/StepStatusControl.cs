@@ -406,7 +406,8 @@ namespace MainUI.Procedure.Controls
                 "写入单元格" or "WriteCells" => DisplayWriteCellsParameters(stepParameter, yPosition),
                 "变量赋值" or "VariableAssignment" => DisplayVariableAssignmentParameters(stepParameter, yPosition),
                 "读取单元格" or "ReadCells" => DisplayReadCellsParameters(stepParameter, yPosition),
-                "条件判断" or "Condition" => DisplayConditionParameters(stepParameter, yPosition),
+                "监测工具" or "Condition" => DisplayConditionParameters(stepParameter, yPosition),
+                "条件判断" => DisplayConditionToolParameters(stepParameter, yPosition),
                 "延时等待" or "Delay" => DisplayDelayParameters(stepParameter, yPosition),
                 "写入PLC" or "WritePLC" => DisplayWritePLCParameters(stepParameter, yPosition),
                 "读取PLC" or "ReadPLC" => DisplayReadPLCParameters(stepParameter, yPosition),
@@ -605,7 +606,7 @@ namespace MainUI.Procedure.Controls
 
         #region 条件判断显示
 
-        #region 条件判断
+        #region 监测工具
 
         /// <summary>
         /// 条件判断参数展示
@@ -837,6 +838,211 @@ namespace MainUI.Procedure.Controls
             {
                 return string.Empty;
             }
+        }
+
+        #endregion
+
+        #region 条件判断显示（Parameter_Condition）
+
+        /// <summary>
+        /// 条件判断参数展示 - 使用 Parameter_Condition
+        /// 显示条件表达式、满足/不满足条件时的子步骤等信息
+        /// </summary>
+        private int DisplayConditionToolParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                // 尝试转换为强类型参数
+                var param = ConvertToParameter<Parameter_Condition>(stepParameter);
+
+                if (param == null)
+                {
+                    // 如果转换失败，尝试JSON解析
+                    var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                    var json = JObject.Parse(jsonStr);
+                    return DisplayConditionToolParametersFromJson(json, yPosition);
+                }
+
+                // 定义列宽
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // ===== 基本信息 =====
+                yPosition = AddSubSectionTitle("🔀 检测工具配置", yPosition);
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 描述
+                if (!string.IsNullOrEmpty(param.Description))
+                {
+                    AddTableCell("描述", yPosition, 0, col1Width, false);
+                    AddTableCell(param.Description, yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(0, 102, 204));
+                    yPosition += 22;
+                }
+
+                // 启用状态
+                AddTableCell("启用状态", yPosition, 0, col1Width, false);
+                AddTableCell(param.IsEnabled ? "✓ 已启用" : "✗ 已禁用", yPosition, col1Width, col2Width, false,
+                    param.IsEnabled ? StatusColors.Success : StatusColors.Skipped);
+                yPosition += 22;
+
+                // ===== 条件表达式 =====
+                yPosition = AddSeparatorLine(yPosition);
+                yPosition = AddSubSectionTitle("📋 条件表达式", yPosition);
+
+                // 条件表达式
+                AddTableCell("表达式", yPosition, 0, col1Width, false);
+                string expression = param.ConditionExpression ?? "(未设置)";
+                AddTableCell(expression, yPosition, col1Width, col2Width, false,
+                    string.IsNullOrEmpty(param.ConditionExpression) ? StatusColors.Failed : StatusColors.Waiting);
+                yPosition += 22;
+
+                // 表达式说明
+                string expressionDesc = GetExpressionDescription(param.ConditionExpression);
+                if (!string.IsNullOrEmpty(expressionDesc))
+                {
+                    AddTableCell("类型", yPosition, 0, col1Width, false);
+                    AddTableCell(expressionDesc, yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // ===== 分支配置 =====
+                yPosition = AddSeparatorLine(yPosition);
+                yPosition = AddSubSectionTitle("🔀 执行分支", yPosition);
+
+                // 满足条件时的步骤
+                int trueStepsCount = param.TrueSteps?.Count ?? 0;
+                AddTableCell("满足条件时", yPosition, 0, col1Width, false);
+                AddTableCell($"{trueStepsCount} 个子步骤", yPosition, col1Width, col2Width, false,
+                    trueStepsCount > 0 ? StatusColors.Success : StatusColors.Waiting);
+                yPosition += 22;
+
+                // 显示满足条件的子步骤名称列表
+                if (trueStepsCount > 0)
+                {
+                    yPosition = DisplayChildStepsList(param.TrueSteps, "  → ", yPosition, col1Width, col2Width);
+                }
+
+                // 不满足条件时的步骤
+                int falseStepsCount = param.FalseSteps?.Count ?? 0;
+                AddTableCell("不满足条件时", yPosition, 0, col1Width, false);
+                AddTableCell($"{falseStepsCount} 个子步骤", yPosition, col1Width, col2Width, false,
+                    falseStepsCount > 0 ? StatusColors.Skipped : StatusColors.Waiting);
+                yPosition += 22;
+
+                // 显示不满足条件的子步骤名称列表
+                if (falseStepsCount > 0)
+                {
+                    yPosition = DisplayChildStepsList(param.FalseSteps, "  → ", yPosition, col1Width, col2Width);
+                }
+
+                yPosition += 5;
+                return yPosition;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DisplayConditionToolParameters 错误: {ex}");
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 显示子步骤列表
+        /// </summary>
+        private int DisplayChildStepsList(List<ChildModel> steps, string prefix, int yPosition, int col1Width, int col2Width)
+        {
+            if (steps == null || steps.Count == 0)
+                return yPosition;
+
+            // 最多显示5个子步骤，超过则显示省略
+            int displayCount = Math.Min(steps.Count, 5);
+
+            for (int i = 0; i < displayCount; i++)
+            {
+                var step = steps[i];
+                AddTableCell($"{prefix}步骤{i + 1}", yPosition, 0, col1Width, false);
+                AddTableCell($"[{step.StepName}] {step.Remark ?? ""}", yPosition, col1Width, col2Width, false,
+                    Color.FromArgb(100, 100, 100));
+                yPosition += 20;
+            }
+
+            if (steps.Count > 5)
+            {
+                AddTableCell("", yPosition, 0, col1Width, false);
+                AddTableCell($"... 还有 {steps.Count - 5} 个步骤", yPosition, col1Width, col2Width, false,
+                    Color.FromArgb(150, 150, 150));
+                yPosition += 20;
+            }
+
+            return yPosition;
+        }
+
+        /// <summary>
+        /// 从JSON显示检测工具参数（备用方案）
+        /// </summary>
+        private int DisplayConditionToolParametersFromJson(JObject json, int yPosition)
+        {
+            // 定义列宽
+            int col1Width = 120;
+            int col2Width = detailsPanel.Width - col1Width - 10;
+
+            yPosition = AddSubSectionTitle("🔀 检测工具配置", yPosition);
+
+            // 表头
+            AddTableCell("配置项", yPosition, 0, col1Width, true);
+            AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+            yPosition += 25;
+
+            // 描述
+            string description = json["Description"]?.ToString();
+            if (!string.IsNullOrEmpty(description))
+            {
+                AddTableCell("描述", yPosition, 0, col1Width, false);
+                AddTableCell(description, yPosition, col1Width, col2Width, false, Color.FromArgb(0, 102, 204));
+                yPosition += 22;
+            }
+
+            // 启用状态
+            bool isEnabled = json["IsEnabled"]?.ToObject<bool>() ?? true;
+            AddTableCell("启用状态", yPosition, 0, col1Width, false);
+            AddTableCell(isEnabled ? "✓ 已启用" : "✗ 已禁用", yPosition, col1Width, col2Width, false,
+                isEnabled ? StatusColors.Success : StatusColors.Skipped);
+            yPosition += 22;
+
+            // 条件表达式
+            yPosition = AddSeparatorLine(yPosition);
+            yPosition = AddSubSectionTitle("📋 条件表达式", yPosition);
+
+            string expression = json["ConditionExpression"]?.ToString() ?? "(未设置)";
+            AddTableCell("表达式", yPosition, 0, col1Width, false);
+            AddTableCell(expression, yPosition, col1Width, col2Width, false);
+            yPosition += 22;
+
+            // 分支信息
+            yPosition = AddSeparatorLine(yPosition);
+            yPosition = AddSubSectionTitle("🔀 执行分支", yPosition);
+
+            // 满足条件步骤数
+            var trueSteps = json["TrueSteps"] as JArray;
+            int trueCount = trueSteps?.Count ?? 0;
+            AddTableCell("满足条件时", yPosition, 0, col1Width, false);
+            AddTableCell($"{trueCount} 个子步骤", yPosition, col1Width, col2Width, false,
+                trueCount > 0 ? StatusColors.Success : StatusColors.Waiting);
+            yPosition += 22;
+
+            // 不满足条件步骤数
+            var falseSteps = json["FalseSteps"] as JArray;
+            int falseCount = falseSteps?.Count ?? 0;
+            AddTableCell("不满足条件时", yPosition, 0, col1Width, false);
+            AddTableCell($"{falseCount} 个子步骤", yPosition, col1Width, col2Width, false,
+                falseCount > 0 ? StatusColors.Skipped : StatusColors.Waiting);
+            yPosition += 22;
+
+            return yPosition + 5;
         }
 
         #endregion
@@ -1974,12 +2180,7 @@ namespace MainUI.Procedure.Controls
                 lblStepTime.Location = new Point(contentPanel.Width - lblStepTime.Width - 15, 10);
             }
         }
-
-        private void InitializeComponent()
-        {
-
-        }
-
+ 
         private void CirclePanel_Paint(object sender, PaintEventArgs e)
         {
             var g = e.Graphics;

@@ -43,12 +43,12 @@
             btnAddRow = new UISymbolButton();
             BtnDelete = new UISymbolButton();
             DataGridViewDefineVar = new UIDataGridView();
-            uiLine2 = new UILine();
-            uiLine1 = new UILine();
             ColCellAddress = new DataGridViewTextBoxColumn();
             ColSaveToVar = new DataGridViewComboBoxColumn();
             ColDataType = new DataGridViewComboBoxColumn();
             ColDefaultValue = new DataGridViewTextBoxColumn();
+            uiLine2 = new UILine();
+            uiLine1 = new UILine();
             uiGroupBox1.SuspendLayout();
             uiGroupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)DataGridViewDefineVar).BeginInit();
@@ -261,36 +261,6 @@
             DataGridViewDefineVar.StripeEvenColor = Color.Empty;
             DataGridViewDefineVar.TabIndex = 1;
             // 
-            // uiLine2
-            // 
-            uiLine2.BackColor = Color.Transparent;
-            uiLine2.EndCap = UILineCap.Circle;
-            uiLine2.Font = new Font("微软雅黑", 11F);
-            uiLine2.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLine2.LineColor = Color.White;
-            uiLine2.Location = new Point(15, 169);
-            uiLine2.MinimumSize = new Size(1, 1);
-            uiLine2.Name = "uiLine2";
-            uiLine2.Size = new Size(820, 29);
-            uiLine2.TabIndex = 445;
-            uiLine2.Text = "📖 单元格读取配置";
-            uiLine2.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // uiLine1
-            // 
-            uiLine1.BackColor = Color.Transparent;
-            uiLine1.EndCap = UILineCap.Circle;
-            uiLine1.Font = new Font("微软雅黑", 11F);
-            uiLine1.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLine1.LineColor = Color.White;
-            uiLine1.Location = new Point(15, 43);
-            uiLine1.MinimumSize = new Size(1, 1);
-            uiLine1.Name = "uiLine1";
-            uiLine1.Size = new Size(820, 29);
-            uiLine1.TabIndex = 446;
-            uiLine1.Text = "📄 Excel文件配置";
-            uiLine1.TextAlign = ContentAlignment.MiddleLeft;
-            // 
             // ColCellAddress
             // 
             ColCellAddress.HeaderText = "单元格地址";
@@ -328,11 +298,42 @@
             ColDefaultValue.SortMode = DataGridViewColumnSortMode.NotSortable;
             ColDefaultValue.Width = 160;
             // 
+            // uiLine2
+            // 
+            uiLine2.BackColor = Color.Transparent;
+            uiLine2.EndCap = UILineCap.Circle;
+            uiLine2.Font = new Font("微软雅黑", 11F);
+            uiLine2.ForeColor = Color.FromArgb(48, 48, 48);
+            uiLine2.LineColor = Color.White;
+            uiLine2.Location = new Point(15, 169);
+            uiLine2.MinimumSize = new Size(1, 1);
+            uiLine2.Name = "uiLine2";
+            uiLine2.Size = new Size(820, 29);
+            uiLine2.TabIndex = 445;
+            uiLine2.Text = "📖 单元格读取配置";
+            uiLine2.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // uiLine1
+            // 
+            uiLine1.BackColor = Color.Transparent;
+            uiLine1.EndCap = UILineCap.Circle;
+            uiLine1.Font = new Font("微软雅黑", 11F);
+            uiLine1.ForeColor = Color.FromArgb(48, 48, 48);
+            uiLine1.LineColor = Color.White;
+            uiLine1.Location = new Point(15, 43);
+            uiLine1.MinimumSize = new Size(1, 1);
+            uiLine1.Name = "uiLine1";
+            uiLine1.Size = new Size(820, 29);
+            uiLine1.TabIndex = 446;
+            uiLine1.Text = "📄 Excel文件配置";
+            uiLine1.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // Form_ReadCells
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 236);
             ClientSize = new Size(850, 710);
+            ControlBox = false;
             Controls.Add(uiLine1);
             Controls.Add(uiLine2);
             Controls.Add(uiGroupBox2);
