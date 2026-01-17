@@ -1,14 +1,15 @@
-﻿using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.RegularExpressions;
-using AntdUI;
+﻿using AntdUI;
+using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using MainUI.LogicalConfiguration.Services.ServicesCommunication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -87,6 +88,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 初始化控件
                 InitializeFormControls();
 
+                SetupExpressionPanels();
+
                 // 绑定事件
                 BindEvents();
 
@@ -103,6 +106,56 @@ namespace MainUI.LogicalConfiguration.Forms
             finally
             {
                 _isInitializing = false;
+            }
+        }
+
+        /// <summary>
+        /// 设置表达式输入面板
+        /// </summary>
+        private void SetupExpressionPanels()
+        {
+            try
+            {
+                // 发送内容输入框 - 支持变量、表达式、常量
+                ExpressionInputPanel.AttachTo(txtSendContent, new InputPanelOptions
+                {
+                    Mode = InputMode.Expression,
+                    EnabledModules = InputModules.Variable | InputModules.Expression | InputModules.Constant,
+                    Title = "发送内容",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true
+                });
+                txtSendContent.Watermark = "点击输入发送内容，支持 {变量名} 引用变量 (按F2打开面板)";
+
+                // 执行条件输入框 - 支持条件表达式
+                ExpressionInputPanel.AttachTo(txtCondition, new InputPanelOptions
+                {
+                    Mode = InputMode.Condition,
+                    EnabledModules = InputModules.Variable | InputModules.PLC |
+                                     InputModules.Expression | InputModules.Constant,
+                    Title = "执行条件表达式",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true
+                });
+                txtCondition.Watermark = "可选，如：{Status} == 'Ready' (按F2打开面板)";
+
+                // 响应变量名输入框 - 仅支持变量选择
+                ExpressionInputPanel.AttachTo(cmbResponseVariable, new InputPanelOptions
+                {
+                    Mode = InputMode.VariableOnly,
+                    EnabledModules = InputModules.Variable,
+                    Title = "选择响应保存变量",
+                    ShowValidation = false,
+                    CloseOnSubmit = true
+                });
+
+                Logger?.LogDebug("以太网发送表达式输入面板设置完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "设置表达式输入面板失败");
             }
         }
 
@@ -420,60 +473,59 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #region 事件处理
 
-        /// <summary>
-        /// 帮助按钮点击
-        /// </summary>
         private void BtnHelp_Click(object sender, EventArgs e)
         {
             try
             {
-                string helpText = @"以太网发送配置说明：
-
-1. 连接设置
+                var helpText = @"📖 以太网发送工具使用说明
+连接设置
    - IP地址：目标设备的IP地址（如 192.168.1.100）
    - 端口：目标设备的端口号（1-65535）
    - 协议：TCP（可靠连接）或 UDP（快速传输）
 
-2. 超时设置
+超时设置
    - 连接超时：建立连接的最长等待时间
    - 发送超时：发送数据的最长等待时间
    - 接收超时：等待响应的最长等待时间
 
-3. 数据格式
+数据格式
    - 文本：直接发送文本内容
    - 十六进制：发送十六进制数据（如：FF AA BB CC）
    - Base64：发送Base64编码数据
 
-4. 编码方式
+编码方式
    - UTF-8：支持中文和多语言（推荐）
    - ASCII：仅支持英文字符
    - GB2312：中文简体编码
    - Unicode：通用Unicode编码
 
-5. 变量引用
+变量引用
    - 使用 {变量名} 格式引用全局变量
    - 例如：Send data: {Temperature} °C
    - 发送前会自动替换为变量的实际值
+   - 点击发送内容输入框可打开表达式面板
+   - 按 F2 快速打开输入面板
 
-6. 响应处理
+响应处理
    - 勾选【等待响应】可接收服务器返回数据
    - 响应数据可保存到指定的全局变量
    - 可用于后续步骤的条件判断或数据处理
         
-7.执行条件
+执行条件
    - 可选设置，为空时总是执行
-   - 支持表达式，如：{ Status} == 'Ready'
+   - 支持表达式，如：{Status} == 'Ready'
    - 条件为 true 时才执行发送操作
+   - 点击条件输入框可打开条件表达式面板
         
-8.测试功能
+测试功能
    - 测试连接：验证能否连接到目标设备
    - 测试发送：实际发送一次数据进行验证
 
- 使用建议：
+使用建议
    - TCP适用于需要可靠传输的场景
    - UDP适用于对速度要求高、允许少量丢包的场景
    - 建议先测试连接，确认网络通畅后再配置完整参数";
-        
+
                 MessageHelper.MessageOK(this, helpText, TType.Info);
             }
             catch (Exception ex)
@@ -481,7 +533,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 Logger?.LogError(ex, "显示帮助时发生错误");
             }
         }
-
         /// <summary>
         /// 保存按钮点击
         /// </summary>
@@ -752,6 +803,9 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void Form_EthernetSend_FormClosing(object sender, FormClosingEventArgs e)
         {
+            // 关闭活动的表达式面板
+            ExpressionInputPanel.CloseActivePanel();
+
             _testCts?.Cancel();
             _testCts?.Dispose();
         }

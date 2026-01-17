@@ -824,7 +824,12 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             }
         }
 
-        // 添加执行方法
+        /// <summary>
+        /// 执行以太网发送
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         private async Task<DetailedResult> ExecuteEthernetSend(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_EthernetSend>(step.StepParameter);
@@ -834,6 +839,12 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return result ? DetailedResult.Successful() : DetailedResult.Failed("以太网发送失败");
         }
 
+        /// <summary>
+        /// 执行串口发送
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         private async Task<DetailedResult> ExecuteSerialPortSend(ChildModel step, CancellationToken cancellationToken)
         {
             var param = ConvertParameter<Parameter_SerialPortSend>(step.StepParameter);
@@ -842,6 +853,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             var result = await _communicationMethods.ExecuteSerialPortSend(param, cancellationToken);
             return result ? DetailedResult.Successful() : DetailedResult.Failed("串口发送失败");
         }
+        
         #endregion
 
         #region 辅助方法

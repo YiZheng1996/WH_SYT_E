@@ -137,11 +137,11 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 // 禁止的步骤类型(避免嵌套循环)
                 var disallowedSteps = new HashSet<string>
-        {
-            "LoopControlStart",  // 循环开始
-            "LoopControlStop",   // 循环结束
-            "Loop",              // 循环(如果有的话)
-        };
+                {
+                    "LoopControlStart",  // 循环开始
+                    "LoopControlStop",   // 循环结束
+                    "Loop",              // 循环(如果有的话)
+                };
 
                 // 清空工具箱
                 _toolTreeControl.ClearTools();
@@ -155,8 +155,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 _toolTreeControl.AddToolNode("延时等待", "DelayWait", "延时等待.png", logicNode);
                 _toolTreeControl.AddToolNode("条件判断", "ConditionJudge", "条件判断.png", logicNode);
                 _toolTreeControl.AddToolNode("等待稳定", "Waitingforstability", "等待稳定.png", logicNode);
-                _toolTreeControl.AddToolNode("循环工具", "CycleBegins", "等待稳定.png", logicNode);
-                _toolTreeControl.AddToolNode("实时监控", "MonitorTool", "检测工具.png", logicNode);
+                _toolTreeControl.AddToolNode("循环工具", "CycleBegins", "循环工具.png", logicNode);
+                _toolTreeControl.AddToolNode("实时监控", "MonitorTool", "实时监控.png", logicNode);
 
                 // 数据操作组
                 TreeNode dataNode = _toolTreeControl.AddToolNode(
@@ -175,6 +175,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 );
                 _toolTreeControl.AddToolNode("读取PLC", "PLCRead", "读取PLC.png", plcNode);
                 _toolTreeControl.AddToolNode("写入PLC", "PLCWrite", "写入PLC.png", plcNode);
+                _toolTreeControl.AddToolNode("以太网发送", "EthernetSend", "以太网.png", plcNode); 
+                _toolTreeControl.AddToolNode("串口发送", "SerialPortSend", "串口助手.png", plcNode); 
 
                 // 检测工具组
                 TreeNode detectionNode = _toolTreeControl.AddToolNode(

@@ -1,4 +1,5 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
@@ -97,6 +98,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 初始化控件
                 InitializeFormControls();
 
+                SetupExpressionPanels();
+
                 // 绑定事件
                 BindEvents();
 
@@ -115,6 +118,57 @@ namespace MainUI.LogicalConfiguration.Forms
                 _isInitializing = false;
             }
         }
+
+        /// <summary>
+        /// 设置表达式输入面板
+        /// </summary>
+        private void SetupExpressionPanels()
+        {
+            try
+            {
+                // 发送内容输入框 - 支持变量、表达式、常量
+                ExpressionInputPanel.AttachTo(txtSendContent, new InputPanelOptions
+                {
+                    Mode = InputMode.Expression,
+                    EnabledModules = InputModules.Variable | InputModules.Expression | InputModules.Constant,
+                    Title = "发送内容",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true
+                });
+                txtSendContent.Watermark = "点击输入发送内容，支持 {变量名} 引用变量 (按F2打开面板)";
+
+                // 执行条件输入框 - 支持条件表达式
+                ExpressionInputPanel.AttachTo(txtCondition, new InputPanelOptions
+                {
+                    Mode = InputMode.Condition,
+                    EnabledModules = InputModules.Variable | InputModules.PLC |
+                                     InputModules.Expression | InputModules.Constant,
+                    Title = "执行条件表达式",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true
+                });
+                txtCondition.Watermark = "可选，如：{Status} == 'Ready' (按F2打开面板)";
+
+                // 响应变量名输入框 - 仅支持变量选择
+                ExpressionInputPanel.AttachTo(cmbResponseVariable, new InputPanelOptions
+                {
+                    Mode = InputMode.VariableOnly,
+                    EnabledModules = InputModules.Variable,
+                    Title = "选择响应保存变量",
+                    ShowValidation = false,
+                    CloseOnSubmit = true
+                });
+
+                Logger?.LogDebug("串口发送表达式输入面板设置完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "设置表达式输入面板失败");
+            }
+        }
+
 
         /// <summary>
         /// 初始化表单控件
@@ -507,25 +561,47 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
-                string helpText = @"串口发送配置说明：
+                var helpText = @"📖 串口发送工具使用说明
 
-1. 串口设置
-   - 选择正确的串口号
-   - 配置波特率、数据位、校验位等参数
+串口设置
+   - 串口：选择正确的串口号（如 COM1）
+   - 波特率：常用 9600、115200 等
+   - 数据位：通常为 8 位
+   - 校验位：None/Odd/Even/Mark/Space
+   - 停止位：One/OnePointFive/Two
 
-2. 数据格式
+数据格式
    - 文本：直接发送文本内容
    - 十六进制：发送十六进制数据（如：FF AA BB）
    - Base64：发送Base64编码数据
 
-3. 变量引用
-   - 使用 {变量名} 格式引用变量
-   - 例如：Send data: {Temperature}
+变量引用
+   - 使用 {变量名} 格式引用全局变量
+   - 例如：CMD:{CommandID}
+   - 发送前会自动替换为变量的实际值
+   - 点击发送内容输入框可打开表达式面板
+   - 按 F2 快速打开输入面板
 
-4. 响应处理
+响应处理
    - 勾选【等待响应】可接收设备返回数据
-   - 响应数据可保存到指定变量";
-        
+   - 响应数据可保存到指定的全局变量
+   - 可用于后续步骤的条件判断
+
+执行条件
+   - 可选设置，为空时总是执行
+   - 支持表达式，如：{DeviceReady} == true
+   - 条件为 true 时才执行发送操作
+
+换行符
+   - CRLF (\r\n)：Windows 标准
+   - LF (\n)：Linux/Unix 标准
+   - CR (\r)：旧版 Mac 标准
+
+使用建议
+   - 确保串口参数与设备配置一致
+   - 可先使用刷新按钮检测可用串口
+   - 测试按钮可验证串口是否正常";
+
                 MessageHelper.MessageOK(this, helpText, TType.Info);
             }
             catch (Exception ex)
@@ -793,6 +869,9 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void Form_SerialPortSend_FormClosing(object sender, FormClosingEventArgs e)
         {
+            // 关闭活动的表达式面板
+            ExpressionInputPanel.CloseActivePanel();
+
             _testCts?.Cancel();
             _testCts?.Dispose();
         }

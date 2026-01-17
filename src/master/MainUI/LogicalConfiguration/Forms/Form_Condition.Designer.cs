@@ -43,21 +43,8 @@ namespace MainUI.LogicalConfiguration.Forms
             lblTrueStepsCount = new UILabel();
             lblChildStepsTitle = new UILabel();
             panelCondition = new UIPanel();
-            panelRangeValue = new Panel();
-            btnSelectVarRangeMax = new UISymbolButton();
-            txtRangeMax = new UITextBox();
-            lblRangeMax = new UILabel();
-            btnSelectVarRangeMin = new UISymbolButton();
-            txtRangeMin = new UITextBox();
-            lblRangeMin = new UILabel();
-            panelSingleValue = new Panel();
-            btnSelectVarRight = new UISymbolButton();
-            txtRightExpression = new UITextBox();
-            lblRightExpression = new UILabel();
-            cmbOperator = new UIComboBox();
-            lblOperator = new UILabel();
-            btnSelectVarLeft = new UISymbolButton();
-            txtLeftExpression = new UITextBox();
+            lblValidationStatus = new AntdUI.Label();
+            txtConditionExpression = new UITextBox();
             lblLeftExpression = new UILabel();
             lblConditionTitle = new UILabel();
             panelBottom = new Panel();
@@ -68,8 +55,6 @@ namespace MainUI.LogicalConfiguration.Forms
             panelMain.SuspendLayout();
             panelChildSteps.SuspendLayout();
             panelCondition.SuspendLayout();
-            panelRangeValue.SuspendLayout();
-            panelSingleValue.SuspendLayout();
             panelBottom.SuspendLayout();
             SuspendLayout();
             // 
@@ -83,7 +68,7 @@ namespace MainUI.LogicalConfiguration.Forms
             panelDescription.Location = new Point(0, 35);
             panelDescription.Name = "panelDescription";
             panelDescription.Padding = new Padding(15, 10, 15, 10);
-            panelDescription.Size = new Size(900, 70);
+            panelDescription.Size = new Size(805, 70);
             panelDescription.TabIndex = 1;
             // 
             // chkEnabled
@@ -93,7 +78,7 @@ namespace MainUI.LogicalConfiguration.Forms
             chkEnabled.Checked = true;
             chkEnabled.Font = new Font("微软雅黑", 10F);
             chkEnabled.ForeColor = Color.FromArgb(48, 48, 48);
-            chkEnabled.Location = new Point(750, 15);
+            chkEnabled.Location = new Point(665, 14);
             chkEnabled.MinimumSize = new Size(1, 1);
             chkEnabled.Name = "chkEnabled";
             chkEnabled.Size = new Size(130, 30);
@@ -111,8 +96,9 @@ namespace MainUI.LogicalConfiguration.Forms
             txtDescription.Padding = new Padding(5);
             txtDescription.RectColor = Color.FromArgb(65, 100, 204);
             txtDescription.ShowText = false;
-            txtDescription.Size = new Size(600, 30);
+            txtDescription.Size = new Size(532, 30);
             txtDescription.TabIndex = 1;
+            txtDescription.Text = "条件判断工具\r\n根据条件表达式的结果决定执行不同的步骤分支\r\n";
             txtDescription.TextAlignment = ContentAlignment.MiddleLeft;
             txtDescription.Watermark = "请输入步骤描述信息";
             // 
@@ -136,7 +122,7 @@ namespace MainUI.LogicalConfiguration.Forms
             panelMain.Location = new Point(0, 105);
             panelMain.Name = "panelMain";
             panelMain.Padding = new Padding(15, 10, 15, 10);
-            panelMain.Size = new Size(900, 495);
+            panelMain.Size = new Size(805, 437);
             panelMain.TabIndex = 2;
             // 
             // panelChildSteps
@@ -156,7 +142,7 @@ namespace MainUI.LogicalConfiguration.Forms
             panelChildSteps.Padding = new Padding(15);
             panelChildSteps.Radius = 8;
             panelChildSteps.RectColor = Color.FromArgb(65, 100, 204);
-            panelChildSteps.Size = new Size(870, 210);
+            panelChildSteps.Size = new Size(775, 152);
             panelChildSteps.TabIndex = 1;
             panelChildSteps.Text = null;
             panelChildSteps.TextAlignment = ContentAlignment.MiddleCenter;
@@ -165,7 +151,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             btnConfigFalseSteps.Cursor = Cursors.Hand;
             btnConfigFalseSteps.Font = new Font("微软雅黑", 10F);
-            btnConfigFalseSteps.Location = new Point(18, 135);
+            btnConfigFalseSteps.Location = new Point(428, 93);
             btnConfigFalseSteps.MinimumSize = new Size(1, 1);
             btnConfigFalseSteps.Name = "btnConfigFalseSteps";
             btnConfigFalseSteps.Size = new Size(150, 35);
@@ -175,11 +161,12 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // lblFalseStepsCount
             // 
+            lblFalseStepsCount.BackColor = Color.FromArgb(255, 245, 245);
             lblFalseStepsCount.Font = new Font("微软雅黑", 10F);
             lblFalseStepsCount.ForeColor = Color.FromArgb(48, 48, 48);
-            lblFalseStepsCount.Location = new Point(18, 105);
+            lblFalseStepsCount.Location = new Point(18, 96);
             lblFalseStepsCount.Name = "lblFalseStepsCount";
-            lblFalseStepsCount.Size = new Size(350, 25);
+            lblFalseStepsCount.Size = new Size(390, 25);
             lblFalseStepsCount.TabIndex = 3;
             lblFalseStepsCount.Text = "不满足条件时执行的步骤 (0 个)";
             lblFalseStepsCount.TextAlign = ContentAlignment.MiddleLeft;
@@ -188,7 +175,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             btnConfigTrueSteps.Cursor = Cursors.Hand;
             btnConfigTrueSteps.Font = new Font("微软雅黑", 10F);
-            btnConfigTrueSteps.Location = new Point(18, 60);
+            btnConfigTrueSteps.Location = new Point(428, 36);
             btnConfigTrueSteps.MinimumSize = new Size(1, 1);
             btnConfigTrueSteps.Name = "btnConfigTrueSteps";
             btnConfigTrueSteps.Size = new Size(150, 35);
@@ -198,11 +185,12 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // lblTrueStepsCount
             // 
+            lblTrueStepsCount.BackColor = Color.Honeydew;
             lblTrueStepsCount.Font = new Font("微软雅黑", 10F);
             lblTrueStepsCount.ForeColor = Color.FromArgb(48, 48, 48);
-            lblTrueStepsCount.Location = new Point(18, 30);
+            lblTrueStepsCount.Location = new Point(18, 40);
             lblTrueStepsCount.Name = "lblTrueStepsCount";
-            lblTrueStepsCount.Size = new Size(350, 25);
+            lblTrueStepsCount.Size = new Size(390, 25);
             lblTrueStepsCount.TabIndex = 1;
             lblTrueStepsCount.Text = "满足条件时执行的步骤 (0 个)";
             lblTrueStepsCount.TextAlign = ContentAlignment.MiddleLeft;
@@ -221,12 +209,8 @@ namespace MainUI.LogicalConfiguration.Forms
             // panelCondition
             // 
             panelCondition.BackColor = Color.FromArgb(250, 250, 250);
-            panelCondition.Controls.Add(panelRangeValue);
-            panelCondition.Controls.Add(panelSingleValue);
-            panelCondition.Controls.Add(cmbOperator);
-            panelCondition.Controls.Add(lblOperator);
-            panelCondition.Controls.Add(btnSelectVarLeft);
-            panelCondition.Controls.Add(txtLeftExpression);
+            panelCondition.Controls.Add(lblValidationStatus);
+            panelCondition.Controls.Add(txtConditionExpression);
             panelCondition.Controls.Add(lblLeftExpression);
             panelCondition.Controls.Add(lblConditionTitle);
             panelCondition.Dock = DockStyle.Top;
@@ -238,216 +222,37 @@ namespace MainUI.LogicalConfiguration.Forms
             panelCondition.Padding = new Padding(15);
             panelCondition.Radius = 8;
             panelCondition.RectColor = Color.FromArgb(65, 100, 204);
-            panelCondition.Size = new Size(870, 265);
+            panelCondition.Size = new Size(775, 265);
             panelCondition.TabIndex = 0;
             panelCondition.Text = null;
             panelCondition.TextAlignment = ContentAlignment.MiddleCenter;
             // 
-            // panelRangeValue
+            // lblValidationStatus
             // 
-            panelRangeValue.BackColor = Color.Transparent;
-            panelRangeValue.Controls.Add(btnSelectVarRangeMax);
-            panelRangeValue.Controls.Add(txtRangeMax);
-            panelRangeValue.Controls.Add(lblRangeMax);
-            panelRangeValue.Controls.Add(btnSelectVarRangeMin);
-            panelRangeValue.Controls.Add(txtRangeMin);
-            panelRangeValue.Controls.Add(lblRangeMin);
-            panelRangeValue.Location = new Point(18, 135);
-            panelRangeValue.Name = "panelRangeValue";
-            panelRangeValue.Size = new Size(830, 110);
-            panelRangeValue.TabIndex = 7;
-            panelRangeValue.Visible = false;
+            lblValidationStatus.Font = new Font("微软雅黑", 8.5F);
+            lblValidationStatus.ForeColor = Color.Gray;
+            lblValidationStatus.Location = new Point(124, 227);
+            lblValidationStatus.Name = "lblValidationStatus";
+            lblValidationStatus.Size = new Size(617, 20);
+            lblValidationStatus.TabIndex = 3;
+            lblValidationStatus.Text = "准备就绪";
             // 
-            // btnSelectVarRangeMax
+            // txtConditionExpression
             // 
-            btnSelectVarRangeMax.Cursor = Cursors.Hand;
-            btnSelectVarRangeMax.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnSelectVarRangeMax.Location = new Point(690, 55);
-            btnSelectVarRangeMax.MinimumSize = new Size(1, 1);
-            btnSelectVarRangeMax.Name = "btnSelectVarRangeMax";
-            btnSelectVarRangeMax.Size = new Size(120, 30);
-            btnSelectVarRangeMax.Symbol = 361697;
-            btnSelectVarRangeMax.TabIndex = 5;
-            btnSelectVarRangeMax.Text = "选择变量";
-            btnSelectVarRangeMax.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            // 
-            // txtRangeMax
-            // 
-            txtRangeMax.Cursor = Cursors.IBeam;
-            txtRangeMax.Font = new Font("微软雅黑", 10F);
-            txtRangeMax.Location = new Point(106, 55);
-            txtRangeMax.Margin = new Padding(4, 5, 4, 5);
-            txtRangeMax.MinimumSize = new Size(1, 16);
-            txtRangeMax.Name = "txtRangeMax";
-            txtRangeMax.Padding = new Padding(5);
-            txtRangeMax.RectColor = Color.FromArgb(65, 100, 204);
-            txtRangeMax.ShowText = false;
-            txtRangeMax.Size = new Size(570, 30);
-            txtRangeMax.TabIndex = 4;
-            txtRangeMax.TextAlignment = ContentAlignment.MiddleLeft;
-            txtRangeMax.Watermark = "输入范围最大值或变量，如：100 或 {MaxValue}";
-            // 
-            // lblRangeMax
-            // 
-            lblRangeMax.Font = new Font("微软雅黑", 10F);
-            lblRangeMax.ForeColor = Color.FromArgb(48, 48, 48);
-            lblRangeMax.Location = new Point(7, 55);
-            lblRangeMax.Name = "lblRangeMax";
-            lblRangeMax.Size = new Size(100, 25);
-            lblRangeMax.TabIndex = 3;
-            lblRangeMax.Text = "范围最大值:";
-            lblRangeMax.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // btnSelectVarRangeMin
-            // 
-            btnSelectVarRangeMin.Cursor = Cursors.Hand;
-            btnSelectVarRangeMin.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnSelectVarRangeMin.Location = new Point(690, 10);
-            btnSelectVarRangeMin.MinimumSize = new Size(1, 1);
-            btnSelectVarRangeMin.Name = "btnSelectVarRangeMin";
-            btnSelectVarRangeMin.Size = new Size(120, 30);
-            btnSelectVarRangeMin.Symbol = 361697;
-            btnSelectVarRangeMin.TabIndex = 2;
-            btnSelectVarRangeMin.Text = "选择变量";
-            btnSelectVarRangeMin.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            // 
-            // txtRangeMin
-            // 
-            txtRangeMin.Cursor = Cursors.IBeam;
-            txtRangeMin.Font = new Font("微软雅黑", 10F);
-            txtRangeMin.Location = new Point(106, 10);
-            txtRangeMin.Margin = new Padding(4, 5, 4, 5);
-            txtRangeMin.MinimumSize = new Size(1, 16);
-            txtRangeMin.Name = "txtRangeMin";
-            txtRangeMin.Padding = new Padding(5);
-            txtRangeMin.RectColor = Color.FromArgb(65, 100, 204);
-            txtRangeMin.ShowText = false;
-            txtRangeMin.Size = new Size(570, 30);
-            txtRangeMin.TabIndex = 1;
-            txtRangeMin.TextAlignment = ContentAlignment.MiddleLeft;
-            txtRangeMin.Watermark = "输入范围最小值或变量，如：0 或 {MinValue}";
-            // 
-            // lblRangeMin
-            // 
-            lblRangeMin.Font = new Font("微软雅黑", 10F);
-            lblRangeMin.ForeColor = Color.FromArgb(48, 48, 48);
-            lblRangeMin.Location = new Point(6, 10);
-            lblRangeMin.Name = "lblRangeMin";
-            lblRangeMin.Size = new Size(100, 25);
-            lblRangeMin.TabIndex = 0;
-            lblRangeMin.Text = "范围最小值:";
-            lblRangeMin.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // panelSingleValue
-            // 
-            panelSingleValue.BackColor = Color.Transparent;
-            panelSingleValue.Controls.Add(btnSelectVarRight);
-            panelSingleValue.Controls.Add(txtRightExpression);
-            panelSingleValue.Controls.Add(lblRightExpression);
-            panelSingleValue.Location = new Point(18, 135);
-            panelSingleValue.Name = "panelSingleValue";
-            panelSingleValue.Size = new Size(830, 45);
-            panelSingleValue.TabIndex = 6;
-            // 
-            // btnSelectVarRight
-            // 
-            btnSelectVarRight.Cursor = Cursors.Hand;
-            btnSelectVarRight.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnSelectVarRight.Location = new Point(690, 5);
-            btnSelectVarRight.MinimumSize = new Size(1, 1);
-            btnSelectVarRight.Name = "btnSelectVarRight";
-            btnSelectVarRight.Size = new Size(120, 30);
-            btnSelectVarRight.Symbol = 361697;
-            btnSelectVarRight.TabIndex = 2;
-            btnSelectVarRight.Text = "选择变量";
-            btnSelectVarRight.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            // 
-            // txtRightExpression
-            // 
-            txtRightExpression.Cursor = Cursors.IBeam;
-            txtRightExpression.Font = new Font("微软雅黑", 10F);
-            txtRightExpression.Location = new Point(106, 5);
-            txtRightExpression.Margin = new Padding(4, 5, 4, 5);
-            txtRightExpression.MinimumSize = new Size(1, 16);
-            txtRightExpression.Name = "txtRightExpression";
-            txtRightExpression.Padding = new Padding(5);
-            txtRightExpression.RectColor = Color.FromArgb(65, 100, 204);
-            txtRightExpression.ShowText = false;
-            txtRightExpression.Size = new Size(570, 30);
-            txtRightExpression.TabIndex = 1;
-            txtRightExpression.TextAlignment = ContentAlignment.MiddleLeft;
-            txtRightExpression.Watermark = "输入右值表达式或变量，如：100 或 {Target}";
-            // 
-            // lblRightExpression
-            // 
-            lblRightExpression.Font = new Font("微软雅黑", 10F);
-            lblRightExpression.ForeColor = Color.FromArgb(48, 48, 48);
-            lblRightExpression.Location = new Point(0, 5);
-            lblRightExpression.Name = "lblRightExpression";
-            lblRightExpression.Size = new Size(100, 25);
-            lblRightExpression.TabIndex = 0;
-            lblRightExpression.Text = "右值表达式:";
-            lblRightExpression.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // cmbOperator
-            // 
-            cmbOperator.DataSource = null;
-            cmbOperator.DropDownStyle = UIDropDownStyle.DropDownList;
-            cmbOperator.FillColor = Color.White;
-            cmbOperator.Font = new Font("微软雅黑", 10F);
-            cmbOperator.ItemHoverColor = Color.FromArgb(155, 200, 255);
-            cmbOperator.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbOperator.Location = new Point(124, 90);
-            cmbOperator.Margin = new Padding(4, 5, 4, 5);
-            cmbOperator.MinimumSize = new Size(63, 0);
-            cmbOperator.Name = "cmbOperator";
-            cmbOperator.Padding = new Padding(0, 0, 30, 2);
-            cmbOperator.RectColor = Color.FromArgb(65, 100, 204);
-            cmbOperator.Size = new Size(200, 30);
-            cmbOperator.SymbolSize = 24;
-            cmbOperator.TabIndex = 5;
-            cmbOperator.TextAlignment = ContentAlignment.MiddleLeft;
-            cmbOperator.Watermark = "";
-            // 
-            // lblOperator
-            // 
-            lblOperator.Font = new Font("微软雅黑", 10F);
-            lblOperator.ForeColor = Color.FromArgb(48, 48, 48);
-            lblOperator.Location = new Point(18, 90);
-            lblOperator.Name = "lblOperator";
-            lblOperator.Size = new Size(100, 25);
-            lblOperator.TabIndex = 4;
-            lblOperator.Text = "运算符:";
-            lblOperator.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // btnSelectVarLeft
-            // 
-            btnSelectVarLeft.Cursor = Cursors.Hand;
-            btnSelectVarLeft.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnSelectVarLeft.Location = new Point(708, 45);
-            btnSelectVarLeft.MinimumSize = new Size(1, 1);
-            btnSelectVarLeft.Name = "btnSelectVarLeft";
-            btnSelectVarLeft.Size = new Size(120, 30);
-            btnSelectVarLeft.Symbol = 361697;
-            btnSelectVarLeft.TabIndex = 3;
-            btnSelectVarLeft.Text = "选择变量";
-            btnSelectVarLeft.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            // 
-            // txtLeftExpression
-            // 
-            txtLeftExpression.Cursor = Cursors.IBeam;
-            txtLeftExpression.Font = new Font("微软雅黑", 10F);
-            txtLeftExpression.Location = new Point(124, 45);
-            txtLeftExpression.Margin = new Padding(4, 5, 4, 5);
-            txtLeftExpression.MinimumSize = new Size(1, 16);
-            txtLeftExpression.Name = "txtLeftExpression";
-            txtLeftExpression.Padding = new Padding(5);
-            txtLeftExpression.RectColor = Color.FromArgb(65, 100, 204);
-            txtLeftExpression.ShowText = false;
-            txtLeftExpression.Size = new Size(570, 30);
-            txtLeftExpression.TabIndex = 2;
-            txtLeftExpression.TextAlignment = ContentAlignment.MiddleLeft;
-            txtLeftExpression.Watermark = "输入左值表达式或变量，如：{Temperature} 或 {Value1} + 10";
+            txtConditionExpression.Cursor = Cursors.IBeam;
+            txtConditionExpression.Font = new Font("微软雅黑", 10F);
+            txtConditionExpression.Location = new Point(124, 45);
+            txtConditionExpression.Margin = new Padding(4, 5, 4, 5);
+            txtConditionExpression.MinimumSize = new Size(1, 16);
+            txtConditionExpression.Multiline = true;
+            txtConditionExpression.Name = "txtConditionExpression";
+            txtConditionExpression.Padding = new Padding(5);
+            txtConditionExpression.RectColor = Color.FromArgb(65, 100, 204);
+            txtConditionExpression.ShowText = false;
+            txtConditionExpression.Size = new Size(617, 170);
+            txtConditionExpression.TabIndex = 2;
+            txtConditionExpression.TextAlignment = ContentAlignment.MiddleLeft;
+            txtConditionExpression.Watermark = "点击输入条件表达式，如：{温度} > 100 (按F2打开面板)";
             // 
             // lblLeftExpression
             // 
@@ -457,7 +262,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblLeftExpression.Name = "lblLeftExpression";
             lblLeftExpression.Size = new Size(100, 25);
             lblLeftExpression.TabIndex = 1;
-            lblLeftExpression.Text = "左值表达式:";
+            lblLeftExpression.Text = "条件表达式:";
             lblLeftExpression.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // lblConditionTitle
@@ -478,10 +283,10 @@ namespace MainUI.LogicalConfiguration.Forms
             panelBottom.Controls.Add(btnCancel);
             panelBottom.Controls.Add(btnSave);
             panelBottom.Dock = DockStyle.Bottom;
-            panelBottom.Location = new Point(0, 600);
+            panelBottom.Location = new Point(0, 542);
             panelBottom.Name = "panelBottom";
             panelBottom.Padding = new Padding(15, 10, 15, 10);
-            panelBottom.Size = new Size(900, 60);
+            panelBottom.Size = new Size(805, 65);
             panelBottom.TabIndex = 3;
             // 
             // btnHelp
@@ -502,7 +307,7 @@ namespace MainUI.LogicalConfiguration.Forms
             btnCancel.Cursor = Cursors.Hand;
             btnCancel.FillColor = Color.FromArgb(230, 80, 80);
             btnCancel.Font = new Font("微软雅黑", 10F);
-            btnCancel.Location = new Point(672, 13);
+            btnCancel.Location = new Point(677, 13);
             btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
             btnCancel.RectColor = Color.FromArgb(230, 80, 80);
@@ -520,7 +325,7 @@ namespace MainUI.LogicalConfiguration.Forms
             btnSave.Cursor = Cursors.Hand;
             btnSave.FillColor = Color.FromArgb(65, 100, 204);
             btnSave.Font = new Font("微软雅黑", 10F);
-            btnSave.Location = new Point(782, 13);
+            btnSave.Location = new Point(556, 13);
             btnSave.MinimumSize = new Size(1, 1);
             btnSave.Name = "btnSave";
             btnSave.RectColor = Color.FromArgb(65, 100, 204);
@@ -536,7 +341,8 @@ namespace MainUI.LogicalConfiguration.Forms
             // Form_Condition
             // 
             AutoScaleMode = AutoScaleMode.None;
-            ClientSize = new Size(900, 660);
+            ClientSize = new Size(805, 607);
+            ControlBox = false;
             Controls.Add(panelMain);
             Controls.Add(panelBottom);
             Controls.Add(panelDescription);
@@ -555,8 +361,6 @@ namespace MainUI.LogicalConfiguration.Forms
             panelMain.ResumeLayout(false);
             panelChildSteps.ResumeLayout(false);
             panelCondition.ResumeLayout(false);
-            panelRangeValue.ResumeLayout(false);
-            panelSingleValue.ResumeLayout(false);
             panelBottom.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -569,23 +373,9 @@ namespace MainUI.LogicalConfiguration.Forms
         private UILabel lblDescription;
         private Panel panelMain;
         private UIPanel panelCondition;
-        private UISymbolButton btnSelectVarLeft;
-        private UITextBox txtLeftExpression;
+        private UITextBox txtConditionExpression;
         private UILabel lblLeftExpression;
         private UILabel lblConditionTitle;
-        private UIComboBox cmbOperator;
-        private UILabel lblOperator;
-        private Panel panelSingleValue;
-        private UISymbolButton btnSelectVarRight;
-        private UITextBox txtRightExpression;
-        private UILabel lblRightExpression;
-        private Panel panelRangeValue;
-        private UISymbolButton btnSelectVarRangeMax;
-        private UITextBox txtRangeMax;
-        private UILabel lblRangeMax;
-        private UISymbolButton btnSelectVarRangeMin;
-        private UITextBox txtRangeMin;
-        private UILabel lblRangeMin;
         private UIPanel panelChildSteps;
         private UILabel lblChildStepsTitle;
         private UIButton btnConfigTrueSteps;
@@ -596,5 +386,6 @@ namespace MainUI.LogicalConfiguration.Forms
         private UISymbolButton btnHelp;
         private UISymbolButton btnCancel;
         private UISymbolButton btnSave;
+        private AntdUI.Label lblValidationStatus;
     }
 }

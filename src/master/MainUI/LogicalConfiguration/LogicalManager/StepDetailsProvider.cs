@@ -40,6 +40,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "消息通知" => GetMessageNotificationPreview(step),
                     "读取PLC" => GetReadPLCPreview(step),
                     "写入PLC" => GetWritePLCPreview(step),
+                    "以太网发送" => GetEthernetSendPreview(step),
+                    "串口发送" => GetSerialPortSendPreview(step),
                     "读取单元格" => GetReadCellsPreview(step),
                     "写入单元格" => GetWriteCellsPreview(step),
                     _ => "双击查看详情"
@@ -331,6 +333,76 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
             return $"[{sheetName}] {preview}";
         }
+
+        /// <summary>
+        /// 获取以太网发送步骤的预览
+        /// </summary>
+        private string GetEthernetSendPreview(ChildModel step)
+        {
+            if (!TryGetParameter<Parameter_EthernetSend>(step.StepParameter, out var param))
+                return "未配置";
+
+            // 构建连接信息
+            var connectionInfo = $"{param.IPAddress}:{param.Port}";
+
+            // 协议类型
+            var protocol = param.Protocol == System.Net.Sockets.ProtocolType.Tcp ? "TCP" : "UDP";
+
+            // 数据格式
+            var format = param.DataFormat switch
+            {
+                Parameter_EthernetSend.DataFormatType.Text => "文本",
+                Parameter_EthernetSend.DataFormatType.Hex => "HEX",
+                Parameter_EthernetSend.DataFormatType.Base64 => "Base64",
+                _ => "文本"
+            };
+
+            // 发送内容预览
+            var contentPreview = string.IsNullOrEmpty(param.SendContent)
+                ? "无内容"
+                : TruncateText(param.SendContent, 20);
+
+            // 响应设置
+            var responseInfo = param.WaitResponse
+                ? $", 等待响应→@{param.ResponseVariableName}"
+                : "";
+
+            return $"[{protocol}] {connectionInfo} | {format}: {contentPreview}{responseInfo}";
+        }
+
+        /// <summary>
+        /// 获取串口发送步骤的预览
+        /// </summary>
+        private string GetSerialPortSendPreview(ChildModel step)
+        {
+            if (!TryGetParameter<Parameter_SerialPortSend>(step.StepParameter, out var param))
+                return "未配置";
+
+            // 串口配置信息
+            var portInfo = $"{param.PortName} ({param.BaudRate})";
+
+            // 数据格式
+            var format = param.DataFormat switch
+            {
+                Parameter_EthernetSend.DataFormatType.Text => "文本",
+                Parameter_EthernetSend.DataFormatType.Hex => "HEX",
+                Parameter_EthernetSend.DataFormatType.Base64 => "Base64",
+                _ => "文本"
+            };
+
+            // 发送内容预览
+            var contentPreview = string.IsNullOrEmpty(param.SendContent)
+                ? "无内容"
+                : TruncateText(param.SendContent, 20);
+
+            // 响应设置
+            var responseInfo = param.WaitResponse
+                ? $", 等待响应→@{param.ResponseVariableName}"
+                : "";
+
+            return $"[{portInfo}] {format}: {contentPreview}{responseInfo}";
+        }
+
 
         #endregion
 

@@ -6,7 +6,8 @@ using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
-    /// 条件判断执行方法 - 只负责条件逻辑判断
+    /// 条件判断执行方法 - 适配简化后的参数格式
+    /// 直接使用ConditionExpression进行条件判断
     /// </summary>
     public class ConditionMethods(
         ExpressionEngine expressionEngine,
@@ -25,12 +26,31 @@ namespace MainUI.LogicalConfiguration.Methods
         {
             try
             {
+                // 检查是否启用
+                if (!parameter.IsEnabled)
+                {
+                    _logger.LogInformation("条件判断已禁用，跳过执行: {Description}", parameter.Description);
+                    return new ConditionEvaluationResult
+                    {
+                        ConditionMet = true,
+                        StepsToExecute = null,
+                        Description = parameter.Description,
+                        Skipped = true
+                    };
+                }
+
                 _logger.LogInformation("开始条件判断: {Description}", parameter.Description);
+                _logger.LogDebug("条件表达式: {Expression}", parameter.ConditionExpression);
+
+                // 尝试迁移旧版本参数
+                parameter.MigrateFromLegacy();
 
                 // 计算条件结果
-                bool conditionResult = EvaluateConditionLogic(parameter);
+                bool conditionResult = EvaluateConditionExpression(parameter.ConditionExpression);
 
-                _logger.LogInformation($"条件判断结果: {(conditionResult ? "满足条件" : "不满足条件")}");
+                _logger.LogInformation("条件判断结果: {Result} ({Expression})",
+                    conditionResult ? "满足条件" : "不满足条件",
+                    parameter.ConditionExpression);
 
                 // 根据结果选择执行分支
                 var stepsToExecute = conditionResult ? parameter.TrueSteps : parameter.FalseSteps;
@@ -39,7 +59,8 @@ namespace MainUI.LogicalConfiguration.Methods
                 {
                     ConditionMet = conditionResult,
                     StepsToExecute = stepsToExecute,
-                    Description = parameter.Description
+                    Description = parameter.Description,
+                    EvaluatedExpression = parameter.ConditionExpression
                 };
             }
             catch (Exception ex)
@@ -49,105 +70,70 @@ namespace MainUI.LogicalConfiguration.Methods
                 {
                     ConditionMet = false,
                     StepsToExecute = null,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = ex.Message,
+                    EvaluatedExpression = parameter.ConditionExpression
                 };
             }
         }
 
         /// <summary>
-        /// 计算条件结果
+        /// 计算条件表达式结果
         /// </summary>
-        private bool EvaluateConditionLogic(Parameter_Condition parameter)
+        private bool EvaluateConditionExpression(string expression)
         {
+            if (string.IsNullOrWhiteSpace(expression))
+            {
+                _logger.LogWarning("条件表达式为空，默认返回 false");
+                return false;
+            }
+
             try
             {
-                // 计算左值
-                var leftResult = _expressionEngine.EvaluateExpression(parameter.LeftExpression);
-                if (!leftResult.Success)
+                // 使用表达式引擎计算
+                var result = _expressionEngine.EvaluateExpression(expression);
+
+                if (!result.Success)
                 {
-                    _logger.LogError($"左值表达式计算失败: {parameter.LeftExpression}");
+                    _logger.LogError("条件表达式计算失败: {Expression}, 错误: {Error}",
+                        expression, result.Message);
                     return false;
                 }
 
-                // 处理布尔类型直接返回
-                if (leftResult.Result is bool boolValue)
+                // 处理结果
+                if (result.Result is bool boolValue)
                 {
-                    _logger.LogInformation($"左值是布尔类型: {boolValue}");
                     return boolValue;
                 }
 
-                double leftValue = Convert.ToDouble(leftResult.Result);
-
-                // 根据运算符类型进行判断
-                switch (parameter.Operator)
+                // 尝试转换为布尔值
+                if (result.Result != null)
                 {
-                    case ConditionOperator.在范围内:
-                    case ConditionOperator.不在范围内:
-                        return EvaluateRangeCondition(leftValue, parameter);
+                    // 数值类型：非零为true
+                    if (result.Result is int intValue)
+                        return intValue != 0;
+                    if (result.Result is double doubleValue)
+                        return Math.Abs(doubleValue) > double.Epsilon;
+                    if (result.Result is decimal decimalValue)
+                        return decimalValue != 0;
 
-                    default:
-                        return EvaluateComparisonCondition(leftValue, parameter);
+                    // 字符串类型：非空为true
+                    if (result.Result is string strValue)
+                        return !string.IsNullOrWhiteSpace(strValue) &&
+                               !strValue.Equals("false", StringComparison.OrdinalIgnoreCase) &&
+                               strValue != "0";
+
+                    // 尝试通用转换
+                    return Convert.ToBoolean(result.Result);
                 }
+
+                _logger.LogWarning("条件表达式结果为 null，默认返回 false");
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"条件计算异常: {ex.Message}");
+                _logger.LogError(ex, "计算条件表达式时发生异常: {Expression}", expression);
                 return false;
             }
-        }
-
-        /// <summary>
-        /// 计算范围条件
-        /// </summary>
-        private bool EvaluateRangeCondition(double leftValue, Parameter_Condition parameter)
-        {
-            var minResult = _expressionEngine.EvaluateExpression(parameter.RangeMin);
-            var maxResult = _expressionEngine.EvaluateExpression(parameter.RangeMax);
-
-            if (!minResult.Success || !maxResult.Success)
-            {
-                _logger.LogError("范围值计算失败");
-                return false;
-            }
-
-            double minValue = Convert.ToDouble(minResult.Result);
-            double maxValue = Convert.ToDouble(maxResult.Result);
-
-            bool inRange = leftValue >= minValue && leftValue <= maxValue;
-
-            _logger.LogInformation($"范围判断: {leftValue} 在 [{minValue}, {maxValue}] 之间 = {inRange}");
-
-            return parameter.Operator == ConditionOperator.在范围内 ? inRange : !inRange;
-        }
-
-        /// <summary>
-        /// 计算比较条件
-        /// </summary>
-        private bool EvaluateComparisonCondition(double leftValue, Parameter_Condition parameter)
-        {
-            var rightResult = _expressionEngine.EvaluateExpression(parameter.RightExpression);
-            if (!rightResult.Success)
-            {
-                _logger.LogError($"右值表达式计算失败: {parameter.RightExpression}");
-                return false;
-            }
-
-            double rightValue = Convert.ToDouble(rightResult.Result);
-
-            bool result = parameter.Operator switch
-            {
-                ConditionOperator.等于 => Math.Abs(leftValue - rightValue) < 0.0001,
-                ConditionOperator.不等于 => Math.Abs(leftValue - rightValue) >= 0.0001,
-                ConditionOperator.大于 => leftValue > rightValue,
-                ConditionOperator.大于等于 => leftValue >= rightValue,
-                ConditionOperator.小于 => leftValue < rightValue,
-                ConditionOperator.小于等于 => leftValue <= rightValue,
-                _ => false
-            };
-
-            _logger.LogInformation($"比较判断: {leftValue} {parameter.Operator} {rightValue} = {result}");
-
-            return result;
         }
     }
 
@@ -167,17 +153,27 @@ namespace MainUI.LogicalConfiguration.Methods
         public List<Parent> StepsToExecute { get; set; }
 
         /// <summary>
-        /// 描述信息
+        /// 条件描述
         /// </summary>
         public string Description { get; set; }
 
         /// <summary>
-        /// 错误信息（如果有）
+        /// 错误消息（如果有）
         /// </summary>
         public string ErrorMessage { get; set; }
 
         /// <summary>
-        /// 是否成功
+        /// 是否被跳过（禁用时）
+        /// </summary>
+        public bool Skipped { get; set; }
+
+        /// <summary>
+        /// 计算的表达式
+        /// </summary>
+        public string EvaluatedExpression { get; set; }
+
+        /// <summary>
+        /// 是否成功（无错误）
         /// </summary>
         public bool IsSuccess => string.IsNullOrEmpty(ErrorMessage);
     }

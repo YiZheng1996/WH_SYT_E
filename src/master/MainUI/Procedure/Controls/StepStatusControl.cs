@@ -410,6 +410,8 @@ namespace MainUI.Procedure.Controls
                 "延时等待" or "Delay" => DisplayDelayParameters(stepParameter, yPosition),
                 "写入PLC" or "WritePLC" => DisplayWritePLCParameters(stepParameter, yPosition),
                 "读取PLC" or "ReadPLC" => DisplayReadPLCParameters(stepParameter, yPosition),
+                "以太网发送" or "EthernetSend" => DisplayEthernetSendParameters(stepParameter, yPosition),
+                "串口发送" or "SerialPortSend" => DisplaySerialPortSendParameters(stepParameter, yPosition),
                 "等待稳定" or "WaitForStable" => DisplayWaitForStableParameters(stepParameter, yPosition),
                 "实时监控" => DisplayRealtimeMonitorPromptParameters(stepParameter, yPosition),
                 "循环工具" => DisplayLoopParameters(stepParameter, yPosition),
@@ -1129,6 +1131,179 @@ namespace MainUI.Procedure.Controls
                     AddTableCell("写入值", yPosition, 0, col1Width, false);
                     AddTableCell(json["Value"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
                     yPosition += 22;
+                }
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 以太网发送参数展示 - 表格式
+        /// </summary>
+        private int DisplayEthernetSendParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                yPosition = AddSubSectionTitle("以太网发送配置", yPosition);
+
+                // 定义列宽
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // IP地址
+                AddTableCell("IP地址", yPosition, 0, col1Width, false);
+                AddTableCell(json["IPAddress"]?.ToString() ?? "192.168.1.100", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 端口
+                AddTableCell("端口", yPosition, 0, col1Width, false);
+                AddTableCell(json["Port"]?.ToString() ?? "502", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 协议类型
+                var protocolValue = json["Protocol"]?.ToString() ?? "Tcp";
+                var protocolDisplay = protocolValue.Contains("Udp", StringComparison.OrdinalIgnoreCase) ? "UDP" : "TCP";
+                AddTableCell("协议类型", yPosition, 0, col1Width, false);
+                AddTableCell(protocolDisplay, yPosition, col1Width, col2Width, false,
+                    protocolDisplay == "TCP" ? StatusColors.Success : StatusColors.Running);
+                yPosition += 22;
+
+                // 数据格式
+                var formatValue = json["DataFormat"]?.ToString() ?? "Text";
+                AddTableCell("数据格式", yPosition, 0, col1Width, false);
+                AddTableCell(formatValue, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 发送内容
+                var content = json["SendContent"]?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(content))
+                {
+                    AddTableCell("发送内容", yPosition, 0, col1Width, false);
+                    AddTableCell(content.Length > 50 ? content.Substring(0, 50) + "..." : content,
+                        yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 等待响应
+                var waitResponse = json["WaitResponse"]?.ToObject<bool>() ?? false;
+                AddTableCell("等待响应", yPosition, 0, col1Width, false);
+                AddTableCell(waitResponse ? "是" : "否", yPosition, col1Width, col2Width, false,
+                    waitResponse ? StatusColors.Success : Color.Gray);
+                yPosition += 22;
+
+                // 响应变量
+                if (waitResponse)
+                {
+                    var responseVar = json["ResponseVariableName"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(responseVar))
+                    {
+                        AddTableCell("响应变量", yPosition, 0, col1Width, false);
+                        AddTableCell($"@{responseVar}", yPosition, col1Width, col2Width, false, StatusColors.Success);
+                        yPosition += 22;
+                    }
+                }
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+        /// <summary>
+        /// 串口发送参数展示 - 表格式
+        /// </summary>
+        private int DisplaySerialPortSendParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                yPosition = AddSubSectionTitle("串口发送配置", yPosition);
+
+                // 定义列宽
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 串口名称
+                AddTableCell("串口", yPosition, 0, col1Width, false);
+                AddTableCell(json["PortName"]?.ToString() ?? "COM1", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 波特率
+                AddTableCell("波特率", yPosition, 0, col1Width, false);
+                AddTableCell(json["BaudRate"]?.ToString() ?? "9600", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 数据位
+                AddTableCell("数据位", yPosition, 0, col1Width, false);
+                AddTableCell(json["DataBits"]?.ToString() ?? "8", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 校验位
+                var parityValue = json["Parity"]?.ToString() ?? "None";
+                AddTableCell("校验位", yPosition, 0, col1Width, false);
+                AddTableCell(parityValue, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 停止位
+                var stopBitsValue = json["StopBits"]?.ToString() ?? "One";
+                AddTableCell("停止位", yPosition, 0, col1Width, false);
+                AddTableCell(stopBitsValue, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 数据格式
+                var formatValue = json["DataFormat"]?.ToString() ?? "Text";
+                AddTableCell("数据格式", yPosition, 0, col1Width, false);
+                AddTableCell(formatValue, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 发送内容
+                var content = json["SendContent"]?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(content))
+                {
+                    AddTableCell("发送内容", yPosition, 0, col1Width, false);
+                    AddTableCell(content.Length > 50 ? content.Substring(0, 50) + "..." : content,
+                        yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 等待响应
+                var waitResponse = json["WaitResponse"]?.ToObject<bool>() ?? false;
+                AddTableCell("等待响应", yPosition, 0, col1Width, false);
+                AddTableCell(waitResponse ? "是" : "否", yPosition, col1Width, col2Width, false,
+                    waitResponse ? StatusColors.Success : Color.Gray);
+                yPosition += 22;
+
+                // 响应变量
+                if (waitResponse)
+                {
+                    var responseVar = json["ResponseVariableName"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(responseVar))
+                    {
+                        AddTableCell("响应变量", yPosition, 0, col1Width, false);
+                        AddTableCell($"@{responseVar}", yPosition, col1Width, col2Width, false, StatusColors.Success);
+                        yPosition += 22;
+                    }
                 }
 
                 return yPosition;

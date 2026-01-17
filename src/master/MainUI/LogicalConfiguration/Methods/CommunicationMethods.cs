@@ -212,8 +212,8 @@ namespace MainUI.LogicalConfiguration.Methods
             return regex.Replace(content, match =>
             {
                 var varName = match.Groups[1].Value;
-                var value = _variableManager.GetAllUserVariables();
-                return value?.ToString() ?? match.Value;
+                var variable = _variableManager.FindVariableByName(varName);
+                return variable?.VarValue?.ToString() ?? match.Value;
             });
         }
 
