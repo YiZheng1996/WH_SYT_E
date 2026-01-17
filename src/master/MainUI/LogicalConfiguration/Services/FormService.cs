@@ -107,6 +107,12 @@ namespace MainUI.LogicalConfiguration.Services
                     case "循环工具":
                         form = CreateForm<Form_Loop>();
                         break;
+                    case "以太网发送":
+                        form = CreateForm<Form_EthernetSend>();
+                        break;
+                    case "串口发送":
+                        form = CreateForm<Form_SerialPortSend>();
+                        break;
                     default:
                         _logger.LogWarning("未知的窗体类型: {FormName}", formName);
                         MessageBox.Show($"未知的窗体类型: {formName}", "错误",
@@ -114,19 +120,17 @@ namespace MainUI.LogicalConfiguration.Services
                         return;
                 }
 
-                if (form != null)
+                if (form == null) return;
+                // 设置父窗体关系
+                if (parent != null && !parent.IsDisposed)
                 {
-                    // 设置父窗体关系
-                    if (parent != null && !parent.IsDisposed)
-                    {
-                        form.Owner = parent;
-                        form.StartPosition = FormStartPosition.CenterParent;
-                    }
-
-                    // 显示窗体
-                    VarHelper.ShowDialogWithOverlay(parentform, form);
-                    _logger.LogInformation("窗体打开成功: {FormName}", formName);
+                    form.Owner = parent;
+                    form.StartPosition = FormStartPosition.CenterParent;
                 }
+
+                // 显示窗体
+                VarHelper.ShowDialogWithOverlay(parentform, form);
+                _logger.LogInformation("窗体打开成功: {FormName}", formName);
             }
             catch (Exception ex)
             {
@@ -239,6 +243,16 @@ namespace MainUI.LogicalConfiguration.Services
                 nameof(Form_Loop) => (T)(object)new Form_Loop(
                     _workflowState,
                     GetSpecificLogger<Form_Loop>()),
+
+                // 以太网发送
+                nameof(Form_EthernetSend) => (T)(object)new Form_EthernetSend(
+                    _workflowState,
+                    GetSpecificLogger<Form_EthernetSend>()),
+
+                // 串口发送
+                nameof(Form_SerialPortSend) => (T)(object)new Form_SerialPortSend(
+                    _workflowState,
+                    GetSpecificLogger<Form_SerialPortSend>()),
 
                 // 未知窗体类型
                 _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")

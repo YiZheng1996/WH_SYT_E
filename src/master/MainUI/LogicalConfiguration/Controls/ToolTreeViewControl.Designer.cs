@@ -53,6 +53,9 @@
             imageList1.Images.SetKeyName(11, "写入PLC.png");
             imageList1.Images.SetKeyName(12, "等待稳定.png");
             imageList1.Images.SetKeyName(13, "检测工具.png");
+            imageList1.Images.SetKeyName(14, "以太网.png");
+            imageList1.Images.SetKeyName(15, "串口助手.png");
+            imageList1.Images.SetKeyName(16, "实时监控.png");
             // 
             // ToolTreeViewControl
             // 

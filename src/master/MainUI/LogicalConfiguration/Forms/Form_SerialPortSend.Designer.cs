@@ -28,927 +28,894 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-
-            // 主面板
-            panelMain = new System.Windows.Forms.Panel();
-            panelBottom = new System.Windows.Forms.Panel();
-
-            // 串口设置组
-            grpSerialPort = new Sunny.UI.UIGroupBox();
-            lblPortName = new Sunny.UI.UILabel();
-            cmbPortName = new Sunny.UI.UIComboBox();
-            btnRefreshPorts = new Sunny.UI.UISymbolButton();
-            lblBaudRate = new Sunny.UI.UILabel();
-            cmbBaudRate = new Sunny.UI.UIComboBox();
-            lblDataBits = new Sunny.UI.UILabel();
-            cmbDataBits = new Sunny.UI.UIComboBox();
-            lblParity = new Sunny.UI.UILabel();
-            cmbParity = new Sunny.UI.UIComboBox();
-            lblStopBits = new Sunny.UI.UILabel();
-            cmbStopBits = new Sunny.UI.UIComboBox();
-            lblHandshake = new Sunny.UI.UILabel();
-            cmbHandshake = new Sunny.UI.UIComboBox();
-            btnTestPort = new Sunny.UI.UISymbolButton();
-            lblPortStatus = new Sunny.UI.UILabel();
-
-            // 超时设置组
-            grpTimeout = new Sunny.UI.UIGroupBox();
-            lblReadTimeout = new Sunny.UI.UILabel();
-            numReadTimeout = new Sunny.UI.UIIntegerUpDown();
-            lblWriteTimeout = new Sunny.UI.UILabel();
-            numWriteTimeout = new Sunny.UI.UIIntegerUpDown();
-
-            // 数据设置组
-            grpDataSettings = new Sunny.UI.UIGroupBox();
-            lblDataFormat = new Sunny.UI.UILabel();
-            cmbDataFormat = new Sunny.UI.UIComboBox();
-            lblEncoding = new Sunny.UI.UILabel();
-            cmbEncoding = new Sunny.UI.UIComboBox();
-            lblSendContent = new Sunny.UI.UILabel();
-            txtSendContent = new Sunny.UI.UITextBox();
-            btnInsertVariable = new Sunny.UI.UISymbolButton();
-            chkAppendNewLine = new Sunny.UI.UICheckBox();
-            lblNewLineType = new Sunny.UI.UILabel();
-            cmbNewLineType = new Sunny.UI.UIComboBox();
-
-            // 响应设置组
-            grpResponseSettings = new Sunny.UI.UIGroupBox();
-            chkWaitResponse = new Sunny.UI.UICheckBox();
-            lblResponseTimeout = new Sunny.UI.UILabel();
-            numResponseTimeout = new Sunny.UI.UIIntegerUpDown();
-            lblResponseVariable = new Sunny.UI.UILabel();
-            cmbResponseVariable = new Sunny.UI.UIComboBox();
-            btnCreateVariable = new Sunny.UI.UISymbolButton();
-
-            // 其他设置组
-            grpOtherSettings = new Sunny.UI.UIGroupBox();
-            chkCloseAfterSend = new Sunny.UI.UICheckBox();
-            lblCondition = new Sunny.UI.UILabel();
-            txtCondition = new Sunny.UI.UITextBox();
-            btnConditionHelper = new Sunny.UI.UISymbolButton();
-            lblDescription = new Sunny.UI.UILabel();
-            txtDescription = new Sunny.UI.UITextBox();
-            chkEnabled = new Sunny.UI.UICheckBox();
-
-            // 底部按钮
-            btnTestSend = new Sunny.UI.UISymbolButton();
-            btnOK = new Sunny.UI.UISymbolButton();
-            btnCancel = new Sunny.UI.UISymbolButton();
-
+            panelDescription = new Panel();
+            lblDescription = new UILabel();
+            txtDescription = new UITextBox();
+            chkEnabled = new UICheckBox();
+            panelMain = new Panel();
+            grpSerialPort = new UIGroupBox();
+            lblPortName = new UILabel();
+            cmbPortName = new UIComboBox();
+            btnRefreshPorts = new UISymbolButton();
+            lblBaudRate = new UILabel();
+            cmbBaudRate = new UIComboBox();
+            lblDataBits = new UILabel();
+            cmbDataBits = new UIComboBox();
+            lblParity = new UILabel();
+            cmbParity = new UIComboBox();
+            lblStopBits = new UILabel();
+            cmbStopBits = new UIComboBox();
+            lblHandshake = new UILabel();
+            cmbHandshake = new UIComboBox();
+            btnTestPort = new UISymbolButton();
+            lblPortStatus = new UILabel();
+            grpTimeout = new UIGroupBox();
+            lblReadTimeout = new UILabel();
+            numReadTimeout = new UIIntegerUpDown();
+            lblWriteTimeout = new UILabel();
+            numWriteTimeout = new UIIntegerUpDown();
+            grpDataSettings = new UIGroupBox();
+            lblDataFormat = new UILabel();
+            cmbDataFormat = new UIComboBox();
+            lblEncoding = new UILabel();
+            cmbEncoding = new UIComboBox();
+            lblSendContent = new UILabel();
+            txtSendContent = new UITextBox();
+            btnInsertVariable = new UISymbolButton();
+            chkAppendNewLine = new UICheckBox();
+            lblNewLineType = new UILabel();
+            cmbNewLineType = new UIComboBox();
+            grpResponseSettings = new UIGroupBox();
+            chkWaitResponse = new UICheckBox();
+            lblResponseTimeout = new UILabel();
+            numResponseTimeout = new UIIntegerUpDown();
+            lblResponseVariable = new UILabel();
+            cmbResponseVariable = new UIComboBox();
+            btnCreateVariable = new UISymbolButton();
+            chkCloseAfterSend = new UICheckBox();
+            lblCondition = new UILabel();
+            txtCondition = new UITextBox();
+            panelBottom = new Panel();
+            btnTestSend = new UIButton();
+            btnHelp = new UIButton();
+            btnCancel = new UIButton();
+            btnSave = new UIButton();
+            panelDescription.SuspendLayout();
             panelMain.SuspendLayout();
-            panelBottom.SuspendLayout();
             grpSerialPort.SuspendLayout();
             grpTimeout.SuspendLayout();
             grpDataSettings.SuspendLayout();
             grpResponseSettings.SuspendLayout();
-            grpOtherSettings.SuspendLayout();
+            panelBottom.SuspendLayout();
             SuspendLayout();
-
+            // 
+            // panelDescription
+            // 
+            panelDescription.BackColor = Color.White;
+            panelDescription.BorderStyle = BorderStyle.FixedSingle;
+            panelDescription.Controls.Add(lblDescription);
+            panelDescription.Controls.Add(txtDescription);
+            panelDescription.Controls.Add(chkEnabled);
+            panelDescription.Dock = DockStyle.Top;
+            panelDescription.Location = new Point(0, 35);
+            panelDescription.Name = "panelDescription";
+            panelDescription.Padding = new Padding(15, 10, 15, 10);
+            panelDescription.Size = new Size(800, 70);
+            panelDescription.TabIndex = 0;
+            // 
+            // lblDescription
+            // 
+            lblDescription.Font = new Font("微软雅黑", 10F);
+            lblDescription.ForeColor = Color.FromArgb(48, 48, 48);
+            lblDescription.Location = new Point(18, 20);
+            lblDescription.Name = "lblDescription";
+            lblDescription.Size = new Size(100, 25);
+            lblDescription.TabIndex = 0;
+            lblDescription.Text = "步骤描述:";
+            lblDescription.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // txtDescription
+            // 
+            txtDescription.Cursor = Cursors.IBeam;
+            txtDescription.Font = new Font("微软雅黑", 10F);
+            txtDescription.Location = new Point(124, 20);
+            txtDescription.Margin = new Padding(4, 5, 4, 5);
+            txtDescription.MinimumSize = new Size(1, 16);
+            txtDescription.Name = "txtDescription";
+            txtDescription.Padding = new Padding(5);
+            txtDescription.RectColor = Color.FromArgb(65, 100, 204);
+            txtDescription.ShowText = false;
+            txtDescription.Size = new Size(500, 30);
+            txtDescription.TabIndex = 1;
+            txtDescription.TextAlignment = ContentAlignment.MiddleLeft;
+            txtDescription.Watermark = "请输入步骤描述信息";
+            // 
+            // chkEnabled
+            // 
+            chkEnabled.CheckBoxColor = Color.FromArgb(65, 100, 204);
+            chkEnabled.CheckBoxSize = 18;
+            chkEnabled.Checked = true;
+            chkEnabled.Font = new Font("微软雅黑", 10F);
+            chkEnabled.ForeColor = Color.FromArgb(48, 48, 48);
+            chkEnabled.Location = new Point(650, 20);
+            chkEnabled.MinimumSize = new Size(1, 1);
+            chkEnabled.Name = "chkEnabled";
+            chkEnabled.Size = new Size(120, 30);
+            chkEnabled.TabIndex = 2;
+            chkEnabled.Text = "启用此步骤";
             // 
             // panelMain
             // 
             panelMain.AutoScroll = true;
-            panelMain.Controls.Add(grpOtherSettings);
-            panelMain.Controls.Add(grpResponseSettings);
-            panelMain.Controls.Add(grpDataSettings);
-            panelMain.Controls.Add(grpTimeout);
+            panelMain.BackColor = Color.FromArgb(248, 249, 250);
             panelMain.Controls.Add(grpSerialPort);
-            panelMain.Dock = System.Windows.Forms.DockStyle.Fill;
-            panelMain.Location = new System.Drawing.Point(0, 35);
+            panelMain.Controls.Add(grpTimeout);
+            panelMain.Controls.Add(grpDataSettings);
+            panelMain.Controls.Add(grpResponseSettings);
+            panelMain.Dock = DockStyle.Fill;
+            panelMain.Location = new Point(0, 105);
             panelMain.Name = "panelMain";
-            panelMain.Padding = new System.Windows.Forms.Padding(15);
-            panelMain.Size = new System.Drawing.Size(720, 665);
-            panelMain.TabIndex = 0;
-
+            panelMain.Padding = new Padding(15);
+            panelMain.Size = new Size(800, 637);
+            panelMain.TabIndex = 1;
             // 
-            // panelBottom
+            // grpSerialPort
             // 
-            panelBottom.BackColor = System.Drawing.Color.FromArgb(248, 249, 250);
-            panelBottom.Controls.Add(btnTestSend);
-            panelBottom.Controls.Add(btnOK);
-            panelBottom.Controls.Add(btnCancel);
-            panelBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
-            panelBottom.Location = new System.Drawing.Point(0, 700);
-            panelBottom.Name = "panelBottom";
-            panelBottom.Size = new System.Drawing.Size(720, 60);
-            panelBottom.TabIndex = 1;
-
-            // ============================================
-            // grpSerialPort - 串口设置
-            // ============================================
-            grpSerialPort.Controls.Add(lblPortStatus);
-            grpSerialPort.Controls.Add(btnTestPort);
-            grpSerialPort.Controls.Add(cmbHandshake);
-            grpSerialPort.Controls.Add(lblHandshake);
-            grpSerialPort.Controls.Add(cmbStopBits);
-            grpSerialPort.Controls.Add(lblStopBits);
-            grpSerialPort.Controls.Add(cmbParity);
-            grpSerialPort.Controls.Add(lblParity);
-            grpSerialPort.Controls.Add(cmbDataBits);
-            grpSerialPort.Controls.Add(lblDataBits);
-            grpSerialPort.Controls.Add(cmbBaudRate);
-            grpSerialPort.Controls.Add(lblBaudRate);
-            grpSerialPort.Controls.Add(btnRefreshPorts);
-            grpSerialPort.Controls.Add(cmbPortName);
             grpSerialPort.Controls.Add(lblPortName);
-            grpSerialPort.Dock = System.Windows.Forms.DockStyle.Top;
-            grpSerialPort.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            grpSerialPort.Location = new System.Drawing.Point(15, 15);
-            grpSerialPort.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            grpSerialPort.MinimumSize = new System.Drawing.Size(1, 1);
+            grpSerialPort.Controls.Add(cmbPortName);
+            grpSerialPort.Controls.Add(btnRefreshPorts);
+            grpSerialPort.Controls.Add(lblBaudRate);
+            grpSerialPort.Controls.Add(cmbBaudRate);
+            grpSerialPort.Controls.Add(lblDataBits);
+            grpSerialPort.Controls.Add(cmbDataBits);
+            grpSerialPort.Controls.Add(lblParity);
+            grpSerialPort.Controls.Add(cmbParity);
+            grpSerialPort.Controls.Add(lblStopBits);
+            grpSerialPort.Controls.Add(cmbStopBits);
+            grpSerialPort.Controls.Add(lblHandshake);
+            grpSerialPort.Controls.Add(cmbHandshake);
+            grpSerialPort.Controls.Add(btnTestPort);
+            grpSerialPort.Controls.Add(lblPortStatus);
+            grpSerialPort.Dock = DockStyle.Top;
+            grpSerialPort.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
+            grpSerialPort.ForeColor = Color.FromArgb(65, 100, 204);
+            grpSerialPort.Location = new Point(15, 446);
+            grpSerialPort.Margin = new Padding(4, 5, 4, 5);
+            grpSerialPort.MinimumSize = new Size(1, 1);
             grpSerialPort.Name = "grpSerialPort";
-            grpSerialPort.Padding = new System.Windows.Forms.Padding(0, 32, 0, 0);
-            grpSerialPort.Size = new System.Drawing.Size(690, 140);
+            grpSerialPort.Padding = new Padding(0, 32, 0, 0);
+            grpSerialPort.RectColor = Color.FromArgb(65, 100, 204);
+            grpSerialPort.Size = new Size(770, 180);
             grpSerialPort.TabIndex = 0;
             grpSerialPort.Text = "串口设置";
-            grpSerialPort.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            //grpSerialPort.TitleColor = System.Drawing.Color.FromArgb(65, 100, 204);
-
+            grpSerialPort.TextAlignment = ContentAlignment.MiddleLeft;
             // 
             // lblPortName
             // 
             lblPortName.AutoSize = true;
-            lblPortName.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblPortName.Location = new System.Drawing.Point(20, 45);
+            lblPortName.Font = new Font("微软雅黑", 9F);
+            lblPortName.ForeColor = Color.FromArgb(48, 48, 48);
+            lblPortName.Location = new Point(20, 45);
             lblPortName.Name = "lblPortName";
-            lblPortName.Size = new System.Drawing.Size(56, 17);
+            lblPortName.Size = new Size(47, 17);
             lblPortName.TabIndex = 0;
             lblPortName.Text = "串口号:";
-
             // 
             // cmbPortName
             // 
             cmbPortName.DataSource = null;
-            cmbPortName.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbPortName.FillColor = System.Drawing.Color.White;
-            cmbPortName.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbPortName.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbPortName.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbPortName.Location = new System.Drawing.Point(80, 42);
-            cmbPortName.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbPortName.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbPortName.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbPortName.FillColor = Color.White;
+            cmbPortName.Font = new Font("微软雅黑", 9F);
+            cmbPortName.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbPortName.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbPortName.Location = new Point(80, 42);
+            cmbPortName.Margin = new Padding(4, 5, 4, 5);
+            cmbPortName.MinimumSize = new Size(63, 0);
             cmbPortName.Name = "cmbPortName";
-            cmbPortName.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbPortName.Radius = 5;
-            cmbPortName.Size = new System.Drawing.Size(100, 29);
+            cmbPortName.Padding = new Padding(0, 0, 30, 2);
+            cmbPortName.RectColor = Color.FromArgb(65, 100, 204);
+            cmbPortName.Size = new Size(100, 29);
+            cmbPortName.SymbolSize = 24;
             cmbPortName.TabIndex = 1;
-            cmbPortName.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbPortName.TextAlignment = ContentAlignment.MiddleLeft;
             cmbPortName.Watermark = "";
-
             // 
             // btnRefreshPorts
             // 
-            btnRefreshPorts.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnRefreshPorts.Font = new System.Drawing.Font("微软雅黑", 9F);
-            btnRefreshPorts.Location = new System.Drawing.Point(185, 42);
-            btnRefreshPorts.MinimumSize = new System.Drawing.Size(1, 1);
+            btnRefreshPorts.Cursor = Cursors.Hand;
+            btnRefreshPorts.FillColor = Color.FromArgb(65, 100, 204);
+            btnRefreshPorts.Font = new Font("微软雅黑", 9F);
+            btnRefreshPorts.Location = new Point(190, 42);
+            btnRefreshPorts.MinimumSize = new Size(1, 1);
             btnRefreshPorts.Name = "btnRefreshPorts";
-            btnRefreshPorts.Radius = 5;
-            btnRefreshPorts.Size = new System.Drawing.Size(35, 29);
+            btnRefreshPorts.Size = new Size(35, 29);
             btnRefreshPorts.Symbol = 61473;
             btnRefreshPorts.TabIndex = 2;
-            btnRefreshPorts.TipsFont = new System.Drawing.Font("微软雅黑", 9F);
-
+            btnRefreshPorts.TipsFont = new Font("微软雅黑", 9F);
             // 
             // lblBaudRate
             // 
             lblBaudRate.AutoSize = true;
-            lblBaudRate.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblBaudRate.Location = new System.Drawing.Point(230, 45);
+            lblBaudRate.Font = new Font("微软雅黑", 9F);
+            lblBaudRate.ForeColor = Color.FromArgb(48, 48, 48);
+            lblBaudRate.Location = new Point(250, 45);
             lblBaudRate.Name = "lblBaudRate";
-            lblBaudRate.Size = new System.Drawing.Size(56, 17);
+            lblBaudRate.Size = new Size(47, 17);
             lblBaudRate.TabIndex = 3;
             lblBaudRate.Text = "波特率:";
-
             // 
             // cmbBaudRate
             // 
             cmbBaudRate.DataSource = null;
-            cmbBaudRate.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbBaudRate.FillColor = System.Drawing.Color.White;
-            cmbBaudRate.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbBaudRate.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbBaudRate.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbBaudRate.Location = new System.Drawing.Point(290, 42);
-            cmbBaudRate.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbBaudRate.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbBaudRate.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbBaudRate.FillColor = Color.White;
+            cmbBaudRate.Font = new Font("微软雅黑", 9F);
+            cmbBaudRate.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbBaudRate.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbBaudRate.Location = new Point(310, 42);
+            cmbBaudRate.Margin = new Padding(4, 5, 4, 5);
+            cmbBaudRate.MinimumSize = new Size(63, 0);
             cmbBaudRate.Name = "cmbBaudRate";
-            cmbBaudRate.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbBaudRate.Radius = 5;
-            cmbBaudRate.Size = new System.Drawing.Size(100, 29);
+            cmbBaudRate.Padding = new Padding(0, 0, 30, 2);
+            cmbBaudRate.RectColor = Color.FromArgb(65, 100, 204);
+            cmbBaudRate.Size = new Size(100, 29);
+            cmbBaudRate.SymbolSize = 24;
             cmbBaudRate.TabIndex = 4;
-            cmbBaudRate.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbBaudRate.TextAlignment = ContentAlignment.MiddleLeft;
             cmbBaudRate.Watermark = "";
-
             // 
             // lblDataBits
             // 
             lblDataBits.AutoSize = true;
-            lblDataBits.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblDataBits.Location = new System.Drawing.Point(400, 45);
+            lblDataBits.Font = new Font("微软雅黑", 9F);
+            lblDataBits.ForeColor = Color.FromArgb(48, 48, 48);
+            lblDataBits.Location = new Point(430, 45);
             lblDataBits.Name = "lblDataBits";
-            lblDataBits.Size = new System.Drawing.Size(56, 17);
+            lblDataBits.Size = new Size(47, 17);
             lblDataBits.TabIndex = 5;
             lblDataBits.Text = "数据位:";
-
             // 
             // cmbDataBits
             // 
             cmbDataBits.DataSource = null;
-            cmbDataBits.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbDataBits.FillColor = System.Drawing.Color.White;
-            cmbDataBits.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbDataBits.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbDataBits.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbDataBits.Location = new System.Drawing.Point(460, 42);
-            cmbDataBits.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbDataBits.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbDataBits.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbDataBits.FillColor = Color.White;
+            cmbDataBits.Font = new Font("微软雅黑", 9F);
+            cmbDataBits.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbDataBits.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbDataBits.Location = new Point(490, 42);
+            cmbDataBits.Margin = new Padding(4, 5, 4, 5);
+            cmbDataBits.MinimumSize = new Size(63, 0);
             cmbDataBits.Name = "cmbDataBits";
-            cmbDataBits.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbDataBits.Radius = 5;
-            cmbDataBits.Size = new System.Drawing.Size(70, 29);
+            cmbDataBits.Padding = new Padding(0, 0, 30, 2);
+            cmbDataBits.RectColor = Color.FromArgb(65, 100, 204);
+            cmbDataBits.Size = new Size(80, 29);
+            cmbDataBits.SymbolSize = 24;
             cmbDataBits.TabIndex = 6;
-            cmbDataBits.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbDataBits.TextAlignment = ContentAlignment.MiddleLeft;
             cmbDataBits.Watermark = "";
-
             // 
             // lblParity
             // 
             lblParity.AutoSize = true;
-            lblParity.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblParity.Location = new System.Drawing.Point(540, 45);
+            lblParity.Font = new Font("微软雅黑", 9F);
+            lblParity.ForeColor = Color.FromArgb(48, 48, 48);
+            lblParity.Location = new Point(20, 85);
             lblParity.Name = "lblParity";
-            lblParity.Size = new System.Drawing.Size(56, 17);
+            lblParity.Size = new Size(47, 17);
             lblParity.TabIndex = 7;
             lblParity.Text = "校验位:";
-
             // 
             // cmbParity
             // 
             cmbParity.DataSource = null;
-            cmbParity.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbParity.FillColor = System.Drawing.Color.White;
-            cmbParity.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbParity.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbParity.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbParity.Location = new System.Drawing.Point(600, 42);
-            cmbParity.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbParity.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbParity.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbParity.FillColor = Color.White;
+            cmbParity.Font = new Font("微软雅黑", 9F);
+            cmbParity.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbParity.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbParity.Location = new Point(80, 82);
+            cmbParity.Margin = new Padding(4, 5, 4, 5);
+            cmbParity.MinimumSize = new Size(63, 0);
             cmbParity.Name = "cmbParity";
-            cmbParity.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbParity.Radius = 5;
-            cmbParity.Size = new System.Drawing.Size(75, 29);
+            cmbParity.Padding = new Padding(0, 0, 30, 2);
+            cmbParity.RectColor = Color.FromArgb(65, 100, 204);
+            cmbParity.Size = new Size(100, 29);
+            cmbParity.SymbolSize = 24;
             cmbParity.TabIndex = 8;
-            cmbParity.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbParity.TextAlignment = ContentAlignment.MiddleLeft;
             cmbParity.Watermark = "";
-
             // 
             // lblStopBits
             // 
             lblStopBits.AutoSize = true;
-            lblStopBits.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblStopBits.Location = new System.Drawing.Point(20, 85);
+            lblStopBits.Font = new Font("微软雅黑", 9F);
+            lblStopBits.ForeColor = Color.FromArgb(48, 48, 48);
+            lblStopBits.Location = new Point(250, 85);
             lblStopBits.Name = "lblStopBits";
-            lblStopBits.Size = new System.Drawing.Size(56, 17);
+            lblStopBits.Size = new Size(47, 17);
             lblStopBits.TabIndex = 9;
             lblStopBits.Text = "停止位:";
-
             // 
             // cmbStopBits
             // 
             cmbStopBits.DataSource = null;
-            cmbStopBits.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbStopBits.FillColor = System.Drawing.Color.White;
-            cmbStopBits.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbStopBits.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbStopBits.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbStopBits.Location = new System.Drawing.Point(80, 82);
-            cmbStopBits.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbStopBits.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbStopBits.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbStopBits.FillColor = Color.White;
+            cmbStopBits.Font = new Font("微软雅黑", 9F);
+            cmbStopBits.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbStopBits.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbStopBits.Location = new Point(310, 82);
+            cmbStopBits.Margin = new Padding(4, 5, 4, 5);
+            cmbStopBits.MinimumSize = new Size(63, 0);
             cmbStopBits.Name = "cmbStopBits";
-            cmbStopBits.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbStopBits.Radius = 5;
-            cmbStopBits.Size = new System.Drawing.Size(80, 29);
+            cmbStopBits.Padding = new Padding(0, 0, 30, 2);
+            cmbStopBits.RectColor = Color.FromArgb(65, 100, 204);
+            cmbStopBits.Size = new Size(140, 29);
+            cmbStopBits.SymbolSize = 24;
             cmbStopBits.TabIndex = 10;
-            cmbStopBits.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbStopBits.TextAlignment = ContentAlignment.MiddleLeft;
             cmbStopBits.Watermark = "";
-
             // 
             // lblHandshake
             // 
             lblHandshake.AutoSize = true;
-            lblHandshake.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblHandshake.Location = new System.Drawing.Point(175, 85);
+            lblHandshake.Font = new Font("微软雅黑", 9F);
+            lblHandshake.ForeColor = Color.FromArgb(48, 48, 48);
+            lblHandshake.Location = new Point(470, 85);
             lblHandshake.Name = "lblHandshake";
-            lblHandshake.Size = new System.Drawing.Size(68, 17);
+            lblHandshake.Size = new Size(47, 17);
             lblHandshake.TabIndex = 11;
-            lblHandshake.Text = "流控方式:";
-
+            lblHandshake.Text = "流控制:";
             // 
             // cmbHandshake
             // 
             cmbHandshake.DataSource = null;
-            cmbHandshake.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbHandshake.FillColor = System.Drawing.Color.White;
-            cmbHandshake.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbHandshake.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbHandshake.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbHandshake.Location = new System.Drawing.Point(250, 82);
-            cmbHandshake.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbHandshake.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbHandshake.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbHandshake.FillColor = Color.White;
+            cmbHandshake.Font = new Font("微软雅黑", 9F);
+            cmbHandshake.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbHandshake.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbHandshake.Location = new Point(530, 82);
+            cmbHandshake.Margin = new Padding(4, 5, 4, 5);
+            cmbHandshake.MinimumSize = new Size(63, 0);
             cmbHandshake.Name = "cmbHandshake";
-            cmbHandshake.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbHandshake.Radius = 5;
-            cmbHandshake.Size = new System.Drawing.Size(120, 29);
+            cmbHandshake.Padding = new Padding(0, 0, 30, 2);
+            cmbHandshake.RectColor = Color.FromArgb(65, 100, 204);
+            cmbHandshake.Size = new Size(200, 29);
+            cmbHandshake.SymbolSize = 24;
             cmbHandshake.TabIndex = 12;
-            cmbHandshake.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbHandshake.TextAlignment = ContentAlignment.MiddleLeft;
             cmbHandshake.Watermark = "";
-
             // 
             // btnTestPort
             // 
-            btnTestPort.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnTestPort.Font = new System.Drawing.Font("微软雅黑", 9F);
-            btnTestPort.Location = new System.Drawing.Point(390, 82);
-            btnTestPort.MinimumSize = new System.Drawing.Size(1, 1);
+            btnTestPort.Cursor = Cursors.Hand;
+            btnTestPort.FillColor = Color.FromArgb(40, 167, 69);
+            btnTestPort.Font = new Font("微软雅黑", 9F);
+            btnTestPort.Location = new Point(20, 130);
+            btnTestPort.MinimumSize = new Size(1, 1);
             btnTestPort.Name = "btnTestPort";
-            btnTestPort.Radius = 5;
-            btnTestPort.Size = new System.Drawing.Size(100, 29);
-            btnTestPort.Symbol = 61728;
+            btnTestPort.Size = new Size(100, 32);
+            btnTestPort.Symbol = 61714;
             btnTestPort.TabIndex = 13;
             btnTestPort.Text = "测试串口";
-            btnTestPort.TipsFont = new System.Drawing.Font("微软雅黑", 9F);
-
+            btnTestPort.TipsFont = new Font("微软雅黑", 9F);
             // 
             // lblPortStatus
             // 
             lblPortStatus.AutoSize = true;
-            lblPortStatus.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblPortStatus.ForeColor = System.Drawing.Color.Gray;
-            lblPortStatus.Location = new System.Drawing.Point(500, 85);
+            lblPortStatus.Font = new Font("微软雅黑", 9F);
+            lblPortStatus.ForeColor = Color.Gray;
+            lblPortStatus.Location = new Point(130, 137);
             lblPortStatus.Name = "lblPortStatus";
-            lblPortStatus.Size = new System.Drawing.Size(56, 17);
+            lblPortStatus.Size = new Size(44, 17);
             lblPortStatus.TabIndex = 14;
             lblPortStatus.Text = "未测试";
-
-            // ============================================
-            // grpTimeout - 超时设置
-            // ============================================
-            grpTimeout.Controls.Add(numWriteTimeout);
-            grpTimeout.Controls.Add(lblWriteTimeout);
-            grpTimeout.Controls.Add(numReadTimeout);
+            // 
+            // grpTimeout
+            // 
             grpTimeout.Controls.Add(lblReadTimeout);
-            grpTimeout.Dock = System.Windows.Forms.DockStyle.Top;
-            grpTimeout.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            grpTimeout.Location = new System.Drawing.Point(15, 155);
-            grpTimeout.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            grpTimeout.MinimumSize = new System.Drawing.Size(1, 1);
+            grpTimeout.Controls.Add(numReadTimeout);
+            grpTimeout.Controls.Add(lblWriteTimeout);
+            grpTimeout.Controls.Add(numWriteTimeout);
+            grpTimeout.Dock = DockStyle.Top;
+            grpTimeout.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
+            grpTimeout.ForeColor = Color.FromArgb(65, 100, 204);
+            grpTimeout.Location = new Point(15, 356);
+            grpTimeout.Margin = new Padding(4, 5, 4, 5);
+            grpTimeout.MinimumSize = new Size(1, 1);
             grpTimeout.Name = "grpTimeout";
-            grpTimeout.Padding = new System.Windows.Forms.Padding(0, 32, 0, 0);
-            grpTimeout.Size = new System.Drawing.Size(690, 75);
+            grpTimeout.Padding = new Padding(0, 32, 0, 0);
+            grpTimeout.RectColor = Color.FromArgb(65, 100, 204);
+            grpTimeout.Size = new Size(770, 90);
             grpTimeout.TabIndex = 1;
             grpTimeout.Text = "超时设置";
-            grpTimeout.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            //grpTimeout.TitleColor = System.Drawing.Color.FromArgb(65, 100, 204);
-
+            grpTimeout.TextAlignment = ContentAlignment.MiddleLeft;
             // 
             // lblReadTimeout
             // 
             lblReadTimeout.AutoSize = true;
-            lblReadTimeout.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblReadTimeout.Location = new System.Drawing.Point(20, 42);
+            lblReadTimeout.Font = new Font("微软雅黑", 9F);
+            lblReadTimeout.ForeColor = Color.FromArgb(48, 48, 48);
+            lblReadTimeout.Location = new Point(20, 45);
             lblReadTimeout.Name = "lblReadTimeout";
-            lblReadTimeout.Size = new System.Drawing.Size(92, 17);
+            lblReadTimeout.Size = new Size(79, 17);
             lblReadTimeout.TabIndex = 0;
-            lblReadTimeout.Text = "读取超时(ms):";
-
+            lblReadTimeout.Text = "读取超时(秒):";
             // 
             // numReadTimeout
             // 
-            numReadTimeout.Font = new System.Drawing.Font("微软雅黑", 9F);
-            numReadTimeout.Location = new System.Drawing.Point(120, 39);
-            numReadTimeout.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            numReadTimeout.Maximum = 60000;
-            numReadTimeout.Minimum = 100;
-            numReadTimeout.MinimumSize = new System.Drawing.Size(100, 0);
+            numReadTimeout.Font = new Font("微软雅黑", 9F);
+            numReadTimeout.Location = new Point(115, 42);
+            numReadTimeout.Margin = new Padding(4, 5, 4, 5);
+            numReadTimeout.Maximum = 300D;
+            numReadTimeout.Minimum = 1D;
+            numReadTimeout.MinimumSize = new Size(100, 0);
             numReadTimeout.Name = "numReadTimeout";
-            numReadTimeout.Radius = 5;
-            numReadTimeout.RectColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            numReadTimeout.Size = new System.Drawing.Size(100, 29);
-            numReadTimeout.Step = 100;
+            numReadTimeout.Padding = new Padding(5);
+            numReadTimeout.RectColor = Color.FromArgb(65, 100, 204);
+            numReadTimeout.ShowText = false;
+            numReadTimeout.Size = new Size(100, 29);
             numReadTimeout.TabIndex = 1;
-            numReadTimeout.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
-            numReadTimeout.Value = 5000;
-
+            numReadTimeout.Text = "3";
+            numReadTimeout.TextAlignment = ContentAlignment.MiddleCenter;
+            numReadTimeout.Value = 3;
             // 
             // lblWriteTimeout
             // 
             lblWriteTimeout.AutoSize = true;
-            lblWriteTimeout.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblWriteTimeout.Location = new System.Drawing.Point(250, 42);
+            lblWriteTimeout.Font = new Font("微软雅黑", 9F);
+            lblWriteTimeout.ForeColor = Color.FromArgb(48, 48, 48);
+            lblWriteTimeout.Location = new Point(250, 45);
             lblWriteTimeout.Name = "lblWriteTimeout";
-            lblWriteTimeout.Size = new System.Drawing.Size(92, 17);
+            lblWriteTimeout.Size = new Size(79, 17);
             lblWriteTimeout.TabIndex = 2;
-            lblWriteTimeout.Text = "写入超时(ms):";
-
+            lblWriteTimeout.Text = "写入超时(秒):";
             // 
             // numWriteTimeout
             // 
-            numWriteTimeout.Font = new System.Drawing.Font("微软雅黑", 9F);
-            numWriteTimeout.Location = new System.Drawing.Point(350, 39);
-            numWriteTimeout.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            numWriteTimeout.Maximum = 60000;
-            numWriteTimeout.Minimum = 100;
-            numWriteTimeout.MinimumSize = new System.Drawing.Size(100, 0);
+            numWriteTimeout.Font = new Font("微软雅黑", 9F);
+            numWriteTimeout.Location = new Point(345, 42);
+            numWriteTimeout.Margin = new Padding(4, 5, 4, 5);
+            numWriteTimeout.Maximum = 300D;
+            numWriteTimeout.Minimum = 1D;
+            numWriteTimeout.MinimumSize = new Size(100, 0);
             numWriteTimeout.Name = "numWriteTimeout";
-            numWriteTimeout.Radius = 5;
-            numWriteTimeout.RectColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            numWriteTimeout.Size = new System.Drawing.Size(100, 29);
-            numWriteTimeout.Step = 100;
+            numWriteTimeout.Padding = new Padding(5);
+            numWriteTimeout.RectColor = Color.FromArgb(65, 100, 204);
+            numWriteTimeout.ShowText = false;
+            numWriteTimeout.Size = new Size(100, 29);
             numWriteTimeout.TabIndex = 3;
-            numWriteTimeout.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
-            numWriteTimeout.Value = 5000;
-
-            // ============================================
-            // grpDataSettings - 数据设置
-            // ============================================
-            grpDataSettings.Controls.Add(cmbNewLineType);
-            grpDataSettings.Controls.Add(lblNewLineType);
-            grpDataSettings.Controls.Add(chkAppendNewLine);
-            grpDataSettings.Controls.Add(btnInsertVariable);
-            grpDataSettings.Controls.Add(txtSendContent);
-            grpDataSettings.Controls.Add(lblSendContent);
-            grpDataSettings.Controls.Add(cmbEncoding);
-            grpDataSettings.Controls.Add(lblEncoding);
-            grpDataSettings.Controls.Add(cmbDataFormat);
+            numWriteTimeout.Text = "3";
+            numWriteTimeout.TextAlignment = ContentAlignment.MiddleCenter;
+            numWriteTimeout.Value = 3;
+            // 
+            // grpDataSettings
+            // 
             grpDataSettings.Controls.Add(lblDataFormat);
-            grpDataSettings.Dock = System.Windows.Forms.DockStyle.Top;
-            grpDataSettings.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            grpDataSettings.Location = new System.Drawing.Point(15, 230);
-            grpDataSettings.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            grpDataSettings.MinimumSize = new System.Drawing.Size(1, 1);
+            grpDataSettings.Controls.Add(cmbDataFormat);
+            grpDataSettings.Controls.Add(lblEncoding);
+            grpDataSettings.Controls.Add(cmbEncoding);
+            grpDataSettings.Controls.Add(lblSendContent);
+            grpDataSettings.Controls.Add(txtSendContent);
+            grpDataSettings.Controls.Add(btnInsertVariable);
+            grpDataSettings.Controls.Add(chkAppendNewLine);
+            grpDataSettings.Controls.Add(lblNewLineType);
+            grpDataSettings.Controls.Add(cmbNewLineType);
+            grpDataSettings.Dock = DockStyle.Top;
+            grpDataSettings.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
+            grpDataSettings.ForeColor = Color.FromArgb(65, 100, 204);
+            grpDataSettings.Location = new Point(15, 155);
+            grpDataSettings.Margin = new Padding(4, 5, 4, 5);
+            grpDataSettings.MinimumSize = new Size(1, 1);
             grpDataSettings.Name = "grpDataSettings";
-            grpDataSettings.Padding = new System.Windows.Forms.Padding(0, 32, 0, 0);
-            grpDataSettings.Size = new System.Drawing.Size(690, 175);
+            grpDataSettings.Padding = new Padding(0, 32, 0, 0);
+            grpDataSettings.RectColor = Color.FromArgb(65, 100, 204);
+            grpDataSettings.Size = new Size(770, 201);
             grpDataSettings.TabIndex = 2;
             grpDataSettings.Text = "数据设置";
-            grpDataSettings.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            //grpDataSettings.TitleColor = System.Drawing.Color.FromArgb(65, 100, 204);
-
+            grpDataSettings.TextAlignment = ContentAlignment.MiddleLeft;
             // 
             // lblDataFormat
             // 
             lblDataFormat.AutoSize = true;
-            lblDataFormat.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblDataFormat.Location = new System.Drawing.Point(20, 45);
+            lblDataFormat.Font = new Font("微软雅黑", 9F);
+            lblDataFormat.ForeColor = Color.FromArgb(48, 48, 48);
+            lblDataFormat.Location = new Point(20, 45);
             lblDataFormat.Name = "lblDataFormat";
-            lblDataFormat.Size = new System.Drawing.Size(68, 17);
+            lblDataFormat.Size = new Size(59, 17);
             lblDataFormat.TabIndex = 0;
             lblDataFormat.Text = "数据格式:";
-
             // 
             // cmbDataFormat
             // 
             cmbDataFormat.DataSource = null;
-            cmbDataFormat.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbDataFormat.FillColor = System.Drawing.Color.White;
-            cmbDataFormat.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbDataFormat.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbDataFormat.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbDataFormat.Location = new System.Drawing.Point(95, 42);
-            cmbDataFormat.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbDataFormat.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbDataFormat.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbDataFormat.FillColor = Color.White;
+            cmbDataFormat.Font = new Font("微软雅黑", 9F);
+            cmbDataFormat.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbDataFormat.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbDataFormat.Location = new Point(95, 42);
+            cmbDataFormat.Margin = new Padding(4, 5, 4, 5);
+            cmbDataFormat.MinimumSize = new Size(63, 0);
             cmbDataFormat.Name = "cmbDataFormat";
-            cmbDataFormat.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbDataFormat.Radius = 5;
-            cmbDataFormat.Size = new System.Drawing.Size(100, 29);
+            cmbDataFormat.Padding = new Padding(0, 0, 30, 2);
+            cmbDataFormat.RectColor = Color.FromArgb(65, 100, 204);
+            cmbDataFormat.Size = new Size(120, 29);
+            cmbDataFormat.SymbolSize = 24;
             cmbDataFormat.TabIndex = 1;
-            cmbDataFormat.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbDataFormat.TextAlignment = ContentAlignment.MiddleLeft;
             cmbDataFormat.Watermark = "";
-
             // 
             // lblEncoding
             // 
             lblEncoding.AutoSize = true;
-            lblEncoding.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblEncoding.Location = new System.Drawing.Point(210, 45);
+            lblEncoding.Font = new Font("微软雅黑", 9F);
+            lblEncoding.ForeColor = Color.FromArgb(48, 48, 48);
+            lblEncoding.Location = new Point(250, 45);
             lblEncoding.Name = "lblEncoding";
-            lblEncoding.Size = new System.Drawing.Size(68, 17);
+            lblEncoding.Size = new Size(59, 17);
             lblEncoding.TabIndex = 2;
-            lblEncoding.Text = "字符编码:";
-
+            lblEncoding.Text = "文本编码:";
             // 
             // cmbEncoding
             // 
             cmbEncoding.DataSource = null;
-            cmbEncoding.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbEncoding.FillColor = System.Drawing.Color.White;
-            cmbEncoding.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbEncoding.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbEncoding.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbEncoding.Location = new System.Drawing.Point(285, 42);
-            cmbEncoding.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbEncoding.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbEncoding.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbEncoding.FillColor = Color.White;
+            cmbEncoding.Font = new Font("微软雅黑", 9F);
+            cmbEncoding.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbEncoding.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbEncoding.Location = new Point(325, 42);
+            cmbEncoding.Margin = new Padding(4, 5, 4, 5);
+            cmbEncoding.MinimumSize = new Size(63, 0);
             cmbEncoding.Name = "cmbEncoding";
-            cmbEncoding.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbEncoding.Radius = 5;
-            cmbEncoding.Size = new System.Drawing.Size(100, 29);
+            cmbEncoding.Padding = new Padding(0, 0, 30, 2);
+            cmbEncoding.RectColor = Color.FromArgb(65, 100, 204);
+            cmbEncoding.Size = new Size(120, 29);
+            cmbEncoding.SymbolSize = 24;
             cmbEncoding.TabIndex = 3;
-            cmbEncoding.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbEncoding.TextAlignment = ContentAlignment.MiddleLeft;
             cmbEncoding.Watermark = "";
-
             // 
             // lblSendContent
             // 
             lblSendContent.AutoSize = true;
-            lblSendContent.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblSendContent.Location = new System.Drawing.Point(20, 82);
+            lblSendContent.Font = new Font("微软雅黑", 9F);
+            lblSendContent.ForeColor = Color.FromArgb(48, 48, 48);
+            lblSendContent.Location = new Point(20, 85);
             lblSendContent.Name = "lblSendContent";
-            lblSendContent.Size = new System.Drawing.Size(68, 17);
+            lblSendContent.Size = new Size(59, 17);
             lblSendContent.TabIndex = 4;
             lblSendContent.Text = "发送内容:";
-
             // 
             // txtSendContent
             // 
-            txtSendContent.Cursor = System.Windows.Forms.Cursors.IBeam;
-            txtSendContent.Font = new System.Drawing.Font("微软雅黑", 9F);
-            txtSendContent.Location = new System.Drawing.Point(95, 79);
-            txtSendContent.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            txtSendContent.MinimumSize = new System.Drawing.Size(1, 16);
+            txtSendContent.Cursor = Cursors.IBeam;
+            txtSendContent.Font = new Font("微软雅黑", 9F);
+            txtSendContent.Location = new Point(95, 82);
+            txtSendContent.Margin = new Padding(4, 5, 4, 5);
+            txtSendContent.MinimumSize = new Size(1, 16);
             txtSendContent.Multiline = true;
             txtSendContent.Name = "txtSendContent";
-            txtSendContent.Padding = new System.Windows.Forms.Padding(5);
-            txtSendContent.Radius = 5;
-            //txtSendContent.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            txtSendContent.Padding = new Padding(5);
+            txtSendContent.RectColor = Color.FromArgb(65, 100, 204);
             txtSendContent.ShowText = false;
-            txtSendContent.Size = new System.Drawing.Size(470, 55);
+            txtSendContent.Size = new Size(520, 60);
             txtSendContent.TabIndex = 5;
-            txtSendContent.TextAlignment = System.Drawing.ContentAlignment.TopLeft;
-            txtSendContent.Watermark = "输入发送内容，支持 {变量名} 格式引用变量";
-
+            txtSendContent.TextAlignment = ContentAlignment.TopLeft;
+            txtSendContent.Watermark = "输入发送内容,支持 {变量名} 格式引用变量";
             // 
             // btnInsertVariable
             // 
-            btnInsertVariable.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnInsertVariable.Font = new System.Drawing.Font("微软雅黑", 9F);
-            btnInsertVariable.Location = new System.Drawing.Point(575, 79);
-            btnInsertVariable.MinimumSize = new System.Drawing.Size(1, 1);
+            btnInsertVariable.Cursor = Cursors.Hand;
+            btnInsertVariable.FillColor = Color.FromArgb(65, 100, 204);
+            btnInsertVariable.Font = new Font("微软雅黑", 9F);
+            btnInsertVariable.Location = new Point(625, 82);
+            btnInsertVariable.MinimumSize = new Size(1, 1);
             btnInsertVariable.Name = "btnInsertVariable";
-            btnInsertVariable.Radius = 5;
-            btnInsertVariable.Size = new System.Drawing.Size(100, 29);
+            btnInsertVariable.Size = new Size(100, 32);
             btnInsertVariable.Symbol = 61618;
             btnInsertVariable.TabIndex = 6;
             btnInsertVariable.Text = "插入变量";
-            btnInsertVariable.TipsFont = new System.Drawing.Font("微软雅黑", 9F);
-
+            btnInsertVariable.TipsFont = new Font("微软雅黑", 9F);
             // 
             // chkAppendNewLine
             // 
-            chkAppendNewLine.Cursor = System.Windows.Forms.Cursors.Hand;
-            chkAppendNewLine.Font = new System.Drawing.Font("微软雅黑", 9F);
-            chkAppendNewLine.Location = new System.Drawing.Point(20, 142);
-            chkAppendNewLine.MinimumSize = new System.Drawing.Size(1, 1);
+            chkAppendNewLine.CheckBoxColor = Color.FromArgb(65, 100, 204);
+            chkAppendNewLine.Font = new Font("微软雅黑", 9F);
+            chkAppendNewLine.ForeColor = Color.FromArgb(48, 48, 48);
+            chkAppendNewLine.Location = new Point(95, 155);
+            chkAppendNewLine.MinimumSize = new Size(1, 1);
             chkAppendNewLine.Name = "chkAppendNewLine";
-            chkAppendNewLine.Size = new System.Drawing.Size(100, 24);
+            chkAppendNewLine.Size = new Size(100, 24);
             chkAppendNewLine.TabIndex = 7;
             chkAppendNewLine.Text = "追加换行符";
-
             // 
             // lblNewLineType
             // 
             lblNewLineType.AutoSize = true;
-            lblNewLineType.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblNewLineType.Location = new System.Drawing.Point(130, 145);
+            lblNewLineType.Font = new Font("微软雅黑", 9F);
+            lblNewLineType.ForeColor = Color.FromArgb(48, 48, 48);
+            lblNewLineType.Location = new Point(210, 160);
             lblNewLineType.Name = "lblNewLineType";
-            lblNewLineType.Size = new System.Drawing.Size(68, 17);
+            lblNewLineType.Size = new Size(59, 17);
             lblNewLineType.TabIndex = 8;
             lblNewLineType.Text = "换行类型:";
-
             // 
             // cmbNewLineType
             // 
             cmbNewLineType.DataSource = null;
-            cmbNewLineType.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
-            cmbNewLineType.FillColor = System.Drawing.Color.White;
-            cmbNewLineType.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbNewLineType.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbNewLineType.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbNewLineType.Location = new System.Drawing.Point(205, 142);
-            cmbNewLineType.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbNewLineType.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbNewLineType.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbNewLineType.Enabled = false;
+            cmbNewLineType.FillColor = Color.White;
+            cmbNewLineType.Font = new Font("微软雅黑", 9F);
+            cmbNewLineType.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbNewLineType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbNewLineType.Location = new Point(285, 152);
+            cmbNewLineType.Margin = new Padding(4, 5, 4, 5);
+            cmbNewLineType.MinimumSize = new Size(63, 0);
             cmbNewLineType.Name = "cmbNewLineType";
-            cmbNewLineType.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbNewLineType.Radius = 5;
-            cmbNewLineType.Size = new System.Drawing.Size(100, 29);
+            cmbNewLineType.Padding = new Padding(0, 0, 30, 2);
+            cmbNewLineType.RectColor = Color.FromArgb(65, 100, 204);
+            cmbNewLineType.Size = new Size(140, 29);
+            cmbNewLineType.SymbolSize = 24;
             cmbNewLineType.TabIndex = 9;
-            cmbNewLineType.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            cmbNewLineType.TextAlignment = ContentAlignment.MiddleLeft;
             cmbNewLineType.Watermark = "";
-
-            // ============================================
-            // grpResponseSettings - 响应设置
-            // ============================================
-            grpResponseSettings.Controls.Add(btnCreateVariable);
-            grpResponseSettings.Controls.Add(cmbResponseVariable);
-            grpResponseSettings.Controls.Add(lblResponseVariable);
-            grpResponseSettings.Controls.Add(numResponseTimeout);
-            grpResponseSettings.Controls.Add(lblResponseTimeout);
+            // 
+            // grpResponseSettings
+            // 
             grpResponseSettings.Controls.Add(chkWaitResponse);
-            grpResponseSettings.Dock = System.Windows.Forms.DockStyle.Top;
-            grpResponseSettings.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            grpResponseSettings.Location = new System.Drawing.Point(15, 405);
-            grpResponseSettings.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            grpResponseSettings.MinimumSize = new System.Drawing.Size(1, 1);
+            grpResponseSettings.Controls.Add(lblResponseTimeout);
+            grpResponseSettings.Controls.Add(numResponseTimeout);
+            grpResponseSettings.Controls.Add(lblResponseVariable);
+            grpResponseSettings.Controls.Add(cmbResponseVariable);
+            grpResponseSettings.Controls.Add(btnCreateVariable);
+            grpResponseSettings.Controls.Add(chkCloseAfterSend);
+            grpResponseSettings.Controls.Add(lblCondition);
+            grpResponseSettings.Controls.Add(txtCondition);
+            grpResponseSettings.Dock = DockStyle.Top;
+            grpResponseSettings.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
+            grpResponseSettings.ForeColor = Color.FromArgb(65, 100, 204);
+            grpResponseSettings.Location = new Point(15, 15);
+            grpResponseSettings.Margin = new Padding(4, 5, 4, 5);
+            grpResponseSettings.MinimumSize = new Size(1, 1);
             grpResponseSettings.Name = "grpResponseSettings";
-            grpResponseSettings.Padding = new System.Windows.Forms.Padding(0, 32, 0, 0);
-            grpResponseSettings.Size = new System.Drawing.Size(690, 85);
+            grpResponseSettings.Padding = new Padding(0, 32, 0, 0);
+            grpResponseSettings.RectColor = Color.FromArgb(65, 100, 204);
+            grpResponseSettings.Size = new Size(770, 140);
             grpResponseSettings.TabIndex = 3;
-            grpResponseSettings.Text = "响应设置";
-            grpResponseSettings.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            //grpResponseSettings.TitleColor = System.Drawing.Color.FromArgb(65, 100, 204);
-
+            grpResponseSettings.Text = "响应与条件设置";
+            grpResponseSettings.TextAlignment = ContentAlignment.MiddleLeft;
             // 
             // chkWaitResponse
             // 
-            chkWaitResponse.Cursor = System.Windows.Forms.Cursors.Hand;
-            chkWaitResponse.Font = new System.Drawing.Font("微软雅黑", 9F);
-            chkWaitResponse.Location = new System.Drawing.Point(20, 45);
-            chkWaitResponse.MinimumSize = new System.Drawing.Size(1, 1);
+            chkWaitResponse.CheckBoxColor = Color.FromArgb(65, 100, 204);
+            chkWaitResponse.Font = new Font("微软雅黑", 9F);
+            chkWaitResponse.ForeColor = Color.FromArgb(48, 48, 48);
+            chkWaitResponse.Location = new Point(20, 45);
+            chkWaitResponse.MinimumSize = new Size(1, 1);
             chkWaitResponse.Name = "chkWaitResponse";
-            chkWaitResponse.Size = new System.Drawing.Size(100, 24);
+            chkWaitResponse.Size = new Size(90, 24);
             chkWaitResponse.TabIndex = 0;
             chkWaitResponse.Text = "等待响应";
-
             // 
             // lblResponseTimeout
             // 
             lblResponseTimeout.AutoSize = true;
-            lblResponseTimeout.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblResponseTimeout.Location = new System.Drawing.Point(130, 48);
+            lblResponseTimeout.Font = new Font("微软雅黑", 9F);
+            lblResponseTimeout.ForeColor = Color.FromArgb(48, 48, 48);
+            lblResponseTimeout.Location = new Point(125, 48);
             lblResponseTimeout.Name = "lblResponseTimeout";
-            lblResponseTimeout.Size = new System.Drawing.Size(92, 17);
+            lblResponseTimeout.Size = new Size(55, 17);
             lblResponseTimeout.TabIndex = 1;
-            lblResponseTimeout.Text = "响应超时(ms):";
-
+            lblResponseTimeout.Text = "超时(秒):";
             // 
             // numResponseTimeout
             // 
-            numResponseTimeout.Font = new System.Drawing.Font("微软雅黑", 9F);
-            numResponseTimeout.Location = new System.Drawing.Point(230, 45);
-            numResponseTimeout.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            numResponseTimeout.Maximum = 60000;
-            numResponseTimeout.Minimum = 100;
-            numResponseTimeout.MinimumSize = new System.Drawing.Size(100, 0);
+            numResponseTimeout.Enabled = false;
+            numResponseTimeout.Font = new Font("微软雅黑", 9F);
+            numResponseTimeout.Location = new Point(195, 45);
+            numResponseTimeout.Margin = new Padding(4, 5, 4, 5);
+            numResponseTimeout.Maximum = 300D;
+            numResponseTimeout.Minimum = 1D;
+            numResponseTimeout.MinimumSize = new Size(100, 0);
             numResponseTimeout.Name = "numResponseTimeout";
-            numResponseTimeout.Radius = 5;
-            numResponseTimeout.RectColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            numResponseTimeout.Size = new System.Drawing.Size(100, 29);
-            numResponseTimeout.Step = 100;
+            numResponseTimeout.Padding = new Padding(5);
+            numResponseTimeout.RectColor = Color.FromArgb(65, 100, 204);
+            numResponseTimeout.ShowText = false;
+            numResponseTimeout.Size = new Size(100, 29);
             numResponseTimeout.TabIndex = 2;
-            numResponseTimeout.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
-            numResponseTimeout.Value = 5000;
-
+            numResponseTimeout.Text = "3";
+            numResponseTimeout.TextAlignment = ContentAlignment.MiddleCenter;
+            numResponseTimeout.Value = 3;
             // 
             // lblResponseVariable
             // 
             lblResponseVariable.AutoSize = true;
-            lblResponseVariable.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblResponseVariable.Location = new System.Drawing.Point(350, 48);
+            lblResponseVariable.Font = new Font("微软雅黑", 9F);
+            lblResponseVariable.ForeColor = Color.FromArgb(48, 48, 48);
+            lblResponseVariable.Location = new Point(295, 48);
             lblResponseVariable.Name = "lblResponseVariable";
-            lblResponseVariable.Size = new System.Drawing.Size(80, 17);
+            lblResponseVariable.Size = new Size(59, 17);
             lblResponseVariable.TabIndex = 3;
-            lblResponseVariable.Text = "保存到变量:";
-
+            lblResponseVariable.Text = "响应变量:";
             // 
             // cmbResponseVariable
             // 
             cmbResponseVariable.DataSource = null;
-            cmbResponseVariable.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDown;
-            cmbResponseVariable.FillColor = System.Drawing.Color.White;
-            cmbResponseVariable.Font = new System.Drawing.Font("微软雅黑", 9F);
-            cmbResponseVariable.ItemHoverColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbResponseVariable.ItemSelectForeColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            cmbResponseVariable.Location = new System.Drawing.Point(435, 45);
-            cmbResponseVariable.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            cmbResponseVariable.MinimumSize = new System.Drawing.Size(63, 0);
+            cmbResponseVariable.Enabled = false;
+            cmbResponseVariable.FillColor = Color.White;
+            cmbResponseVariable.Font = new Font("微软雅黑", 9F);
+            cmbResponseVariable.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbResponseVariable.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbResponseVariable.Location = new Point(370, 45);
+            cmbResponseVariable.Margin = new Padding(4, 5, 4, 5);
+            cmbResponseVariable.MinimumSize = new Size(63, 0);
             cmbResponseVariable.Name = "cmbResponseVariable";
-            cmbResponseVariable.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            cmbResponseVariable.Radius = 5;
-            cmbResponseVariable.Size = new System.Drawing.Size(140, 29);
+            cmbResponseVariable.Padding = new Padding(0, 0, 30, 2);
+            cmbResponseVariable.RectColor = Color.FromArgb(65, 100, 204);
+            cmbResponseVariable.Size = new Size(180, 29);
+            cmbResponseVariable.SymbolSize = 24;
             cmbResponseVariable.TabIndex = 4;
-            cmbResponseVariable.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            cmbResponseVariable.Watermark = "选择或输入变量名";
-
+            cmbResponseVariable.TextAlignment = ContentAlignment.MiddleLeft;
+            cmbResponseVariable.Watermark = "输入或选择变量名";
             // 
             // btnCreateVariable
             // 
-            btnCreateVariable.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnCreateVariable.Font = new System.Drawing.Font("微软雅黑", 9F);
-            btnCreateVariable.Location = new System.Drawing.Point(585, 45);
-            btnCreateVariable.MinimumSize = new System.Drawing.Size(1, 1);
+            btnCreateVariable.Cursor = Cursors.Hand;
+            btnCreateVariable.Enabled = false;
+            btnCreateVariable.FillColor = Color.FromArgb(65, 100, 204);
+            btnCreateVariable.Font = new Font("微软雅黑", 9F);
+            btnCreateVariable.Location = new Point(560, 45);
+            btnCreateVariable.MinimumSize = new Size(1, 1);
             btnCreateVariable.Name = "btnCreateVariable";
-            btnCreateVariable.Radius = 5;
-            btnCreateVariable.Size = new System.Drawing.Size(90, 29);
+            btnCreateVariable.Size = new Size(80, 29);
             btnCreateVariable.Symbol = 61543;
             btnCreateVariable.TabIndex = 5;
-            btnCreateVariable.Text = "新建变量";
-            btnCreateVariable.TipsFont = new System.Drawing.Font("微软雅黑", 9F);
-
-            // ============================================
-            // grpOtherSettings - 其他设置
-            // ============================================
-            grpOtherSettings.Controls.Add(chkEnabled);
-            grpOtherSettings.Controls.Add(txtDescription);
-            grpOtherSettings.Controls.Add(lblDescription);
-            grpOtherSettings.Controls.Add(btnConditionHelper);
-            grpOtherSettings.Controls.Add(txtCondition);
-            grpOtherSettings.Controls.Add(lblCondition);
-            grpOtherSettings.Controls.Add(chkCloseAfterSend);
-            grpOtherSettings.Dock = System.Windows.Forms.DockStyle.Top;
-            grpOtherSettings.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            grpOtherSettings.Location = new System.Drawing.Point(15, 490);
-            grpOtherSettings.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            grpOtherSettings.MinimumSize = new System.Drawing.Size(1, 1);
-            grpOtherSettings.Name = "grpOtherSettings";
-            grpOtherSettings.Padding = new System.Windows.Forms.Padding(0, 32, 0, 0);
-            grpOtherSettings.Size = new System.Drawing.Size(690, 130);
-            grpOtherSettings.TabIndex = 4;
-            grpOtherSettings.Text = "其他设置";
-            grpOtherSettings.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            //grpOtherSettings.TitleColor = System.Drawing.Color.FromArgb(65, 100, 204);
-
+            btnCreateVariable.Text = "新建";
+            btnCreateVariable.TipsFont = new Font("微软雅黑", 9F);
             // 
             // chkCloseAfterSend
             // 
-            chkCloseAfterSend.Cursor = System.Windows.Forms.Cursors.Hand;
-            chkCloseAfterSend.Font = new System.Drawing.Font("微软雅黑", 9F);
-            chkCloseAfterSend.Location = new System.Drawing.Point(20, 45);
-            chkCloseAfterSend.MinimumSize = new System.Drawing.Size(1, 1);
+            chkCloseAfterSend.CheckBoxColor = Color.FromArgb(65, 100, 204);
+            chkCloseAfterSend.Checked = true;
+            chkCloseAfterSend.Font = new Font("微软雅黑", 9F);
+            chkCloseAfterSend.ForeColor = Color.FromArgb(48, 48, 48);
+            chkCloseAfterSend.Location = new Point(20, 85);
+            chkCloseAfterSend.MinimumSize = new Size(1, 1);
             chkCloseAfterSend.Name = "chkCloseAfterSend";
-            chkCloseAfterSend.Size = new System.Drawing.Size(120, 24);
-            chkCloseAfterSend.TabIndex = 0;
+            chkCloseAfterSend.Size = new Size(150, 24);
+            chkCloseAfterSend.TabIndex = 6;
             chkCloseAfterSend.Text = "发送后关闭串口";
-
             // 
             // lblCondition
             // 
             lblCondition.AutoSize = true;
-            lblCondition.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblCondition.Location = new System.Drawing.Point(160, 48);
+            lblCondition.Font = new Font("微软雅黑", 9F);
+            lblCondition.ForeColor = Color.FromArgb(48, 48, 48);
+            lblCondition.Location = new Point(240, 88);
             lblCondition.Name = "lblCondition";
-            lblCondition.Size = new System.Drawing.Size(68, 17);
-            lblCondition.TabIndex = 1;
+            lblCondition.Size = new Size(59, 17);
+            lblCondition.TabIndex = 7;
             lblCondition.Text = "执行条件:";
-
             // 
             // txtCondition
             // 
-            txtCondition.Cursor = System.Windows.Forms.Cursors.IBeam;
-            txtCondition.Font = new System.Drawing.Font("微软雅黑", 9F);
-            txtCondition.Location = new System.Drawing.Point(235, 45);
-            txtCondition.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            txtCondition.MinimumSize = new System.Drawing.Size(1, 16);
+            txtCondition.Cursor = Cursors.IBeam;
+            txtCondition.Font = new Font("微软雅黑", 9F);
+            txtCondition.Location = new Point(315, 85);
+            txtCondition.Margin = new Padding(4, 5, 4, 5);
+            txtCondition.MinimumSize = new Size(1, 16);
             txtCondition.Name = "txtCondition";
-            txtCondition.Padding = new System.Windows.Forms.Padding(5);
-            txtCondition.Radius = 5;
+            txtCondition.Padding = new Padding(5);
+            txtCondition.RectColor = Color.FromArgb(65, 100, 204);
             txtCondition.ShowText = false;
-            txtCondition.Size = new System.Drawing.Size(340, 29);
-            txtCondition.TabIndex = 2;
-            txtCondition.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            txtCondition.Watermark = "留空表示始终执行";
-
+            txtCondition.Size = new Size(410, 30);
+            txtCondition.TabIndex = 8;
+            txtCondition.TextAlignment = ContentAlignment.MiddleLeft;
+            txtCondition.Watermark = "可选,为空时总是执行";
             // 
-            // btnConditionHelper
+            // panelBottom
             // 
-            btnConditionHelper.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnConditionHelper.Font = new System.Drawing.Font("微软雅黑", 9F);
-            btnConditionHelper.Location = new System.Drawing.Point(585, 45);
-            btnConditionHelper.MinimumSize = new System.Drawing.Size(1, 1);
-            btnConditionHelper.Name = "btnConditionHelper";
-            btnConditionHelper.Radius = 5;
-            btnConditionHelper.Size = new System.Drawing.Size(90, 29);
-            btnConditionHelper.Symbol = 61736;
-            btnConditionHelper.TabIndex = 3;
-            btnConditionHelper.Text = "条件助手";
-            btnConditionHelper.TipsFont = new System.Drawing.Font("微软雅黑", 9F);
-
-            // 
-            // lblDescription
-            // 
-            lblDescription.AutoSize = true;
-            lblDescription.Font = new System.Drawing.Font("微软雅黑", 9F);
-            lblDescription.Location = new System.Drawing.Point(20, 88);
-            lblDescription.Name = "lblDescription";
-            lblDescription.Size = new System.Drawing.Size(44, 17);
-            lblDescription.TabIndex = 4;
-            lblDescription.Text = "描述:";
-
-            // 
-            // txtDescription
-            // 
-            txtDescription.Cursor = System.Windows.Forms.Cursors.IBeam;
-            txtDescription.Font = new System.Drawing.Font("微软雅黑", 9F);
-            txtDescription.Location = new System.Drawing.Point(70, 85);
-            txtDescription.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            txtDescription.MinimumSize = new System.Drawing.Size(1, 16);
-            txtDescription.Name = "txtDescription";
-            txtDescription.Padding = new System.Windows.Forms.Padding(5);
-            txtDescription.Radius = 5;
-            txtDescription.ShowText = false;
-            txtDescription.Size = new System.Drawing.Size(505, 29);
-            txtDescription.TabIndex = 5;
-            txtDescription.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            txtDescription.Watermark = "步骤描述信息";
-
-            // 
-            // chkEnabled
-            // 
-            chkEnabled.Checked = true;
-            chkEnabled.Cursor = System.Windows.Forms.Cursors.Hand;
-            chkEnabled.Font = new System.Drawing.Font("微软雅黑", 9F);
-            chkEnabled.Location = new System.Drawing.Point(585, 88);
-            chkEnabled.MinimumSize = new System.Drawing.Size(1, 1);
-            chkEnabled.Name = "chkEnabled";
-            chkEnabled.Size = new System.Drawing.Size(90, 24);
-            chkEnabled.TabIndex = 6;
-            chkEnabled.Text = "启用此步骤";
-
-            // ============================================
-            // 底部按钮
-            // ============================================
+            panelBottom.BackColor = Color.FromArgb(248, 249, 250);
+            panelBottom.Controls.Add(btnTestSend);
+            panelBottom.Controls.Add(btnHelp);
+            panelBottom.Controls.Add(btnCancel);
+            panelBottom.Controls.Add(btnSave);
+            panelBottom.Dock = DockStyle.Bottom;
+            panelBottom.Location = new Point(0, 742);
+            panelBottom.Name = "panelBottom";
+            panelBottom.Padding = new Padding(15, 10, 15, 10);
+            panelBottom.Size = new Size(800, 70);
+            panelBottom.TabIndex = 2;
             // 
             // btnTestSend
             // 
-            btnTestSend.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnTestSend.FillColor = System.Drawing.Color.FromArgb(0, 150, 136);
-            btnTestSend.FillHoverColor = System.Drawing.Color.FromArgb(0, 170, 156);
-            btnTestSend.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            btnTestSend.Location = new System.Drawing.Point(15, 15);
-            btnTestSend.MinimumSize = new System.Drawing.Size(1, 1);
+            btnTestSend.Cursor = Cursors.Hand;
+            btnTestSend.FillColor = Color.FromArgb(40, 167, 69);
+            btnTestSend.Font = new Font("微软雅黑", 11F);
+            btnTestSend.Location = new Point(20, 15);
+            btnTestSend.MinimumSize = new Size(1, 1);
             btnTestSend.Name = "btnTestSend";
-            btnTestSend.Radius = 5;
-            btnTestSend.Size = new System.Drawing.Size(110, 35);
-            btnTestSend.Symbol = 61544;
+            btnTestSend.Size = new Size(100, 40);
             btnTestSend.TabIndex = 0;
             btnTestSend.Text = "测试发送";
-            btnTestSend.TipsFont = new System.Drawing.Font("微软雅黑", 9F);
-
+            btnTestSend.TipsFont = new Font("微软雅黑", 9F);
             // 
-            // btnOK
+            // btnHelp
             // 
-            btnOK.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnOK.FillColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            btnOK.FillHoverColor = System.Drawing.Color.FromArgb(85, 120, 224);
-            btnOK.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            btnOK.Location = new System.Drawing.Point(495, 15);
-            btnOK.MinimumSize = new System.Drawing.Size(1, 1);
-            btnOK.Name = "btnOK";
-            btnOK.Radius = 5;
-            btnOK.Size = new System.Drawing.Size(110, 35);
-            btnOK.Symbol = 61694;
-            btnOK.TabIndex = 1;
-            btnOK.Text = "确定";
-            btnOK.TipsFont = new System.Drawing.Font("微软雅黑", 9F);
-
+            btnHelp.Cursor = Cursors.Hand;
+            btnHelp.FillColor = Color.White;
+            btnHelp.Font = new Font("微软雅黑", 11F);
+            btnHelp.ForeColor = Color.FromArgb(65, 100, 204);
+            btnHelp.Location = new Point(140, 15);
+            btnHelp.MinimumSize = new Size(1, 1);
+            btnHelp.Name = "btnHelp";
+            btnHelp.RectColor = Color.FromArgb(65, 100, 204);
+            btnHelp.Size = new Size(80, 40);
+            btnHelp.Style = UIStyle.Custom;
+            btnHelp.StyleCustomMode = true;
+            btnHelp.TabIndex = 1;
+            btnHelp.Text = "帮助";
+            btnHelp.TipsFont = new Font("微软雅黑", 9F);
             // 
             // btnCancel
             // 
-            btnCancel.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnCancel.FillColor = System.Drawing.Color.FromArgb(110, 110, 110);
-            btnCancel.FillHoverColor = System.Drawing.Color.FromArgb(130, 130, 130);
-            btnCancel.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            btnCancel.Location = new System.Drawing.Point(615, 15);
-            btnCancel.MinimumSize = new System.Drawing.Size(1, 1);
+            btnCancel.Cursor = Cursors.Hand;
+            btnCancel.FillColor = Color.White;
+            btnCancel.Font = new Font("微软雅黑", 11F);
+            btnCancel.ForeColor = Color.FromArgb(48, 48, 48);
+            btnCancel.Location = new Point(680, 15);
+            btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
-            btnCancel.Radius = 5;
-            btnCancel.Size = new System.Drawing.Size(90, 35);
-            btnCancel.Symbol = 61527;
-            btnCancel.TabIndex = 2;
+            btnCancel.RectColor = Color.FromArgb(180, 180, 180);
+            btnCancel.Size = new Size(100, 40);
+            btnCancel.Style = UIStyle.Custom;
+            btnCancel.StyleCustomMode = true;
+            btnCancel.TabIndex = 3;
             btnCancel.Text = "取消";
-            btnCancel.TipsFont = new System.Drawing.Font("微软雅黑", 9F);
-
-            // ============================================
+            btnCancel.TipsFont = new Font("微软雅黑", 9F);
+            // 
+            // btnSave
+            // 
+            btnSave.Cursor = Cursors.Hand;
+            btnSave.FillColor = Color.FromArgb(65, 100, 204);
+            btnSave.Font = new Font("微软雅黑", 11F);
+            btnSave.Location = new Point(560, 15);
+            btnSave.MinimumSize = new Size(1, 1);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(100, 40);
+            btnSave.TabIndex = 2;
+            btnSave.Text = "保存";
+            btnSave.TipsFont = new Font("微软雅黑", 9F);
+            // 
             // Form_SerialPortSend
-            // ============================================
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            ClientSize = new System.Drawing.Size(720, 760);
+            // 
+            AutoScaleMode = AutoScaleMode.None;
+            BackColor = Color.FromArgb(248, 249, 250);
+            ClientSize = new Size(800, 812);
+            ControlBox = false;
             Controls.Add(panelMain);
             Controls.Add(panelBottom);
+            Controls.Add(panelDescription);
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "Form_SerialPortSend";
-            RectColor = System.Drawing.Color.FromArgb(65, 100, 204);
+            RectColor = Color.FromArgb(65, 100, 204);
             ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            StartPosition = FormStartPosition.CenterParent;
+            Style = UIStyle.Custom;
+            StyleCustomMode = true;
             Text = "串口发送配置";
-            TitleColor = System.Drawing.Color.FromArgb(65, 100, 204);
-            TitleFont = new System.Drawing.Font("微软雅黑", 14F, System.Drawing.FontStyle.Bold);
-            ZoomScaleRect = new System.Drawing.Rectangle(15, 15, 720, 760);
-
+            TitleColor = Color.FromArgb(65, 100, 204);
+            TitleFont = new Font("微软雅黑", 12F, FontStyle.Bold);
+            ZoomScaleRect = new Rectangle(15, 15, 800, 700);
+            panelDescription.ResumeLayout(false);
             panelMain.ResumeLayout(false);
-            panelBottom.ResumeLayout(false);
             grpSerialPort.ResumeLayout(false);
             grpSerialPort.PerformLayout();
             grpTimeout.ResumeLayout(false);
@@ -957,16 +924,21 @@
             grpDataSettings.PerformLayout();
             grpResponseSettings.ResumeLayout(false);
             grpResponseSettings.PerformLayout();
-            grpOtherSettings.ResumeLayout(false);
-            grpOtherSettings.PerformLayout();
+            panelBottom.ResumeLayout(false);
             ResumeLayout(false);
         }
 
         #endregion
 
-        // 主面板
+        // 面板
+        private System.Windows.Forms.Panel panelDescription;
         private System.Windows.Forms.Panel panelMain;
         private System.Windows.Forms.Panel panelBottom;
+
+        // 顶部描述区
+        private Sunny.UI.UILabel lblDescription;
+        private Sunny.UI.UITextBox txtDescription;
+        private Sunny.UI.UICheckBox chkEnabled;
 
         // 串口设置组
         private Sunny.UI.UIGroupBox grpSerialPort;
@@ -1014,20 +986,14 @@
         private Sunny.UI.UILabel lblResponseVariable;
         private Sunny.UI.UIComboBox cmbResponseVariable;
         private Sunny.UI.UISymbolButton btnCreateVariable;
-
-        // 其他设置组
-        private Sunny.UI.UIGroupBox grpOtherSettings;
         private Sunny.UI.UICheckBox chkCloseAfterSend;
         private Sunny.UI.UILabel lblCondition;
         private Sunny.UI.UITextBox txtCondition;
-        private Sunny.UI.UISymbolButton btnConditionHelper;
-        private Sunny.UI.UILabel lblDescription;
-        private Sunny.UI.UITextBox txtDescription;
-        private Sunny.UI.UICheckBox chkEnabled;
 
         // 底部按钮
-        private Sunny.UI.UISymbolButton btnTestSend;
-        private Sunny.UI.UISymbolButton btnOK;
-        private Sunny.UI.UISymbolButton btnCancel;
+        private Sunny.UI.UIButton btnTestSend;
+        private Sunny.UI.UIButton btnHelp;
+        private Sunny.UI.UIButton btnCancel;
+        private Sunny.UI.UIButton btnSave;
     }
 }

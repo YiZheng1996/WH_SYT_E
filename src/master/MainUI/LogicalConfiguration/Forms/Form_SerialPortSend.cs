@@ -1,10 +1,11 @@
-﻿using MainUI.LogicalConfiguration.LogicalManager;
+﻿using AntdUI;
+using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
+using MainUI.LogicalConfiguration.Services;
 using MainUI.LogicalConfiguration.Services.ServicesCommunication;
-using MainUI.Procedure.DSL.LogicalConfiguration.Forms;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Sunny.UI;
 using System;
 using System.Drawing;
 using System.IO.Ports;
@@ -14,12 +15,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Panel = System.Windows.Forms.Panel;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
     /// <summary>
     /// 串口发送参数配置表单
-    /// 支持串口数据发送，可配置串口参数、超时、编码、响应等
+    /// 支持串口数据发送,可配置串口参数、超时、编码、响应等
     /// </summary>
     public partial class Form_SerialPortSend : BaseParameterForm
     {
@@ -27,6 +29,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private Parameter_SerialPortSend _parameter;
         private CancellationTokenSource _testCts;
+        private bool _isInitializing = true;
 
         #endregion
 
@@ -41,7 +44,7 @@ namespace MainUI.LogicalConfiguration.Forms
             set
             {
                 _parameter = value ?? new Parameter_SerialPortSend();
-                if (!DesignMode && !IsLoading)
+                if (!DesignMode && !IsLoading && IsHandleCreated)
                 {
                     LoadParameterToForm();
                 }
@@ -61,17 +64,57 @@ namespace MainUI.LogicalConfiguration.Forms
 
             if (DesignMode) return;
 
-            // 初始化控件
-            InitializeFormControls();
-            // 绑定事件
-            BindEvents();
-            // 设置默认值
-            SetDefaultValues();
+            InitializeForm();
+        }
+
+        /// <summary>
+        /// 依赖注入构造函数
+        /// </summary>
+        public Form_SerialPortSend(
+            IWorkflowStateService workflowState,
+            ILogger<Form_SerialPortSend> logger)
+            : base(workflowState, logger)
+        {
+            InitializeComponent();
+            InitializeForm();
         }
 
         #endregion
 
         #region 初始化方法
+
+        /// <summary>
+        /// 初始化表单
+        /// </summary>
+        private void InitializeForm()
+        {
+            if (DesignMode) return;
+
+            try
+            {
+                _isInitializing = true;
+
+                // 初始化控件
+                InitializeFormControls();
+
+                // 绑定事件
+                BindEvents();
+
+                // 设置默认值
+                SetDefaultValues();
+
+                Logger?.LogDebug("Form_SerialPortSend 初始化完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "初始化窗体时发生错误");
+                MessageHelper.MessageOK(this, $"初始化失败: {ex.Message}", TType.Error);
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+        }
 
         /// <summary>
         /// 初始化表单控件
@@ -91,37 +134,37 @@ namespace MainUI.LogicalConfiguration.Forms
 
             // 初始化数据位下拉框
             cmbDataBits.Items.Clear();
-            cmbDataBits.Items.AddRange(new object[] { "5", "6", "7", "8" });
+            cmbDataBits.Items.AddRange(["5", "6", "7", "8"]);
             cmbDataBits.SelectedItem = "8";
 
             // 初始化校验位下拉框
             cmbParity.Items.Clear();
-            cmbParity.Items.AddRange(new object[] { "None", "Odd", "Even", "Mark", "Space" });
+            cmbParity.Items.AddRange(["None", "Odd", "Even", "Mark", "Space"]);
             cmbParity.SelectedIndex = 0;
 
             // 初始化停止位下拉框
             cmbStopBits.Items.Clear();
-            cmbStopBits.Items.AddRange(new object[] { "One", "OnePointFive", "Two" });
+            cmbStopBits.Items.AddRange(["One", "OnePointFive", "Two"]);
             cmbStopBits.SelectedIndex = 0;
 
             // 初始化流控制下拉框
             cmbHandshake.Items.Clear();
-            cmbHandshake.Items.AddRange(new object[] { "None", "XOnXOff", "RequestToSend", "RequestToSendXOnXOff" });
+            cmbHandshake.Items.AddRange(["None", "XOnXOff", "RequestToSend", "RequestToSendXOnXOff"]);
             cmbHandshake.SelectedIndex = 0;
 
             // 初始化数据格式下拉框
             cmbDataFormat.Items.Clear();
-            cmbDataFormat.Items.AddRange(new object[] { "文本", "十六进制" });
+            cmbDataFormat.Items.AddRange(["文本", "十六进制", "Base64"]);
             cmbDataFormat.SelectedIndex = 0;
 
             // 初始化编码下拉框
             cmbEncoding.Items.Clear();
-            cmbEncoding.Items.AddRange(new object[] { "UTF-8", "ASCII", "GB2312", "Unicode" });
+            cmbEncoding.Items.AddRange(["UTF-8", "ASCII", "GB2312", "Unicode"]);
             cmbEncoding.SelectedIndex = 0;
 
             // 初始化换行符类型下拉框
             cmbNewLineType.Items.Clear();
-            cmbNewLineType.Items.AddRange(new object[] { "CRLF (\\r\\n)", "LF (\\n)", "CR (\\r)" });
+            cmbNewLineType.Items.AddRange(["CRLF (\\r\\n)", "LF (\\n)", "CR (\\r)"]);
             cmbNewLineType.SelectedIndex = 0;
             cmbNewLineType.Enabled = false;
 
@@ -137,10 +180,12 @@ namespace MainUI.LogicalConfiguration.Forms
             // 按钮事件
             btnRefreshPorts.Click += BtnRefreshPorts_Click;
             btnTestPort.Click += BtnTestPort_Click;
-            btnTestSend.Click += BtnTestSend_Click;
+            btnInsertVariable.Click += BtnInsertVariable_Click;
             btnCreateVariable.Click += BtnCreateVariable_Click;
+            btnTestSend.Click += BtnTestSend_Click;
             btnSave.Click += BtnSave_Click;
             btnCancel.Click += BtnCancel_Click;
+            btnHelp.Click += BtnHelp_Click;
 
             // 复选框事件
             chkWaitResponse.CheckedChanged += ChkWaitResponse_CheckedChanged;
@@ -155,27 +200,27 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void RefreshSerialPorts()
         {
-            cmbPortName.Items.Clear();
-
             try
             {
+                cmbPortName.Items.Clear();
                 var ports = SerialPort.GetPortNames();
+
                 if (ports.Length > 0)
                 {
-                    cmbPortName.Items.AddRange(ports.Cast<object>().ToArray());
+                    foreach (var port in ports)
+                    {
+                        cmbPortName.Items.Add(port);
+                    }
                     cmbPortName.SelectedIndex = 0;
                 }
                 else
                 {
-                    cmbPortName.Items.Add("(无可用串口)");
-                    cmbPortName.SelectedIndex = 0;
+                    cmbPortName.Text = "无可用串口";
                 }
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "获取串口列表失败");
-                cmbPortName.Items.Add("(获取失败)");
-                cmbPortName.SelectedIndex = 0;
+                Logger?.LogError(ex, "刷新串口列表失败");
             }
         }
 
@@ -184,317 +229,337 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void LoadVariableList()
         {
-            cmbResponseVariable.Items.Clear();
-            cmbResponseVariable.Items.Add("");
-
-            if (_globalVariable != null)
+            try
             {
-                var variables = _globalVariable.GetAllVariables();
-                foreach (var v in variables.Where(v => v.VarType == "string"))
+                cmbResponseVariable.Items.Clear();
+
+                var variableManager = _globalVariable ??
+                    Program.ServiceProvider?.GetService<GlobalVariableManager>();
+
+                if (variableManager == null) return;
+                var variables = variableManager.GetAllUserVariables();
+                foreach (var variable in variables)
                 {
-                    cmbResponseVariable.Items.Add(v.VarName);
+                    cmbResponseVariable.Items.Add(variable.VarName);
                 }
             }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载变量列表失败");
+            }
         }
+
+        #endregion
+
+        #region 重写基类方法
 
         /// <summary>
         /// 设置默认值
         /// </summary>
         protected override void SetDefaultValues()
         {
-            _parameter = new Parameter_SerialPortSend
+            try
             {
-                PortName = cmbPortName.Items.Count > 0 &&
-                           cmbPortName.Items[0].ToString() != "(无可用串口)" &&
-                           cmbPortName.Items[0].ToString() != "(获取失败)"
-                    ? cmbPortName.Items[0].ToString() : "COM1",
-                BaudRate = 9600,
-                DataBits = 8,
-                Parity = Parity.None,
-                StopBits = StopBits.One,
-                Handshake = Handshake.None,
-                DataFormat = Parameter_EthernetSend.DataFormatType.Text,
-                Encoding = Parameter_EthernetSend.EncodingType.UTF8,
-                SendContent = "",
-                AppendNewLine = false,
-                NewLineType = NewLineType.CRLF,
-                WaitResponse = false,
-                ResponseTimeout = 10,
-                ResponseVariableName = "",
-                CloseAfterSend = true,
-                Condition = "",
-                Description = $"串口发送步骤 {WorkflowState?.StepNum + 1}",
-                IsEnabled = true
-            };
+                _parameter = new Parameter_SerialPortSend
+                {
+                    Description = $"串口发送步骤 {(_workflowState?.StepNum ?? 0) + 1}",
+                    IsEnabled = true,
+                    Condition = "",
 
-            LoadParameterToForm();
+                    // 串口设置
+                    PortName = "COM1",
+                    BaudRate = 9600,
+                    Parity = Parity.None,
+                    DataBits = 8,
+                    StopBits = StopBits.One,
+                    Handshake = Handshake.None,
+
+                    // 数据设置
+                    DataFormat = Parameter_EthernetSend.DataFormatType.Text,
+                    Encoding = Parameter_EthernetSend.EncodingType.UTF8,
+                    SendContent = "",
+                    AppendNewLine = false,
+                    NewLineType = "\r\n",
+
+                    // 响应设置
+                    WaitResponse = false,
+                    ResponseTimeout = 3000,
+                    ResponseVariableName = "",
+
+                    // 其他设置
+                    CloseAfterSend = true,
+                    WriteTimeout = 3000
+                };
+
+                LoadParameterToForm();
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "设置默认值失败");
+            }
         }
 
-        #endregion
-
-        #region BaseParameterForm 重写方法
-
         /// <summary>
-        /// 加载参数到表单 - BaseParameterForm 要求实现
+        /// 加载参数到界面
         /// </summary>
         protected override void LoadParameterToForm()
         {
-            if (_parameter == null) return;
+            if (_parameter == null || _isInitializing) return;
 
             try
             {
-                // 串口设置
-                if (!string.IsNullOrEmpty(_parameter.PortName) && cmbPortName.Items.Contains(_parameter.PortName))
-                {
-                    cmbPortName.Text = _parameter.PortName;
-                }
-                else if (cmbPortName.Items.Count > 0)
-                {
-                    cmbPortName.SelectedIndex = 0;
-                }
+                _isInitializing = true;
 
+                // 基本信息
+                txtDescription.Text = _parameter.Description ?? "";
+                chkEnabled.Checked = _parameter.IsEnabled;
+                txtCondition.Text = _parameter.Condition ?? "";
+
+                // 串口设置
+                cmbPortName.Text = _parameter.PortName;
                 cmbBaudRate.Text = _parameter.BaudRate.ToString();
                 cmbDataBits.Text = _parameter.DataBits.ToString();
                 cmbParity.SelectedIndex = (int)_parameter.Parity;
-                cmbStopBits.SelectedIndex = GetStopBitsIndex(_parameter.StopBits);
+                cmbStopBits.SelectedIndex = (int)_parameter.StopBits;
                 cmbHandshake.SelectedIndex = (int)_parameter.Handshake;
 
                 // 超时设置
-                numReadTimeout.Value = _parameter.ReadTimeout;
-                numWriteTimeout.Value = _parameter.WriteTimeout;
+                numReadTimeout.Value = _parameter.ResponseTimeout / 1000;
+                numWriteTimeout.Value = _parameter.WriteTimeout / 1000;
 
                 // 数据设置
                 cmbDataFormat.SelectedIndex = (int)_parameter.DataFormat;
                 cmbEncoding.SelectedIndex = (int)_parameter.Encoding;
                 txtSendContent.Text = _parameter.SendContent ?? "";
                 chkAppendNewLine.Checked = _parameter.AppendNewLine;
-                cmbNewLineType.SelectedIndex = (int)_parameter.NewLineType;
-                cmbNewLineType.Enabled = _parameter.AppendNewLine;
+
+                // 换行符类型
+                switch (_parameter.NewLineType)
+                {
+                    case "\r\n": cmbNewLineType.SelectedIndex = 0; break;
+                    case "\n": cmbNewLineType.SelectedIndex = 1; break;
+                    case "\r": cmbNewLineType.SelectedIndex = 2; break;
+                    default: cmbNewLineType.SelectedIndex = 0; break;
+                }
 
                 // 响应设置
                 chkWaitResponse.Checked = _parameter.WaitResponse;
-                numResponseTimeout.Value = _parameter.ResponseTimeout;
-                numResponseTimeout.Enabled = _parameter.WaitResponse;
+                numResponseTimeout.Value = _parameter.ResponseTimeout / 1000;
                 cmbResponseVariable.Text = _parameter.ResponseVariableName ?? "";
-                cmbResponseVariable.Enabled = _parameter.WaitResponse;
-                btnCreateVariable.Enabled = _parameter.WaitResponse;
 
                 // 其他设置
                 chkCloseAfterSend.Checked = _parameter.CloseAfterSend;
-                txtCondition.Text = _parameter.Condition ?? "";
-                txtDescription.Text = _parameter.Description ?? "";
-                chkEnabled.Checked = _parameter.IsEnabled;
+
+                Logger?.LogDebug("参数已加载到界面");
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "加载参数到表单失败");
+                Logger?.LogError(ex, "加载参数到界面失败");
+                MessageHelper.MessageOK(this, $"加载参数失败：{ex.Message}", TType.Error);
+            }
+            finally
+            {
+                _isInitializing = false;
             }
         }
 
         /// <summary>
-        /// 保存表单到参数 - BaseParameterForm 要求实现
+        /// 保存界面数据到参数对象
         /// </summary>
         protected override void SaveFormToParameter()
         {
             try
             {
+                _parameter ??= new Parameter_SerialPortSend();
+
+                // 基本信息
+                _parameter.Description = txtDescription.Text.Trim();
+                _parameter.IsEnabled = chkEnabled.Checked;
+                _parameter.Condition = txtCondition.Text.Trim();
+
                 // 串口设置
                 _parameter.PortName = cmbPortName.Text;
-                _parameter.BaudRate = int.TryParse(cmbBaudRate.Text, out int baud) ? baud : 9600;
-                _parameter.DataBits = int.TryParse(cmbDataBits.Text, out int bits) ? bits : 8;
+                _parameter.BaudRate = int.TryParse(cmbBaudRate.Text, out var baud) ? baud : 9600;
+                _parameter.DataBits = int.TryParse(cmbDataBits.Text, out var bits) ? bits : 8;
                 _parameter.Parity = (Parity)cmbParity.SelectedIndex;
-                _parameter.StopBits = GetStopBitsFromIndex(cmbStopBits.SelectedIndex);
+                _parameter.StopBits = (StopBits)cmbStopBits.SelectedIndex;
                 _parameter.Handshake = (Handshake)cmbHandshake.SelectedIndex;
 
                 // 超时设置
-                _parameter.ReadTimeout = (int)numReadTimeout.Value;
-                _parameter.WriteTimeout = (int)numWriteTimeout.Value;
+                _parameter.ResponseTimeout = numReadTimeout.Value * 1000;
+                _parameter.WriteTimeout = numWriteTimeout.Value * 1000;
 
                 // 数据设置
                 _parameter.DataFormat = (Parameter_EthernetSend.DataFormatType)cmbDataFormat.SelectedIndex;
                 _parameter.Encoding = (Parameter_EthernetSend.EncodingType)cmbEncoding.SelectedIndex;
-                _parameter.SendContent = txtSendContent.Text.Trim();
+                _parameter.SendContent = txtSendContent.Text;
                 _parameter.AppendNewLine = chkAppendNewLine.Checked;
-                _parameter.NewLineType = (NewLineType)cmbNewLineType.SelectedIndex;
+
+                // 换行符类型
+                _parameter.NewLineType = cmbNewLineType.SelectedIndex switch
+                {
+                    0 => "\r\n",
+                    1 => "\n",
+                    2 => "\r",
+                    _ => "\r\n"
+                };
 
                 // 响应设置
                 _parameter.WaitResponse = chkWaitResponse.Checked;
-                _parameter.ResponseTimeout = (int)numResponseTimeout.Value;
+                _parameter.ResponseTimeout = numResponseTimeout.Value * 1000;
                 _parameter.ResponseVariableName = cmbResponseVariable.Text.Trim();
 
                 // 其他设置
                 _parameter.CloseAfterSend = chkCloseAfterSend.Checked;
-                _parameter.Condition = txtCondition.Text.Trim();
-                _parameter.Description = txtDescription.Text.Trim();
-                _parameter.IsEnabled = chkEnabled.Checked;
+
+                Logger?.LogDebug("界面数据已保存到参数对象");
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "保存表单到参数失败");
+                Logger?.LogError(ex, "保存界面数据到参数对象失败");
+                throw;
             }
         }
 
         /// <summary>
-        /// 验证输入 - BaseParameterForm 要求实现
+        /// 验证输入
         /// </summary>
         protected override bool ValidateInput()
         {
-            // 验证串口名称
-            if (string.IsNullOrWhiteSpace(cmbPortName.Text) ||
-                cmbPortName.Text == "(无可用串口)" ||
-                cmbPortName.Text == "(获取失败)")
+            try
             {
-                UIMessageTip.ShowError("请选择有效的串口");
-                cmbPortName.Focus();
-                return false;
-            }
-
-            // 验证波特率
-            if (!int.TryParse(cmbBaudRate.Text, out int baudRate) || baudRate <= 0)
-            {
-                UIMessageTip.ShowError("请选择有效的波特率");
-                cmbBaudRate.Focus();
-                return false;
-            }
-
-            // 验证发送内容
-            if (string.IsNullOrWhiteSpace(txtSendContent.Text))
-            {
-                UIMessageTip.ShowError("请输入发送内容");
-                txtSendContent.Focus();
-                return false;
-            }
-
-            // 如果等待响应，需要指定变量名
-            if (chkWaitResponse.Checked && string.IsNullOrWhiteSpace(cmbResponseVariable.Text))
-            {
-                UIMessageTip.ShowError("等待响应时需要指定保存变量");
-                cmbResponseVariable.Focus();
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// 收集参数（基类方法重写）
-        /// </summary>
-        protected override object CollectParameters()
-        {
-            SaveFormToParameter();
-            return _parameter;
-        }
-
-        #endregion
-
-        #region 辅助方法
-
-        /// <summary>
-        /// 从停止位枚举获取索引
-        /// </summary>
-        private int GetStopBitsIndex(StopBits stopBits)
-        {
-            return stopBits switch
-            {
-                StopBits.One => 0,
-                StopBits.OnePointFive => 1,
-                StopBits.Two => 2,
-                _ => 0
-            };
-        }
-
-        /// <summary>
-        /// 从索引获取停止位枚举
-        /// </summary>
-        private StopBits GetStopBitsFromIndex(int index)
-        {
-            return index switch
-            {
-                0 => StopBits.One,
-                1 => StopBits.OnePointFive,
-                2 => StopBits.Two,
-                _ => StopBits.One
-            };
-        }
-
-        /// <summary>
-        /// 解析变量引用
-        /// </summary>
-        private string ResolveVariables(string content)
-        {
-            if (string.IsNullOrEmpty(content) || _globalVariable == null)
-                return content;
-
-            // 匹配 {变量名} 格式
-            var pattern = @"\{([^{}]+)\}";
-            return Regex.Replace(content, pattern, match =>
-            {
-                var varName = match.Groups[1].Value;
-                var variable = _globalVariable.GetAllVariables()
-                    .FirstOrDefault(v => v.VarName == varName);
-
-                return variable?.VarValue?.ToString() ?? match.Value;
-            });
-        }
-
-        /// <summary>
-        /// 准备发送数据
-        /// </summary>
-        private byte[] PrepareData(string content)
-        {
-            if (string.IsNullOrEmpty(content))
-                return Array.Empty<byte>();
-
-            // 追加换行符
-            if (_parameter.AppendNewLine)
-            {
-                content += _parameter.NewLineType switch
+                // 验证串口名称
+                if (string.IsNullOrWhiteSpace(cmbPortName.Text))
                 {
-                    NewLineType.CRLF => "\r\n",
-                    NewLineType.LF => "\n",
-                    NewLineType.CR => "\r",
-                    _ => "\r\n"
-                };
+                    MessageHelper.MessageOK(this, "请选择串口号", TType.Warn);
+                    cmbPortName.Focus();
+                    return false;
+                }
+
+                // 验证波特率
+                if (!int.TryParse(cmbBaudRate.Text, out int baudRate) || baudRate <= 0)
+                {
+                    MessageHelper.MessageOK(this, "波特率必须是正整数", TType.Warn);
+                    cmbBaudRate.Focus();
+                    return false;
+                }
+
+                // 验证数据位
+                if (!int.TryParse(cmbDataBits.Text, out int dataBits) || dataBits < 5 || dataBits > 8)
+                {
+                    MessageHelper.MessageOK(this, "数据位必须在5-8之间", TType.Warn);
+                    cmbDataBits.Focus();
+                    return false;
+                }
+
+                // 验证发送内容
+                if (string.IsNullOrWhiteSpace(txtSendContent.Text))
+                {
+                    MessageHelper.MessageOK(this, "请输入发送内容", TType.Warn);
+                    txtSendContent.Focus();
+                    return false;
+                }
+
+                // 如果选择十六进制格式,验证十六进制字符串
+                if (cmbDataFormat.SelectedIndex == 1) // 十六进制
+                {
+                    string hex = txtSendContent.Text.Replace(" ", "").Replace("-", "");
+                    if (!Regex.IsMatch(hex, @"^[0-9A-Fa-f]+$"))
+                    {
+                        MessageHelper.MessageOK(this, "十六进制格式无效,只能包含0-9和A-F字符", TType.Warn);
+                        txtSendContent.Focus();
+                        return false;
+                    }
+
+                    if (hex.Length % 2 != 0)
+                    {
+                        MessageHelper.MessageOK(this, "十六进制字符串长度必须是偶数", TType.Warn);
+                        txtSendContent.Focus();
+                        return false;
+                    }
+                }
+
+                // 验证响应变量
+                if (chkWaitResponse.Checked && string.IsNullOrWhiteSpace(cmbResponseVariable.Text))
+                {
+                    MessageHelper.MessageOK(this, "等待响应时必须指定响应变量名", TType.Warn);
+                    cmbResponseVariable.Focus();
+                    return false;
+                }
+
+                return true;
             }
-
-            // 根据数据格式转换
-            if (_parameter.DataFormat == Parameter_EthernetSend.DataFormatType.Hex)
+            catch (Exception ex)
             {
-                return HexStringToBytes(content);
+                Logger?.LogError(ex, "验证输入时发生错误");
+                return false;
             }
-
-            // 根据编码转换
-            Encoding encoding = _parameter.Encoding switch
-            {
-                Parameter_EthernetSend.EncodingType.ASCII => Encoding.ASCII,
-                Parameter_EthernetSend.EncodingType.GB2312 => Encoding.GetEncoding("GB2312"),
-                Parameter_EthernetSend.EncodingType.Unicode => Encoding.Unicode,
-                _ => Encoding.UTF8
-            };
-
-            return encoding.GetBytes(content);
-        }
-
-        /// <summary>
-        /// 十六进制字符串转字节数组
-        /// </summary>
-        private byte[] HexStringToBytes(string hex)
-        {
-            hex = hex.Replace(" ", "").Replace("-", "");
-            if (hex.Length % 2 != 0)
-                hex = "0" + hex;
-
-            byte[] bytes = new byte[hex.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-            }
-            return bytes;
         }
 
         #endregion
 
-        #region 按钮事件处理
+        #region 事件处理
+
+        /// <summary>
+        /// 帮助按钮点击
+        /// </summary>
+        private void BtnHelp_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string helpText = @"串口发送配置说明：
+
+1. 串口设置
+   - 选择正确的串口号
+   - 配置波特率、数据位、校验位等参数
+
+2. 数据格式
+   - 文本：直接发送文本内容
+   - 十六进制：发送十六进制数据（如：FF AA BB）
+   - Base64：发送Base64编码数据
+
+3. 变量引用
+   - 使用 {变量名} 格式引用变量
+   - 例如：Send data: {Temperature}
+
+4. 响应处理
+   - 勾选【等待响应】可接收设备返回数据
+   - 响应数据可保存到指定变量";
+        
+                MessageHelper.MessageOK(this, helpText, TType.Info);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "显示帮助时发生错误");
+            }
+        }
+
+        /// <summary>
+        /// 保存按钮点击
+        /// </summary>
+        private void BtnSave_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // 调用基类的 SaveParameters 方法
+                // 它会自动调用 ValidateInput、SaveFormToParameter 等
+                SaveParameters();
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "保存参数时发生错误");
+                MessageHelper.MessageOK(this, $"保存失败: {ex.Message}", TType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 取消按钮点击
+        /// </summary>
+        private void BtnCancel_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
 
         /// <summary>
         /// 刷新串口按钮
@@ -502,7 +567,7 @@ namespace MainUI.LogicalConfiguration.Forms
         private void BtnRefreshPorts_Click(object sender, EventArgs e)
         {
             RefreshSerialPorts();
-            UIMessageTip.ShowOk("串口列表已刷新");
+            MessageHelper.MessageOK(this, "串口列表已刷新", TType.Success);
         }
 
         /// <summary>
@@ -510,11 +575,9 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private async void BtnTestPort_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(cmbPortName.Text) ||
-                cmbPortName.Text == "(无可用串口)" ||
-                cmbPortName.Text == "(获取失败)")
+            if (string.IsNullOrWhiteSpace(cmbPortName.Text))
             {
-                UIMessageTip.ShowError("请选择有效的串口");
+                MessageHelper.MessageOK(this, "请先选择串口", TType.Warn);
                 return;
             }
 
@@ -527,29 +590,25 @@ namespace MainUI.LogicalConfiguration.Forms
                 _testCts?.Cancel();
                 _testCts = new CancellationTokenSource();
 
-                SaveFormToParameter();
-
-                // 简单测试：尝试打开和关闭串口
-                using var port = new SerialPort
-                {
-                    PortName = _parameter.PortName,
-                    BaudRate = _parameter.BaudRate,
-                    Parity = _parameter.Parity,
-                    DataBits = _parameter.DataBits,
-                    StopBits = _parameter.StopBits,
-                    Handshake = _parameter.Handshake
-                };
-
                 await Task.Run(() =>
                 {
+                    using var port = new SerialPort
+                    {
+                        PortName = cmbPortName.Text,
+                        BaudRate = int.TryParse(cmbBaudRate.Text, out int baud) ? baud : 9600,
+                        Parity = (Parity)cmbParity.SelectedIndex,
+                        DataBits = int.TryParse(cmbDataBits.Text, out int bits) ? bits : 8,
+                        StopBits = (StopBits)cmbStopBits.SelectedIndex
+                    };
+
                     port.Open();
-                    Thread.Sleep(100);
+                    Thread.Sleep(500); // 短暂延时确保端口打开
                     port.Close();
                 }, _testCts.Token);
 
-                lblPortStatus.Text = "串口正常";
+                lblPortStatus.Text = "串口可用";
                 lblPortStatus.ForeColor = Color.Green;
-                UIMessageTip.ShowOk($"串口 {cmbPortName.Text} 测试成功");
+                MessageHelper.MessageOK(this, "串口测试成功", TType.Success);
             }
             catch (OperationCanceledException)
             {
@@ -561,7 +620,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 lblPortStatus.Text = "串口异常";
                 lblPortStatus.ForeColor = Color.Red;
                 Logger?.LogError(ex, "测试串口失败: {Port}", cmbPortName.Text);
-                UIMessageTip.ShowError($"测试失败: {ex.Message}");
+                MessageHelper.MessageOK(this, $"测试失败: {ex.Message}", TType.Error);
             }
             finally
             {
@@ -578,7 +637,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 return;
 
             btnTestSend.Enabled = false;
-            btnTestSend.Text = "发送中...";
 
             try
             {
@@ -598,7 +656,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     DataBits = _parameter.DataBits,
                     StopBits = _parameter.StopBits,
                     Handshake = _parameter.Handshake,
-                    ReadTimeout = _parameter.ResponseTimeout * 1000,
+                    ReadTimeout = _parameter.ResponseTimeout,
                     WriteTimeout = _parameter.WriteTimeout
                 };
 
@@ -610,50 +668,88 @@ namespace MainUI.LogicalConfiguration.Forms
 
                     if (_parameter.WaitResponse)
                     {
-                        await Task.Delay(_parameter.ResponseTimeout * 1000, _testCts.Token);
-                        if (port.BytesToRead > 0)
+                        // 等待响应
+                        var buffer = new byte[4096];
+                        var bytesRead = port.Read(buffer, 0, buffer.Length);
+                        var response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+                        this.Invoke(new Action(() =>
                         {
-                            string response = port.ReadExisting();
-                            this.Invoke(() =>
-                            {
-                                UIMessageTip.ShowOk($"发送成功，响应: {response}");
-                            });
-                        }
-                        else
-                        {
-                            this.Invoke(() =>
-                            {
-                                UIMessageTip.ShowWarning("发送成功，但未收到响应");
-                            });
-                        }
+                            MessageHelper.MessageOK(this,
+                                $"发送成功,收到响应:\n{response}",
+                                TType.Success);
+                        }));
                     }
                     else
                     {
-                        this.Invoke(() =>
+                        this.Invoke(new Action(() =>
                         {
-                            UIMessageTip.ShowOk("发送成功");
-                        });
+                            MessageHelper.MessageOK(this,
+                                $"发送成功,共 {data.Length} 字节",
+                                TType.Success);
+                        }));
                     }
 
-                    if (_parameter.CloseAfterSend)
-                    {
-                        port.Close();
-                    }
+                    await Task.Delay(100); // 短暂延时确保数据发送完成
+                    port.Close();
                 }, _testCts.Token);
             }
             catch (OperationCanceledException)
             {
-                UIMessageTip.ShowWarning("发送已取消");
+                MessageHelper.MessageOK(this, "测试已取消", TType.Info);
             }
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "测试发送失败");
-                UIMessageTip.ShowError($"发送失败: {ex.Message}");
+                MessageHelper.MessageOK(this, $"测试失败: {ex.Message}", TType.Error);
             }
             finally
             {
                 btnTestSend.Enabled = true;
-                btnTestSend.Text = "测试发送";
+            }
+        }
+
+        /// <summary>
+        /// 插入变量按钮
+        /// </summary>
+        private void BtnInsertVariable_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var variableManager = _globalVariable ??
+                    Program.ServiceProvider?.GetService<GlobalVariableManager>();
+
+                if (variableManager == null)
+                {
+                    MessageHelper.MessageOK(this, "变量管理器未初始化", TType.Warn);
+                    return;
+                }
+
+                var variables = variableManager.GetAllUserVariables();
+                if (variables == null || variables.Count == 0)
+                {
+                    MessageHelper.MessageOK(this, "没有可用的变量", TType.Info);
+                    return;
+                }
+
+                // 显示变量选择对话框
+                var varNames = variables.Select(v => v.VarName).ToList();
+                var selectedVar = ShowVariableSelectDialog(varNames);
+
+                if (!string.IsNullOrEmpty(selectedVar))
+                {
+                    // 在光标位置插入变量引用
+                    int selectionStart = txtSendContent.SelectionStart;
+                    string newText = txtSendContent.Text.Insert(selectionStart, $"{{{selectedVar}}}");
+                    txtSendContent.Text = newText;
+                    txtSendContent.SelectionStart = selectionStart + selectedVar.Length + 2;
+                    txtSendContent.Focus();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "插入变量失败");
+                MessageHelper.MessageOK(this, $"插入变量失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -662,45 +758,19 @@ namespace MainUI.LogicalConfiguration.Forms
         /// </summary>
         private void BtnCreateVariable_Click(object sender, EventArgs e)
         {
-            // 弹出创建变量对话框
-            using var inputForm = new UIInputForm();
-            inputForm.Text = "创建响应变量";
-
-            if (inputForm.ShowDialog(this) == DialogResult.OK)
+            try
             {
-                string varName = inputForm.Value?.Trim();
-                if (!string.IsNullOrEmpty(varName))
-                {
-                    _globalVariable?.CreateVariable(varName, "string", "");
-                    LoadVariableList();
-                    cmbResponseVariable.Text = varName;
-                    UIMessageTip.ShowOk($"变量 '{varName}' 创建成功");
-                }
+                // TODO: 打开变量创建对话框
+                MessageHelper.MessageOK(this, "变量创建功能开发中", TType.Info);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "创建变量失败");
             }
         }
 
         /// <summary>
-        /// 保存按钮
-        /// </summary>
-        private void BtnSave_Click(object sender, EventArgs e)
-        {
-            OnSaveClick();
-        }
-
-        /// <summary>
-        /// 取消按钮
-        /// </summary>
-        private void BtnCancel_Click(object sender, EventArgs e)
-        {
-            OnCancelClick();
-        }
-
-        #endregion
-
-        #region 复选框事件处理
-
-        /// <summary>
-        /// 等待响应复选框
+        /// 等待响应复选框变化
         /// </summary>
         private void ChkWaitResponse_CheckedChanged(object sender, EventArgs e)
         {
@@ -711,16 +781,12 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 追加换行符复选框
+        /// 追加换行符复选框变化
         /// </summary>
         private void ChkAppendNewLine_CheckedChanged(object sender, EventArgs e)
         {
             cmbNewLineType.Enabled = chkAppendNewLine.Checked;
         }
-
-        #endregion
-
-        #region 表单事件
 
         /// <summary>
         /// 表单关闭事件
@@ -729,6 +795,159 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             _testCts?.Cancel();
             _testCts?.Dispose();
+        }
+
+        #endregion
+
+        #region 辅助方法
+
+        /// <summary>
+        /// 解析变量引用
+        /// </summary>
+        private string ResolveVariables(string content)
+        {
+            if (string.IsNullOrEmpty(content))
+                return content;
+
+            try
+            {
+                var variableManager = _globalVariable ??
+                    Program.ServiceProvider?.GetService<GlobalVariableManager>();
+
+                if (variableManager == null)
+                    return content;
+
+                var regex = new Regex(@"\{(\w+)\}");
+                return regex.Replace(content, match =>
+                {
+                    var varName = match.Groups[1].Value;
+                    var variable = variableManager.FindVariableByName(varName);
+                    return variable?.VarValue?.ToString() ?? match.Value;
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "解析变量引用失败");
+                return content;
+            }
+        }
+
+        /// <summary>
+        /// 准备发送数据
+        /// </summary>
+        private byte[] PrepareData(string content)
+        {
+            if (_parameter.AppendNewLine)
+            {
+                content += _parameter.NewLineType;
+            }
+
+            var encoding = GetEncoding(_parameter.Encoding);
+
+            return _parameter.DataFormat switch
+            {
+                Parameter_EthernetSend.DataFormatType.Hex => HexStringToBytes(content),
+                Parameter_EthernetSend.DataFormatType.Base64 => Convert.FromBase64String(content),
+                _ => encoding.GetBytes(content)
+            };
+        }
+
+        /// <summary>
+        /// 获取编码
+        /// </summary>
+        private Encoding GetEncoding(Parameter_EthernetSend.EncodingType encodingType)
+        {
+            return encodingType switch
+            {
+                Parameter_EthernetSend.EncodingType.UTF8 => Encoding.UTF8,
+                Parameter_EthernetSend.EncodingType.ASCII => Encoding.ASCII,
+                Parameter_EthernetSend.EncodingType.GB2312 => Encoding.GetEncoding("GB2312"),
+                Parameter_EthernetSend.EncodingType.Unicode => Encoding.Unicode,
+                _ => Encoding.UTF8
+            };
+        }
+
+        /// <summary>
+        /// 十六进制字符串转字节数组
+        /// </summary>
+        private byte[] HexStringToBytes(string hex)
+        {
+            hex = hex.Replace(" ", "").Replace("-", "");
+            byte[] bytes = new byte[hex.Length / 2];
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            }
+
+            return bytes;
+        }
+
+        /// <summary>
+        /// 显示变量选择对话框
+        /// </summary>
+        private string ShowVariableSelectDialog(List<string> variables)
+        {
+            // 简单实现,可以后续改进为更友好的对话框
+            using var dialog = new Form
+            {
+                Text = "选择变量",
+                Width = 300,
+                Height = 400,
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var listBox = new ListBox
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("微软雅黑", 10F)
+            };
+
+            foreach (var variable in variables)
+            {
+                listBox.Items.Add(variable);
+            }
+
+            var btnPanel = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 50
+            };
+
+            var btnOK = new Sunny.UI.UIButton
+            {
+                Text = "确定",
+                DialogResult = DialogResult.OK,
+                Location = new Point(80, 10),
+                Width = 60
+            };
+
+            var btnCancel = new UIButton
+            {
+                Text = "取消",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(160, 10),
+                Width = 60
+            };
+
+            btnPanel.Controls.Add(btnOK);
+            btnPanel.Controls.Add(btnCancel);
+
+            dialog.Controls.Add(listBox);
+            dialog.Controls.Add(btnPanel);
+
+            dialog.AcceptButton = btnOK;
+            dialog.CancelButton = btnCancel;
+
+            if (dialog.ShowDialog(this) == DialogResult.OK && listBox.SelectedItem != null)
+            {
+                return listBox.SelectedItem.ToString();
+            }
+
+            return null;
         }
 
         #endregion

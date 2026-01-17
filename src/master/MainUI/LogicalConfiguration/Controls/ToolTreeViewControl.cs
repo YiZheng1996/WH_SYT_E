@@ -161,7 +161,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 logicNode.Nodes.Add(new TreeNode("条件判断") { Tag = "ConditionJudge", ImageKey = "条件判断.png" });
                 logicNode.Nodes.Add(new TreeNode("等待稳定") { Tag = "Waitingforstability", ImageKey = "等待稳定.png" });
                 logicNode.Nodes.Add(new TreeNode("检测工具") { Tag = "DetectionTool", ImageKey = "检测工具.png" });
-                logicNode.Nodes.Add(new TreeNode("实时监控") { Tag = "MonitorTool", ImageKey = "检测工具.png" });
+                logicNode.Nodes.Add(new TreeNode("实时监控") { Tag = "MonitorTool", ImageKey = "实时监控.png" });
                 logicNode.Nodes.Add(new TreeNode("循环工具") { Tag = "CycleBegins", ImageKey = "循环工具.png" });
                 _treeView.Nodes.Add(logicNode);
 
@@ -186,7 +186,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 plcNode.Nodes.Add(new TreeNode("读取PLC") { Tag = "PLCRead", ImageKey = "读取PLC.png" });
                 plcNode.Nodes.Add(new TreeNode("写入PLC") { Tag = "PLCWrite", ImageKey = "写入PLC.png" });
                 plcNode.Nodes.Add(new TreeNode("以太网发送") { Tag = "EthernetSend", ImageKey = "以太网.png" });
-                plcNode.Nodes.Add(new TreeNode("串口发送") { Tag = "SerialPortSend", ImageKey = "串口.png" });
+                plcNode.Nodes.Add(new TreeNode("串口发送") { Tag = "SerialPortSend", ImageKey = "串口助手.png" });
                 _treeView.Nodes.Add(plcNode);
 
                 // 报表操作组

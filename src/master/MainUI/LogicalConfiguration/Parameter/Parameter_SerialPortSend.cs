@@ -124,6 +124,7 @@ namespace MainUI.LogicalConfiguration.Parameter
         /// 发送后是否关闭串口
         /// </summary>
         public bool CloseAfterSend { get; set; } = false;
+        public int WriteTimeout { get; internal set; }
 
         #endregion
 
