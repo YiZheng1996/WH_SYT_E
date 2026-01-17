@@ -1,6 +1,4 @@
-﻿using Microsoft.Office.Interop.Excel;
-using static System.Net.Mime.MediaTypeNames;
-using Font = System.Drawing.Font;
+﻿using Font = System.Drawing.Font;
 using Point = System.Drawing.Point;
 using Rectangle = System.Drawing.Rectangle;
 
@@ -21,19 +19,25 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void InitializeComponent()
         {
-            BtnSave = new Sunny.UI.UISymbolButton();
-            txtPromptContent = new Sunny.UI.UIRichTextBox();
-            uiLine2 = new Sunny.UI.UILine();
-            uiLine1 = new Sunny.UI.UILine();
-            cmbDialogType = new Sunny.UI.UIComboBox();
-            chkWaitResponse = new Sunny.UI.UICheckBox();
+            BtnSave = new UISymbolButton();
+            txtPromptContent = new UIRichTextBox();
+            lblPromptContent = new UILine();
+            lblDialogType = new UILine();
+            cmbDialogType = new UIComboBox();
+            lblMessageLevel = new UILine();
+            cmbMessageLevel = new UIComboBox();
+            lblResultVariable = new UILine();
+            txtResultVariable = new UITextBox();
+            pnlResultVariable = new Panel();
+            btnCancel = new UISymbolButton();
+            pnlResultVariable.SuspendLayout();
             SuspendLayout();
             // 
             // BtnSave
             // 
-            BtnSave.Cursor = System.Windows.Forms.Cursors.Hand;
+            BtnSave.Cursor = Cursors.Hand;
             BtnSave.Font = new Font("微软雅黑", 12F);
-            BtnSave.Location = new Point(152, 385);
+            BtnSave.Location = new Point(60, 418);
             BtnSave.MinimumSize = new Size(1, 1);
             BtnSave.Name = "BtnSave";
             BtnSave.Radius = 20;
@@ -47,8 +51,8 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtPromptContent
             // 
             txtPromptContent.FillColor = Color.White;
-            txtPromptContent.Font = new Font("微软雅黑", 12.75F);
-            txtPromptContent.Location = new Point(37, 85);
+            txtPromptContent.Font = new Font("微软雅黑", 12F);
+            txtPromptContent.Location = new Point(37, 80);
             txtPromptContent.Margin = new Padding(4, 5, 4, 5);
             txtPromptContent.MinimumSize = new Size(1, 1);
             txtPromptContent.Name = "txtPromptContent";
@@ -56,81 +60,174 @@ namespace MainUI.LogicalConfiguration.Forms
             txtPromptContent.Radius = 10;
             txtPromptContent.RectColor = Color.White;
             txtPromptContent.ShowText = false;
-            txtPromptContent.Size = new Size(352, 150);
-            txtPromptContent.TabIndex = 8;
+            txtPromptContent.Size = new Size(352, 160);
+            txtPromptContent.TabIndex = 1;
             txtPromptContent.TextAlignment = ContentAlignment.MiddleCenter;
             // 
-            // uiLine2
+            // lblPromptContent
             // 
-            uiLine2.BackColor = Color.Transparent;
-            uiLine2.EndCap = Sunny.UI.UILineCap.Circle;
-            uiLine2.Font = new System.Drawing.Font("微软雅黑", 13F, FontStyle.Bold);
-            uiLine2.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLine2.LineColor = Color.White;
-            uiLine2.Location = new System.Drawing.Point(37, 48);
-            uiLine2.MinimumSize = new Size(1, 1);
-            uiLine2.Name = "uiLine2";
-            uiLine2.Size = new Size(352, 29);
-            uiLine2.TabIndex = 9;
-            uiLine2.Text = "提示内容";
-            uiLine2.TextAlign = ContentAlignment.MiddleLeft;
+            lblPromptContent.BackColor = Color.Transparent;
+            lblPromptContent.EndCap = UILineCap.Circle;
+            lblPromptContent.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
+            lblPromptContent.ForeColor = Color.FromArgb(48, 48, 48);
+            lblPromptContent.LineColor = Color.White;
+            lblPromptContent.Location = new Point(37, 48);
+            lblPromptContent.MinimumSize = new Size(1, 1);
+            lblPromptContent.Name = "lblPromptContent";
+            lblPromptContent.Size = new Size(352, 29);
+            lblPromptContent.TabIndex = 0;
+            lblPromptContent.Text = "提示内容";
+            lblPromptContent.TextAlign = ContentAlignment.MiddleLeft;
             // 
-            // uiLine1
+            // lblDialogType
             // 
-            uiLine1.BackColor = Color.Transparent;
-            uiLine1.EndCap = Sunny.UI.UILineCap.Circle;
-            uiLine1.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
-            uiLine1.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLine1.LineColor = Color.White;
-            uiLine1.Location = new Point(37, 245);
-            uiLine1.MinimumSize = new Size(1, 1);
-            uiLine1.Name = "uiLine1";
-            uiLine1.Size = new Size(352, 29);
-            uiLine1.TabIndex = 10;
-            uiLine1.Text = "对话框类型";
-            uiLine1.TextAlign = ContentAlignment.MiddleLeft;
+            lblDialogType.BackColor = Color.Transparent;
+            lblDialogType.EndCap = UILineCap.Circle;
+            lblDialogType.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
+            lblDialogType.ForeColor = Color.FromArgb(48, 48, 48);
+            lblDialogType.LineColor = Color.White;
+            lblDialogType.Location = new Point(229, 248);
+            lblDialogType.MinimumSize = new Size(1, 1);
+            lblDialogType.Name = "lblDialogType";
+            lblDialogType.Size = new Size(160, 29);
+            lblDialogType.TabIndex = 4;
+            lblDialogType.Text = "对话框类型";
+            lblDialogType.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // cmbDialogType
             // 
+            cmbDialogType.BackColor = Color.Transparent;
             cmbDialogType.DataSource = null;
-            cmbDialogType.DropDownStyle = Sunny.UI.UIDropDownStyle.DropDownList;
+            cmbDialogType.DropDownStyle = UIDropDownStyle.DropDownList;
             cmbDialogType.FillColor = Color.White;
             cmbDialogType.Font = new Font("微软雅黑", 12F);
             cmbDialogType.ItemHoverColor = Color.FromArgb(155, 200, 255);
-            cmbDialogType.Items.AddRange(new object[] { "仅消息提示", "是/否", "是/否/取消", "确定/取消", "仅确定" });
+            cmbDialogType.Items.AddRange(new object[] { "确认", "是/否", "确认/取消" });
             cmbDialogType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbDialogType.Location = new Point(37, 282);
+            cmbDialogType.Location = new Point(229, 280);
             cmbDialogType.Margin = new Padding(4, 5, 4, 5);
             cmbDialogType.MinimumSize = new Size(63, 0);
             cmbDialogType.Name = "cmbDialogType";
             cmbDialogType.Padding = new Padding(0, 0, 30, 2);
             cmbDialogType.Radius = 10;
-            cmbDialogType.Size = new Size(352, 36);
+            cmbDialogType.RectColor = Color.Gainsboro;
+            cmbDialogType.Size = new Size(160, 36);
             cmbDialogType.SymbolSize = 24;
-            cmbDialogType.TabIndex = 11;
+            cmbDialogType.TabIndex = 5;
             cmbDialogType.TextAlignment = ContentAlignment.MiddleLeft;
             cmbDialogType.Watermark = "";
+            cmbDialogType.SelectedIndexChanged += CmbDialogType_SelectedIndexChanged;
             // 
-            // chkWaitResponse
+            // lblMessageLevel
             // 
-            chkWaitResponse.Checked = true;
-            chkWaitResponse.Font = new Font("微软雅黑", 12F);
-            chkWaitResponse.Location = new Point(37, 335);
-            chkWaitResponse.MinimumSize = new Size(1, 1);
-            chkWaitResponse.Name = "chkWaitResponse";
-            chkWaitResponse.Size = new Size(200, 29);
-            chkWaitResponse.TabIndex = 12;
-            chkWaitResponse.Text = "等待用户响应";
+            lblMessageLevel.BackColor = Color.Transparent;
+            lblMessageLevel.EndCap = UILineCap.Circle;
+            lblMessageLevel.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
+            lblMessageLevel.ForeColor = Color.FromArgb(48, 48, 48);
+            lblMessageLevel.LineColor = Color.White;
+            lblMessageLevel.Location = new Point(37, 248);
+            lblMessageLevel.MinimumSize = new Size(1, 1);
+            lblMessageLevel.Name = "lblMessageLevel";
+            lblMessageLevel.Size = new Size(160, 29);
+            lblMessageLevel.TabIndex = 2;
+            lblMessageLevel.Text = "提示等级";
+            lblMessageLevel.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // cmbMessageLevel
+            // 
+            cmbMessageLevel.BackColor = Color.Transparent;
+            cmbMessageLevel.DataSource = null;
+            cmbMessageLevel.DropDownStyle = UIDropDownStyle.DropDownList;
+            cmbMessageLevel.FillColor = Color.White;
+            cmbMessageLevel.Font = new Font("微软雅黑", 12F);
+            cmbMessageLevel.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cmbMessageLevel.Items.AddRange(new object[] { "信息", "警告", "错误", "询问" });
+            cmbMessageLevel.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cmbMessageLevel.Location = new Point(37, 280);
+            cmbMessageLevel.Margin = new Padding(4, 5, 4, 5);
+            cmbMessageLevel.MinimumSize = new Size(63, 0);
+            cmbMessageLevel.Name = "cmbMessageLevel";
+            cmbMessageLevel.Padding = new Padding(0, 0, 30, 2);
+            cmbMessageLevel.Radius = 10;
+            cmbMessageLevel.RectColor = Color.Gainsboro;
+            cmbMessageLevel.Size = new Size(160, 36);
+            cmbMessageLevel.SymbolSize = 24;
+            cmbMessageLevel.TabIndex = 3;
+            cmbMessageLevel.TextAlignment = ContentAlignment.MiddleLeft;
+            cmbMessageLevel.Watermark = "";
+            // 
+            // lblResultVariable
+            // 
+            lblResultVariable.BackColor = Color.Transparent;
+            lblResultVariable.Dock = DockStyle.Top;
+            lblResultVariable.EndCap = UILineCap.Circle;
+            lblResultVariable.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
+            lblResultVariable.ForeColor = Color.FromArgb(48, 48, 48);
+            lblResultVariable.LineColor = Color.White;
+            lblResultVariable.Location = new Point(0, 0);
+            lblResultVariable.MinimumSize = new Size(1, 1);
+            lblResultVariable.Name = "lblResultVariable";
+            lblResultVariable.Size = new Size(352, 29);
+            lblResultVariable.TabIndex = 0;
+            lblResultVariable.Text = "结果保存变量（true/false）";
+            lblResultVariable.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // txtResultVariable
+            // 
+            txtResultVariable.Cursor = Cursors.IBeam;
+            txtResultVariable.Font = new Font("微软雅黑", 12F);
+            txtResultVariable.Location = new Point(0, 32);
+            txtResultVariable.Margin = new Padding(4, 5, 4, 5);
+            txtResultVariable.MinimumSize = new Size(1, 16);
+            txtResultVariable.Name = "txtResultVariable";
+            txtResultVariable.Padding = new Padding(5);
+            txtResultVariable.Radius = 10;
+            txtResultVariable.RectColor = Color.White;
+            txtResultVariable.ShowText = false;
+            txtResultVariable.Size = new Size(352, 36);
+            txtResultVariable.TabIndex = 1;
+            txtResultVariable.TextAlignment = ContentAlignment.MiddleLeft;
+            txtResultVariable.Watermark = "请输入变量名，如：UserChoice";
+            // 
+            // pnlResultVariable
+            // 
+            pnlResultVariable.BackColor = Color.Transparent;
+            pnlResultVariable.Controls.Add(lblResultVariable);
+            pnlResultVariable.Controls.Add(txtResultVariable);
+            pnlResultVariable.Location = new Point(37, 328);
+            pnlResultVariable.Name = "pnlResultVariable";
+            pnlResultVariable.Size = new Size(352, 70);
+            pnlResultVariable.TabIndex = 6;
+            pnlResultVariable.Visible = false;
+            // 
+            // btnCancel
+            // 
+            btnCancel.Cursor = Cursors.Hand;
+            btnCancel.Font = new Font("微软雅黑", 12F);
+            btnCancel.Location = new Point(229, 418);
+            btnCancel.MinimumSize = new Size(1, 1);
+            btnCancel.Name = "btnCancel";
+            btnCancel.Radius = 20;
+            btnCancel.Size = new Size(123, 41);
+            btnCancel.Symbol = 61530;
+            btnCancel.TabIndex = 8;
+            btnCancel.Text = "取消";
+            btnCancel.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnCancel.Click += btnCancel_Click;
             // 
             // Form_SystemPrompt
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 236);
-            ClientSize = new Size(427, 450);
-            Controls.Add(chkWaitResponse);
+            ClientSize = new Size(427, 472);
+            ControlBox = false;
+            Controls.Add(btnCancel);
+            Controls.Add(pnlResultVariable);
             Controls.Add(cmbDialogType);
-            Controls.Add(uiLine1);
-            Controls.Add(uiLine2);
+            Controls.Add(lblDialogType);
+            Controls.Add(cmbMessageLevel);
+            Controls.Add(lblMessageLevel);
+            Controls.Add(lblPromptContent);
             Controls.Add(txtPromptContent);
             Controls.Add(BtnSave);
             MaximizeBox = false;
@@ -142,14 +239,21 @@ namespace MainUI.LogicalConfiguration.Forms
             TitleColor = Color.FromArgb(65, 100, 204);
             TitleFont = new Font("微软雅黑", 14.25F, FontStyle.Bold);
             ZoomScaleRect = new Rectangle(15, 15, 800, 450);
+            FormClosed += Form_SystemPrompt_FormClosed;
+            pnlResultVariable.ResumeLayout(false);
             ResumeLayout(false);
         }
 
         private Sunny.UI.UISymbolButton BtnSave;
         private Sunny.UI.UIRichTextBox txtPromptContent;
-        private Sunny.UI.UILine uiLine2;
-        private Sunny.UI.UILine uiLine1;
+        private Sunny.UI.UILine lblPromptContent;
+        private Sunny.UI.UILine lblDialogType;
         private Sunny.UI.UIComboBox cmbDialogType;
-        private Sunny.UI.UICheckBox chkWaitResponse;
+        private Sunny.UI.UILine lblMessageLevel;
+        private Sunny.UI.UIComboBox cmbMessageLevel;
+        private Sunny.UI.UILine lblResultVariable;
+        private Sunny.UI.UITextBox txtResultVariable;
+        private Panel pnlResultVariable;
+        private UISymbolButton btnCancel;
     }
 }

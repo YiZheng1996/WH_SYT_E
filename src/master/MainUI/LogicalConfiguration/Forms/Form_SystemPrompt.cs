@@ -1,7 +1,9 @@
-﻿using MainUI.LogicalConfiguration.Parameter;
+﻿using MainUI.LogicalConfiguration.Controls;
+using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using NLog;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -19,13 +21,22 @@ namespace MainUI.LogicalConfiguration.Forms
             InitForm();
         }
 
-        // 加载参数
+        /// <summary>
+        /// 初始化表单，加载现有参数
+        /// </summary>
         private void InitForm()
         {
             try
             {
+                // 设置默认值
+                cmbDialogType.SelectedIndex = 0;
+                cmbMessageLevel.SelectedIndex = 0;
+                UpdateResultVariableVisibility();
+
                 var steps = _workflowStateService.GetSteps();
                 int idx = _workflowStateService.StepNum;
+
+                AttachExpressionPanels();
 
                 if (steps != null && idx >= 0 && idx < steps.Count)
                 {
@@ -58,25 +69,102 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
-        // 加载参数到界面
+        /// <summary>
+        /// 附加表达式输入面板
+        /// </summary>
+        private void AttachExpressionPanels()
+        {
+            try
+            {
+                // 为条件表达式文本框附加ExpressionInputPanel
+                ExpressionInputPanel.AttachTo(txtResultVariable, new InputPanelOptions
+                {
+                    Mode = InputMode.VariableOnly,
+                    EnabledModules = InputModules.Variable,
+                    Title = "配置条件表达式",
+                    ShowValidation = true,
+                    ShowPreview = true,
+                    CloseOnSubmit = true,
+                    ExpectedReturnType = typeof(bool)
+                });
+
+                // 设置水印提示
+                txtResultVariable.Watermark = "点击选择变量，如：{开始气压} (按F2打开面板)";
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "附加表达式输入面板失败");
+            }
+        }
+
+        /// <summary>
+        /// 加载参数到界面
+        /// </summary>
         private void LoadParameter(Parameter_SystemPrompt param)
         {
             txtPromptContent.Text = param.Message ?? string.Empty;
-            chkWaitResponse.Checked = param.WaitForResponse;
 
             // 设置对话框类型
             cmbDialogType.SelectedIndex = param.DialogType switch
             {
-                DialogType.Message => 0,
+                DialogType.OK => 0,
                 DialogType.YesNo => 1,
-                DialogType.YesNoCancel => 2,
-                DialogType.OKCancel => 3,
-                DialogType.OK => 4,
+                DialogType.OKCancel => 2,
                 _ => 0
             };
+
+            // 设置提示等级
+            cmbMessageLevel.SelectedIndex = param.MessageLevel switch
+            {
+                MessageLevel.Info => 0,
+                MessageLevel.Warning => 1,
+                MessageLevel.Error => 2,
+                MessageLevel.Question => 3,
+                _ => 0
+            };
+
+            // 设置返回值变量
+            txtResultVariable.Text = param.ResultVariable ?? string.Empty;
+
+            // 更新返回值变量面板的可见性
+            UpdateResultVariableVisibility();
         }
 
-        // 保存按钮点击事件
+        /// <summary>
+        /// 对话框类型改变事件
+        /// </summary>
+        private void CmbDialogType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateResultVariableVisibility();
+        }
+
+        /// <summary>
+        /// 根据对话框类型更新返回值变量面板的可见性
+        /// </summary>
+        private void UpdateResultVariableVisibility()
+        {
+            // 只有 是/否 和 确认/取消 类型需要返回值变量
+            bool needsResultVariable = cmbDialogType.SelectedIndex > 0;
+            pnlResultVariable.Visible = needsResultVariable;
+
+            // 动态调整保存按钮位置
+            if (needsResultVariable)   // 是否
+            {
+                BtnSave.Location = new Point(70, 420);
+                btnCancel.Location = new Point(230, 420);
+                this.ClientSize = new Size(427, 472);
+            }
+            else                      // 确认
+            {
+                BtnSave.Location = new Point(70, 330);
+                btnCancel.Location = new Point(230, 330);
+                this.ClientSize = new Size(427, 380);
+            }
+        }
+
+        /// <summary>
+        /// 保存按钮点击事件
+        /// </summary>
         private void BtnSave_Click(object sender, EventArgs e)
         {
             try
@@ -89,20 +177,26 @@ namespace MainUI.LogicalConfiguration.Forms
                     return;
                 }
 
+                // 如果是需要返回值的类型，验证变量名
+                var dialogType = GetSelectedDialogType();
+                if (dialogType != DialogType.OK)
+                {
+                    if (string.IsNullOrWhiteSpace(txtResultVariable.Text))
+                    {
+                        MessageBox.Show("请输入用于保存结果的变量名", "提示",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                }
+
                 // 创建参数对象
                 var param = new Parameter_SystemPrompt
                 {
                     Message = txtPromptContent.Text.Trim(),
-                    WaitForResponse = chkWaitResponse.Checked,
-                    DialogType = cmbDialogType.SelectedIndex switch
-                    {
-                        0 => DialogType.Message,
-                        1 => DialogType.YesNo,
-                        2 => DialogType.YesNoCancel,
-                        3 => DialogType.OKCancel,
-                        4 => DialogType.OK,
-                        _ => DialogType.Message
-                    }
+                    DialogType = dialogType,
+                    MessageLevel = GetSelectedMessageLevel(),
+                    ResultVariable = dialogType != DialogType.OK ? txtResultVariable.Text.Trim() : null,
+                    WaitForResponse = true
                 };
 
                 // 保存到工作流状态
@@ -112,7 +206,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (steps != null && idx >= 0 && idx < steps.Count)
                 {
                     steps[idx].StepParameter = param;
-                    _logger.LogInformation("系统提示参数已保存");
+                    _logger.LogInformation("系统提示参数已保存: DialogType={DialogType}, MessageLevel={MessageLevel}",
+                        param.DialogType, param.MessageLevel);
                 }
 
                 DialogResult = DialogResult.OK;
@@ -124,6 +219,69 @@ namespace MainUI.LogicalConfiguration.Forms
                 MessageBox.Show($"保存失败: {ex.Message}", "错误",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        /// <summary>
+        /// 获取选中的对话框类型
+        /// </summary>
+        private DialogType GetSelectedDialogType()
+        {
+            return cmbDialogType.SelectedIndex switch
+            {
+                0 => DialogType.OK,
+                1 => DialogType.YesNo,
+                2 => DialogType.OKCancel,
+                _ => DialogType.OK
+            };
+        }
+
+        /// <summary>
+        /// 获取选中的提示等级
+        /// </summary>
+        private MessageLevel GetSelectedMessageLevel()
+        {
+            return cmbMessageLevel.SelectedIndex switch
+            {
+                0 => MessageLevel.Info,
+                1 => MessageLevel.Warning,
+                2 => MessageLevel.Error,
+                3 => MessageLevel.Question,
+                _ => MessageLevel.Info
+            };
+        }
+
+        /// <summary>
+        /// 验证变量名格式
+        /// </summary>
+        private static bool IsValidVariableName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+
+            // 不能以数字开头
+            if (char.IsDigit(name[0]))
+                return false;
+
+            // 只能包含字母、数字、下划线和中文
+            foreach (char c in name)
+            {
+                if (!char.IsLetterOrDigit(c) && c != '_')
+                    return false;
+            }
+
+            return true;
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        private void Form_SystemPrompt_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            // 关闭活动的表达式面板
+            ExpressionInputPanel.CloseActivePanel();
         }
     }
 }

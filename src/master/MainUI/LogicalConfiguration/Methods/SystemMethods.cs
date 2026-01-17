@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.Methods.Core;
+﻿using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
 
 namespace MainUI.LogicalConfiguration.Methods
@@ -40,67 +41,77 @@ namespace MainUI.LogicalConfiguration.Methods
             }
         }
 
-        public Task<bool> SystemPrompt(Parameter_SystemPrompt param)
+        /// <summary>
+        /// 系统提示方法 - 支持新的对话框类型和提示等级
+        /// </summary>
+        public Task<bool> SystemPrompt(Parameter_SystemPrompt param, GlobalVariableManager variableManager = null)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(param.Message))
                 {
-                    //_logger.LogWarning("提示消息为空");
+                    NlogHelper.Default.Warn("提示消息为空");
                     return Task.FromResult(false);
                 }
 
+                // 获取对应的 MessageBoxIcon
+                var icon = param.MessageLevel switch
+                {
+                    MessageLevel.Info => MessageBoxIcon.Information,
+                    MessageLevel.Warning => MessageBoxIcon.Warning,
+                    MessageLevel.Error => MessageBoxIcon.Error,
+                    MessageLevel.Question => MessageBoxIcon.Question,
+                    _ => MessageBoxIcon.Information
+                };
+
                 DialogResult result = DialogResult.None;
+                string title = param.Title ?? "提示";
 
                 // 根据对话框类型显示不同的消息框
                 switch (param.DialogType)
                 {
-                    case DialogType.Message:
-                        MessageBox.Show(param.Message, param.Title ?? "提示",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    case DialogType.OK:
+                        // 仅确认按钮
+                        MessageBox.Show(param.Message, title, MessageBoxButtons.OK, icon);
                         result = DialogResult.OK;
                         break;
 
                     case DialogType.YesNo:
-                        result = MessageBox.Show(param.Message, param.Title ?? "确认",
-                            MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                        break;
+                        // 是/否 选择
+                        result = MessageBox.Show(param.Message, title, MessageBoxButtons.YesNo, icon);
 
-                    case DialogType.YesNoCancel:
-                        result = MessageBox.Show(param.Message, param.Title ?? "确认",
-                            MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                        // 保存结果到变量
+                        if (variableManager != null && !string.IsNullOrEmpty(param.ResultVariable))
+                        {
+                            bool userChoice = result == DialogResult.Yes;
+                            variableManager.UpdateVariableValue(param.ResultVariable, userChoice, "");
+                            NlogHelper.Default.Info($"用户选择已保存到变量 [{param.ResultVariable}]: {userChoice}");
+                        }
                         break;
 
                     case DialogType.OKCancel:
-                        result = MessageBox.Show(param.Message, param.Title ?? "确认",
-                            MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
-                        break;
+                        // 确认/取消 选择
+                        result = MessageBox.Show(param.Message, title, MessageBoxButtons.OKCancel, icon);
 
-                    case DialogType.OK:
-                        MessageBox.Show(param.Message, param.Title ?? "提示",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        result = DialogResult.OK;
+                        // 保存结果到变量
+                        if (variableManager != null && !string.IsNullOrEmpty(param.ResultVariable))
+                        {
+                            bool userChoice = result == DialogResult.OK;
+                            variableManager.UpdateVariableValue(param.ResultVariable, userChoice, "");
+                            NlogHelper.Default.Info($"用户选择已保存到变量 [{param.ResultVariable}]: {userChoice}");
+                        }
                         break;
                 }
 
                 // 保存用户响应结果
                 param.UserResponse = result;
 
-                // 记录日志
-                //_logger.LogInformation($"系统提示已显示，类型: {param.DialogType}, 用户响应: {result}");
-
-                // 根据等待响应设置返回值
-                if (param.WaitForResponse)
-                {
-                    // 对于需要确认的对话框，根据用户选择返回结果
-                    return Task.FromResult(result == DialogResult.OK || result == DialogResult.Yes);
-                }
-
+                NlogHelper.Default.Info($"系统提示显示完成: Type={param.DialogType}, Level={param.MessageLevel}, Result={result}");
                 return Task.FromResult(true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //_logger.LogError(ex, "显示系统提示失败");
+                NlogHelper.Default.Error("系统提示执行失败", ex);
                 return Task.FromResult(false);
             }
         }
