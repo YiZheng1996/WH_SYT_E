@@ -34,8 +34,6 @@
             uiPanel1 = new UIPanel();
             uiLabel4 = new UILabel();
             cboModelType = new UIComboBox();
-            txtEntityClassName = new UITextBox();
-            uiLabel2 = new UILabel();
             RadioIsVisible2 = new UIRadioButton();
             RadioIsVisible = new UIRadioButton();
             txtProcessName = new UITextBox();
@@ -62,7 +60,7 @@
             btnCancel.Cursor = Cursors.Hand;
             btnCancel.FillDisableColor = Color.FromArgb(80, 160, 255);
             btnCancel.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
-            btnCancel.Location = new Point(281, 249);
+            btnCancel.Location = new Point(281, 214);
             btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
             btnCancel.Radius = 10;
@@ -80,7 +78,7 @@
             btnSubmit.Cursor = Cursors.Hand;
             btnSubmit.FillDisableColor = Color.FromArgb(80, 160, 255);
             btnSubmit.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
-            btnSubmit.Location = new Point(117, 249);
+            btnSubmit.Location = new Point(117, 214);
             btnSubmit.MinimumSize = new Size(1, 1);
             btnSubmit.Name = "btnSubmit";
             btnSubmit.Radius = 10;
@@ -96,8 +94,6 @@
             // 
             uiPanel1.Controls.Add(uiLabel4);
             uiPanel1.Controls.Add(cboModelType);
-            uiPanel1.Controls.Add(txtEntityClassName);
-            uiPanel1.Controls.Add(uiLabel2);
             uiPanel1.Controls.Add(RadioIsVisible2);
             uiPanel1.Controls.Add(RadioIsVisible);
             uiPanel1.Controls.Add(txtProcessName);
@@ -118,7 +114,7 @@
             uiPanel1.Radius = 15;
             uiPanel1.RectColor = Color.White;
             uiPanel1.RectDisableColor = Color.White;
-            uiPanel1.Size = new Size(519, 321);
+            uiPanel1.Size = new Size(519, 287);
             uiPanel1.TabIndex = 408;
             uiPanel1.Text = null;
             uiPanel1.TextAlignment = ContentAlignment.MiddleCenter;
@@ -166,51 +162,11 @@
             cboModelType.TextAlignment = ContentAlignment.MiddleLeft;
             cboModelType.Watermark = "请选择";
             // 
-            // txtEntityClassName
-            // 
-            txtEntityClassName.BackColor = Color.Transparent;
-            txtEntityClassName.Cursor = Cursors.IBeam;
-            txtEntityClassName.FillColor = Color.FromArgb(218, 220, 230);
-            txtEntityClassName.FillColor2 = Color.FromArgb(218, 220, 230);
-            txtEntityClassName.FillDisableColor = Color.FromArgb(218, 220, 230);
-            txtEntityClassName.FillReadOnlyColor = Color.FromArgb(218, 220, 230);
-            txtEntityClassName.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
-            txtEntityClassName.ForeColor = Color.Black;
-            txtEntityClassName.ForeDisableColor = Color.Black;
-            txtEntityClassName.ForeReadOnlyColor = Color.Black;
-            txtEntityClassName.Location = new Point(202, 143);
-            txtEntityClassName.Margin = new Padding(4, 5, 4, 5);
-            txtEntityClassName.MinimumSize = new Size(1, 16);
-            txtEntityClassName.Name = "txtEntityClassName";
-            txtEntityClassName.Padding = new Padding(5);
-            txtEntityClassName.Radius = 10;
-            txtEntityClassName.RectColor = Color.FromArgb(218, 220, 230);
-            txtEntityClassName.RectDisableColor = Color.FromArgb(218, 220, 230);
-            txtEntityClassName.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
-            txtEntityClassName.ShowText = false;
-            txtEntityClassName.Size = new Size(210, 30);
-            txtEntityClassName.TabIndex = 413;
-            txtEntityClassName.TextAlignment = ContentAlignment.MiddleLeft;
-            txtEntityClassName.Watermark = "请输入";
-            // 
-            // uiLabel2
-            // 
-            uiLabel2.AutoSize = true;
-            uiLabel2.BackColor = Color.Transparent;
-            uiLabel2.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
-            uiLabel2.ForeColor = Color.FromArgb(43, 46, 57);
-            uiLabel2.Location = new Point(105, 144);
-            uiLabel2.Name = "uiLabel2";
-            uiLabel2.Size = new Size(84, 26);
-            uiLabel2.TabIndex = 412;
-            uiLabel2.Text = "关联名称";
-            uiLabel2.TextAlign = ContentAlignment.MiddleRight;
-            // 
             // RadioIsVisible2
             // 
             RadioIsVisible2.BackColor = Color.Transparent;
             RadioIsVisible2.Font = new Font("微软雅黑", 12.5F);
-            RadioIsVisible2.Location = new Point(311, 194);
+            RadioIsVisible2.Location = new Point(311, 159);
             RadioIsVisible2.MinimumSize = new Size(1, 1);
             RadioIsVisible2.Name = "RadioIsVisible2";
             RadioIsVisible2.RadioButtonColor = Color.FromArgb(65, 100, 204);
@@ -223,7 +179,7 @@
             RadioIsVisible.BackColor = Color.Transparent;
             RadioIsVisible.Checked = true;
             RadioIsVisible.Font = new Font("微软雅黑", 12.5F);
-            RadioIsVisible.Location = new Point(223, 194);
+            RadioIsVisible.Location = new Point(223, 159);
             RadioIsVisible.MinimumSize = new Size(1, 1);
             RadioIsVisible.Name = "RadioIsVisible";
             RadioIsVisible.RadioButtonColor = Color.FromArgb(65, 100, 204);
@@ -265,7 +221,7 @@
             uiLabel3.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
             uiLabel3.ForeColor = Color.FromArgb(43, 46, 57);
             uiLabel3.ImeMode = ImeMode.NoControl;
-            uiLabel3.Location = new Point(105, 195);
+            uiLabel3.Location = new Point(105, 160);
             uiLabel3.Name = "uiLabel3";
             uiLabel3.Size = new Size(84, 26);
             uiLabel3.TabIndex = 74;
@@ -276,7 +232,7 @@
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 236);
-            ClientSize = new Size(585, 404);
+            ClientSize = new Size(585, 378);
             ControlBox = false;
             Controls.Add(uiPanel1);
             Font = new Font("微软雅黑", 11F);
@@ -310,8 +266,6 @@
         private UITextBox txtProcessName;
         private UIRadioButton RadioIsVisible2;
         private UIRadioButton RadioIsVisible;
-        private UITextBox txtEntityClassName;
-        private UILabel uiLabel2;
         private UILabel uiLabel4;
         private UIComboBox cboModelType;
     }

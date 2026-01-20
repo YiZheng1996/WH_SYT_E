@@ -221,7 +221,7 @@ namespace MainUI.LogicalConfiguration.Engine
         #region 辅助方法
 
         /// <summary>
-        /// 根据白名单过滤变量 - 简化的逻辑
+        /// 根据白名单过滤变量
         /// </summary>
         private List<string> FilterVariablesByWhitelist(List<string> variables, ValidationContext context)
         {

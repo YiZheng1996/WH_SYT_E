@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Methods
 {
     /// <summary>
-    /// 条件判断执行方法 - 简化版本
+    /// 条件判断执行方法
     /// 直接使用 ConditionExpression 进行条件判断
     /// TrueSteps 和 FalseSteps 类型统一为 List&lt;ChildModel&gt;
     /// </summary>
@@ -18,9 +18,10 @@ namespace MainUI.LogicalConfiguration.Methods
         public override string Description => "条件判断";
 
         /// <summary>
-        /// 执行条件判断 - 返回判断结果和需要执行的步骤列表
+        /// 异步执行条件判断 - 推荐使用此方法
+        /// 避免UI线程死锁问题
         /// </summary>
-        public ConditionEvaluationResult EvaluateCondition(Parameter_Condition parameter)
+        public async Task<ConditionEvaluationResult> EvaluateConditionAsync(Parameter_Condition parameter)
         {
             try
             {
@@ -40,14 +41,14 @@ namespace MainUI.LogicalConfiguration.Methods
                 logger.LogInformation("开始条件判断: {Description}", parameter.Description);
                 logger.LogDebug("条件表达式: {Expression}", parameter.ConditionExpression);
 
-                // 计算条件结果
-                var conditionResult = EvaluateConditionExpression(parameter.ConditionExpression);
+                // 使用异步方法计算条件结果
+                var conditionResult = await EvaluateConditionExpressionAsync(parameter.ConditionExpression);
 
                 logger.LogInformation("条件判断结果: {Result} ({Expression})",
                     conditionResult ? "满足条件" : "不满足条件",
                     parameter.ConditionExpression);
 
-                // 根据结果选择执行分支 - 直接返回 List<ChildModel>
+                // 根据结果选择执行分支
                 var stepsToExecute = conditionResult ? parameter.TrueSteps : parameter.FalseSteps;
 
                 return new ConditionEvaluationResult
@@ -72,9 +73,9 @@ namespace MainUI.LogicalConfiguration.Methods
         }
 
         /// <summary>
-        /// 计算条件表达式结果
+        /// 异步计算条件表达式结果
         /// </summary>
-        private bool EvaluateConditionExpression(string expression)
+        private async Task<bool> EvaluateConditionExpressionAsync(string expression)
         {
             if (string.IsNullOrWhiteSpace(expression))
             {
@@ -84,8 +85,8 @@ namespace MainUI.LogicalConfiguration.Methods
 
             try
             {
-                // 使用表达式引擎计算
-                var result = expressionEngine.EvaluateExpression(expression);
+                // 使用异步版本的表达式求值
+                var result = await expressionEngine.EvaluateExpressionAsync(expression);
 
                 if (!result.Success)
                 {
@@ -115,8 +116,6 @@ namespace MainUI.LogicalConfiguration.Methods
                                            strValue != "0",
                         _ => Convert.ToBoolean(result.Result)
                     };
-
-                    // 尝试通用转换
                 }
 
                 logger.LogWarning("条件表达式结果为 null，默认返回 false");
@@ -130,6 +129,7 @@ namespace MainUI.LogicalConfiguration.Methods
         }
     }
 
+
     /// <summary>
     /// 条件判断结果
     /// </summary>
@@ -141,7 +141,7 @@ namespace MainUI.LogicalConfiguration.Methods
         public bool ConditionMet { get; set; }
 
         /// <summary>
-        /// 需要执行的步骤列表 - 直接是 List&lt;ChildModel&gt;
+        /// 需要执行的步骤列表
         /// </summary>
         public List<ChildModel> StepsToExecute { get; set; }
 

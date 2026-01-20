@@ -33,7 +33,6 @@ namespace MainUI
             try
             {
                 string ProcessName = txtProcessName.Text.Trim();
-                string EntityClassName = txtEntityClassName.Text.Trim();
                 bool IsVisible = RadioIsVisible.Checked;
                 int ModelTypeID = cboModelType.SelectedValue.ToInt32();
 
@@ -43,13 +42,6 @@ namespace MainUI
                     txtProcessName.Focus();
                     return;
                 }
-                if (string.IsNullOrEmpty(EntityClassName))
-                {
-                    MessageHelper.MessageOK(this, "未输入关联实体类名称！");
-                    txtProcessName.Focus();
-                    return;
-                }
-
                 bool result = false;
                 if (_processModel == null)
                 {
@@ -57,7 +49,6 @@ namespace MainUI
                     {
                         ProcessName = ProcessName,
                         ModelTypeID = ModelTypeID,
-                        EntityClassName = EntityClassName,
                         IsVisible = IsVisible,
                     };
                     result = _processBLL.AddTestProcess(newModel);
@@ -66,7 +57,6 @@ namespace MainUI
                 {
                     _processModel.ProcessName = ProcessName;
                     _processModel.ModelTypeID = ModelTypeID;
-                    _processModel.EntityClassName = txtEntityClassName.Text;
                     _processModel.IsVisible = IsVisible;
                     result = _processBLL.SaveTestProcess(_processModel);
                 }
@@ -92,19 +82,16 @@ namespace MainUI
 
         private void frmMeteringEdit_Load(object sender, EventArgs e)
         {
-            if (_processModel != null)
+            if (_processModel == null) return;
+            txtProcessName.Text = _processModel.ProcessName;
+            cboModelType.SelectedValue = _processModel.ModelTypeID;
+            if (_processModel.IsVisible)
             {
-                txtProcessName.Text = _processModel.ProcessName;
-                txtEntityClassName.Text = _processModel.EntityClassName;
-                cboModelType.SelectedValue = _processModel.ModelTypeID;
-                if (_processModel.IsVisible)
-                {
-                    RadioIsVisible.Checked = true;
-                }
-                else
-                {
-                    RadioIsVisible2.Checked = true;
-                }
+                RadioIsVisible.Checked = true;
+            }
+            else
+            {
+                RadioIsVisible2.Checked = true;
             }
         }
 
