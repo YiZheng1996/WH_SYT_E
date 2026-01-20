@@ -1,10 +1,12 @@
-﻿using MainUI.LogicalConfiguration.Infrastructure;
+﻿using MainUI.LogicalConfiguration.Helpers;
+using MainUI.LogicalConfiguration.Infrastructure;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using MainUI.Service;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace MainUI.LogicalConfiguration.Methods
 {
@@ -211,7 +213,7 @@ namespace MainUI.LogicalConfiguration.Methods
         }
 
         /// <summary>
-        /// 获取变量值
+        /// 获取变量值 - 使用统一规范化方法
         /// </summary>
         private object GetVariableValue(WriteCellItem item)
         {
@@ -223,44 +225,49 @@ namespace MainUI.LogicalConfiguration.Methods
 
             try
             {
-                // 清理变量名：移除可能的花括号
-                var cleanVarName = item.VariableName.Trim();
-                if (cleanVarName.StartsWith('{') && cleanVarName.EndsWith('}'))
+                // 使用 VariableNameHelper 规范化变量名
+                var normalizedVarName = VariableNameHelper.NormalizeVariableName(item.VariableName);
+
+                if (normalizedVarName == null)
                 {
-                    cleanVarName = cleanVarName[1..^1].Trim();
-                    NlogHelper.Default.Debug($"清理变量名: {item.VariableName} -> {cleanVarName}");
+                    NlogHelper.Default.Error($"无效的变量名格式: {item.VariableName}");
+                    return $"[无效变量名:{item.VariableName}]";
                 }
 
-                // 输出当前所有变量（用于调试）
-                var allVariables = _globalVariableManager.GetAllVariables();
-                if (allVariables != null && allVariables.Count > 0)
+                // 记录规范化信息（如果发生了转换）
+                if (item.VariableName.Trim() != normalizedVarName)
                 {
-                    var varNames = string.Join(", ", allVariables.Select(v => $"'{v.VarName}'"));
-                    NlogHelper.Default.Debug($"变量列表: {varNames}");
+                    NlogHelper.Default.Debug(
+                        $"变量名已规范化: '{item.VariableName}' -> '{normalizedVarName}'");
                 }
 
-                var variable = _globalVariableManager.FindVariableByName(cleanVarName);
+                // 使用规范化后的变量名查找变量
+                var variable = _globalVariableManager?.FindVariableByName(normalizedVarName);
+
                 if (variable == null)
                 {
-                    NlogHelper.Default.Warn($"变量未找到: {cleanVarName}");
-                    NlogHelper.Default.Warn($"原始变量名: {item.VariableName}");
+                    NlogHelper.Default.Warn($"变量未找到: {normalizedVarName}");
 
-                    // 尝试模糊匹配（容错处理）
-                    var similarVar = allVariables?
-                        .FirstOrDefault(v => v.VarName.Equals(cleanVarName, StringComparison.OrdinalIgnoreCase));
+                    // 尝试大小写不敏感查找
+                    var allVars = _globalVariableManager?.GetAllUserVariables();
+                    var similarVar = allVars?.FirstOrDefault(v =>
+                        v.VarName.Equals(normalizedVarName, StringComparison.OrdinalIgnoreCase));
 
                     if (similarVar != null)
                     {
-                        NlogHelper.Default.Info($"找到大小写不匹配的变量: {similarVar.VarName}，使用该变量");
+                        NlogHelper.Default.Info(
+                            $"找到大小写不匹配的变量: {similarVar.VarName}，使用该变量");
                         return similarVar.VarValue ?? string.Empty;
                     }
 
-                    return $"[变量未找到:{cleanVarName}]";
+                    return $"[变量未找到:{normalizedVarName}]";
                 }
 
                 var value = variable.VarValue;
 
-                // 如果值为 null，返回空字符串
+                NlogHelper.Default.Info(
+                    $"获取变量值成功: {normalizedVarName} = {value ?? "(null)"}");
+
                 return value ?? string.Empty;
             }
             catch (Exception ex)
@@ -270,8 +277,10 @@ namespace MainUI.LogicalConfiguration.Methods
             }
         }
 
+
         /// <summary>
-        /// 计算表达式（支持 PLC 引用）
+        /// 计算表达式 - 增强版
+        /// 支持真正的表达式: {Var1} + {Var2}, MAX({Val1}, {Val2}), etc.
         /// </summary>
         private async Task<object> EvaluateExpression(WriteCellItem item)
         {
@@ -283,10 +292,14 @@ namespace MainUI.LogicalConfiguration.Methods
 
             try
             {
-                // 使用异步方法处理表达式（支持 PLC 引用）
-                var result = await _expressionHelper.Value.EvaluateForReportAsync(item.Expression);
+                var expression = item.Expression.Trim();
 
-                NlogHelper.Default.Debug($"表达式计算成功: {item.Expression} = {result}");
+                NlogHelper.Default.Debug($"开始计算表达式: {expression}");
+
+                // 使用异步方法处理表达式（支持 PLC 引用）
+                var result = await _expressionHelper.Value.EvaluateForReportAsync(expression);
+
+                NlogHelper.Default.Info($"表达式计算成功: {expression} = {result}");
                 return result;
             }
             catch (Exception ex)

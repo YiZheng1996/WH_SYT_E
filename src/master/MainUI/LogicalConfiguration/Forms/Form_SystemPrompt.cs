@@ -1,9 +1,9 @@
 ﻿using MainUI.LogicalConfiguration.Controls;
+using MainUI.LogicalConfiguration.Helpers;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using NLog;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -165,6 +165,9 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 保存按钮点击事件
         /// </summary>
+        /// <summary>
+        /// 保存按钮点击事件 - 添加变量名验证
+        /// </summary>
         private void BtnSave_Click(object sender, EventArgs e)
         {
             try
@@ -181,21 +184,60 @@ namespace MainUI.LogicalConfiguration.Forms
                 var dialogType = GetSelectedDialogType();
                 if (dialogType != DialogType.OK)
                 {
-                    if (string.IsNullOrWhiteSpace(txtResultVariable.Text))
+                    var varNameInput = txtResultVariable.Text?.Trim();
+
+                    if (string.IsNullOrWhiteSpace(varNameInput))
                     {
                         MessageBox.Show("请输入用于保存结果的变量名", "提示",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
+
+                    // 使用 VariableNameHelper 验证变量名格式
+                    var normalizedVarName = VariableNameHelper.NormalizeVariableName(varNameInput);
+
+                    if (normalizedVarName == null)
+                    {
+                        MessageBox.Show(
+                            $"变量名格式无效: {varNameInput}\n\n" +
+                            "变量名规则：\n" +
+                            "1. 只能包含字母、数字、下划线、中文\n" +
+                            "2. 不能以数字开头\n" +
+                            "3. 可以带花括号 {变量名} 或不带",
+                            "提示",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    // 如果用户输入的是带花括号的格式，给出友好提示
+                    if (varNameInput != normalizedVarName)
+                    {
+                        var result = MessageBox.Show(
+                            $"检测到您输入的变量名包含花括号：\n\n" +
+                            $"原始输入: {varNameInput}\n" +
+                            $"规范化后: {normalizedVarName}\n\n" +
+                            $"系统会自动使用规范化后的变量名。是否继续？",
+                            "变量名规范化",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Information);
+
+                        if (result != DialogResult.Yes)
+                        {
+                            return;
+                        }
+                    }
                 }
 
-                // 创建参数对象
+                // 创建参数对象（保存原始输入，在SystemMethods中再规范化）
                 var param = new Parameter_SystemPrompt
                 {
                     Message = txtPromptContent.Text.Trim(),
                     DialogType = dialogType,
                     MessageLevel = GetSelectedMessageLevel(),
-                    ResultVariable = dialogType != DialogType.OK ? txtResultVariable.Text.Trim() : null,
+                    ResultVariable = dialogType != DialogType.OK
+                        ? txtResultVariable.Text.Trim()
+                        : null,
                     WaitForResponse = true
                 };
 
@@ -206,8 +248,9 @@ namespace MainUI.LogicalConfiguration.Forms
                 if (steps != null && idx >= 0 && idx < steps.Count)
                 {
                     steps[idx].StepParameter = param;
-                    _logger.LogInformation("系统提示参数已保存: DialogType={DialogType}, MessageLevel={MessageLevel}",
-                        param.DialogType, param.MessageLevel);
+                    _logger.LogInformation(
+                        "系统提示参数已保存: DialogType={DialogType}, MessageLevel={MessageLevel}, ResultVariable={ResultVariable}",
+                        param.DialogType, param.MessageLevel, param.ResultVariable);
                 }
 
                 DialogResult = DialogResult.OK;

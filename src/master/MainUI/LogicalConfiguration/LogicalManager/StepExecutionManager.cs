@@ -163,17 +163,15 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     _currentStepIndex++;
 
                     // 步骤间延时(可选),使用取消令牌
-                    if (_isExecuting)
+                    if (!_isExecuting) continue;
+                    try
                     {
-                        try
-                        {
-                            await Task.Delay(10, _cancellationTokenSource.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            // 延时被取消,直接退出
-                            break;
-                        }
+                        await Task.Delay(10, _cancellationTokenSource.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // 延时被取消,直接退出
+                        break;
                     }
                 }
 
