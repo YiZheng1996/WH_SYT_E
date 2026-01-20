@@ -69,7 +69,7 @@ namespace MainUI.LogicalConfiguration.Engine
                 var varName = match.Groups[1].Value;
                 string replacement;
 
-                // 使用共享工具检查是否是 PLC 引用格式 - 修复点
+                // 使用共享工具检查是否是 PLC 引用格式
                 if (ExpressionUtils.IsPLCReference(varName))
                 {
                     replacement = async
@@ -94,14 +94,11 @@ namespace MainUI.LogicalConfiguration.Engine
         {
             var variable = _variableManager.TryFindVariableByName(varName);
 
-            if (variable == null)
-            {
-                logger?.LogWarning("变量 '{VarName}' 不存在", varName);
-                throw new InvalidOperationException($"变量 '{varName}' 不存在");
-            }
+            if (variable != null) return ExpressionUtils.FormatValueForExpression(variable.VarValue);
+            logger?.LogWarning("变量 '{VarName}' 不存在", varName);
+            throw new InvalidOperationException($"变量 '{varName}' 不存在");
 
             // 使用共享工具格式化值
-            return ExpressionUtils.FormatValueForExpression(variable.VarValue);
         }
 
         /// <summary>
@@ -117,7 +114,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
             try
             {
-                // 使用共享工具正确解析PLC引用 - 关键修复点
+                // 使用共享工具正确解析PLC引用
                 var (moduleName, address) = ExpressionUtils.ParsePLCReference(plcAddress);
 
                 if (string.IsNullOrEmpty(moduleName) || string.IsNullOrEmpty(address))

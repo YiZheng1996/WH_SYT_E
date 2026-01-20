@@ -544,7 +544,7 @@ namespace MainUI.LogicalConfiguration.Services.ServicesPLC
         private async Task<BaseModule> GetModuleAsync(string moduleName, CancellationToken cancellationToken = default)
         {
             var modules = await GetModulesAsync(cancellationToken);
-            return modules.TryGetValue(moduleName, out var module) ? module : null;
+            return modules.GetValueOrDefault(moduleName);
         }
 
         /// <summary>
