@@ -416,6 +416,9 @@ namespace MainUI.Procedure.Controls
                 "等待稳定" or "WaitForStable" => DisplayWaitForStableParameters(stepParameter, yPosition),
                 "实时监控" => DisplayRealtimeMonitorPromptParameters(stepParameter, yPosition),
                 "循环工具" => DisplayLoopParameters(stepParameter, yPosition),
+                //"检测工具" => DisplayDetectionToolParameters(stepParameter, yPosition),
+                "消息通知" => DisplayMessageNotificationParameters(stepParameter, yPosition),
+
                 _ => DisplayGenericParameters(stepParameter, yPosition)
             };
         }
@@ -561,7 +564,7 @@ namespace MainUI.Procedure.Controls
         }
 
         /// <summary>
-        /// 读取单元格参数展示 - 表格式
+        /// 读取单元格参数展示
         /// </summary>
         private int DisplayReadCellsParameters(object stepParameter, int yPosition)
         {
@@ -570,9 +573,8 @@ namespace MainUI.Procedure.Controls
                 var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
                 var json = JObject.Parse(jsonStr);
 
-                yPosition = AddSubSectionTitle("📊 读取配置", yPosition);
+                yPosition = AddSubSectionTitle("📖 读取单元格配置", yPosition);
 
-                // 定义列宽
                 int col1Width = 120;
                 int col2Width = detailsPanel.Width - col1Width - 10;
 
@@ -581,19 +583,31 @@ namespace MainUI.Procedure.Controls
                 AddTableCell("配置值", yPosition, col1Width, col2Width, true);
                 yPosition += 25;
 
-                // 工作表
+                // 文件路径
+                string filePath = json["FilePath"]?.ToString() ?? json["ExcelFile"]?.ToString();
+                AddTableCell("Excel文件", yPosition, 0, col1Width, false);
+                AddTableCell(string.IsNullOrEmpty(filePath) ? "(未指定)" : Path.GetFileName(filePath),
+                    yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 工作表名称
+                string sheetName = json["SheetName"]?.ToString() ?? "Sheet1";
                 AddTableCell("工作表", yPosition, 0, col1Width, false);
-                AddTableCell(json["SheetName"]?.ToString() ?? "Sheet1", yPosition, col1Width, col2Width, false);
+                AddTableCell(sheetName, yPosition, col1Width, col2Width, false);
                 yPosition += 22;
 
                 // 单元格地址
+                string cellAddress = json["CellAddress"]?.ToString() ?? json["Address"]?.ToString();
                 AddTableCell("单元格地址", yPosition, 0, col1Width, false);
-                AddTableCell(json["CellAddress"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                AddTableCell(cellAddress ?? "(未指定)", yPosition, col1Width, col2Width, false,
+                    Color.FromArgb(0, 102, 204));
                 yPosition += 22;
 
                 // 目标变量
+                string targetVar = json["TargetVariable"]?.ToString() ?? json["TargetVarName"]?.ToString();
                 AddTableCell("保存到变量", yPosition, 0, col1Width, false);
-                AddTableCell(json["TargetVariable"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                AddTableCell(targetVar ?? "(未指定)", yPosition, col1Width, col2Width, false,
+                    StatusColors.Success);
                 yPosition += 22;
 
                 return yPosition;
@@ -1179,8 +1193,8 @@ namespace MainUI.Procedure.Controls
         {
             try
             {
-                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
-                var json = JObject.Parse(jsonStr);
+                var param = ConvertToParameter<Parameter_DelayTime>(stepParameter);
+                if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
 
                 yPosition = AddSubSectionTitle("延时配置", yPosition);
 
@@ -1193,11 +1207,27 @@ namespace MainUI.Procedure.Controls
                 AddTableCell("配置值", yPosition, col1Width, col2Width, true);
                 yPosition += 25;
 
-                // 延时时长
-                string duration = json["T"]?.ToString() ?? "0";
-                AddTableCell("延时时长", yPosition, 0, col1Width, false);
-                AddTableCell($"{(duration.ToDouble() / 1000)} 秒", yPosition, col1Width, col2Width, false);
-                yPosition += 22;
+                // 检查是否使用变量表达式
+                if (!string.IsNullOrEmpty(param.DelayValue) && param.DelayValue.Contains("{"))
+                {
+                    // 变量模式
+                    AddTableCell("延时表达式", yPosition, 0, col1Width, false);
+                    AddTableCell(param.DelayValue, yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(0, 102, 204));
+                    yPosition += 22;
+
+                    AddTableCell("当前值", yPosition, 0, col1Width, false);
+                    AddTableCell($"{param.T / 1000.0:F1} 秒 ({param.T} ms)", yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(100, 100, 100));
+                    yPosition += 22;
+                }
+                else
+                {
+                    // 固定值模式
+                    AddTableCell("延时时长", yPosition, 0, col1Width, false);
+                    AddTableCell($"{param.T / 1000.0:F1} 秒 ({param.T} ms)", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
 
                 return yPosition;
             }
@@ -1885,6 +1915,62 @@ namespace MainUI.Procedure.Controls
                 return DisplayGenericParameters(stepParameter, yPosition);
             }
         }
+
+        /// <summary>
+        /// 消息通知参数展示 - 中文版
+        /// </summary>
+        private int DisplayMessageNotificationParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var param = ConvertToParameter<Parameter_SystemPrompt>(stepParameter);
+                if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
+
+                yPosition = AddSubSectionTitle("消息通知配置", yPosition);
+
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 通知类型
+                string typeText = param.MessageLevel switch
+                {
+                    //"Info" => "信息提示",
+                    //"Warning" => "警告提示",
+                    //"Error" => "错误提示",
+                    //"Success" => "成功提示",
+                    //_ => param.MessageLevel ?? "普通提示"
+                };
+                AddTableCell("通知类型", yPosition, 0, col1Width, false);
+                AddTableCell(typeText, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 通知内容
+                AddTableCell("通知内容", yPosition, 0, col1Width, false);
+                AddTableCell(param.Message ?? param.Message ?? "(无内容)", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 是否阻塞
+                //if (param.IsBlocking)
+                {
+                    AddTableCell("等待确认", yPosition, 0, col1Width, false);
+                    AddTableCell("是 - 需要用户点击确认", yPosition, col1Width, col2Width, false, StatusColors.Waiting);
+                    yPosition += 22;
+                }
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
+
+
 
         /// <summary>
         /// 添加分隔线（辅助方法）

@@ -35,9 +35,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "等待稳定" => GetWaitForStablePreview(step),
                     "条件判断" => GetConditionPreview(step),
                     "循环工具" => GetLoopStartPreview(step),
-                    "数据读取" => GetDataReadPreview(step),
-                    "数据计算" => GetDataCalculationPreview(step),
                     "消息通知" => GetMessageNotificationPreview(step),
+                    "检测工具" => GetDetectionToolPreview(step),
                     "读取PLC" => GetReadPLCPreview(step),
                     "写入PLC" => GetWritePLCPreview(step),
                     "以太网发送" => GetEthernetSendPreview(step),
@@ -95,12 +94,20 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             if (!TryGetParameter<Parameter_DelayTime>(step.StepParameter, out var param))
                 return "未配置";
 
-            if (param.T < 1000)
-                return $"等待 {param.T:F0} 毫秒";
-            else if (param.T < 60000)
-                return $"等待 {param.T / 1000:F1} 秒";
-            else
-                return $"等待 {param.T / 60000:F1} 分钟";
+            // 检查是否使用了变量表达式
+            if (!string.IsNullOrEmpty(param.DelayValue) && param.DelayValue.Contains("{"))
+            {
+                // 使用变量的情况，显示变量表达式
+                return $"延时: {param.DelayValue}";
+            }
+
+            return param.T switch
+            {
+                // 直接使用数值的情况
+                < 1000 => $"等待 {param.T:F0} 毫秒",
+                < 60000 => $"等待 {param.T / 1000:F1} 秒",
+                _ => $"等待 {param.T / 60000:F1} 分钟"
+            };
         }
 
         /// <summary>
@@ -217,30 +224,50 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         }
 
         /// <summary>
-        /// 获取数据读取步骤的预览
-        /// </summary>
-        private string GetDataReadPreview(ChildModel step)
-        {
-            // 根据实际的参数结构调整
-            return "数据读取操作";
-        }
-
-        /// <summary>
-        /// 获取数据计算步骤的预览
-        /// </summary>
-        private string GetDataCalculationPreview(ChildModel step)
-        {
-            // 根据实际的参数结构调整
-            return "数据计算操作";
-        }
-
-        /// <summary>
-        /// 获取消息通知步骤的预览
+        /// 消息通知步骤的预览
         /// </summary>
         private string GetMessageNotificationPreview(ChildModel step)
         {
-            // 根据实际的参数结构调整
-            return "消息通知";
+            if (!TryGetParameter<Parameter_SystemPrompt>(step.StepParameter, out var param))
+                return "未配置";
+
+            return "未配置";
+
+            //// 根据通知类型显示不同预览
+            //string typeText = param.DialogType switch
+            //{
+            //    "Info" or "信息" => "ℹ️ 信息",
+            //    "Warning" or "警告" => "⚠️ 警告",
+            //    "Error" or "错误" => "❌ 错误",
+            //    "Success" or "成功" => "✓ 成功",
+            //    _ => "💬 提示"
+            //};
+
+            //string content = TruncateText(param.PromptContent ?? param.Message ?? "", 25);
+            //return $"{typeText}: {content}";
+        }
+
+        /// <summary>
+        /// 检测工具步骤的预览
+        /// </summary>
+        private string GetDetectionToolPreview(ChildModel step)
+        {
+            if (!TryGetParameter<Parameter_Detection>(step.StepParameter, out var param))
+                return "未配置";
+            return "未配置";
+
+            //// 构建简洁预览
+            //string expression = param.ConditionExpression ?? "未设置条件";
+            //string preview = $"检测: {TruncateText(expression, 30)}";
+
+            //// 添加分支数量信息
+            //int trueCount = param.TrueSteps?.Count ?? 0;
+            //int falseCount = param.FalseSteps?.Count ?? 0;
+
+            //if (trueCount > 0 || falseCount > 0)
+            //    preview += $" [✓{trueCount}/✗{falseCount}]";
+
+            //return preview;
         }
 
         /// <summary>
