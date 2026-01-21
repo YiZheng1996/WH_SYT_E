@@ -1,7 +1,9 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Helpers;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
+using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -123,6 +125,111 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
+        /// <summary>
+        /// 设置ComboBox选中值(支持通过Value或Text匹配)
+        /// </summary>
+        private void SetComboBoxValue(UIComboBox comboBox, string value)
+        {
+            if (comboBox == null || string.IsNullOrEmpty(value)) return;
+
+            try
+            {
+                // 优先通过 ComboItem.Value 查找匹配项
+                for (int i = 0; i < comboBox.Items.Count; i++)
+                {
+                    if (comboBox.Items[i] is ComboItem item)
+                    {
+                        // 先比较 Value
+                        if (item.Value?.ToString().Equals(value, StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            comboBox.SelectedIndex = i;
+                            return;
+                        }
+                        // 再比较 Text
+                        if (item.Text?.Equals(value, StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            comboBox.SelectedIndex = i;
+                            return;
+                        }
+                    }
+                    // 兼容普通字符串项
+                    else if (comboBox.Items[i]?.ToString().Equals(value, StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        comboBox.SelectedIndex = i;
+                        return;
+                    }
+                }
+
+                // 如果没有找到匹配项,且ComboBox允许编辑,则设置Text属性
+                if (comboBox.DropDownStyle == UIDropDownStyle.DropDown)
+                {
+                    comboBox.Text = value;
+                }
+                else
+                {
+                    Logger?.LogWarning($"ComboBox中找不到匹配项: {value}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogWarning(ex, $"设置ComboBox值失败: {value}");
+            }
+        }
+
+        /// <summary>
+        /// 确保PLC模块列表已加载
+        /// </summary>
+        private async Task EnsurePlcModulesLoaded()
+        {
+            // 如果列表为空，等待加载
+            if (cmbPlcModule.Items.Count == 0)
+            {
+                try
+                {
+                    if (_plcManager != null)
+                    {
+                        var modules = await _plcManager.GetModuleTagsAsync();
+                        if (modules != null && modules.Count != 0)
+                        {
+                            cmbPlcModule.Items.Clear();
+                            cmbPlcModule.Items.AddRange([.. modules.Keys]);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogError(ex, "加载PLC模块列表失败");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 异步加载PLC地址列表
+        /// </summary>
+        private async Task LoadPlcAddresses(string moduleName)
+        {
+            try
+            {
+                 
+                if (_plcManager == null || string.IsNullOrEmpty(moduleName))
+                    return;
+
+                var modules = await PLCManager.GetModuleTagsAsync();
+                if (modules.TryGetValue(moduleName, out List<string> addresses))
+                {
+                    cmbPlcAddress.Items.Clear();
+                    foreach (var address in addresses)
+                    {
+                        cmbPlcAddress.Items.Add(address);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "加载PLC地址列表失败");
+            }
+        }
+
         private async void CmbPlcModule_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (_isInitializing) return;
@@ -131,12 +238,14 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 string moduleName = cmbPlcModule.Text;
                 if (string.IsNullOrEmpty(moduleName)) return;
-
-                var addresses = await _plcManager.GetModuleTagsAsync(moduleName);
-                if (addresses != null)
+                var modules = await PLCManager.GetModuleTagsAsync();
+                if (modules.TryGetValue(moduleName, out List<string> addresses))
                 {
                     cmbPlcAddress.Items.Clear();
-                    cmbPlcAddress.Items.AddRange(addresses.ToArray());
+                    foreach (var address in addresses)
+                    {
+                        cmbPlcAddress.Items.Add(address);
+                    }
                 }
             }
             catch (Exception ex)
@@ -272,7 +381,7 @@ namespace MainUI.LogicalConfiguration.Forms
         /// <summary>
         /// 加载参数
         /// </summary>
-        protected override void LoadParameterToForm()
+        protected override async void LoadParameterToForm()
         {
             _isInitializing = true;
 
@@ -294,6 +403,29 @@ namespace MainUI.LogicalConfiguration.Forms
             cmbIconType.SelectedIndex = (int)Parameter.IconType;
 
             UpdateMonitorSourceVisibility();
+
+            // 监测源配置
+            if (Parameter.MonitorSourceType == MonitorSourceType.Variable)
+            {
+                // 确保选中"全局变量"
+                SetComboBoxValue(cmbMonitorSourceType, "Variable");
+                cmbMonitorVariable.Text = Parameter.MonitorVariable ?? "";
+            }
+            else // MonitorSourceType.PLC
+            {
+                SetComboBoxValue(cmbMonitorSourceType, "PLC");
+
+                // 先等待PLC模块列表加载完成
+                await EnsurePlcModulesLoaded();
+                cmbPlcModule.Text = Parameter.PlcModuleName ?? "";
+
+                // 如果有模块名，加载对应地址列表
+                if (!string.IsNullOrEmpty(Parameter.PlcModuleName))
+                {
+                    await LoadPlcAddresses(Parameter.PlcModuleName);
+                    cmbPlcAddress.Text = Parameter.PlcAddress ?? "";
+                }
+            }
 
             _isInitializing = false;
         }
@@ -319,9 +451,27 @@ namespace MainUI.LogicalConfiguration.Forms
             Parameter.IconType = (TType)cmbIconType.SelectedIndex;
             Parameter.ValueLabelText = txtValueLabelText.Text;
             Parameter.ShowValueLabel = chkShowValueLabel.Checked;
+
+            // 规范化监测变量名
+            //var monitorVarName = cmbMonitorVariable.Text?.Trim();
+            //Parameter.MonitorVariable = VariableNameHelper.NormalizeVariableName(monitorVarName) ?? monitorVarName;
         }
 
         #endregion
 
+        #region ComboItem 类
+
+        /// <summary>
+        /// ComboBox数据项
+        /// </summary>
+        private class ComboItem
+        {
+            public string Text { get; set; }
+            public object Value { get; set; }
+
+            public override string ToString() => Text;
+        }
+
+        #endregion
     }
 }

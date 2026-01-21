@@ -16,7 +16,7 @@ namespace MainUI.LogicalConfiguration.Parameter
         /// </summary>
         [DisplayName("检测项名称")]
         [Description("用于标识此检测步骤的名称")]
-        public string DetectionName { get; set; } = "";
+        public string DetectionName { get; set; } = "检测工具配置";
 
         #endregion
 
@@ -50,7 +50,7 @@ namespace MainUI.LogicalConfiguration.Parameter
         /// </summary>
         [DisplayName("超时时间")]
         [Description("检测超时时间，单位毫秒，0表示不限制")]
-        public int TimeoutMs { get; set; } = 5000;
+        public int TimeoutMs { get; set; } = 30000;
 
         /// <summary>
         /// 重试次数

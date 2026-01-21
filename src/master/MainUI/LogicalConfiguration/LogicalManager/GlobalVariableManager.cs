@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.Services;
+﻿using MainUI.LogicalConfiguration.Helpers;
+using MainUI.LogicalConfiguration.Services;
 
 namespace MainUI.LogicalConfiguration.LogicalManager
 {
@@ -35,7 +36,10 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             if (string.IsNullOrEmpty(varName))
                 return null;
 
-            return _workflowState.FindVariableByName(varName);
+            // 自动规范化变量名，支持带花括号的输入
+            var normalizedName = VariableNameHelper.NormalizeVariableName(varName) ?? varName;
+
+            return _workflowState.FindVariableByName(normalizedName);
         }
 
         /// <summary>

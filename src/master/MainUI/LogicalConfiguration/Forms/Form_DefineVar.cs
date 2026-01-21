@@ -1,6 +1,7 @@
 ﻿using AntdUI;
-using MainUI.LogicalConfiguration.Parameter;
+using MainUI.LogicalConfiguration.Helpers;
 using MainUI.LogicalConfiguration.LogicalManager;
+using MainUI.LogicalConfiguration.Parameter;
 using Microsoft.Extensions.Logging;
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -142,6 +143,13 @@ namespace MainUI.LogicalConfiguration.Forms
 
                     // 跳过变量名为空的行
                     if (string.IsNullOrEmpty(varName)) continue;
+
+                    // 在创建新变量前，验证变量名格式
+                    if (!VariableNameHelper.IsValidVariableName(varName))
+                    {
+                        errorMessages.Add($"变量名\"{varName}\"格式无效：只能包含字母、数字、下划线和中文，且不能以数字开头");
+                        continue;
+                    }
 
                     // 检查变量名是否重复
                     if (addedVariables.Contains(varName, StringComparer.OrdinalIgnoreCase))

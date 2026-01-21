@@ -1,5 +1,6 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Controls;
+using MainUI.LogicalConfiguration.Helpers;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
@@ -385,10 +386,21 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 响应设置
                 _parameter.WaitResponse = chkWaitResponse.Checked;
                 _parameter.ResponseTimeout = numResponseTimeout.Value * 1000;
-                _parameter.ResponseVariableName = cmbResponseVariable.Text.Trim();
+                //_parameter.ResponseVariableName = cmbResponseVariable.Text.Trim();
 
                 // 其他设置
                 _parameter.DisconnectAfterSend = chkDisconnectAfterSend.Checked;
+
+                if (chkWaitResponse.Checked && !string.IsNullOrEmpty(cmbResponseVariable.Text))
+                {
+                    var normalizedVar = VariableNameHelper.NormalizeVariableName(cmbResponseVariable.Text);
+                    if (normalizedVar == null)
+                    {
+                        MessageHelper.MessageOK($"响应变量名格式无效: {cmbResponseVariable.Text}", TType.Warn);
+                        return;
+                    }
+                    _parameter.ResponseVariableName = normalizedVar;
+                }
 
                 Logger?.LogDebug("界面数据已保存到参数对象");
             }

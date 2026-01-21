@@ -322,9 +322,9 @@ namespace MainUI.LogicalConfiguration.Forms
             numTimeoutMs.Size = new Size(145, 28);
             numTimeoutMs.Step = 100;
             numTimeoutMs.TabIndex = 2;
-            numTimeoutMs.Text = "5000";
+            numTimeoutMs.Text = "30000";
             numTimeoutMs.TextAlignment = ContentAlignment.MiddleCenter;
-            numTimeoutMs.Value = 5000;
+            numTimeoutMs.Value = 30000;
             // 
             // lblTimeoutMs
             // 
@@ -454,6 +454,7 @@ namespace MainUI.LogicalConfiguration.Forms
             txtDetectionName.ShowText = false;
             txtDetectionName.Size = new Size(569, 30);
             txtDetectionName.TabIndex = 2;
+            txtDetectionName.Text = "检测工具配置";
             txtDetectionName.TextAlignment = ContentAlignment.MiddleLeft;
             txtDetectionName.Watermark = "输入检测项名称...";
             // 

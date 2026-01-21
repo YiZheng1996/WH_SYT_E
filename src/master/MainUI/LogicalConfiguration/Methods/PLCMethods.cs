@@ -244,9 +244,9 @@ namespace MainUI.LogicalConfiguration.Methods
             try
             {
                 // 检查是否是变量引用（例如：${variableName}）
-                if (value.StartsWith("${") && value.EndsWith("}"))
+                if (value.StartsWith("{") && value.EndsWith("}"))
                 {
-                    var variableName = value[2..^1]; // 移除 ${ 和 }
+                    var variableName = value[1..^1]; // 移除 { 和 }
                     var variables = _workflowStateService.GetVariables<VarItem_Enhanced>();
                     var variable = variables.FirstOrDefault(v => v.VarName == variableName);
 

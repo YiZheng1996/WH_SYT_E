@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.Helpers;
+﻿using MainUI.LogicalConfiguration.Engine;
+using MainUI.LogicalConfiguration.Helpers;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods.Core;
 using MainUI.LogicalConfiguration.Parameter;
@@ -8,26 +9,98 @@ namespace MainUI.LogicalConfiguration.Methods
     /// <summary>
     /// 系统工具方法集合 - 使用新的统一错误处理
     /// </summary>
-    public class SystemMethods : DSLMethodBase
+    public class SystemMethods(ExpressionEngine expressionEngine,
+        GlobalVariableManager variableManager) : DSLMethodBase
     {
+        private readonly ExpressionEngine _expressionEngine = expressionEngine;
+        private readonly GlobalVariableManager _variableManager = variableManager;
+
         public override string Category => "系统工具";
         public override string Description => "提供延时、提示等系统级工具方法";
 
         /// <summary>
-        /// 延时等待 - 支持取消
+        /// 延时等待 - 支持变量表达式和时间单位
         /// </summary>
         public async Task<bool> DelayTime(Parameter_DelayTime param, CancellationToken cancellationToken = default)
         {
             try
             {
-                NlogHelper.Default.Info($"开始延时: {param.T} 秒");
+                int delayMilliseconds;
 
-                int delayMilliseconds = (int)(param.T /** 1000*/);
+                // 1. 检查是否有有效的 DelayValue
+                if (!string.IsNullOrWhiteSpace(param.DelayValue))
+                {
+                    double delayValue;
 
-                // 使用支持取消的延时
+                    // 1.1 解析延时值(支持变量表达式)
+                    if (param.ContainsVariables())
+                    {
+                        // 包含变量引用,使用表达式引擎求值
+                        NlogHelper.Default.Info($"解析延时表达式: {param.DelayValue}");
+
+                        var evalResult = await _expressionEngine.EvaluateExpressionAsync(param.DelayValue);
+
+                        if (!evalResult.Success)
+                        {
+                            NlogHelper.Default.Error($"延时表达式求值失败: {evalResult.ErrorMessage}");
+                            return false;
+                        }
+
+                        // 转换为数值
+                        if (evalResult.Result is double doubleVal)
+                        {
+                            delayValue = doubleVal;
+                        }
+                        else if (evalResult.Result is int intVal)
+                        {
+                            delayValue = intVal;
+                        }
+                        else if (double.TryParse(evalResult.Result?.ToString(), out double parsedVal))
+                        {
+                            delayValue = parsedVal;
+                        }
+                        else
+                        {
+                            NlogHelper.Default.Error($"延时表达式结果类型错误: {evalResult.Result?.GetType().Name}");
+                            return false;
+                        }
+
+                        NlogHelper.Default.Info($"表达式 {param.DelayValue} 解析结果: {delayValue}");
+                    }
+                    else
+                    {
+                        // 直接解析数值
+                        if (!double.TryParse(param.DelayValue, out delayValue))
+                        {
+                            NlogHelper.Default.Error($"延时值格式错误: {param.DelayValue}");
+                            return false;
+                        }
+                    }
+
+                    // 1.2 根据单位转换为毫秒
+                    delayMilliseconds = (int)/*param.ConvertToMilliseconds*/(delayValue);
+                    //string unitDisplay = Parameter_DelayTime.GetUnitDisplayName(param.Unit);
+                    //NlogHelper.Default.Info($"延时时间: {delayValue} {unitDisplay} (转换为 {delayMilliseconds} 毫秒)");
+                }
+                else
+                {
+                    // 2. 向后兼容：如果 DelayValue 为空，使用 T 属性（已经是毫秒）
+                    delayMilliseconds = (int)param.T;
+                    NlogHelper.Default.Info($"使用兼容模式延时: {delayMilliseconds} 毫秒");
+                }
+
+                // 3. 验证延时值
+                if (delayMilliseconds < 0)
+                {
+                    NlogHelper.Default.Error($"延时值不能为负数: {delayMilliseconds}");
+                    return false;
+                }
+
+                // 4. 执行延时
+                NlogHelper.Default.Info($"开始延时 {delayMilliseconds} 毫秒");
                 await Task.Delay(delayMilliseconds, cancellationToken);
-
                 NlogHelper.Default.Info("延时完成");
+
                 return true;
             }
             catch (OperationCanceledException)
@@ -45,8 +118,7 @@ namespace MainUI.LogicalConfiguration.Methods
         /// <summary>
         /// 系统提示方法 - 支持新的对话框类型和提示等级
         /// </summary>
-        public async Task<bool> SystemPrompt(Parameter_SystemPrompt param,
-    GlobalVariableManager variableManager = null)
+        public async Task<bool> SystemPrompt(Parameter_SystemPrompt param, GlobalVariableManager variableManager = null)
         {
             try
             {

@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.LogicalManager;
+﻿using MainUI.LogicalConfiguration.Helpers;
+using MainUI.LogicalConfiguration.LogicalManager;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -9,21 +10,13 @@ namespace MainUI.LogicalConfiguration.Engine
     /// 负责验证表达式的合法性,使用共享工具消除所有重复代码
     /// 区分普通变量和PLC引用,避免将PLC点位当作变量验证
     /// </summary>
-    internal class ExpressionValidator
+    internal class ExpressionValidator(
+        GlobalVariableManager variableManager,
+        FunctionRegistry functionRegistry,
+        ILogger logger = null)
     {
-        private readonly GlobalVariableManager _variableManager;
-        private readonly FunctionRegistry _functionRegistry;
-        private readonly ILogger _logger;
-
-        public ExpressionValidator(
-            GlobalVariableManager variableManager,
-            FunctionRegistry functionRegistry,
-            ILogger logger = null)
-        {
-            _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
-            _functionRegistry = functionRegistry ?? throw new ArgumentNullException(nameof(functionRegistry));
-            _logger = logger;
-        }
+        private readonly GlobalVariableManager _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
+        private readonly FunctionRegistry _functionRegistry = functionRegistry ?? throw new ArgumentNullException(nameof(functionRegistry));
 
         #region 公共方法 - 验证入口
 
@@ -46,7 +39,7 @@ namespace MainUI.LogicalConfiguration.Engine
                     ? $"{context.ValidationLabel}: {expression}"
                     : expression;
 
-                _logger?.LogDebug("开始验证表达式: {Expression}", label);
+                logger?.LogDebug("开始验证表达式: {Expression}", label);
 
                 // 统一的验证流程 - 每个步骤独立,职责单一
                 if (!ValidateCharacters(expression, result)) return result;
@@ -56,12 +49,12 @@ namespace MainUI.LogicalConfiguration.Engine
                 if (!ValidateOperators(expression, result)) return result;
                 if (!ValidateTypeCompatibility(expression, context, result)) return result;
 
-                _logger?.LogDebug("表达式验证通过: {Expression}", expression);
+                logger?.LogDebug("表达式验证通过: {Expression}", expression);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "表达式验证失败: {Expression}", expression);
+                logger?.LogError(ex, "表达式验证失败: {Expression}", expression);
                 return CreateError($"验证过程发生错误: {ex.Message}");
             }
         }
@@ -114,7 +107,7 @@ namespace MainUI.LogicalConfiguration.Engine
             // 根据上下文白名单过滤
             var varsToCheck = FilterVariablesByWhitelist(referencedVars, context);
 
-            // 分离普通变量和PLC引用 - 关键修复点
+            // 分离普通变量和PLC引用
             var normalVariables = new List<string>();
             var plcReferences = new List<string>();
 
@@ -144,13 +137,11 @@ namespace MainUI.LogicalConfiguration.Engine
             }
 
             // 可选: 验证PLC引用的格式是否正确
-            if (context?.AllowPlcReferences == true && plcReferences.Count > 0)
+            if (context?.AllowPlcReferences != true || plcReferences.Count <= 0) return true;
+            var invalidPlcRefs = ValidatePLCReferences(plcReferences);
+            if (invalidPlcRefs.Count > 0)
             {
-                var invalidPlcRefs = ValidatePLCReferences(plcReferences);
-                if (invalidPlcRefs.Count > 0)
-                {
-                    result.AddWarning($"PLC引用格式可能不正确: {string.Join(", ", invalidPlcRefs)}");
-                }
+                result.AddWarning($"PLC引用格式可能不正确: {string.Join(", ", invalidPlcRefs)}");
             }
 
             return true;

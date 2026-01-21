@@ -266,6 +266,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 var modules = await PLCManager.GetModuleTagsAsync();
                 if (modules.TryGetValue(moduleName, out List<string> addresses))
                 {
+                    cmbPlcAddress.Items.Clear();
                     foreach (var address in addresses)
                     {
                         cmbPlcAddress.Items.Add(address);

@@ -1,5 +1,6 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Controls;
+using MainUI.LogicalConfiguration.Helpers;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
@@ -232,7 +233,10 @@ namespace MainUI.LogicalConfiguration.Forms
                 _parameter.DataSource ??= new DataSourceConfig();
 
                 // 目标变量名：直接使用，不处理花括号
-                _parameter.TargetVarName = txtTargetVariable?.Text?.Trim() ?? "";
+                //_parameter.TargetVarName = txtTargetVariable?.Text?.Trim() ?? "";
+
+                // 目标变量名：使用规范化后的名称
+                _parameter.TargetVarName = VariableNameHelper.NormalizeVariableName(txtTargetVariable?.Text) ?? "";
 
                 // 赋值内容：原样保存，不处理花括号
                 string expression = txtAssignmentContent?.Text?.Trim() ?? "";
@@ -297,6 +301,16 @@ namespace MainUI.LogicalConfiguration.Forms
                 {
                     MessageHelper.MessageOK("请配置赋值内容！", TType.Warn);
                     txtAssignmentContent?.Focus();
+                    return false;
+                }
+
+                // 在验证目标变量存在性之前，先验证格式
+                var targetVarInput = txtTargetVariable?.Text?.Trim();
+                var normalizedTarget = VariableNameHelper.NormalizeVariableName(targetVarInput);
+                if (normalizedTarget == null)
+                {
+                    MessageHelper.MessageOK($"目标变量名格式无效: {targetVarInput}", TType.Warn);
+                    txtTargetVariable?.Focus();
                     return false;
                 }
 

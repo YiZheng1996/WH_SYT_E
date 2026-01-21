@@ -1,6 +1,7 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.Engine;
+using MainUI.LogicalConfiguration.Helpers;
 using MainUI.LogicalConfiguration.Infrastructure;
 using MainUI.LogicalConfiguration.Parameter;
 using Microsoft.Extensions.DependencyInjection;
@@ -160,7 +161,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 cmbFailureAction.Items.Clear();
                 cmbFailureAction.Items.Add("继续执行");
                 cmbFailureAction.Items.Add("停止流程");
-                cmbFailureAction.Items.Add("跳转到指定步骤");
+                //cmbFailureAction.Items.Add("跳转到指定步骤");
                 //cmbFailureAction.Items.Add("重试");
                 cmbFailureAction.SelectedIndex = 0;
 
@@ -526,6 +527,26 @@ namespace MainUI.LogicalConfiguration.Forms
                 _parameter.ResultHandling.SaveValueToVariable = chkSaveValue.Checked;
                 _parameter.ResultHandling.ValueVariableName = cmbValueVariable.Text?.Trim() ?? "";
                 _parameter.ResultHandling.OnFailure = (FailureAction)cmbFailureAction.SelectedIndex;
+
+                // 验证并规范化结果变量名
+                if (chkSaveResult.Checked)
+                {
+                    var resultVarName = cmbResultVariable.Text?.Trim();
+                    var normalizedResultVar = VariableNameHelper.NormalizeVariableName(resultVarName);
+                    if (normalizedResultVar == null && !string.IsNullOrEmpty(resultVarName))
+                    {
+                        _logger?.LogWarning($"结果变量名格式无效: {resultVarName}");
+                    }
+                    _parameter.ResultHandling.ResultVariableName = normalizedResultVar ?? "";
+                }
+
+                // 同样处理 ValueVariableName
+                if (chkSaveValue.Checked)
+                {
+                    var valueVarName = cmbValueVariable.Text?.Trim();
+                    var normalizedValueVar = VariableNameHelper.NormalizeVariableName(valueVarName);
+                    _parameter.ResultHandling.ValueVariableName = normalizedValueVar ?? "";
+                }
 
                 _logger?.LogDebug("界面保存到参数完成");
             }

@@ -157,7 +157,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
-        #region 核心方法 - 参考 Form_WriteCells 模式
+        #region 核心方法
 
         /// <summary>
         /// 从界面收集参数 - 参考 Form_WriteCells.GetCurrentParameters()
