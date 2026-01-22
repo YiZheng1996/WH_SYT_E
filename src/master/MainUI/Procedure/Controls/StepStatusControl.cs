@@ -188,7 +188,7 @@ namespace MainUI.Procedure.Controls
             currentStatus = status.ToLower();
             currentStepData = stepData;
 
-            Debug.WriteLine($"UpdateStatus - Status: {status}, StepData: {stepData?.StepName}");
+            Debug.WriteLine($"更新状态 - 状态: {status}, 步骤数据: {stepData?.StepName}");
 
             Color statusColor;
             Color bgColor;
@@ -416,7 +416,7 @@ namespace MainUI.Procedure.Controls
                 "等待稳定" or "WaitForStable" => DisplayWaitForStableParameters(stepParameter, yPosition),
                 "实时监控" => DisplayRealtimeMonitorPromptParameters(stepParameter, yPosition),
                 "循环工具" => DisplayLoopParameters(stepParameter, yPosition),
-                //"检测工具" => DisplayDetectionToolParameters(stepParameter, yPosition),
+                "检测工具" => DisplayDetectionToolParameters(stepParameter, yPosition),
                 "消息通知" => DisplayMessageNotificationParameters(stepParameter, yPosition),
 
                 _ => DisplayGenericParameters(stepParameter, yPosition)
@@ -437,7 +437,7 @@ namespace MainUI.Procedure.Controls
                 var param = ConvertToParameter<Parameter_WriteCells>(stepParameter);
                 if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
 
-                yPosition = AddSubSectionTitle("Excel 配置", yPosition);
+                yPosition = AddSubSectionTitle("报表配置", yPosition);
                 yPosition = AddDetailLine("工作表", param.SheetName ?? "Sheet1", yPosition, 0, detailsPanel.Width);
                 yPosition += 10;
 
@@ -564,56 +564,103 @@ namespace MainUI.Procedure.Controls
         }
 
         /// <summary>
-        /// 读取单元格参数展示
+        /// 读取单元格参数展示 - 表格式
         /// </summary>
         private int DisplayReadCellsParameters(object stepParameter, int yPosition)
         {
             try
             {
-                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
-                var json = JObject.Parse(jsonStr);
+                var param = ConvertToParameter<Parameter_ReadCells>(stepParameter);
+                if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
 
-                yPosition = AddSubSectionTitle("📖 读取单元格配置", yPosition);
+                yPosition = AddSubSectionTitle("报表读取配置", yPosition);
 
+                // 工作表名称
                 int col1Width = 120;
                 int col2Width = detailsPanel.Width - col1Width - 10;
 
-                // 表头
                 AddTableCell("配置项", yPosition, 0, col1Width, true);
                 AddTableCell("配置值", yPosition, col1Width, col2Width, true);
                 yPosition += 25;
 
-                // 文件路径
-                string filePath = json["FilePath"]?.ToString() ?? json["ExcelFile"]?.ToString();
-                AddTableCell("Excel文件", yPosition, 0, col1Width, false);
-                AddTableCell(string.IsNullOrEmpty(filePath) ? "(未指定)" : Path.GetFileName(filePath),
-                    yPosition, col1Width, col2Width, false);
-                yPosition += 22;
-
-                // 工作表名称
-                string sheetName = json["SheetName"]?.ToString() ?? "Sheet1";
                 AddTableCell("工作表", yPosition, 0, col1Width, false);
-                AddTableCell(sheetName, yPosition, col1Width, col2Width, false);
+                AddTableCell(param.SheetName ?? "Sheet1", yPosition, col1Width, col2Width, false);
                 yPosition += 22;
 
-                // 单元格地址
-                string cellAddress = json["CellAddress"]?.ToString() ?? json["Address"]?.ToString();
-                AddTableCell("单元格地址", yPosition, 0, col1Width, false);
-                AddTableCell(cellAddress ?? "(未指定)", yPosition, col1Width, col2Width, false,
-                    Color.FromArgb(0, 102, 204));
-                yPosition += 22;
+                // 检查是否有ReadItems数据
+                if (param.ReadItems == null || param.ReadItems.Count == 0)
+                {
+                    AddTableCell("读取项", yPosition, 0, col1Width, false);
+                    AddTableCell("未配置单元格", yPosition, col1Width, col2Width, false,
+                        StatusColors.Failed);
+                    yPosition += 22;
+                    return yPosition;
+                }
 
-                // 目标变量
-                string targetVar = json["TargetVariable"]?.ToString() ?? json["TargetVarName"]?.ToString();
-                AddTableCell("保存到变量", yPosition, 0, col1Width, false);
-                AddTableCell(targetVar ?? "(未指定)", yPosition, col1Width, col2Width, false,
-                    StatusColors.Success);
+                // 分隔线
+                yPosition = AddSeparatorLine(yPosition);
+
+                // 显示读取项列表 - 三列表格
+                yPosition = AddSubSectionTitle("读取项列表", yPosition);
+
+                int cellCol = 100;   // 单元格地址
+                int varCol = 120;    // 目标变量
+                int typeCol = detailsPanel.Width - cellCol - varCol - 20;  // 数据类型
+
+                // 表头
+                AddTableCell("单元格", yPosition, 0, cellCol, true);
+                AddTableCell("目标变量", yPosition, cellCol, varCol, true);
+                AddTableCell("数据类型", yPosition, cellCol + varCol, typeCol, true);
+                yPosition += 25;
+
+                // 数据行 - 显示所有项（如果太多可以限制显示前几项）
+                int displayCount = Math.Min(param.ReadItems.Count, 10); // 最多显示10项
+                for (int i = 0; i < displayCount; i++)
+                {
+                    var item = param.ReadItems[i];
+
+                    // 数据类型名称
+                    var dataTypeName = item.DataType switch
+                    {
+                        CellDataType.String => "字符串",
+                        CellDataType.Integer => "整数",
+                        CellDataType.Decimal => "小数",
+                        CellDataType.Boolean => "布尔",
+                        CellDataType.DateTime => "日期时间",
+                        _ => "字符串"
+                    };
+
+                    // 数据类型的颜色
+                    var typeColor = item.DataType switch
+                    {
+                        CellDataType.Integer => Color.FromArgb(0, 102, 204),
+                        CellDataType.Decimal => Color.FromArgb(204, 102, 0),
+                        CellDataType.Boolean => Color.FromArgb(102, 0, 204),
+                        CellDataType.DateTime => Color.FromArgb(0, 153, 76),
+                        _ => Color.FromArgb(96, 96, 96)
+                    };
+
+                    AddTableCell(item.CellAddress ?? "", yPosition, 0, cellCol, false);
+                    AddTableCell(item.SaveToVariable ?? "", yPosition, cellCol, varCol, false,
+                        Color.FromArgb(0, 102, 204));
+                    AddTableCell(dataTypeName, yPosition, cellCol + varCol, typeCol, false, typeColor);
+                    yPosition += 22;
+                }
+
+                // 如果有更多项，显示提示
+                if (param.ReadItems.Count <= displayCount) return yPosition;
+
+                AddTableCell("", yPosition, 0, cellCol, false);
+                AddTableCell($"...还有 {param.ReadItems.Count - displayCount} 项",
+                    yPosition, cellCol, varCol + typeCol, false,
+                    Color.FromArgb(150, 150, 150));
                 yPosition += 22;
 
                 return yPosition;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"DisplayReadCellsParameters 错误: {ex}");
                 return DisplayGenericParameters(stepParameter, yPosition);
             }
         }
@@ -660,7 +707,7 @@ namespace MainUI.Procedure.Controls
                 }
 
                 // 开始显示
-                yPosition = AddSubSectionTitle("🔍 检测条件配置", yPosition);
+                yPosition = AddSubSectionTitle("检测条件配置", yPosition);
 
                 int col1Width = 120;
                 int col2Width = detailsPanel.Width - col1Width - 10;
@@ -882,7 +929,7 @@ namespace MainUI.Procedure.Controls
                 int col2Width = detailsPanel.Width - col1Width - 10;
 
                 // ===== 基本信息 =====
-                yPosition = AddSubSectionTitle("🔀 检测工具配置", yPosition);
+                yPosition = AddSubSectionTitle("检测工具配置", yPosition);
 
                 // 表头
                 AddTableCell("配置项", yPosition, 0, col1Width, true);
@@ -906,7 +953,7 @@ namespace MainUI.Procedure.Controls
 
                 // ===== 条件表达式 =====
                 yPosition = AddSeparatorLine(yPosition);
-                yPosition = AddSubSectionTitle("📋 条件表达式", yPosition);
+                yPosition = AddSubSectionTitle("条件表达式", yPosition);
 
                 // 条件表达式
                 AddTableCell("表达式", yPosition, 0, col1Width, false);
@@ -926,7 +973,7 @@ namespace MainUI.Procedure.Controls
 
                 // ===== 分支配置 =====
                 yPosition = AddSeparatorLine(yPosition);
-                yPosition = AddSubSectionTitle("🔀 执行分支", yPosition);
+                yPosition = AddSubSectionTitle("执行分支", yPosition);
 
                 // 满足条件时的步骤
                 int trueStepsCount = param.TrueSteps?.Count ?? 0;
@@ -1004,7 +1051,7 @@ namespace MainUI.Procedure.Controls
             int col1Width = 120;
             int col2Width = detailsPanel.Width - col1Width - 10;
 
-            yPosition = AddSubSectionTitle("🔀 检测工具配置", yPosition);
+            yPosition = AddSubSectionTitle("检测工具配置", yPosition);
 
             // 表头
             AddTableCell("配置项", yPosition, 0, col1Width, true);
@@ -1029,7 +1076,7 @@ namespace MainUI.Procedure.Controls
 
             // 条件表达式
             yPosition = AddSeparatorLine(yPosition);
-            yPosition = AddSubSectionTitle("📋 条件表达式", yPosition);
+            yPosition = AddSubSectionTitle("条件表达式", yPosition);
 
             string expression = json["ConditionExpression"]?.ToString() ?? "(未设置)";
             AddTableCell("表达式", yPosition, 0, col1Width, false);
@@ -1038,7 +1085,7 @@ namespace MainUI.Procedure.Controls
 
             // 分支信息
             yPosition = AddSeparatorLine(yPosition);
-            yPosition = AddSubSectionTitle("🔀 执行分支", yPosition);
+            yPosition = AddSubSectionTitle("执行分支", yPosition);
 
             // 满足条件步骤数
             var trueSteps = json["TrueSteps"] as JArray;
@@ -1917,17 +1964,18 @@ namespace MainUI.Procedure.Controls
         }
 
         /// <summary>
-        /// 消息通知参数展示 - 中文版
+        /// 消息通知参数展示 - 表格式
         /// </summary>
         private int DisplayMessageNotificationParameters(object stepParameter, int yPosition)
         {
             try
             {
-                var param = ConvertToParameter<Parameter_SystemPrompt>(stepParameter);
-                if (param == null) return DisplayGenericParameters(stepParameter, yPosition);
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
 
-                yPosition = AddSubSectionTitle("消息通知配置", yPosition);
+                yPosition = AddSubSectionTitle("💬 消息通知配置", yPosition);
 
+                // 定义列宽
                 int col1Width = 120;
                 int col2Width = detailsPanel.Width - col1Width - 10;
 
@@ -1936,29 +1984,91 @@ namespace MainUI.Procedure.Controls
                 AddTableCell("配置值", yPosition, col1Width, col2Width, true);
                 yPosition += 25;
 
-                // 通知类型
-                string typeText = param.MessageLevel switch
+                // 提示标题
+                AddTableCell("标题", yPosition, 0, col1Width, false);
+                AddTableCell(json["Title"]?.ToString() ?? "提示", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 消息内容
+                AddTableCell("消息内容", yPosition, 0, col1Width, false);
+                AddTableCell(json["Message"]?.ToString() ?? "", yPosition, col1Width, col2Width, false,
+                    Color.FromArgb(0, 102, 204));
+                yPosition += 22;
+
+                // 提示等级
+                var messageLevel = json["MessageLevel"]?.ToString() ?? "0";
+                var levelText = messageLevel switch
                 {
-                    //"Info" => "信息提示",
-                    //"Warning" => "警告提示",
-                    //"Error" => "错误提示",
-                    //"Success" => "成功提示",
-                    //_ => param.MessageLevel ?? "普通提示"
+                    "0" or "Info" => "ℹ️ 信息",
+                    "1" or "Warning" => "⚠️ 警告",
+                    "2" or "Error" => "❌ 错误",
+                    "3" or "Question" => "❓ 询问",
+                    _ => "信息"
                 };
-                AddTableCell("通知类型", yPosition, 0, col1Width, false);
-                AddTableCell(typeText, yPosition, col1Width, col2Width, false);
-                yPosition += 22;
-
-                // 通知内容
-                AddTableCell("通知内容", yPosition, 0, col1Width, false);
-                AddTableCell(param.Message ?? param.Message ?? "(无内容)", yPosition, col1Width, col2Width, false);
-                yPosition += 22;
-
-                // 是否阻塞
-                //if (param.IsBlocking)
+                var levelColor = messageLevel switch
                 {
-                    AddTableCell("等待确认", yPosition, 0, col1Width, false);
-                    AddTableCell("是 - 需要用户点击确认", yPosition, col1Width, col2Width, false, StatusColors.Waiting);
+                    "1" or "Warning" => StatusColors.Skipped,
+                    "2" or "Error" => StatusColors.Failed,
+                    "0" or "Info" => StatusColors.Running,
+                    "3" or "Question" => Color.FromArgb(102, 102, 255),
+                    _ => Color.FromArgb(96, 96, 96)
+                };
+                AddTableCell("提示等级", yPosition, 0, col1Width, false);
+                AddTableCell(levelText, yPosition, col1Width, col2Width, false, levelColor);
+                yPosition += 22;
+
+                // 对话框类型
+                var dialogType = json["DialogType"]?.ToString() ?? "0";
+                var dialogTypeText = dialogType switch
+                {
+                    "0" or "OK" => "确认",
+                    "1" or "YesNo" => "是/否",
+                    "2" or "OKCancel" => "确认/取消",
+                    _ => "确认"
+                };
+                AddTableCell("对话框类型", yPosition, 0, col1Width, false);
+                AddTableCell(dialogTypeText, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 结果变量（仅在YesNo或OKCancel类型时显示）
+                if (dialogType == "1" || dialogType == "YesNo" || dialogType == "2" || dialogType == "OKCancel")
+                {
+                    var resultVar = json["ResultVariable"]?.ToString();
+                    if (!string.IsNullOrEmpty(resultVar))
+                    {
+                        AddTableCell("结果变量", yPosition, 0, col1Width, false);
+                        AddTableCell(resultVar, yPosition, col1Width, col2Width, false,
+                            Color.FromArgb(0, 102, 204));
+                        yPosition += 22;
+                    }
+                }
+
+                // 运行时信息：用户响应
+                var userResponse = json["UserResponse"]?.ToString();
+                if (!string.IsNullOrEmpty(userResponse))
+                {
+                    yPosition = AddSeparatorLine(yPosition);
+                    yPosition = AddSubSectionTitle("📊 运行详情", yPosition);
+
+                    AddTableCell("配置项", yPosition, 0, col1Width, true);
+                    AddTableCell("实际值", yPosition, col1Width, col2Width, true);
+                    yPosition += 25;
+
+                    // 用户选择结果
+                    var responseText = userResponse switch
+                    {
+                        "1" or "OK" => "✓ 确认",
+                        "6" or "Yes" => "✓ 是",
+                        "2" or "Cancel" => "✗ 取消",
+                        "7" or "No" => "✗ 否",
+                        _ => userResponse
+                    };
+                    var responseColor = (userResponse == "1" || userResponse == "OK" || userResponse == "6" || userResponse == "Yes")
+                        ? StatusColors.Success
+                        : StatusColors.Failed;
+
+                    AddTableCell("用户选择", yPosition, 0, col1Width, false);
+                    AddTableCell(responseText, yPosition, col1Width, col2Width, false, responseColor);
                     yPosition += 22;
                 }
 
@@ -1970,6 +2080,102 @@ namespace MainUI.Procedure.Controls
             }
         }
 
+        /// <summary>
+        /// 检测工具参数展示 - 表格式
+        /// </summary>
+        private int DisplayDetectionToolParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                yPosition = AddSubSectionTitle("检测工具配置", yPosition);
+
+                // 定义列宽
+                int col1Width = 120;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 检测名称
+                AddTableCell("检测名称", yPosition, 0, col1Width, false);
+                AddTableCell(json["DetectionName"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 条件表达式
+                AddTableCell("条件表达式", yPosition, 0, col1Width, false);
+                AddTableCell(json["ConditionExpression"]?.ToString() ?? "", yPosition, col1Width, col2Width, false,
+                    Color.FromArgb(0, 102, 204));
+                yPosition += 22;
+
+                // 数据源类型
+                var dataSource = json["DataSource"];
+                if (dataSource != null)
+                {
+                    var sourceType = dataSource["SourceType"]?.ToString() ?? "0";
+                    var sourceTypeName = sourceType == "0" || sourceType.Contains("Variable") ? "全局变量" : "PLC地址";
+
+                    AddTableCell("数据源类型", yPosition, 0, col1Width, false);
+                    AddTableCell(sourceTypeName, yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    // 根据数据源类型显示具体信息
+                    if (sourceType == "0" || sourceType.Contains("Variable"))
+                    {
+                        // 变量数据源
+                        AddTableCell("变量名称", yPosition, 0, col1Width, false);
+                        AddTableCell(dataSource["VariableName"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                        yPosition += 22;
+                    }
+                    else
+                    {
+                        // PLC数据源
+                        var plcConfig = dataSource["PlcConfig"];
+                        if (plcConfig != null)
+                        {
+                            AddTableCell("PLC模块", yPosition, 0, col1Width, false);
+                            AddTableCell(plcConfig["ModuleName"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                            yPosition += 22;
+
+                            AddTableCell("点位地址", yPosition, 0, col1Width, false);
+                            AddTableCell(plcConfig["Address"]?.ToString() ?? "", yPosition, col1Width, col2Width, false);
+                            yPosition += 22;
+                        }
+                    }
+                }
+
+                // 超时时间
+                var timeout = json["TimeoutMs"]?.ToString() ?? "0";
+                var timeoutText = timeout == "0" ? "不限制" : $"{timeout} ms";
+                AddTableCell("超时时间", yPosition, 0, col1Width, false);
+                AddTableCell(timeoutText, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 刷新频率
+                AddTableCell("刷新频率", yPosition, 0, col1Width, false);
+                AddTableCell($"{json["RefreshRateMs"]?.ToString() ?? "100"} ms", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 重试次数（如果大于0才显示）
+                var retryCount = json["RetryCount"]?.ToString() ?? "0";
+                if (retryCount != "0")
+                {
+                    AddTableCell("重试次数", yPosition, 0, col1Width, false);
+                    AddTableCell($"{retryCount} 次", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                return yPosition;
+            }
+            catch
+            {
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
 
 
         /// <summary>

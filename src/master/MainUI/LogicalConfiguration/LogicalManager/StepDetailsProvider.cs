@@ -231,20 +231,49 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             if (!TryGetParameter<Parameter_SystemPrompt>(step.StepParameter, out var param))
                 return "未配置";
 
-            return "未配置";
+            // 根据提示等级选择图标
+            var levelIcon = param.MessageLevel switch
+            {
+                MessageLevel.Info => "信息",
+                MessageLevel.Warning => "警告",
+                MessageLevel.Error => "错误",
+                MessageLevel.Question => "询问",
+                _ => "💬"
+            };
 
-            //// 根据通知类型显示不同预览
-            //string typeText = param.DialogType switch
-            //{
-            //    "Info" or "信息" => "ℹ️ 信息",
-            //    "Warning" or "警告" => "⚠️ 警告",
-            //    "Error" or "错误" => "❌ 错误",
-            //    "Success" or "成功" => "✓ 成功",
-            //    _ => "💬 提示"
-            //};
+            // 消息内容（截断显示）
+            string message = string.IsNullOrEmpty(param.Message)
+                ? "（空消息）"
+                : TruncateText(param.Message, 30);
 
-            //string content = TruncateText(param.PromptContent ?? param.Message ?? "", 25);
-            //return $"{typeText}: {content}";
+            // 构建基础预览
+            string preview = $"{levelIcon} {message}";
+
+            // 添加对话框类型（仅非OK类型）
+            if (param.DialogType != DialogType.OK)
+            {
+                string dialogTypeText = param.DialogType switch
+                {
+                    DialogType.YesNo => "是/否",
+                    DialogType.OKCancel => "确认/取消",
+                    _ => ""
+                };
+
+                if (!string.IsNullOrEmpty(dialogTypeText))
+                {
+                    preview += $" [{dialogTypeText}";
+
+                    // 如果有结果变量，添加到预览中
+                    if (!string.IsNullOrEmpty(param.ResultVariable))
+                    {
+                        preview += $"→@{param.ResultVariable}";
+                    }
+
+                    preview += "]";
+                }
+            }
+
+            return preview;
         }
 
         /// <summary>
@@ -254,20 +283,22 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         {
             if (!TryGetParameter<Parameter_Detection>(step.StepParameter, out var param))
                 return "未配置";
-            return "未配置";
 
-            //// 构建简洁预览
-            //string expression = param.ConditionExpression ?? "未设置条件";
-            //string preview = $"检测: {TruncateText(expression, 30)}";
+            // 构建条件表达式预览
+            string expression = string.IsNullOrEmpty(param.ConditionExpression)
+                ? "未设置条件"
+                : TruncateText(param.ConditionExpression, 35);
 
-            //// 添加分支数量信息
-            //int trueCount = param.TrueSteps?.Count ?? 0;
-            //int falseCount = param.FalseSteps?.Count ?? 0;
+            // 构建超时信息
+            string timeout = "";
+            if (param.TimeoutMs > 0)
+            {
+                timeout = param.TimeoutMs >= 1000
+                    ? $" [{param.TimeoutMs / 1000}s]"
+                    : $" [{param.TimeoutMs}ms]";
+            }
 
-            //if (trueCount > 0 || falseCount > 0)
-            //    preview += $" [✓{trueCount}/✗{falseCount}]";
-
-            //return preview;
+            return $"{expression}{timeout}";
         }
 
         /// <summary>

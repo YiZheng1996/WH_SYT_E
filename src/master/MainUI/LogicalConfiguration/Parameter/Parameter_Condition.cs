@@ -28,7 +28,7 @@
         /// <summary>
         /// 条件描述
         /// </summary>
-        public string Description { get; set; } = "";
+        public string Description { get; set; } = "条件表达式（支持完整的条件表达式）";
 
         /// <summary>
         /// 是否启用此条件判断

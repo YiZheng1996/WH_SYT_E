@@ -283,12 +283,16 @@ namespace MainUI
             // 日志服务
             services.AddLogging(builder =>
             {
-                builder.AddConsole();
-                builder.AddDebug();
+                // 清除默认提供者
+                builder.ClearProviders();
 
-                builder.ClearProviders(); // 清除默认提供者
+                // 设置最小日志级别 (Trace/Debug/Information/Warning/Error)
                 builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-                builder.AddNLog(); // 添加NLog
+
+                // 添加各种日志输出目标
+                builder.AddDebug();    // ← 输出到 VS 的"输出"窗口 (调试 -> 窗口 -> 输出)
+                builder.AddConsole();  // ← 输出到控制台 (如果你的应用有控制台窗口)
+                builder.AddNLog();     // ← 输出到 NLog 配置的目标 (通常是文件)
             });
 
             // 步骤执行管理器工厂

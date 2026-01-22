@@ -211,22 +211,22 @@ namespace MainUI.LogicalConfiguration.Forms
                     }
 
                     // 如果用户输入的是带花括号的格式，给出友好提示
-                    if (varNameInput != normalizedVarName)
-                    {
-                        var result = MessageBox.Show(
-                            $"检测到您输入的变量名包含花括号：\n\n" +
-                            $"原始输入: {varNameInput}\n" +
-                            $"规范化后: {normalizedVarName}\n\n" +
-                            $"系统会自动使用规范化后的变量名。是否继续？",
-                            "变量名规范化",
-                            MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Information);
+                    //if (varNameInput != normalizedVarName)
+                    //{
+                    //    var result = MessageBox.Show(
+                    //        $"检测到您输入的变量名包含花括号：\n\n" +
+                    //        $"原始输入: {varNameInput}\n" +
+                    //        $"规范化后: {normalizedVarName}\n\n" +
+                    //        $"系统会自动使用规范化后的变量名。是否继续？",
+                    //        "变量名规范化",
+                    //        MessageBoxButtons.YesNo,
+                    //        MessageBoxIcon.Information);
 
-                        if (result != DialogResult.Yes)
-                        {
-                            return;
-                        }
-                    }
+                    //    if (result != DialogResult.Yes)
+                    //    {
+                    //        return;
+                    //    }
+                    //}
                 }
 
                 // 创建参数对象（保存原始输入，在SystemMethods中再规范化）

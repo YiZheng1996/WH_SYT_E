@@ -162,8 +162,8 @@ namespace MainUI.Procedure.Controls
             {
                 // 调试输出
                 Debug.WriteLine($"========== 步骤 {stepIndex} 状态更新 ==========");
-                Debug.WriteLine($"Status: {step.Status}, StepName: {step.StepName}");
-                Debug.WriteLine($"当前 _stepStartTimes 字典内容:");
+                Debug.WriteLine($"步骤状态: {step.Status}, 步骤名称: {step.StepName}");
+                Debug.WriteLine($"当前 步骤开始时间 字典内容:");
                 foreach (var kvp in _stepStartTimes)
                 {
                     Debug.WriteLine($"  步骤 {kvp.Key}: {kvp.Value:HH:mm:ss}");
