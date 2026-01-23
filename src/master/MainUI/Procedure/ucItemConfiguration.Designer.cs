@@ -31,6 +31,7 @@ namespace MainUI.Procedure
         private void InitializeComponent()
         {
             uiPanel1 = new UIPanel();
+            btnCopyItem = new UIButton();
             lstAllPoint = new UIListBox();
             lstTestPoint = new UIListBox();
             uiLabel20 = new UILabel();
@@ -43,12 +44,17 @@ namespace MainUI.Procedure
             btnLeft = new UIButton();
             btnSave = new UIButton();
             uiLine1 = new UILine();
+            btnUp = new UIButton();
+            btnDown = new UIButton();
             uiPanel1.SuspendLayout();
             SuspendLayout();
             // 
             // uiPanel1
             // 
             uiPanel1.BackColor = Color.FromArgb(236, 236, 236);
+            uiPanel1.Controls.Add(btnDown);
+            uiPanel1.Controls.Add(btnUp);
+            uiPanel1.Controls.Add(btnCopyItem);
             uiPanel1.Controls.Add(lstAllPoint);
             uiPanel1.Controls.Add(lstTestPoint);
             uiPanel1.Controls.Add(uiLabel20);
@@ -75,6 +81,18 @@ namespace MainUI.Procedure
             uiPanel1.TabIndex = 1;
             uiPanel1.Text = null;
             uiPanel1.TextAlignment = ContentAlignment.MiddleCenter;
+            // 
+            // btnCopyItem
+            // 
+            btnCopyItem.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
+            btnCopyItem.Location = new Point(497, 747);
+            btnCopyItem.MinimumSize = new Size(1, 1);
+            btnCopyItem.Name = "btnCopyItem";
+            btnCopyItem.Size = new Size(132, 37);
+            btnCopyItem.TabIndex = 0;
+            btnCopyItem.Text = "复制项点";
+            btnCopyItem.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnCopyItem.Click += btnCopyItem_Click;
             // 
             // lstAllPoint
             // 
@@ -253,7 +271,7 @@ namespace MainUI.Procedure
             // 
             btnLeft.Cursor = Cursors.Hand;
             btnLeft.Font = new Font("微软雅黑", 15F, FontStyle.Bold);
-            btnLeft.Location = new Point(376, 321);
+            btnLeft.Location = new Point(376, 368);
             btnLeft.MinimumSize = new Size(1, 1);
             btnLeft.Name = "btnLeft";
             btnLeft.RectDisableColor = Color.FromArgb(80, 160, 255);
@@ -268,11 +286,11 @@ namespace MainUI.Procedure
             // 
             btnSave.Cursor = Cursors.Hand;
             btnSave.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
-            btnSave.Location = new Point(607, 747);
+            btnSave.Location = new Point(637, 747);
             btnSave.MinimumSize = new Size(1, 1);
             btnSave.Name = "btnSave";
             btnSave.RectDisableColor = Color.FromArgb(80, 160, 255);
-            btnSave.Size = new Size(162, 37);
+            btnSave.Size = new Size(132, 37);
             btnSave.TabIndex = 434;
             btnSave.Text = "保 存";
             btnSave.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
@@ -292,6 +310,34 @@ namespace MainUI.Procedure
             uiLine1.Size = new Size(789, 29);
             uiLine1.StartCap = UILineCap.Circle;
             uiLine1.TabIndex = 441;
+            // 
+            // btnUp
+            // 
+            btnUp.Cursor = Cursors.Hand;
+            btnUp.Font = new Font("微软雅黑", 15F, FontStyle.Bold);
+            btnUp.Location = new Point(376, 180);
+            btnUp.MinimumSize = new Size(1, 1);
+            btnUp.Name = "btnUp";
+            btnUp.RectDisableColor = Color.FromArgb(80, 160, 255);
+            btnUp.Size = new Size(40, 40);
+            btnUp.TabIndex = 442;
+            btnUp.Text = "⬆️";
+            btnUp.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnUp.TipsText = "1";
+            // 
+            // btnDown
+            // 
+            btnDown.Cursor = Cursors.Hand;
+            btnDown.Font = new Font("微软雅黑", 15F, FontStyle.Bold);
+            btnDown.Location = new Point(376, 237);
+            btnDown.MinimumSize = new Size(1, 1);
+            btnDown.Name = "btnDown";
+            btnDown.RectDisableColor = Color.FromArgb(80, 160, 255);
+            btnDown.Size = new Size(40, 40);
+            btnDown.TabIndex = 443;
+            btnDown.Text = "⬇️";
+            btnDown.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnDown.TipsText = "1";
             // 
             // ucItemConfiguration
             // 
@@ -323,5 +369,8 @@ namespace MainUI.Procedure
         private UILabel uiLabel9;
         private UIComboBox cboType;
         private UILine uiLine1;
+        private UIButton btnCopyItem;
+        private UIButton btnDown;
+        private UIButton btnUp;
     }
 }
