@@ -30,6 +30,12 @@ namespace MainUI.LogicalConfiguration.Forms
         private readonly List<ChildModel> _originalSteps;
         private bool _hasUnsavedChanges = false;
 
+        /// <summary>
+        /// 当前子步骤配置的嵌套层级
+        /// 用于限制可添加的步骤类型
+        /// </summary>
+        private readonly int _currentNestingLevel = 0;
+
         // 状态颜色
         private static readonly Color PrimaryBlue = Color.FromArgb(65, 100, 204);
 
@@ -41,15 +47,19 @@ namespace MainUI.LogicalConfiguration.Forms
         /// 构造函数
         /// </summary>
         /// <param name="childSteps">要编辑的子步骤列表</param>
+        /// <param name="nestingLevel">嵌套层级(默认0表示顶层)</param>
         /// <param name="logger">日志服务(可选)</param>
         public Form_ChildStepsConfig(
-            List<ChildModel> childSteps,
+            List<ChildModel> childSteps, int nestingLevel = 0,
             ILogger<Form_ChildStepsConfig> logger = null)
         {
             _logger = logger;
             _originalSteps = childSteps;
 
-            // ⭐ 直接使用传入的列表，不深拷贝
+            // 保存嵌套层级
+            _currentNestingLevel = nestingLevel;
+
+            // 直接使用传入的列表，不深拷贝
             _childSteps = childSteps ?? [];
 
             // 获取服务
@@ -67,6 +77,11 @@ namespace MainUI.LogicalConfiguration.Forms
             InitializeComponent();
             InitializeCustomUI();
             RegisterEventHandlers();
+
+            _logger?.LogInformation(
+                "子步骤配置窗体已创建,嵌套层级: {Level}, 步骤数量: {Count}",
+                _currentNestingLevel,
+                _childSteps.Count);
 
             _processGridControl.RefreshGrid();
             _logger?.LogDebug("循环体子步骤配置窗体已创建,步骤数量: {Count}", _childSteps.Count);
@@ -113,7 +128,6 @@ namespace MainUI.LogicalConfiguration.Forms
                 CreateButtons();
 
                 // 设置窗体样式
-                Text = "循环体子步骤配置";
                 TitleColor = PrimaryBlue;
                 ShowRadius = false;
                 //Size = new Size(1200, 700);
@@ -129,37 +143,45 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 初始化工具箱(过滤循环控制步骤)
+        /// 初始化工具箱(根据嵌套层级过滤步骤)
         /// </summary>
         private void InitializeToolBox()
         {
             try
             {
-                // 禁止的步骤类型(避免嵌套循环)
-                var disallowedSteps = new HashSet<string>
-                {
-                    "LoopControlStart",  // 循环开始
-                    "LoopControlStop",   // 循环结束
-                    "Loop",              // 循环(如果有的话)
-                };
+                // 检查是否达到最大层级
+                bool isMaxLevel = WorkflowNestingConfig.EnableNestingValidation &&
+                                  WorkflowNestingConfig.IsMaxLevelReached(_currentNestingLevel);
 
                 // 清空工具箱
                 _toolTreeControl.ClearTools();
 
-                // 逻辑控制组(排除循环相关)
+                // ========== 逻辑控制组 ==========
                 TreeNode logicNode = _toolTreeControl.AddToolNode(
                     "逻辑控制",
                     "LogicControl",
                     "文件夹.png"
                 );
+
                 _toolTreeControl.AddToolNode("延时等待", "DelayWait", "延时等待.png", logicNode);
-                _toolTreeControl.AddToolNode("条件判断", "ConditionJudge", "条件判断.png", logicNode);
+
+                // 条件判断和循环工具根据层级决定是否添加
+                if (!isMaxLevel)
+                {
+                    _toolTreeControl.AddToolNode("条件判断", "ConditionJudge", "条件判断.png", logicNode);
+                    _toolTreeControl.AddToolNode("循环工具", "CycleBegins", "循环工具.png", logicNode);
+                    _logger?.LogDebug("层级 {Level} 允许添加条件判断和循环工具", _currentNestingLevel);
+                }
+                else
+                {
+                    _logger?.LogWarning("层级 {Level} 已达上限,禁止添加条件判断和循环工具", _currentNestingLevel);
+                }
+
                 _toolTreeControl.AddToolNode("等待稳定", "Waitingforstability", "等待稳定.png", logicNode);
-                _toolTreeControl.AddToolNode("循环工具", "CycleBegins", "循环工具.png", logicNode);
                 _toolTreeControl.AddToolNode("检测工具", "DetectionTool", "检测工具.png", logicNode);
                 _toolTreeControl.AddToolNode("实时监控", "MonitorTool", "实时监控.png", logicNode);
 
-                // 数据操作组
+                // ========== 数据操作组 ==========
                 var dataNode = _toolTreeControl.AddToolNode(
                     "数据操作",
                     "DataOperation",
@@ -168,7 +190,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 _toolTreeControl.AddToolNode("变量赋值", "VariableAssign", "变量赋值.png", dataNode);
                 _toolTreeControl.AddToolNode("消息通知", "", "消息通知.png", dataNode);
 
-                // PLC通信组
+                // ========== PLC通信组 ==========
                 TreeNode plcNode = _toolTreeControl.AddToolNode(
                     "通信操作",
                     "PLCCommunication",
@@ -176,10 +198,10 @@ namespace MainUI.LogicalConfiguration.Forms
                 );
                 _toolTreeControl.AddToolNode("读取PLC", "PLCRead", "读取PLC.png", plcNode);
                 _toolTreeControl.AddToolNode("写入PLC", "PLCWrite", "写入PLC.png", plcNode);
-                _toolTreeControl.AddToolNode("以太网发送", "EthernetSend", "以太网.png", plcNode); 
-                _toolTreeControl.AddToolNode("串口发送", "SerialPortSend", "串口助手.png", plcNode); 
+                _toolTreeControl.AddToolNode("以太网发送", "EthernetSend", "以太网.png", plcNode);
+                _toolTreeControl.AddToolNode("串口发送", "SerialPortSend", "串口助手.png", plcNode);
 
-                // 报表操作组
+                // ========== 报表操作组 ==========
                 TreeNode reportNode = _toolTreeControl.AddToolNode(
                     "报表工具",
                     "ReportTools",
@@ -191,7 +213,8 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 展开所有节点
                 _toolTreeControl.ExpandAll();
 
-                _logger?.LogDebug("工具箱初始化完成(已过滤循环控制步骤)");
+                _logger?.LogDebug("工具箱初始化完成,当前层级: {Level}, 受限步骤已过滤: {Filtered}",
+                    _currentNestingLevel, isMaxLevel);
             }
             catch (Exception ex)
             {
@@ -425,13 +448,33 @@ namespace MainUI.LogicalConfiguration.Forms
                     var node = (TreeNode)e.Data.GetData(typeof(TreeNode));
                     if (node?.Parent != null)
                     {
+                        string stepName = node.Text;
+
+                        // 检查是否允许添加此步骤
+                        if (!CanAddStepType(stepName))
+                        {
+                            var warningMsg = WorkflowNestingConfig.GetLevelWarningMessage(_currentNestingLevel);
+                            MessageHelper.MessageOK(
+                                this,
+                                $"无法添加 [{stepName}]\n\n{warningMsg}",
+                                TType.Warn);
+                            return;
+                        }
+
                         // 创建新步骤
                         var newStep = new ChildModel
                         {
                             StepNum = _workflowState.GetStepCount() + 1,
-                            StepName = node.Text,
+                            StepName = stepName,
                             StepParameter = null,
-                            Remark = string.Empty
+                            Remark = string.Empty,
+
+                            // 设置层级信息
+                            NestingLevel = _currentNestingLevel,
+                            ParentStepId = "", // 在保存到父步骤时会设置
+                            StepType = WorkflowNestingConfig.IsRestrictedStepType(stepName)
+                                ? (stepName == "条件判断" ? "Condition" : "Loop")
+                                : "Normal"
                         };
 
                         // 添加到工作流状态
@@ -441,12 +484,17 @@ namespace MainUI.LogicalConfiguration.Forms
                         _processGridControl.RefreshGrid();
 
                         _hasUnsavedChanges = true;
+
+                        _logger?.LogInformation(
+                            "添加新步骤: {StepName}, 层级: {Level}, 类型: {Type}",
+                            newStep.StepName, newStep.NestingLevel, newStep.StepType);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "拖拽步骤错误");
+                _logger?.LogError(ex, "拖拽步骤错误");
+                MessageHelper.MessageOK(this, $"添加步骤失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -518,6 +566,69 @@ namespace MainUI.LogicalConfiguration.Forms
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
+        #endregion
+
+        #region 嵌套层级管理
+
+        /// <summary>
+        /// 显示嵌套层级警告
+        /// </summary>
+        public void ShowNestingLevelWarningIfNeeded()
+        {
+            string levelText = WorkflowNestingConfig.GetLevelDisplayText(_currentNestingLevel);
+
+            string levelIcon = _currentNestingLevel switch
+            {
+                0 => "📋",
+                1 => "📁",
+                2 => "⚠️",
+                >= 3 => "🔴",
+                _ => ""
+            };
+
+            // 如果 Text 已经被设置（如 "满足条件时执行的步骤"），则追加层级信息
+            if (!string.IsNullOrEmpty(this.Text) && !this.Text.Contains("["))
+            {
+                this.Text = $"{this.Text} {levelIcon} [{levelText}]";
+            }
+            else
+            {
+                this.Text = $"子步骤配置 {levelIcon} [{levelText}]";
+            }
+        }
+
+        /// <summary>
+        /// 检查是否允许添加指定类型的步骤
+        /// </summary>
+        /// <param name="stepName">步骤名称</param>
+        /// <returns>true = 允许添加, false = 禁止添加</returns>
+        private bool CanAddStepType(string stepName)
+        {
+            // 如果未启用嵌套验证,直接返回true
+            if (!WorkflowNestingConfig.EnableNestingValidation)
+            {
+                return true;
+            }
+
+            // 如果不是受限制的步骤类型,直接允许
+            if (!WorkflowNestingConfig.IsRestrictedStepType(stepName))
+            {
+                return true;
+            }
+
+            // 检查是否超过最大层级
+            bool canAdd = !WorkflowNestingConfig.IsMaxLevelReached(_currentNestingLevel);
+
+            if (!canAdd)
+            {
+                _logger?.LogWarning(
+                    "禁止添加步骤 [{StepName}]: 当前层级={CurrentLevel}, 最大层级={MaxLevel}",
+                    stepName, _currentNestingLevel, WorkflowNestingConfig.MaxNestingLevel);
+            }
+
+            return canAdd;
+        }
+
         #endregion
     }
 }

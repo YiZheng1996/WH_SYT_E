@@ -4,7 +4,6 @@ using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace MainUI.LogicalConfiguration.Forms
 {
@@ -43,6 +42,12 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
+        /// <summary>
+        /// 当前条件判断步骤所在的嵌套层级
+        /// 从父窗体或工作流状态获取
+        /// </summary>
+        private int _currentNestingLevel = 0;
+
         #endregion
 
         #region 构造函数
@@ -73,6 +78,104 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #endregion
 
+        #region 嵌套层级管理
+
+        /// <summary>
+        /// 初始化嵌套层级 - 在窗体初始化时调用
+        /// </summary>
+        private void InitializeNestingLevel()
+        {
+            try
+            {
+                // 获取当前正在配置的步骤
+                var currentStep = GetCurrentStepSafely();
+                if (currentStep != null)
+                {
+                    // 从步骤中读取嵌套层级
+                    _currentNestingLevel = currentStep.NestingLevel;
+
+                    Logger?.LogDebug("当前条件判断步骤嵌套层级: {Level}", _currentNestingLevel);
+
+                    // 显示层级信息(可选 - 用于调试或用户提示)
+                    if (!WorkflowNestingConfig.ShouldShowComplexityWarning(_currentNestingLevel)) return;
+                    var warningMsg = WorkflowNestingConfig.GetLevelWarningMessage(_currentNestingLevel);
+                    Logger?.LogWarning(warningMsg);
+                }
+                else
+                {
+                    // 如果是新步骤,默认为顶层
+                    _currentNestingLevel = 0;
+                    Logger?.LogDebug("新建条件判断步骤,默认层级为0");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "初始化嵌套层级失败");
+                _currentNestingLevel = 0; // 兜底值
+            }
+        }
+
+        /// <summary>
+        /// 计算并设置子步骤的嵌套层级
+        /// </summary>
+        private void ApplyNestingLevelToChildSteps(List<ChildModel> childSteps)
+        {
+            if (childSteps == null || childSteps.Count == 0) return;
+
+            // 子步骤的层级 = 当前步骤层级 + 1
+            int childLevel = _currentNestingLevel + 1;
+
+            // 获取当前步骤信息,用于设置ParentStepId
+            var currentStep = GetCurrentStepSafely();
+            string parentStepId = currentStep != null
+                ? $"{currentStep.StepNum}-{currentStep.StepName}"
+                : "";
+
+            // 调用静态方法
+            WorkflowNestingConfig.ApplyNestingLevelToChildSteps(
+                childSteps,
+                childLevel,
+                parentStepId,
+                Logger);
+        }
+
+        /// <summary>
+        /// 检查是否允许在子步骤中添加特定类型的步骤
+        /// </summary>
+        /// <param name="stepName">要添加的步骤名称</param>
+        /// <returns>true = 允许添加, false = 禁止添加</returns>
+        private bool CanAddStepInChildContext(string stepName)
+        {
+            // 如果未启用嵌套验证,直接返回true
+            if (!WorkflowNestingConfig.EnableNestingValidation)
+            {
+                return true;
+            }
+
+            // 如果不是受限制的步骤类型,直接允许
+            if (!WorkflowNestingConfig.IsRestrictedStepType(stepName))
+            {
+                return true;
+            }
+
+            // 子步骤的层级会是 当前层级+1
+            int futureChildLevel = _currentNestingLevel + 1;
+
+            // 检查是否超过最大层级
+            bool canAdd = !WorkflowNestingConfig.IsMaxLevelReached(futureChildLevel);
+
+            if (!canAdd)
+            {
+                Logger?.LogWarning(
+                    "禁止添加步骤 [{StepName}]: 当前层级={CurrentLevel}, 子步骤层级={ChildLevel}, 最大层级={MaxLevel}",
+                    stepName, _currentNestingLevel, futureChildLevel, WorkflowNestingConfig.MaxNestingLevel);
+            }
+
+            return canAdd;
+        }
+
+        #endregion
+
         #region 初始化方法
 
         /// <summary>
@@ -85,6 +188,9 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 _isInitializing = true;
+
+                // 初始化嵌套层级
+                InitializeNestingLevel();
 
                 // 初始化验证定时器
                 InitializeValidationTimer();
@@ -403,23 +509,31 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 确保 TrueSteps 不为 null
                 Parameter.TrueSteps ??= [];
 
+                // 应用嵌套层级到现有子步骤
+                ApplyNestingLevelToChildSteps(Parameter.TrueSteps);
+
                 // 直接使用 Form_ChildStepsConfig，与 Form_Loop 保持一致
-                var configForm = new Form_ChildStepsConfig(Parameter.TrueSteps)
+                var configForm = new Form_ChildStepsConfig(Parameter.TrueSteps,
+                    _currentNestingLevel + 1)
                 {
                     Text = "满足条件时执行的步骤"
                 };
 
-                if (configForm.ShowDialog(this) == DialogResult.OK)
-                {
-                    // 直接使用返回的结果更新 Parameter
-                    Parameter.TrueSteps = configForm._childSteps;
+                configForm.ShowNestingLevelWarningIfNeeded();
 
-                    // 更新步骤计数显示
-                    UpdateStepsCount();
-                    MarkAsChanged();
+                if (configForm.ShowDialog(this) != DialogResult.OK) return;
 
-                    Logger?.LogDebug("满足条件步骤配置完成，数量: {Count}", Parameter.TrueSteps?.Count ?? 0);
-                }
+                // 直接使用返回的结果更新 Parameter
+                Parameter.TrueSteps = configForm._childSteps;
+
+                // 再次确保层级正确
+                ApplyNestingLevelToChildSteps(Parameter.TrueSteps);
+
+                // 更新步骤计数显示
+                UpdateStepsCount();
+                MarkAsChanged();
+
+                Logger?.LogDebug("满足条件步骤配置完成，数量: {Count}", Parameter.TrueSteps?.Count ?? 0);
             }
             catch (Exception ex)
             {
@@ -441,15 +555,23 @@ namespace MainUI.LogicalConfiguration.Forms
                 // 确保 FalseSteps 不为 null
                 Parameter.FalseSteps ??= [];
 
+                // 应用嵌套层级到现有子步骤
+                ApplyNestingLevelToChildSteps(Parameter.FalseSteps);
+
                 // 直接使用 Form_ChildStepsConfig
-                var configForm = new Form_ChildStepsConfig(Parameter.FalseSteps)
+                var configForm = new Form_ChildStepsConfig(Parameter.FalseSteps,
+                    _currentNestingLevel + 1)
                 {
-                    Text = "不满足条件时执行的步骤"
+                    Text = "不满足条件时执行的步骤",
                 };
+                configForm.ShowNestingLevelWarningIfNeeded();
 
                 if (configForm.ShowDialog(this) != DialogResult.OK) return;
                 // 直接使用返回的结果更新 Parameter
                 Parameter.FalseSteps = configForm._childSteps;
+
+                // 再次确保层级正确
+                ApplyNestingLevelToChildSteps(Parameter.FalseSteps);
 
                 // 更新步骤计数显示
                 UpdateStepsCount();
@@ -581,7 +703,7 @@ namespace MainUI.LogicalConfiguration.Forms
             try
             {
                 _isInitializing = true;
- 
+
                 // 加载基本信息
                 txtDescription.Text = Parameter.Description ?? "";
                 chkEnabled.Checked = Parameter.IsEnabled;
@@ -626,7 +748,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 Logger?.LogError(ex, "保存参数失败");
             }
         }
- 
+
         /// <summary>
         /// 设置默认值
         /// </summary>

@@ -529,7 +529,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 // 确保在UI线程上执行
                 if (InvokeRequired)
                 {
-                    Invoke(new Action(RefreshGridInternal));
+                    Invoke(RefreshGridInternal);
                     return;
                 }
 

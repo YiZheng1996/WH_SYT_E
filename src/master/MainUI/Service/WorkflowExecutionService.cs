@@ -215,19 +215,26 @@ namespace MainUI.Service
                     p.ModelName == modelName &&
                     p.ItemName == itemName);
 
-                if (parent?.ChildSteps != null && parent.ChildSteps.Count > 0)
-                {
-                    return [.. parent.ChildSteps.Select(s => new ChildModel
-                    {
-                        StepName = s.StepName,
-                        Status = s.Status,
-                        StepNum = s.StepNum,
-                        StepParameter = s.StepParameter,
-                        Remark = s.Remark
-                    })];
-                }
+                if (parent?.ChildSteps == null || parent.ChildSteps.Count <= 0) return null;
 
-                return null;
+                // 调用静态方法计算层级
+                WorkflowNestingConfig.RecalculateNestingLevels(
+                    parent.ChildSteps,
+                    parentLevel: -1,
+                    logger: _logger);
+
+                return [.. parent.ChildSteps.Select(s => new ChildModel
+                {
+                    StepName = s.StepName,
+                    Status = s.Status,
+                    StepNum = s.StepNum,
+                    StepParameter = s.StepParameter,
+                    Remark = s.Remark,
+                    NestingLevel = s.NestingLevel,
+                    ParentStepId = s.ParentStepId ?? "",
+                    StepType = s.StepType ?? "Normal"
+                })];
+
             }
             catch (Exception ex)
             {

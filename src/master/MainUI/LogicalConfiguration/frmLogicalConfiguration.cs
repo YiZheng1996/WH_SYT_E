@@ -203,6 +203,12 @@ namespace MainUI.LogicalConfiguration
 
                 if (parent?.ChildSteps != null && parent.ChildSteps.Count > 0)
                 {
+                    // 调用静态方法计算层级
+                    WorkflowNestingConfig.RecalculateNestingLevels(
+                        parent.ChildSteps,
+                        parentLevel: -1,
+                        logger: _logger);
+
                     // 批量加载到数据源（会触发事件）
                     foreach (var step in parent.ChildSteps)
                     {
@@ -212,7 +218,10 @@ namespace MainUI.LogicalConfiguration
                             Status = step.Status,
                             StepNum = step.StepNum,
                             StepParameter = step.StepParameter,
-                            Remark = step.Remark ?? ""
+                            Remark = step.Remark ?? "",
+                            NestingLevel = step.NestingLevel,
+                            ParentStepId = step.ParentStepId ?? "",
+                            StepType = step.StepType ?? "Normal"
                         });
                     }
 

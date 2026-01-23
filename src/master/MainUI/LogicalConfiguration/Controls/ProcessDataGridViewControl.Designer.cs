@@ -71,7 +71,7 @@ namespace MainUI.LogicalConfiguration.Controls
         /// </summary>
         private void InitializeComponent()
         {
-            panelDataGrid = new Panel();  // ← 新增这行
+            panelDataGrid = new Panel();
             panelToolbar = new Panel();
             btnClearAll = new AntdUI.Button();
             btnSelectAll = new AntdUI.Button();
@@ -83,9 +83,17 @@ namespace MainUI.LogicalConfiguration.Controls
             btnDelete = new AntdUI.Button();
             btnInsertAfter = new AntdUI.Button();
             btnInsertBefore = new AntdUI.Button();
-            panelDataGrid.SuspendLayout();  // ← 新增这行
             panelToolbar.SuspendLayout();
             SuspendLayout();
+            // 
+            // panelDataGrid
+            // 
+            panelDataGrid.BackColor = Color.White;
+            panelDataGrid.Dock = DockStyle.Fill;
+            panelDataGrid.Location = new Point(0, 0);
+            panelDataGrid.Name = "panelDataGrid";
+            panelDataGrid.Size = new Size(1000, 550);
+            panelDataGrid.TabIndex = 1;
             // 
             // panelToolbar
             // 
@@ -106,15 +114,6 @@ namespace MainUI.LogicalConfiguration.Controls
             panelToolbar.Padding = new Padding(8);
             panelToolbar.Size = new Size(1000, 50);
             panelToolbar.TabIndex = 0;
-            // 
-            // panelDataGrid  ← 新增这整段
-            // 
-            panelDataGrid.BackColor = Color.White;
-            panelDataGrid.Dock = DockStyle.Fill;
-            panelDataGrid.Location = new Point(0, 0);
-            panelDataGrid.Name = "panelDataGrid";
-            panelDataGrid.Size = new Size(1000, 550);
-            panelDataGrid.TabIndex = 1;
             // 
             // btnClearAll
             // 
@@ -178,7 +177,7 @@ namespace MainUI.LogicalConfiguration.Controls
             btnMoveDown.Name = "btnMoveDown";
             btnMoveDown.Size = new Size(90, 34);
             btnMoveDown.TabIndex = 4;
-            btnMoveDown.Text = "下移 ( (Ctrl+↓)";
+            btnMoveDown.Text = "下移 (Ctrl+↓)";
             btnMoveDown.Type = AntdUI.TTypeMini.Success;
             btnMoveDown.Click += BtnMoveDown_Click;
             // 
@@ -229,11 +228,10 @@ namespace MainUI.LogicalConfiguration.Controls
             // ProcessDataGridViewControl
             // 
             AutoScaleMode = AutoScaleMode.None;
-            Controls.Add(panelDataGrid);  // ← 新增这行
+            Controls.Add(panelDataGrid);
             Controls.Add(panelToolbar);
             Name = "ProcessDataGridViewControl";
             Size = new Size(1000, 600);
-            panelDataGrid.ResumeLayout(false);  // ← 新增这行
             panelToolbar.ResumeLayout(false);
             ResumeLayout(false);
         }

@@ -78,7 +78,7 @@
             Name = "Form_ChildStepsConfig";
             RectColor = Color.FromArgb(65, 100, 204);
             ShowIcon = false;
-            Text = "循环体子步骤配置";
+            Text = "子步骤配置";
             TitleColor = Color.FromArgb(65, 100, 204);
             TitleFont = new Font("微软雅黑", 14.25F, FontStyle.Bold);
             ZoomScaleRect = new Rectangle(15, 15, 1200, 700);
