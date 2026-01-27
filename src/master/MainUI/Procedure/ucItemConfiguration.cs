@@ -426,20 +426,76 @@ namespace MainUI.Procedure
 
         #region 数据自动刷新
         /// <summary>
-        /// 重写Reload方法，实现数据刷新逻辑
-        /// 当数据变更事件触发时，会自动调用此方法
+        /// 重写Reload方法,实现数据刷新逻辑
+        /// 当数据变更事件触发时,会自动调用此方法
         /// </summary>
         public override void Reload()
         {
             try
             {
+                // 保存当前选中的型号,以便刷新后恢复
+                var currentModelType = cboType.SelectedValue;
+                var currentModel = cboModel.SelectedValue;
+
                 LoadCboModelType();
                 LoadCboModel();
+
+                // 恢复之前选中的值
+                if (currentModelType != null)
+                    cboType.SelectedValue = currentModelType;
+                if (currentModel != null)
+                    cboModel.SelectedValue = currentModel;
+
+                // 清理lstTestPoint中已不存在的项点
+                CleanInvalidTestPoints();
+
                 Debug.WriteLine("ucItemConfiguration 项点配置 数据已刷新");
             }
             catch (Exception ex)
             {
                 NlogHelper.Default.Error("ucItemConfiguration 项点配置 重新加载数据失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 清理测试点列表中已不存在的项点
+        /// </summary>
+        private void CleanInvalidTestPoints()
+        {
+            try
+            {
+                if (lstTestPoint.Items.Count == 0 || lstTestProcess == null || lstTestProcess.Count == 0)
+                    return;
+
+                // 查找无效的项点
+                var invalidItems = new List<object>();
+                foreach (var item in lstTestPoint.Items)
+                {
+                    string processName = item.ToString();
+                    // 如果在lstTestProcess中找不到对应的项点,标记为无效
+                    if (!lstTestProcess.Exists(x => x.ProcessName == processName))
+                    {
+                        invalidItems.Add(item);
+                    }
+                }
+
+                // 移除无效项点
+                if (invalidItems.Count <= 0) return;
+                {
+                    foreach (var item in invalidItems)
+                    {
+                        lstTestPoint.Items.Remove(item);
+                    }
+
+                    NlogHelper.Default.Warn($"已自动移除 {invalidItems.Count} 个无效的测试项点");
+
+                    // 可选:提示用户(如果不想每次都提示,可以注释掉下面这行)
+                    MessageHelper.MessageOK($"检测到 {invalidItems.Count} 个项点已被删除,已自动移除", TType.Info);
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error("清理无效测试点失败", ex);
             }
         }
 

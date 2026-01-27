@@ -40,12 +40,20 @@
             btnDelete = new UIButton();
             txtTemplateRpt = new UITextBox();
             tabs1 = new AntdUI.Tabs();
-            tabPage1 = new AntdUI.TabPage();
             tabPage2 = new AntdUI.TabPage();
             uiLabel1 = new UILabel();
             btnSaveBrowse = new UIButton();
             txtSaveReport = new UITextBox();
             uiLabel3 = new UILabel();
+            chkSavePDF = new UICheckBox();
+            lblFileNameConfig = new UILabel();
+            chkIncludeModelName = new UICheckBox();
+            chkIncludeProductNo = new UICheckBox();
+            chkIncludeTestResult = new UICheckBox();
+            chkIncludeSaveTime = new UICheckBox();
+            lblExcelPassword = new UILabel();
+            txtExcelPassword = new UITextBox();
+            tabPage1 = new AntdUI.TabPage();
             btnReport = new AntdUI.Button();
             btnParameter = new AntdUI.Button();
             folderBrowserDialog1 = new FolderBrowserDialog();
@@ -184,7 +192,7 @@
             btnBrowse.FillDisableColor = Color.FromArgb(70, 75, 85);
             btnBrowse.Font = new Font("思源黑体 CN Bold", 11F, FontStyle.Bold);
             btnBrowse.ForeDisableColor = Color.White;
-            btnBrowse.Location = new Point(665, 228);
+            btnBrowse.Location = new Point(665, 144);
             btnBrowse.MinimumSize = new Size(1, 1);
             btnBrowse.Name = "btnBrowse";
             btnBrowse.RectDisableColor = Color.FromArgb(80, 160, 255);
@@ -224,7 +232,7 @@
             txtTemplateRpt.ForeColor = Color.FromArgb(46, 46, 46);
             txtTemplateRpt.ForeDisableColor = Color.FromArgb(235, 227, 221);
             txtTemplateRpt.ForeReadOnlyColor = Color.FromArgb(235, 227, 221);
-            txtTemplateRpt.Location = new Point(45, 229);
+            txtTemplateRpt.Location = new Point(45, 145);
             txtTemplateRpt.Margin = new Padding(4, 5, 4, 5);
             txtTemplateRpt.MinimumSize = new Size(1, 16);
             txtTemplateRpt.Name = "txtTemplateRpt";
@@ -242,13 +250,12 @@
             // tabs1
             // 
             tabs1.BackColor = Color.White;
-            tabs1.Controls.Add(tabPage2);
             tabs1.Controls.Add(tabPage1);
+            tabs1.Controls.Add(tabPage2);
             tabs1.Location = new Point(0, 151);
             tabs1.Name = "tabs1";
             tabs1.Pages.Add(tabPage1);
             tabs1.Pages.Add(tabPage2);
-            tabs1.SelectedIndex = 1;
             tabs1.Size = new Size(792, 587);
             styleCard21.Closable = AntdUI.Tabs.StyleCard2.CloseType.none;
             tabs1.Style = styleCard21;
@@ -256,16 +263,6 @@
             tabs1.TabMenuVisible = false;
             tabs1.Text = "tabs1";
             tabs1.Type = AntdUI.TabType.Card2;
-            // 
-            // tabPage1
-            // 
-            tabPage1.BackColor = Color.White;
-            tabPage1.Dock = DockStyle.Fill;
-            tabPage1.Location = new Point(0, 0);
-            tabPage1.Name = "tabPage1";
-            tabPage1.Size = new Size(792, 587);
-            tabPage1.TabIndex = 0;
-            tabPage1.Text = "试验参数";
             // 
             // tabPage2
             // 
@@ -276,10 +273,17 @@
             tabPage2.Controls.Add(uiLabel3);
             tabPage2.Controls.Add(btnBrowse);
             tabPage2.Controls.Add(txtTemplateRpt);
+            tabPage2.Controls.Add(chkSavePDF);
+            tabPage2.Controls.Add(lblFileNameConfig);
+            tabPage2.Controls.Add(chkIncludeModelName);
+            tabPage2.Controls.Add(chkIncludeProductNo);
+            tabPage2.Controls.Add(chkIncludeTestResult);
+            tabPage2.Controls.Add(chkIncludeSaveTime);
+            tabPage2.Controls.Add(lblExcelPassword);
+            tabPage2.Controls.Add(txtExcelPassword);
             tabPage2.Dock = DockStyle.Fill;
             tabPage2.Location = new Point(0, 0);
             tabPage2.Name = "tabPage2";
-            tabPage2.Showed = true;
             tabPage2.Size = new Size(792, 587);
             tabPage2.TabIndex = 0;
             tabPage2.Text = "报表模板";
@@ -290,7 +294,7 @@
             uiLabel1.BackColor = Color.Transparent;
             uiLabel1.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
             uiLabel1.ForeColor = Color.FromArgb(46, 46, 46);
-            uiLabel1.Location = new Point(45, 333);
+            uiLabel1.Location = new Point(45, 249);
             uiLabel1.Name = "uiLabel1";
             uiLabel1.Size = new Size(122, 22);
             uiLabel1.TabIndex = 400;
@@ -303,7 +307,7 @@
             btnSaveBrowse.FillDisableColor = Color.FromArgb(70, 75, 85);
             btnSaveBrowse.Font = new Font("思源黑体 CN Bold", 11F, FontStyle.Bold);
             btnSaveBrowse.ForeDisableColor = Color.White;
-            btnSaveBrowse.Location = new Point(665, 364);
+            btnSaveBrowse.Location = new Point(665, 280);
             btnSaveBrowse.MinimumSize = new Size(1, 1);
             btnSaveBrowse.Name = "btnSaveBrowse";
             btnSaveBrowse.RectDisableColor = Color.FromArgb(80, 160, 255);
@@ -325,7 +329,7 @@
             txtSaveReport.ForeColor = Color.FromArgb(46, 46, 46);
             txtSaveReport.ForeDisableColor = Color.FromArgb(235, 227, 221);
             txtSaveReport.ForeReadOnlyColor = Color.FromArgb(235, 227, 221);
-            txtSaveReport.Location = new Point(45, 364);
+            txtSaveReport.Location = new Point(45, 280);
             txtSaveReport.Margin = new Padding(4, 5, 4, 5);
             txtSaveReport.MinimumSize = new Size(1, 16);
             txtSaveReport.Name = "txtSaveReport";
@@ -346,12 +350,138 @@
             uiLabel3.BackColor = Color.Transparent;
             uiLabel3.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
             uiLabel3.ForeColor = Color.FromArgb(46, 46, 46);
-            uiLabel3.Location = new Point(45, 198);
+            uiLabel3.Location = new Point(45, 114);
             uiLabel3.Name = "uiLabel3";
             uiLabel3.Size = new Size(154, 22);
             uiLabel3.TabIndex = 397;
             uiLabel3.Text = "报表模板打开路径：";
             uiLabel3.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // chkSavePDF
+            // 
+            chkSavePDF.Cursor = Cursors.Hand;
+            chkSavePDF.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            chkSavePDF.ForeColor = Color.FromArgb(46, 46, 46);
+            chkSavePDF.Location = new Point(45, 333);
+            chkSavePDF.MinimumSize = new Size(1, 1);
+            chkSavePDF.Name = "chkSavePDF";
+            chkSavePDF.Size = new Size(200, 29);
+            chkSavePDF.TabIndex = 410;
+            chkSavePDF.Text = "同时保存PDF文件";
+            // 
+            // lblFileNameConfig
+            // 
+            lblFileNameConfig.AutoSize = true;
+            lblFileNameConfig.BackColor = Color.Transparent;
+            lblFileNameConfig.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            lblFileNameConfig.ForeColor = Color.FromArgb(46, 46, 46);
+            lblFileNameConfig.Location = new Point(45, 373);
+            lblFileNameConfig.Name = "lblFileNameConfig";
+            lblFileNameConfig.Size = new Size(218, 22);
+            lblFileNameConfig.TabIndex = 411;
+            lblFileNameConfig.Text = "文件名构建（按勾选顺序）：";
+            lblFileNameConfig.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // chkIncludeModelName
+            // 
+            chkIncludeModelName.Checked = true;
+            chkIncludeModelName.Cursor = Cursors.Hand;
+            chkIncludeModelName.Font = new Font("微软雅黑", 11F);
+            chkIncludeModelName.ForeColor = Color.FromArgb(46, 46, 46);
+            chkIncludeModelName.Location = new Point(70, 403);
+            chkIncludeModelName.MinimumSize = new Size(1, 1);
+            chkIncludeModelName.Name = "chkIncludeModelName";
+            chkIncludeModelName.Size = new Size(120, 29);
+            chkIncludeModelName.TabIndex = 412;
+            chkIncludeModelName.Text = "产品型号";
+            // 
+            // chkIncludeProductNo
+            // 
+            chkIncludeProductNo.Checked = true;
+            chkIncludeProductNo.Cursor = Cursors.Hand;
+            chkIncludeProductNo.Font = new Font("微软雅黑", 11F);
+            chkIncludeProductNo.ForeColor = Color.FromArgb(46, 46, 46);
+            chkIncludeProductNo.Location = new Point(200, 403);
+            chkIncludeProductNo.MinimumSize = new Size(1, 1);
+            chkIncludeProductNo.Name = "chkIncludeProductNo";
+            chkIncludeProductNo.Size = new Size(120, 29);
+            chkIncludeProductNo.TabIndex = 413;
+            chkIncludeProductNo.Text = "产品编号";
+            // 
+            // chkIncludeTestResult
+            // 
+            chkIncludeTestResult.Checked = true;
+            chkIncludeTestResult.Cursor = Cursors.Hand;
+            chkIncludeTestResult.Font = new Font("微软雅黑", 11F);
+            chkIncludeTestResult.ForeColor = Color.FromArgb(46, 46, 46);
+            chkIncludeTestResult.Location = new Point(330, 403);
+            chkIncludeTestResult.MinimumSize = new Size(1, 1);
+            chkIncludeTestResult.Name = "chkIncludeTestResult";
+            chkIncludeTestResult.Size = new Size(120, 29);
+            chkIncludeTestResult.TabIndex = 414;
+            chkIncludeTestResult.Text = "综合判定";
+            // 
+            // chkIncludeSaveTime
+            // 
+            chkIncludeSaveTime.Checked = true;
+            chkIncludeSaveTime.Cursor = Cursors.Hand;
+            chkIncludeSaveTime.Font = new Font("微软雅黑", 11F);
+            chkIncludeSaveTime.ForeColor = Color.FromArgb(46, 46, 46);
+            chkIncludeSaveTime.Location = new Point(460, 403);
+            chkIncludeSaveTime.MinimumSize = new Size(1, 1);
+            chkIncludeSaveTime.Name = "chkIncludeSaveTime";
+            chkIncludeSaveTime.Size = new Size(120, 29);
+            chkIncludeSaveTime.TabIndex = 415;
+            chkIncludeSaveTime.Text = "保存时间";
+            // 
+            // lblExcelPassword
+            // 
+            lblExcelPassword.AutoSize = true;
+            lblExcelPassword.BackColor = Color.Transparent;
+            lblExcelPassword.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            lblExcelPassword.ForeColor = Color.FromArgb(46, 46, 46);
+            lblExcelPassword.Location = new Point(45, 448);
+            lblExcelPassword.Name = "lblExcelPassword";
+            lblExcelPassword.Size = new Size(130, 22);
+            lblExcelPassword.TabIndex = 416;
+            lblExcelPassword.Text = "Excel保护密码：";
+            lblExcelPassword.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // txtExcelPassword
+            // 
+            txtExcelPassword.ButtonFillHoverColor = Color.FromArgb(215, 218, 226);
+            txtExcelPassword.ButtonStyleInherited = false;
+            txtExcelPassword.Cursor = Cursors.IBeam;
+            txtExcelPassword.FillColor = Color.FromArgb(242, 243, 245);
+            txtExcelPassword.FillColor2 = Color.FromArgb(238, 239, 241);
+            txtExcelPassword.FillReadOnlyColor = Color.FromArgb(242, 243, 245);
+            txtExcelPassword.Font = new Font("微软雅黑", 12F);
+            txtExcelPassword.Location = new Point(177, 444);
+            txtExcelPassword.Margin = new Padding(4, 5, 4, 5);
+            txtExcelPassword.MinimumSize = new Size(1, 16);
+            txtExcelPassword.Name = "txtExcelPassword";
+            txtExcelPassword.Padding = new Padding(5);
+            txtExcelPassword.PasswordChar = '*';
+            txtExcelPassword.Radius = 4;
+            txtExcelPassword.RectColor = Color.FromArgb(218, 220, 230);
+            txtExcelPassword.RectDisableColor = Color.FromArgb(218, 220, 230);
+            txtExcelPassword.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtExcelPassword.ShowText = false;
+            txtExcelPassword.Size = new Size(372, 29);
+            txtExcelPassword.TabIndex = 417;
+            txtExcelPassword.TextAlignment = ContentAlignment.MiddleLeft;
+            txtExcelPassword.Watermark = "留空则不加密";
+            // 
+            // tabPage1
+            // 
+            tabPage1.BackColor = Color.White;
+            tabPage1.Dock = DockStyle.Fill;
+            tabPage1.Location = new Point(0, 0);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Showed = true;
+            tabPage1.Size = new Size(792, 587);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "试验参数";
             // 
             // btnReport
             // 
@@ -463,5 +593,13 @@
         private FolderBrowserDialog folderBrowserDialog1;
         private UILine uiLine1;
         private UILine uiLine2;
+        private Sunny.UI.UICheckBox chkSavePDF;
+        private Sunny.UI.UILabel lblFileNameConfig;
+        private Sunny.UI.UICheckBox chkIncludeModelName;
+        private Sunny.UI.UICheckBox chkIncludeProductNo;
+        private Sunny.UI.UICheckBox chkIncludeTestResult;
+        private Sunny.UI.UICheckBox chkIncludeSaveTime;
+        private Sunny.UI.UILabel lblExcelPassword;
+        private Sunny.UI.UITextBox txtExcelPassword;
     }
 }

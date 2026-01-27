@@ -416,7 +416,7 @@ public partial class frmMainMenu : Form
 
         // 获取所有节点并过滤掉受限节点
         var nodes = GetMainDataNodes()
-            .Where(node => !IsRestrictedNode(node.Name)); // ← 关键过滤
+            .Where(node => !IsRestrictedNode(node.Name)); // 关键过滤
 
         // 遍历过滤后的节点
         foreach (var node in nodes)

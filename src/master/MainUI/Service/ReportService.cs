@@ -1,4 +1,5 @@
-﻿using RW.UI.Controls.Report;
+﻿using OfficeOpenXml;
+using RW.UI.Controls.Report;
 
 namespace MainUI.Service
 {
@@ -183,52 +184,8 @@ namespace MainUI.Service
         }
 
         /// <summary>
-        /// 构建报表保存路径(智能选择基础目录)
-        /// 优先使用用户设置的保存路径,未设置则使用默认路径
-        /// 保存结构: [基础目录]\年\月\产品类型\文件名.xls
-        /// </summary>
-        /// <param name="modelTypeName">产品类型</param>
-        /// <param name="modelName">产品型号</param>
-        /// <returns>完整的保存路径</returns>
-        public static string BuildSaveFilePath(string modelTypeName, string modelName)
-        {
-            try
-            {
-                DateTime now = DateTime.Now;
-
-                // 智能选择基础目录
-                string baseDirectory = GetBaseSaveDirectory();
-
-                // 构建目录结构: [基础目录]\年\月\产品类型\
-                string yearMonth = Path.Combine(now.Year.ToString(), now.Month.ToString("D2"));
-                string directory = Path.Combine(baseDirectory, yearMonth, modelTypeName ?? "未知类型");
-
-                // 确保目录存在
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                    NlogHelper.Default.Info($"创建报表保存目录: {directory}");
-                }
-
-                // 构建文件名: 产品型号_图号_时间戳.xls
-                string fileName = GenerateReportFileName(modelTypeName, modelName,
-                    VarHelper.TestViewModel?.DrawingNo);
-
-                string fullPath = Path.Combine(directory, fileName);
-                NlogHelper.Default.Info($"构建报表保存路径: {fullPath}");
-
-                return fullPath;
-            }
-            catch (Exception ex)
-            {
-                NlogHelper.Default.Error($"构建报表路径失败: {ex.Message}", ex);
-                throw;
-            }
-        }
-
-        /// <summary>
         /// 获取报表保存的基础目录
-        /// 优先使用用户设置的路径,未设置则使用默认路径 D:\试验报告
+        /// 优先使用用户设置的路径,未设置则使用默认路径
         /// </summary>
         /// <returns>基础目录路径</returns>
         private static string GetBaseSaveDirectory()
@@ -242,17 +199,25 @@ namespace MainUI.Service
                 // 如果用户设置了保存路径
                 if (!string.IsNullOrEmpty(saveReportConfig.RptSaveFile))
                 {
-                    string userPath = saveReportConfig.RptSaveFile;
+                    string userPath = saveReportConfig.RptSaveFile.Trim();
 
-                    // 如果用户设置的是目录路径,直接使用
-                    if (Directory.Exists(userPath))
+                    // 判断是否为目录路径（没有文件扩展名，或以 \ 结尾）
+                    bool isDirectoryPath = IsDirectoryPath(userPath);
+
+                    if (isDirectoryPath)
                     {
+                        // 用户设置的是目录路径，确保目录存在
+                        if (!Directory.Exists(userPath))
+                        {
+                            Directory.CreateDirectory(userPath);
+                            NlogHelper.Default.Info($"创建用户设置目录: {userPath}");
+                        }
                         NlogHelper.Default.Info($"使用用户设置的保存目录: {userPath}");
                         return userPath;
                     }
 
-                    // 如果用户设置的是文件路径,提取目录部分
-                    string directory = Path.GetDirectoryName(userPath);
+                    // 用户设置的是文件路径，提取目录部分
+                    var directory = Path.GetDirectoryName(userPath);
                     if (!string.IsNullOrEmpty(directory))
                     {
                         // 确保目录存在
@@ -267,40 +232,282 @@ namespace MainUI.Service
                 }
 
                 // 未设置或设置无效,使用默认路径
-                string defaultPath = SaveReportPath();
+                var defaultPath = "D:\\试验报告";
+                if (!Directory.Exists(defaultPath))
+                {
+                    Directory.CreateDirectory(defaultPath);
+                }
                 NlogHelper.Default.Info($"使用默认保存目录: {defaultPath}");
                 return defaultPath;
             }
             catch (Exception ex)
             {
                 NlogHelper.Default.Error($"获取基础保存目录失败,使用默认路径: {ex.Message}", ex);
-                return "D:\\试验报告";
+                string fallbackPath = "D:\\试验报告";
+                if (!Directory.Exists(fallbackPath))
+                {
+                    try { Directory.CreateDirectory(fallbackPath); } catch { }
+                }
+                return fallbackPath;
             }
         }
 
         /// <summary>
+        /// 判断路径是否为目录路径
+        /// </summary>
+        /// <param name="path">路径字符串</param>
+        /// <returns>是否为目录路径</returns>
+        private static bool IsDirectoryPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            // 以 \ 或 / 结尾的是目录路径
+            if (path.EndsWith("\\") || path.EndsWith("/"))
+                return true;
+
+            // 如果目录已存在，那它就是目录路径
+            if (Directory.Exists(path))
+                return true;
+
+            // 没有扩展名的路径视为目录路径
+            // 例如：D:\试验报告、C:\Data\Reports
+            string extension = Path.GetExtension(path);
+            if (string.IsNullOrEmpty(extension))
+                return true;
+
+            // 有常见文件扩展名的视为文件路径
+            string[] fileExtensions = { ".xls", ".xlsx", ".pdf", ".doc", ".docx", ".txt", ".csv" };
+            return !fileExtensions.Contains(extension.ToLower());
+        }
+
+        /// <summary>
         /// 生成报表文件名
-        /// 格式: 产品类型_产品型号_试验编号_时间戳.xls
+        /// 格式: 产品型号_产品编号_综合判定_保存时间.xls（根据配置勾选组合）
+        /// </summary>
+        /// <param name="modelName">产品型号</param>
+        /// <param name="productNo">产品编号（图号）</param>
+        /// <param name="testResult">综合判定结果</param>
+        /// <param name="config">报表配置</param>
+        /// <returns>文件名（不含扩展名）</returns>
+        private static string GenerateReportFileName(string modelName, string productNo, string testResult, SaveReportConfig config)
+        {
+            var parts = new List<string>();
+
+            // 按顺序添加勾选的部分：产品型号_产品编号_综合判定_保存时间
+            if (config.IncludeModelName && !string.IsNullOrWhiteSpace(modelName))
+            {
+                parts.Add(CleanFileName(modelName));
+            }
+
+            if (config.IncludeProductNo && !string.IsNullOrWhiteSpace(productNo))
+            {
+                parts.Add(CleanFileName(productNo));
+            }
+
+            if (config.IncludeTestResult && !string.IsNullOrWhiteSpace(testResult))
+            {
+                parts.Add(CleanFileName(testResult));
+            }
+
+            if (config.IncludeSaveTime)
+            {
+                parts.Add(DateTime.Now.ToString("yyyyMMddHHmmss"));
+            }
+
+            // 如果没有任何勾选，使用默认时间戳
+            if (parts.Count == 0)
+            {
+                parts.Add(DateTime.Now.ToString("yyyyMMddHHmmss"));
+            }
+
+            return string.Join("_", parts);
+        }
+
+        /// <summary>
+        /// 构建报表保存路径（支持Excel和PDF分开保存）
         /// </summary>
         /// <param name="modelTypeName">产品类型</param>
         /// <param name="modelName">产品型号</param>
-        /// <param name="testID">试验编号(可选)</param>
-        /// <returns>文件名</returns>
-        private static string GenerateReportFileName(string modelTypeName, string modelName, string testID = null)
+        /// <param name="testResult">综合判定结果（可选）</param>
+        /// <param name="serialNo">制造编号</param>
+        /// <returns>完整的保存路径</returns>
+        public static string BuildSaveFilePath(string modelTypeName, string modelName, string testResult = null, string serialNo = null)
         {
-            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            try
+            {
+                // 加载配置
+                SaveReportConfig config = new();
+                config.Load();
 
-            // 清理文件名中的非法字符
-            string safeModelType = CleanFileName(modelTypeName ?? "未知类型");
-            string safeModelName = CleanFileName(modelName ?? "未知型号");
-            string safeTestID = CleanFileName(testID ?? "");
+                DateTime now = DateTime.Now;
 
-            // 根据是否有试验编号生成文件名
-            string fileName = string.IsNullOrEmpty(safeTestID)
-                ? $"{safeModelType}_{safeModelName}_{timestamp}.xls"
-                : $"{safeModelType}_{safeModelName}_{safeTestID}_{timestamp}.xls";
+                // 智能选择基础目录
+                string baseDirectory = GetBaseSaveDirectory();
 
-            return fileName;
+                // 构建目录结构: [基础目录]\Excel\年\月\产品类型\
+                string yearMonth = Path.Combine(now.Year.ToString(), now.Month.ToString("D2"));
+                string excelDirectory = Path.Combine(baseDirectory, "Excel", yearMonth, modelTypeName ?? "未知类型");
+
+                // 确保目录存在
+                if (!Directory.Exists(excelDirectory))
+                {
+                    Directory.CreateDirectory(excelDirectory);
+                    NlogHelper.Default.Info($"创建报表保存目录: {excelDirectory}");
+                }
+
+                // 构建文件名
+                string fileNameWithoutExt = GenerateReportFileName(modelName, serialNo, testResult, config);
+                string fullPath = Path.Combine(excelDirectory, fileNameWithoutExt + ".xls");
+
+                NlogHelper.Default.Info($"构建报表保存路径: {fullPath}");
+                return fullPath;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"构建报表路径失败: {ex.Message}", ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 构建PDF保存路径
+        /// </summary>
+        /// <param name="excelPath">Excel文件路径</param>
+        /// <returns>PDF文件路径</returns>
+        public static string BuildPdfSavePath(string excelPath)
+        {
+            try
+            {
+                // 将 Excel 路径中的 "Excel" 替换为 "PDF"
+                string pdfPath = excelPath.Replace("\\Excel\\", "\\PDF\\");
+
+                // 更换扩展名
+                pdfPath = Path.ChangeExtension(pdfPath, ".pdf");
+
+                // 确保目录存在
+                string pdfDirectory = Path.GetDirectoryName(pdfPath);
+                if (!Directory.Exists(pdfDirectory))
+                {
+                    Directory.CreateDirectory(pdfDirectory);
+                    NlogHelper.Default.Info($"创建PDF保存目录: {pdfDirectory}");
+                }
+
+                return pdfPath;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"构建PDF路径失败: {ex.Message}", ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 对Excel文件设置保护密码
+        /// </summary>
+        /// <param name="filePath">Excel文件路径</param>
+        /// <param name="password">保护密码</param>
+        /// <returns>是否成功</returns>
+        public static bool ProtectExcelFile(string filePath, string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return true; // 没有密码，不需要保护
+
+            try
+            {
+                // 使用EPPlus处理xlsx格式
+                if (filePath.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+                {
+                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+                    using var package = new ExcelPackage(new FileInfo(filePath));
+
+                    foreach (var worksheet in package.Workbook.Worksheets)
+                    {
+                        // 设置工作表保护
+                        worksheet.Protection.SetPassword(password);
+                        worksheet.Protection.AllowSelectLockedCells = true;
+                        worksheet.Protection.AllowSelectUnlockedCells = true;
+                        worksheet.Protection.IsProtected = true;
+                    }
+
+                    package.Save();
+                    NlogHelper.Default.Info($"Excel工作表保护设置成功: {filePath}");
+                    return true;
+                }
+                else
+                {
+                    // 对于.xls格式，需要使用其他方式处理
+                    // 这里使用COM互操作（需要安装Excel）
+                    return ProtectExcelFileWithCom(filePath, password);
+                }
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"设置Excel保护失败: {ex.Message}", ex);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 使用COM互操作保护xls文件
+        /// </summary>
+        private static bool ProtectExcelFileWithCom(string filePath, string password)
+        {
+            dynamic excel = null;
+            dynamic workbook = null;
+
+            try
+            {
+                Type excelType = Type.GetTypeFromProgID("Excel.Application");
+                if (excelType == null)
+                {
+                    NlogHelper.Default.Warn("未安装Excel，无法设置xls文件保护");
+                    return false;
+                }
+
+                excel = Activator.CreateInstance(excelType);
+                excel.Visible = false;
+                excel.DisplayAlerts = false;
+
+                workbook = excel.Workbooks.Open(filePath);
+
+                // 遍历所有工作表设置保护
+                foreach (dynamic sheet in workbook.Worksheets)
+                {
+                    sheet.Protect(password, true, true, true);
+                }
+
+                workbook.Save();
+                NlogHelper.Default.Info($"Excel工作表保护设置成功(COM): {filePath}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"COM设置Excel保护失败: {ex.Message}", ex);
+                return false;
+            }
+            finally
+            {
+                try
+                {
+                    workbook?.Close(false);
+                    excel?.Quit();
+
+                    if (workbook != null) System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
+                    if (excel != null) System.Runtime.InteropServices.Marshal.ReleaseComObject(excel);
+                }
+                catch { }
+            }
+        }
+
+        /// <summary>
+        /// 获取保存配置
+        /// </summary>
+        public static SaveReportConfig GetSaveConfig()
+        {
+            var config = new SaveReportConfig();
+            config.Load();
+            return config;
         }
 
         /// <summary>
@@ -364,13 +571,11 @@ namespace MainUI.Service
 
                 var result = VarHelper.fsql.Insert(record).ExecuteAffrows();
 
-                if (result > 0)
-                {
-                    NlogHelper.Default.Info($"试验记录保存成功: {record.TestID}");
-                    return true;
-                }
+                if (result <= 0) return false;
 
-                return false;
+                NlogHelper.Default.Info($"试验记录保存成功: {record.TestID}");
+                return true;
+
             }
             catch (Exception ex)
             {

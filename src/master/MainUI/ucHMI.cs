@@ -3,8 +3,6 @@ using MainUI.LogicalConfiguration;
 using MainUI.Procedure.Controls;
 using MainUI.Service;
 using Microsoft.Extensions.Logging;
-using MySqlX.XDevAPI.Relational;
-using System.Threading.Tasks;
 using Label = System.Windows.Forms.Label;
 
 namespace MainUI
@@ -14,7 +12,6 @@ namespace MainUI
         #region 全局变量
         private RW.UI.Controls.Report.RWReport rWReport = new();
         private readonly frmMainMenu frm = new();
-        Dictionary<TaskInfo, BaseTest> DicTestItems = [];
         public delegate void RunStatusHandler(bool obj);
         public event RunStatusHandler EmergencyStatusChanged;
         private static ParaConfig paraconfig;
@@ -760,31 +757,6 @@ namespace MainUI
         }
 
         /// <summary>
-        /// 完整刷新（原 InitParaConfig 方法）
-        /// </summary>
-        private void InitParaConfig()
-        {
-            try
-            {
-                if (VarHelper.TestViewModel == null) return;
-
-                // 刷新参数配置
-                RefreshParaConfig();
-
-                // 刷新测试项
-                RefreshTestItems();
-
-                // ❌ 移除报表刷新 - 只在特定场景下刷新
-                // InitializeReport(paraconfig.RptFile);
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.MessageOK($"加载参数错误：{ex.Message}");
-                NlogHelper.Default.Error($"加载参数错误", ex);
-            }
-        }
-
-        /// <summary>
         /// 刷新型号相关配置（原 ParaRefresh 方法）
         /// </summary>
         /// <param name="includeReport">是否同时刷新报表</param>
@@ -816,14 +788,6 @@ namespace MainUI
                 NlogHelper.Default.Error($"刷新型号错误: {ex.Message}", ex);
                 MessageHelper.MessageYes($"刷新型号错误：{ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// 向后兼容的无参方法
-        /// </summary>
-        public async void ParaRefresh()
-        {
-            await ParaRefreshAsync(includeReport: false);
         }
 
         #endregion
@@ -1136,10 +1100,18 @@ namespace MainUI
 
                 if (!ConfirmSaveReport()) return;  // 提示确认
 
+                // 获取综合判定结果（需要根据实际情况获取）
+                string testResult = GetOverallTestResult();
+                // 制造编号
+                string serialNo = txtSerialNo.Text.Trim();
+
+                // 构建保存路径
                 string saveFilePath = ReportService.BuildSaveFilePath(
                     VarHelper.TestViewModel.ModelTypeName,
-                    VarHelper.TestViewModel.ModelName); // 保存路径
+                    VarHelper.TestViewModel.ModelName,
+                    testResult, serialNo); // 包含综合判定
 
+                // 创建试验记录
                 var testRecord = new TestRecordModel
                 {
                     KindID = VarHelper.TestViewModel.ModelTypeID,
@@ -1148,12 +1120,29 @@ namespace MainUI
                     Tester = NewUsers.NewUserInfo.Username,
                     TestTime = DateTime.Now,
                     ReportPath = saveFilePath,
-                    TestBenchID = TestBenchService.CurrentTestBenchID // 使用当前工位的ID
+                    TestBenchID = TestBenchService.CurrentTestBenchID
                 };
 
                 if (ReportService.SaveTestRecord(testRecord))
                 {
+                    // 保存Excel
                     rWReport.SaveAS(saveFilePath);
+
+                    // 获取保存配置
+                    var saveConfig = ReportService.GetSaveConfig();
+
+                    // 设置Excel保护密码
+                    if (!string.IsNullOrWhiteSpace(saveConfig.ExcelPassword))
+                    {
+                        ReportService.ProtectExcelFile(saveFilePath, saveConfig.ExcelPassword);
+                    }
+
+                    // 如果勾选了保存PDF
+                    if (saveConfig.SavePDF)
+                    {
+                        rWReport.SaveAsPDF(ReportService.BuildPdfSavePath(saveFilePath));
+                    }
+
                     MessageHelper.MessageOK("保存成功", TType.Success);
                 }
                 else
@@ -1164,6 +1153,32 @@ namespace MainUI
             catch (Exception ex)
             {
                 MessageHelper.MessageOK($"保存失败: {ex.Message}", TType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 获取综合判定结果
+        /// </summary>
+        /// <returns>合格/不合格/未判定</returns>
+        private string GetOverallTestResult()
+        {
+            try
+            {
+                // 这里需要根据实际业务逻辑获取综合判定结果
+                // 例如从报表单元格读取，或从全局变量获取
+
+                // 方式1：从全局变量获取（如果有）
+                // var result = GlobalVariableManager.Instance.GetValue("综合判定");
+
+                // 方式2：从报表特定单元格读取
+                // var result = rWReport.ReadCell("综合判定单元格地址");
+
+                // 临时返回空，由实际业务补充
+                return "";
+            }
+            catch
+            {
+                return "";
             }
         }
 

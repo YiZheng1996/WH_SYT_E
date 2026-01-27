@@ -33,7 +33,7 @@ namespace MainUI
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UcHMI));
-            Tabs.StyleLine styleLine1 = new Tabs.StyleLine();
+            Tabs.StyleLine styleLine2 = new Tabs.StyleLine();
             uiTitlePanel3 = new UITitlePanel();
             TableItemPoint = new Table();
             btnProductSelection = new UIButton();
@@ -60,7 +60,7 @@ namespace MainUI
             uiTitlePanel4 = new UITitlePanel();
             uiTextBox6 = new UITextBox();
             uiLabel5 = new UILabel();
-            uiTextBox5 = new UITextBox();
+            txtSerialNo = new UITextBox();
             uiLabel1 = new UILabel();
             txtType = new UITextBox();
             txtModel = new UITextBox();
@@ -595,7 +595,7 @@ namespace MainUI
             uiTitlePanel4.BackColor = Color.FromArgb(236, 236, 236);
             uiTitlePanel4.Controls.Add(uiTextBox6);
             uiTitlePanel4.Controls.Add(uiLabel5);
-            uiTitlePanel4.Controls.Add(uiTextBox5);
+            uiTitlePanel4.Controls.Add(txtSerialNo);
             uiTitlePanel4.Controls.Add(uiLabel1);
             uiTitlePanel4.Controls.Add(txtType);
             uiTitlePanel4.Controls.Add(btnProductSelection);
@@ -660,28 +660,28 @@ namespace MainUI
             uiLabel5.Text = "备    注:";
             uiLabel5.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // uiTextBox5
+            // txtSerialNo
             // 
-            uiTextBox5.BackColor = Color.Transparent;
-            uiTextBox5.FillColor = Color.FromArgb(218, 220, 230);
-            uiTextBox5.FillColor2 = Color.FromArgb(218, 220, 230);
-            uiTextBox5.FillDisableColor = Color.FromArgb(218, 220, 230);
-            uiTextBox5.FillReadOnlyColor = Color.FromArgb(218, 220, 230);
-            uiTextBox5.Font = new Font("微软雅黑", 11F, FontStyle.Bold);
-            uiTextBox5.Location = new Point(90, 215);
-            uiTextBox5.Margin = new Padding(4, 5, 4, 5);
-            uiTextBox5.MinimumSize = new Size(1, 16);
-            uiTextBox5.Name = "uiTextBox5";
-            uiTextBox5.Padding = new Padding(5);
-            uiTextBox5.Radius = 15;
-            uiTextBox5.RectColor = Color.FromArgb(218, 220, 230);
-            uiTextBox5.RectDisableColor = Color.FromArgb(218, 220, 230);
-            uiTextBox5.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
-            uiTextBox5.ShowText = false;
-            uiTextBox5.Size = new Size(148, 28);
-            uiTextBox5.TabIndex = 69;
-            uiTextBox5.TextAlignment = ContentAlignment.MiddleLeft;
-            uiTextBox5.Watermark = "请输入";
+            txtSerialNo.BackColor = Color.Transparent;
+            txtSerialNo.FillColor = Color.FromArgb(218, 220, 230);
+            txtSerialNo.FillColor2 = Color.FromArgb(218, 220, 230);
+            txtSerialNo.FillDisableColor = Color.FromArgb(218, 220, 230);
+            txtSerialNo.FillReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtSerialNo.Font = new Font("微软雅黑", 11F, FontStyle.Bold);
+            txtSerialNo.Location = new Point(90, 215);
+            txtSerialNo.Margin = new Padding(4, 5, 4, 5);
+            txtSerialNo.MinimumSize = new Size(1, 16);
+            txtSerialNo.Name = "txtSerialNo";
+            txtSerialNo.Padding = new Padding(5);
+            txtSerialNo.Radius = 15;
+            txtSerialNo.RectColor = Color.FromArgb(218, 220, 230);
+            txtSerialNo.RectDisableColor = Color.FromArgb(218, 220, 230);
+            txtSerialNo.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtSerialNo.ShowText = false;
+            txtSerialNo.Size = new Size(148, 28);
+            txtSerialNo.TabIndex = 69;
+            txtSerialNo.TextAlignment = ContentAlignment.MiddleLeft;
+            txtSerialNo.Watermark = "请输入";
             // 
             // uiLabel1
             // 
@@ -1000,7 +1000,7 @@ namespace MainUI
             tabs1.Pages.Add(tabPageTestDetails);
             tabs1.ScrollForeHover = SystemColors.ActiveBorder;
             tabs1.Size = new Size(900, 856);
-            tabs1.Style = styleLine1;
+            tabs1.Style = styleLine2;
             tabs1.TabIndex = 405;
             tabs1.TabMenuVisible = false;
             // 
@@ -1104,7 +1104,7 @@ namespace MainUI
         private UIPanel grpRainy;
         private Tabs tabs1;
         private UILabel uiLabel5;
-        private UITextBox uiTextBox5;
+        private UITextBox txtSerialNo;
         private UILabel uiLabel1;
         private UITextBox uiTextBox6;
         private AntdUI.TabPage tabPageTestDetails;

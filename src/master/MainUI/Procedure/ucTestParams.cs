@@ -10,7 +10,11 @@ namespace MainUI.Procedure
         ParaConfig paraconfig = new(); //参数配置类
         SaveReportConfig SaveRptconfig = new(); //报表保存配置类
 
-        public UcTestParams() => InitializeComponent();
+        public UcTestParams()
+        {
+            InitializeComponent();
+            LoadConfig();
+        }
 
         /// <summary>
         /// 数据初始化
@@ -29,6 +33,13 @@ namespace MainUI.Procedure
                 SaveRptconfig = new SaveReportConfig();
                 SaveRptconfig.Load();
                 txtSaveReport.Text = SaveRptconfig.RptSaveFile;
+
+                chkSavePDF.Checked = SaveRptconfig.SavePDF;
+                chkIncludeModelName.Checked = SaveRptconfig.IncludeModelName;
+                chkIncludeProductNo.Checked = SaveRptconfig.IncludeProductNo;
+                chkIncludeTestResult.Checked = SaveRptconfig.IncludeTestResult;
+                chkIncludeSaveTime.Checked = SaveRptconfig.IncludeSaveTime;
+                txtExcelPassword.Text = SaveRptconfig.ExcelPassword ?? "";
             }
             catch (Exception ex)
             {
@@ -43,11 +54,11 @@ namespace MainUI.Procedure
         {
             try
             {
-                if (string.IsNullOrEmpty(txtModel.Text))
-                {
-                    MessageHelper.MessageOK($"型号未选择！");
-                    return;
-                }
+                //if (string.IsNullOrEmpty(txtModel.Text))
+                //{
+                //    MessageHelper.MessageOK($"型号未选择！");
+                //    return;
+                //}
 
                 // 保存前的报表模板路径
                 string oldRptFile = paraconfig.RptFile;
@@ -57,17 +68,24 @@ namespace MainUI.Procedure
                 paraconfig.Save();
 
                 SaveRptconfig.RptSaveFile = txtSaveReport.Text;
+                SaveRptconfig.SavePDF = chkSavePDF.Checked;
+                SaveRptconfig.IncludeModelName = chkIncludeModelName.Checked;
+                SaveRptconfig.IncludeProductNo = chkIncludeProductNo.Checked;
+                SaveRptconfig.IncludeTestResult = chkIncludeTestResult.Checked;
+                SaveRptconfig.IncludeSaveTime = chkIncludeSaveTime.Checked;
+                SaveRptconfig.ExcelPassword = txtExcelPassword.Text;
                 SaveRptconfig.Save();
 
                 MessageHelper.MessageOK("保存成功。");
 
                 // 检查报表模板是否变更
-                if (oldRptFile != txtTemplateRpt.Text)
-                {
-                    // 报表模板已变更，触发报表刷新事件
-                    DataChangedEventManager.NotifyDataChanged(DataChangeType.ReportTemplate);
-                    NlogHelper.Default.Info($"报表模板已变更: {oldRptFile} → {txtTemplateRpt.Text}");
-                }
+                if (oldRptFile == txtTemplateRpt.Text || 
+                    string.IsNullOrEmpty(oldRptFile) || 
+                    string.IsNullOrEmpty(txtTemplateRpt.Text)) return;
+
+                // 报表模板已变更，触发报表刷新事件
+                DataChangedEventManager.NotifyDataChanged(DataChangeType.ReportTemplate);
+                NlogHelper.Default.Info($"报表模板已变更: {oldRptFile} → {txtTemplateRpt.Text}");
             }
             catch (Exception ex)
             {
