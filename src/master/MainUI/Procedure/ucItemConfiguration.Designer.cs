@@ -31,6 +31,8 @@ namespace MainUI.Procedure
         private void InitializeComponent()
         {
             uiPanel1 = new UIPanel();
+            btnDown = new UIButton();
+            btnUp = new UIButton();
             btnCopyItem = new UIButton();
             lstAllPoint = new UIListBox();
             lstTestPoint = new UIListBox();
@@ -44,8 +46,6 @@ namespace MainUI.Procedure
             btnLeft = new UIButton();
             btnSave = new UIButton();
             uiLine1 = new UILine();
-            btnUp = new UIButton();
-            btnDown = new UIButton();
             uiPanel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -81,6 +81,36 @@ namespace MainUI.Procedure
             uiPanel1.TabIndex = 1;
             uiPanel1.Text = null;
             uiPanel1.TextAlignment = ContentAlignment.MiddleCenter;
+            // 
+            // btnDown
+            // 
+            btnDown.Cursor = Cursors.Hand;
+            btnDown.Font = new Font("微软雅黑", 15F, FontStyle.Bold);
+            btnDown.Location = new Point(376, 237);
+            btnDown.MinimumSize = new Size(1, 1);
+            btnDown.Name = "btnDown";
+            btnDown.RectDisableColor = Color.FromArgb(80, 160, 255);
+            btnDown.Size = new Size(40, 40);
+            btnDown.TabIndex = 443;
+            btnDown.Text = "⬇️";
+            btnDown.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnDown.TipsText = "1";
+            btnDown.Click += btnDown_Click;
+            // 
+            // btnUp
+            // 
+            btnUp.Cursor = Cursors.Hand;
+            btnUp.Font = new Font("微软雅黑", 15F, FontStyle.Bold);
+            btnUp.Location = new Point(376, 180);
+            btnUp.MinimumSize = new Size(1, 1);
+            btnUp.Name = "btnUp";
+            btnUp.RectDisableColor = Color.FromArgb(80, 160, 255);
+            btnUp.Size = new Size(40, 40);
+            btnUp.TabIndex = 442;
+            btnUp.Text = "⬆️";
+            btnUp.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnUp.TipsText = "1";
+            btnUp.Click += btnUp_Click;
             // 
             // btnCopyItem
             // 
@@ -310,34 +340,6 @@ namespace MainUI.Procedure
             uiLine1.Size = new Size(789, 29);
             uiLine1.StartCap = UILineCap.Circle;
             uiLine1.TabIndex = 441;
-            // 
-            // btnUp
-            // 
-            btnUp.Cursor = Cursors.Hand;
-            btnUp.Font = new Font("微软雅黑", 15F, FontStyle.Bold);
-            btnUp.Location = new Point(376, 180);
-            btnUp.MinimumSize = new Size(1, 1);
-            btnUp.Name = "btnUp";
-            btnUp.RectDisableColor = Color.FromArgb(80, 160, 255);
-            btnUp.Size = new Size(40, 40);
-            btnUp.TabIndex = 442;
-            btnUp.Text = "⬆️";
-            btnUp.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnUp.TipsText = "1";
-            // 
-            // btnDown
-            // 
-            btnDown.Cursor = Cursors.Hand;
-            btnDown.Font = new Font("微软雅黑", 15F, FontStyle.Bold);
-            btnDown.Location = new Point(376, 237);
-            btnDown.MinimumSize = new Size(1, 1);
-            btnDown.Name = "btnDown";
-            btnDown.RectDisableColor = Color.FromArgb(80, 160, 255);
-            btnDown.Size = new Size(40, 40);
-            btnDown.TabIndex = 443;
-            btnDown.Text = "⬇️";
-            btnDown.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnDown.TipsText = "1";
             // 
             // ucItemConfiguration
             // 

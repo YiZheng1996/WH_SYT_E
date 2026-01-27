@@ -151,6 +151,7 @@ namespace MainUI.Procedure
                 StepBLL.InsertTestStep(lstTestStep, (int)cboModel?.SelectedValue);
                 LoadConfiguaredProcess();
                 MessageHelper.MessageOK("保存成功！");
+                DataChangedEventManager.NotifyDataChanged(DataChangeType.TestProcess);
             }
             catch (Exception ex)
             {
@@ -219,8 +220,8 @@ namespace MainUI.Procedure
                 using var copyDialog = new ItemCopyDialog();
 
                 // 设置当前选中的源信息作为默认值
-                if (cboType.SelectedValue != null && 
-                    cboModel.SelectedValue != null && 
+                if (cboType.SelectedValue != null &&
+                    cboModel.SelectedValue != null &&
                     lstTestPoint.SelectedItem != null)
                 {
                     copyDialog.SetDefaultSource(
@@ -455,5 +456,101 @@ namespace MainUI.Procedure
             }
         }
         #endregion
+
+        #region 上下移动功能
+        /// <summary>
+        /// 上移选中的测试点
+        /// </summary>
+        private void MoveUpTestPoint()
+        {
+            try
+            {
+                // 检查是否有选中项
+                if (lstTestPoint.SelectedIndex == -1)
+                {
+                    MessageHelper.MessageOK("请先选择要上移的测试点!", TType.Warn);
+                    return;
+                }
+
+                int selectedIndex = lstTestPoint.SelectedIndex;
+
+                // 检查是否已经在顶部
+                if (selectedIndex == 0)
+                {
+                    MessageHelper.MessageOK("已经是第一项,无法继续上移!", TType.Info);
+                    return;
+                }
+
+                // 获取当前项和上一项
+                object currentItem = lstTestPoint.Items[selectedIndex];
+                object previousItem = lstTestPoint.Items[selectedIndex - 1];
+
+                // 交换位置
+                lstTestPoint.Items[selectedIndex - 1] = currentItem;
+                lstTestPoint.Items[selectedIndex] = previousItem;
+
+                // 保持选中状态
+                lstTestPoint.SelectedIndex = selectedIndex - 1;
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.MessageOK($"上移测试点失败: {ex.Message}", TType.Error);
+                NlogHelper.Default.Error("上移测试点失败", ex);
+            }
+        }
+
+        /// <summary>
+        /// 下移选中的测试点
+        /// </summary>
+        private void MoveDownTestPoint()
+        {
+            try
+            {
+                // 检查是否有选中项
+                if (lstTestPoint.SelectedIndex == -1)
+                {
+                    MessageHelper.MessageOK("请先选择要下移的测试点!", TType.Warn);
+                    return;
+                }
+
+                int selectedIndex = lstTestPoint.SelectedIndex;
+
+                // 检查是否已经在底部
+                if (selectedIndex == lstTestPoint.Items.Count - 1)
+                {
+                    MessageHelper.MessageOK("已经是最后一项,无法继续下移!", TType.Info);
+                    return;
+                }
+
+                // 获取当前项和下一项
+                object currentItem = lstTestPoint.Items[selectedIndex];
+                object nextItem = lstTestPoint.Items[selectedIndex + 1];
+
+                // 交换位置
+                lstTestPoint.Items[selectedIndex + 1] = currentItem;
+                lstTestPoint.Items[selectedIndex] = nextItem;
+
+                // 保持选中状态
+                lstTestPoint.SelectedIndex = selectedIndex + 1;
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.MessageOK($"下移测试点失败: {ex.Message}", TType.Error);
+                NlogHelper.Default.Error("下移测试点失败", ex);
+            }
+        }
+
+        private void btnUp_Click(object sender, EventArgs e)
+        {
+            MoveUpTestPoint();
+        }
+
+        private void btnDown_Click(object sender, EventArgs e)
+        {
+            MoveDownTestPoint();
+        }
+
+        #endregion
+
     }
 }

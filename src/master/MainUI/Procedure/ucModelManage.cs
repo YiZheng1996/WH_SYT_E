@@ -107,24 +107,23 @@ namespace MainUI.Procedure
         {
             try
             {
-                if (e.Record is NewModels data)
+                if (e.Record is not NewModels data) return;
+                if (e.Btn.Id != "Release") return;
+                // 1. 只有管理员才能发布
+                if (NewUsers.NewUserInfo.ID != 1)
                 {
-                    if (e.Btn.Id == "Release")
-                    {
-                        if (DialogResult.OK == MessageHelper.MessageYes($"确认发布型号{data.ModelName}吗？"))
-                        {
-                            if (modelBLL.IsRelease(data))
-                            {
-                                LoadData();
-                                MessageHelper.MessageOK($"发布成功！");
-                            }
-                        }
-                    }
+                    MessageHelper.MessageOK("只有管理员才能发布型号!", TType.Warn);
+                    return;
                 }
+
+                if (DialogResult.OK != MessageHelper.MessageYes($"确认发布型号{data.ModelName}吗?")) return;
+                if (!modelBLL.IsRelease(data)) return;
+                LoadData();
+                MessageHelper.MessageOK($"发布成功!");
             }
             catch (Exception ex)
             {
-                MessageHelper.MessageOK("发布错误：" + ex.Message);
+                MessageHelper.MessageOK("发布错误:" + ex.Message);
             }
         }
 

@@ -40,12 +40,12 @@
             btnDelete = new UIButton();
             txtTemplateRpt = new UITextBox();
             tabs1 = new AntdUI.Tabs();
+            tabPage1 = new AntdUI.TabPage();
             tabPage2 = new AntdUI.TabPage();
             uiLabel1 = new UILabel();
             btnSaveBrowse = new UIButton();
             txtSaveReport = new UITextBox();
             uiLabel3 = new UILabel();
-            tabPage1 = new AntdUI.TabPage();
             btnReport = new AntdUI.Button();
             btnParameter = new AntdUI.Button();
             folderBrowserDialog1 = new FolderBrowserDialog();
@@ -242,12 +242,13 @@
             // tabs1
             // 
             tabs1.BackColor = Color.White;
-            tabs1.Controls.Add(tabPage1);
             tabs1.Controls.Add(tabPage2);
+            tabs1.Controls.Add(tabPage1);
             tabs1.Location = new Point(0, 151);
             tabs1.Name = "tabs1";
             tabs1.Pages.Add(tabPage1);
             tabs1.Pages.Add(tabPage2);
+            tabs1.SelectedIndex = 1;
             tabs1.Size = new Size(792, 587);
             styleCard21.Closable = AntdUI.Tabs.StyleCard2.CloseType.none;
             tabs1.Style = styleCard21;
@@ -255,6 +256,16 @@
             tabs1.TabMenuVisible = false;
             tabs1.Text = "tabs1";
             tabs1.Type = AntdUI.TabType.Card2;
+            // 
+            // tabPage1
+            // 
+            tabPage1.BackColor = Color.White;
+            tabPage1.Dock = DockStyle.Fill;
+            tabPage1.Location = new Point(0, 0);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Size = new Size(792, 587);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "试验参数";
             // 
             // tabPage2
             // 
@@ -268,6 +279,7 @@
             tabPage2.Dock = DockStyle.Fill;
             tabPage2.Location = new Point(0, 0);
             tabPage2.Name = "tabPage2";
+            tabPage2.Showed = true;
             tabPage2.Size = new Size(792, 587);
             tabPage2.TabIndex = 0;
             tabPage2.Text = "报表模板";
@@ -340,16 +352,6 @@
             uiLabel3.TabIndex = 397;
             uiLabel3.Text = "报表模板打开路径：";
             uiLabel3.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // tabPage1
-            // 
-            tabPage1.BackColor = Color.White;
-            tabPage1.Dock = DockStyle.Fill;
-            tabPage1.Location = new Point(0, 0);
-            tabPage1.Name = "tabPage1";
-            tabPage1.Size = new Size(792, 587);
-            tabPage1.TabIndex = 0;
-            tabPage1.Text = "试验参数";
             // 
             // btnReport
             // 
