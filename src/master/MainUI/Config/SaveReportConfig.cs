@@ -19,6 +19,18 @@
         }
 
         /// <summary>
+        /// 工长名称
+        /// </summary>
+        [IniKeyName("工长名称")]
+        public string ForemanName { get; set; }
+
+        /// <summary>
+        /// 工长写入单元格名称
+        /// </summary>
+        [IniKeyName("工长写入单元格名称")]
+        public string ForemanCellName { get; set; }
+
+        /// <summary>
         /// 报表保存路径
         /// </summary>
         [IniKeyName("报表保存路径")]

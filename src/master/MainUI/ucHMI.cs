@@ -810,6 +810,9 @@ namespace MainUI
                 // 前置条件满足，标记试验开始
                 _isTestActuallyStarted = true;
 
+                // 表头信息写入报表
+                WriteReport();
+
                 //  设置UI状态
                 Disable(true);
                 TestStateChanged?.Invoke(true, true);
@@ -826,7 +829,7 @@ namespace MainUI
                 //  获取要执行的测试项
                 var checkedItems = GetCheckedTestItemNames();
 
-                // 6. 批量执行工作流
+                // 批量执行工作流
                 if (_workflowService != null && checkedItems.Count > 0)
                 {
                     // 试验前排空所有气压
@@ -855,6 +858,17 @@ namespace MainUI
                     await IsTestEndAsync();
                 }
             }
+        }
+
+        // 报表写值
+        private void WriteReport()
+        {
+            if (rWReport is null) return;
+
+            // 获取保存配置
+            var saveConfig = ReportService.GetSaveConfig();
+
+            rWReport.Write(saveConfig.ForemanCellName, saveConfig.ForemanName); // 班长
         }
 
         #region 试验排空气压

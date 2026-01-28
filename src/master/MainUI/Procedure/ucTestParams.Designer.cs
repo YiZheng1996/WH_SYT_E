@@ -40,6 +40,11 @@
             btnDelete = new UIButton();
             txtTemplateRpt = new UITextBox();
             tabs1 = new AntdUI.Tabs();
+            tabPage1 = new AntdUI.TabPage();
+            txtForemanCellName = new UITextBox();
+            txtForemanName = new UITextBox();
+            uiLabel5 = new UILabel();
+            uiLabel4 = new UILabel();
             tabPage2 = new AntdUI.TabPage();
             uiLabel1 = new UILabel();
             btnSaveBrowse = new UIButton();
@@ -53,13 +58,13 @@
             chkIncludeSaveTime = new UICheckBox();
             lblExcelPassword = new UILabel();
             txtExcelPassword = new UITextBox();
-            tabPage1 = new AntdUI.TabPage();
             btnReport = new AntdUI.Button();
             btnParameter = new AntdUI.Button();
             folderBrowserDialog1 = new FolderBrowserDialog();
             uiLine1 = new UILine();
             uiLine2 = new UILine();
             tabs1.SuspendLayout();
+            tabPage1.SuspendLayout();
             tabPage2.SuspendLayout();
             SuspendLayout();
             // 
@@ -263,6 +268,95 @@
             tabs1.TabMenuVisible = false;
             tabs1.Text = "tabs1";
             tabs1.Type = AntdUI.TabType.Card2;
+            // 
+            // tabPage1
+            // 
+            tabPage1.BackColor = Color.White;
+            tabPage1.Controls.Add(txtForemanCellName);
+            tabPage1.Controls.Add(txtForemanName);
+            tabPage1.Controls.Add(uiLabel5);
+            tabPage1.Controls.Add(uiLabel4);
+            tabPage1.Dock = DockStyle.Fill;
+            tabPage1.Location = new Point(0, 0);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Showed = true;
+            tabPage1.Size = new Size(792, 587);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "试验参数";
+            // 
+            // txtForemanCellName
+            // 
+            txtForemanCellName.FillColor = Color.FromArgb(218, 220, 230);
+            txtForemanCellName.FillColor2 = Color.FromArgb(218, 220, 230);
+            txtForemanCellName.FillDisableColor = Color.FromArgb(218, 220, 230);
+            txtForemanCellName.FillReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtForemanCellName.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
+            txtForemanCellName.ForeColor = Color.FromArgb(46, 46, 46);
+            txtForemanCellName.ForeDisableColor = Color.FromArgb(235, 227, 221);
+            txtForemanCellName.ForeReadOnlyColor = Color.FromArgb(235, 227, 221);
+            txtForemanCellName.Location = new Point(520, 88);
+            txtForemanCellName.Margin = new Padding(4, 5, 4, 5);
+            txtForemanCellName.MinimumSize = new Size(1, 16);
+            txtForemanCellName.Name = "txtForemanCellName";
+            txtForemanCellName.Padding = new Padding(5);
+            txtForemanCellName.RectColor = Color.FromArgb(218, 220, 230);
+            txtForemanCellName.RectDisableColor = Color.FromArgb(218, 220, 230);
+            txtForemanCellName.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtForemanCellName.ShowText = false;
+            txtForemanCellName.Size = new Size(179, 29);
+            txtForemanCellName.TabIndex = 423;
+            txtForemanCellName.TextAlignment = ContentAlignment.MiddleLeft;
+            txtForemanCellName.Watermark = "请输入";
+            // 
+            // txtForemanName
+            // 
+            txtForemanName.FillColor = Color.FromArgb(218, 220, 230);
+            txtForemanName.FillColor2 = Color.FromArgb(218, 220, 230);
+            txtForemanName.FillDisableColor = Color.FromArgb(218, 220, 230);
+            txtForemanName.FillReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtForemanName.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
+            txtForemanName.ForeColor = Color.FromArgb(46, 46, 46);
+            txtForemanName.ForeDisableColor = Color.FromArgb(235, 227, 221);
+            txtForemanName.ForeReadOnlyColor = Color.FromArgb(235, 227, 221);
+            txtForemanName.Location = new Point(134, 88);
+            txtForemanName.Margin = new Padding(4, 5, 4, 5);
+            txtForemanName.MinimumSize = new Size(1, 16);
+            txtForemanName.Name = "txtForemanName";
+            txtForemanName.Padding = new Padding(5);
+            txtForemanName.RectColor = Color.FromArgb(218, 220, 230);
+            txtForemanName.RectDisableColor = Color.FromArgb(218, 220, 230);
+            txtForemanName.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtForemanName.ShowText = false;
+            txtForemanName.Size = new Size(179, 29);
+            txtForemanName.TabIndex = 422;
+            txtForemanName.TextAlignment = ContentAlignment.MiddleLeft;
+            txtForemanName.Watermark = "请输入";
+            // 
+            // uiLabel5
+            // 
+            uiLabel5.AutoSize = true;
+            uiLabel5.BackColor = Color.Transparent;
+            uiLabel5.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            uiLabel5.ForeColor = Color.FromArgb(46, 46, 46);
+            uiLabel5.Location = new Point(382, 90);
+            uiLabel5.Name = "uiLabel5";
+            uiLabel5.Size = new Size(138, 22);
+            uiLabel5.TabIndex = 420;
+            uiLabel5.Text = "写入单元格名称：";
+            uiLabel5.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // uiLabel4
+            // 
+            uiLabel4.AutoSize = true;
+            uiLabel4.BackColor = Color.Transparent;
+            uiLabel4.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            uiLabel4.ForeColor = Color.FromArgb(46, 46, 46);
+            uiLabel4.Location = new Point(45, 90);
+            uiLabel4.Name = "uiLabel4";
+            uiLabel4.Size = new Size(90, 22);
+            uiLabel4.TabIndex = 418;
+            uiLabel4.Text = "工长姓名：";
+            uiLabel4.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tabPage2
             // 
@@ -472,17 +566,6 @@
             txtExcelPassword.TextAlignment = ContentAlignment.MiddleLeft;
             txtExcelPassword.Watermark = "留空则不加密";
             // 
-            // tabPage1
-            // 
-            tabPage1.BackColor = Color.White;
-            tabPage1.Dock = DockStyle.Fill;
-            tabPage1.Location = new Point(0, 0);
-            tabPage1.Name = "tabPage1";
-            tabPage1.Showed = true;
-            tabPage1.Size = new Size(792, 587);
-            tabPage1.TabIndex = 0;
-            tabPage1.Text = "试验参数";
-            // 
             // btnReport
             // 
             btnReport.BackActive = Color.FromArgb(196, 199, 204);
@@ -564,6 +647,8 @@
             Name = "UcTestParams";
             Size = new Size(792, 787);
             tabs1.ResumeLayout(false);
+            tabPage1.ResumeLayout(false);
+            tabPage1.PerformLayout();
             tabPage2.ResumeLayout(false);
             tabPage2.PerformLayout();
             ResumeLayout(false);
@@ -601,5 +686,9 @@
         private Sunny.UI.UICheckBox chkIncludeSaveTime;
         private Sunny.UI.UILabel lblExcelPassword;
         private Sunny.UI.UITextBox txtExcelPassword;
+        private UILabel uiLabel5;
+        private UILabel uiLabel4;
+        private UITextBox txtForemanName;
+        private UITextBox txtForemanCellName;
     }
 }

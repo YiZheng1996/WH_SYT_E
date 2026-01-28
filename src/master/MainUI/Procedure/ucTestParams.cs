@@ -34,6 +34,8 @@ namespace MainUI.Procedure
                 SaveRptconfig.Load();
                 txtSaveReport.Text = SaveRptconfig.RptSaveFile;
 
+                txtForemanName.Text = SaveRptconfig.ForemanName;
+                txtForemanCellName.Text = SaveRptconfig.ForemanCellName;
                 chkSavePDF.Checked = SaveRptconfig.SavePDF;
                 chkIncludeModelName.Checked = SaveRptconfig.IncludeModelName;
                 chkIncludeProductNo.Checked = SaveRptconfig.IncludeProductNo;
@@ -67,6 +69,8 @@ namespace MainUI.Procedure
                 paraconfig.RptFile = txtTemplateRpt.Text;
                 paraconfig.Save();
 
+                SaveRptconfig.ForemanName = txtForemanName.Text;
+                SaveRptconfig.ForemanCellName = txtForemanCellName.Text;
                 SaveRptconfig.RptSaveFile = txtSaveReport.Text;
                 SaveRptconfig.SavePDF = chkSavePDF.Checked;
                 SaveRptconfig.IncludeModelName = chkIncludeModelName.Checked;
@@ -79,8 +83,8 @@ namespace MainUI.Procedure
                 MessageHelper.MessageOK("保存成功。");
 
                 // 检查报表模板是否变更
-                if (oldRptFile == txtTemplateRpt.Text || 
-                    string.IsNullOrEmpty(oldRptFile) || 
+                if (oldRptFile == txtTemplateRpt.Text ||
+                    string.IsNullOrEmpty(oldRptFile) ||
                     string.IsNullOrEmpty(txtTemplateRpt.Text)) return;
 
                 // 报表模板已变更，触发报表刷新事件

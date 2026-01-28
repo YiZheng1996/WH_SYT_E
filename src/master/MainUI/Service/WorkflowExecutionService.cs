@@ -454,7 +454,7 @@ namespace MainUI.Service
                         ProgressMessage?.Invoke($"\n========== 开始测试项: {itemName} ==========");
 
                         // 将批量执行的取消令牌传递给单个工作流
-                        bool success = await ExecuteWorkflowAsync(
+                        var success = await ExecuteWorkflowAsync(
                             itemName,
                             modelType,
                             modelName,
@@ -462,14 +462,7 @@ namespace MainUI.Service
 
                         results[itemName] = success;
 
-                        if (success)
-                        {
-                            ProgressMessage?.Invoke($"✓ 完成测试项: {itemName}");
-                        }
-                        else
-                        {
-                            ProgressMessage?.Invoke($"✗ 测试项执行失败: {itemName}");
-                        }
+                        ProgressMessage?.Invoke(success ? $"✓ 完成测试项: {itemName}" : $"✗ 测试项执行失败: {itemName}");
                     }
                     catch (OperationCanceledException)
                     {
