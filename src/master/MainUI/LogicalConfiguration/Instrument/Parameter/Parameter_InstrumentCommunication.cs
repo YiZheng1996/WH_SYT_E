@@ -1,6 +1,5 @@
 ﻿using MainUI.LogicalConfiguration.Instrument.Models;
 using Newtonsoft.Json;
-using System.Collections.Generic;
 
 namespace MainUI.LogicalConfiguration.Instrument.Parameter
 {
@@ -198,11 +197,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Parameter
         /// </summary>
         public void SetOverrideConfig(ProtocolConfigBase config)
         {
-            if (config != null)
-            {
-                OverrideParamsJson = JsonConvert.SerializeObject(config, Formatting.Indented);
-                OverrideConnectionParams = true;
-            }
+            if (config == null) return;
+
+            OverrideParamsJson = JsonConvert.SerializeObject(config, Formatting.Indented);
+            OverrideConnectionParams = true;
         }
 
         /// <summary>
