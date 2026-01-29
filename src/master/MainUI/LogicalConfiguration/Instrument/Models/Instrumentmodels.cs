@@ -64,6 +64,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         [Description("PLC")]
         PLC,
 
+        [Description("电阻测试仪")]
+        ResistanceTest,
+
+        [Description("绝缘耐压仪")]
+        InsulationVoltage,
+
         [Description("其他")]
         Other
     }
@@ -834,6 +840,78 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         /// 排序顺序(用于界面显示)
         /// </summary>
         public int SortOrder { get; set; } = 0;
+
+        /// <summary>
+        /// 克隆命令对象(深拷贝)
+        /// </summary>
+        public InstrumentCommand Clone()
+        {
+            var clone = new InstrumentCommand
+            {
+                CommandId = Guid.NewGuid().ToString("N"), // 生成新的ID
+                Name = this.Name,
+                DisplayName = this.DisplayName,
+                CommandType = this.CommandType,
+                Description = this.Description,
+                RequestTemplate = this.RequestTemplate,
+                RequestDataType = this.RequestDataType,
+                ExpectedResponsePattern = this.ExpectedResponsePattern,
+                SuccessIndicator = this.SuccessIndicator,
+                FailureIndicator = this.FailureIndicator,
+                Timeout = this.Timeout,
+                DelayAfterSend = this.DelayAfterSend,
+                WaitForResponse = this.WaitForResponse,
+                SortOrder = this.SortOrder
+            };
+
+            // 深拷贝参数列表
+            if (this.Parameters != null)
+            {
+                clone.Parameters = new List<CommandParameter>();
+                foreach (var param in this.Parameters)
+                {
+                    clone.Parameters.Add(new CommandParameter
+                    {
+                        Name = param.Name,
+                        DisplayName = param.DisplayName,
+                        DataType = param.DataType,
+                        DefaultValue = param.DefaultValue,
+                        Required = param.Required,
+                        Description = param.Description,
+                        Options = param.Options != null ? new List<string>(param.Options) : null,
+                        MinValue = param.MinValue,
+                        MaxValue = param.MaxValue
+                    });
+                }
+            }
+
+            // 深拷贝解析规则列表
+            if (this.ParseRules != null)
+            {
+                clone.ParseRules = new List<ResponseParseRule>();
+                foreach (var rule in this.ParseRules)
+                {
+                    clone.ParseRules.Add(new ResponseParseRule
+                    {
+                        Name = rule.Name,
+                        TargetVariable = rule.TargetVariable,
+                        ParseType = rule.ParseType,
+                        StartPosition = rule.StartPosition,
+                        Length = rule.Length,
+                        Delimiter = rule.Delimiter,
+                        SegmentIndex = rule.SegmentIndex,
+                        RegexPattern = rule.RegexPattern,
+                        RegexGroupIndex = rule.RegexGroupIndex,
+                        JsonPath = rule.JsonPath,
+                        TargetDataType = rule.TargetDataType,
+                        ScaleFactor = rule.ScaleFactor,
+                        Offset = rule.Offset
+                    });
+                }
+            }
+
+            return clone;
+        }
     }
 
     #endregion

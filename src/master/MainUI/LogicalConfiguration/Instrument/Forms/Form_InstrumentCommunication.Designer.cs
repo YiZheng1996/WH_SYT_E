@@ -1,4 +1,4 @@
-﻿namespace MainUI.LogicalConfiguration.Forms
+﻿namespace MainUI.LogicalConfiguration.Instrument.Forms
 {
     partial class Form_InstrumentCommunication
     {
@@ -17,11 +17,11 @@
 
         private void InitializeComponent()
         {
-            DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle7 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle9 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle10 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
             mainPanel = new TableLayoutPanel();
             tabControl = new UITabControl();
             tabBasic = new TabPage();
@@ -424,7 +424,7 @@
             tabResponse.Controls.Add(layoutResponse);
             tabResponse.Location = new Point(0, 40);
             tabResponse.Name = "tabResponse";
-            tabResponse.Size = new Size(844, 629);
+            tabResponse.Size = new Size(200, 60);
             tabResponse.TabIndex = 1;
             tabResponse.Text = "响应处理";
             // 
@@ -449,7 +449,7 @@
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 39F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutResponse.Size = new Size(844, 629);
+            layoutResponse.Size = new Size(200, 60);
             layoutResponse.TabIndex = 0;
             // 
             // lblResponseVar
@@ -473,7 +473,7 @@
             txtResponseVariable.Name = "txtResponseVariable";
             txtResponseVariable.Padding = new Padding(5);
             txtResponseVariable.ShowText = false;
-            txtResponseVariable.Size = new Size(716, 28);
+            txtResponseVariable.Size = new Size(72, 28);
             txtResponseVariable.TabIndex = 1;
             txtResponseVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtResponseVariable.Watermark = "将原始响应存储到此变量";
@@ -499,7 +499,7 @@
             txtStatusVariable.Name = "txtStatusVariable";
             txtStatusVariable.Padding = new Padding(5);
             txtStatusVariable.ShowText = false;
-            txtStatusVariable.Size = new Size(716, 29);
+            txtStatusVariable.Size = new Size(72, 29);
             txtStatusVariable.TabIndex = 3;
             txtStatusVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtStatusVariable.Watermark = "存储执行结果(true/false)";
@@ -525,7 +525,7 @@
             txtErrorVariable.Name = "txtErrorVariable";
             txtErrorVariable.Padding = new Padding(5);
             txtErrorVariable.ShowText = false;
-            txtErrorVariable.Size = new Size(716, 30);
+            txtErrorVariable.Size = new Size(72, 30);
             txtErrorVariable.TabIndex = 5;
             txtErrorVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtErrorVariable.Watermark = "失败时存储错误信息";
@@ -537,7 +537,7 @@
             lblParseRules.Location = new Point(3, 117);
             lblParseRules.Name = "lblParseRules";
             lblParseRules.Padding = new Padding(0, 10, 0, 0);
-            lblParseRules.Size = new Size(114, 512);
+            lblParseRules.Size = new Size(114, 1);
             lblParseRules.TabIndex = 6;
             lblParseRules.Text = "解析规则:";
             lblParseRules.TextAlign = ContentAlignment.TopRight;
@@ -552,54 +552,54 @@
             grpParseRules.MinimumSize = new Size(1, 1);
             grpParseRules.Name = "grpParseRules";
             grpParseRules.Padding = new Padding(0, 32, 0, 0);
-            grpParseRules.Size = new Size(716, 502);
+            grpParseRules.Size = new Size(72, 1);
             grpParseRules.TabIndex = 7;
             grpParseRules.Text = "响应数据解析规则";
             grpParseRules.TextAlignment = ContentAlignment.MiddleLeft;
             // 
             // dgvParseRules
             // 
-            dataGridViewCellStyle6.BackColor = Color.FromArgb(235, 243, 255);
-            dgvParseRules.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle1.BackColor = Color.FromArgb(235, 243, 255);
+            dgvParseRules.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             dgvParseRules.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvParseRules.BackgroundColor = Color.White;
             dgvParseRules.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
-            dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle7.BackColor = Color.FromArgb(80, 160, 255);
-            dataGridViewCellStyle7.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            dataGridViewCellStyle7.ForeColor = Color.White;
-            dataGridViewCellStyle7.SelectionBackColor = SystemColors.Highlight;
-            dataGridViewCellStyle7.SelectionForeColor = SystemColors.HighlightText;
-            dataGridViewCellStyle7.WrapMode = DataGridViewTriState.True;
-            dgvParseRules.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle7;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = Color.FromArgb(80, 160, 255);
+            dataGridViewCellStyle2.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            dataGridViewCellStyle2.ForeColor = Color.White;
+            dataGridViewCellStyle2.SelectionBackColor = SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = DataGridViewTriState.True;
+            dgvParseRules.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             dgvParseRules.ColumnHeadersHeight = 32;
-            dataGridViewCellStyle8.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle8.BackColor = SystemColors.Window;
-            dataGridViewCellStyle8.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            dataGridViewCellStyle8.ForeColor = Color.FromArgb(48, 48, 48);
-            dataGridViewCellStyle8.SelectionBackColor = SystemColors.Highlight;
-            dataGridViewCellStyle8.SelectionForeColor = SystemColors.HighlightText;
-            dataGridViewCellStyle8.WrapMode = DataGridViewTriState.False;
-            dgvParseRules.DefaultCellStyle = dataGridViewCellStyle8;
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = SystemColors.Window;
+            dataGridViewCellStyle3.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            dataGridViewCellStyle3.ForeColor = Color.FromArgb(48, 48, 48);
+            dataGridViewCellStyle3.SelectionBackColor = SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.False;
+            dgvParseRules.DefaultCellStyle = dataGridViewCellStyle3;
             dgvParseRules.Dock = DockStyle.Fill;
             dgvParseRules.EnableHeadersVisualStyles = false;
             dgvParseRules.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             dgvParseRules.GridColor = Color.FromArgb(80, 160, 255);
             dgvParseRules.Location = new Point(0, 32);
             dgvParseRules.Name = "dgvParseRules";
-            dataGridViewCellStyle9.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle9.BackColor = Color.FromArgb(235, 243, 255);
-            dataGridViewCellStyle9.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            dataGridViewCellStyle9.ForeColor = Color.FromArgb(48, 48, 48);
-            dataGridViewCellStyle9.SelectionBackColor = Color.FromArgb(80, 160, 255);
-            dataGridViewCellStyle9.SelectionForeColor = Color.White;
-            dataGridViewCellStyle9.WrapMode = DataGridViewTriState.True;
-            dgvParseRules.RowHeadersDefaultCellStyle = dataGridViewCellStyle9;
-            dataGridViewCellStyle10.BackColor = Color.White;
-            dataGridViewCellStyle10.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            dgvParseRules.RowsDefaultCellStyle = dataGridViewCellStyle10;
+            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle4.BackColor = Color.FromArgb(235, 243, 255);
+            dataGridViewCellStyle4.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            dataGridViewCellStyle4.ForeColor = Color.FromArgb(48, 48, 48);
+            dataGridViewCellStyle4.SelectionBackColor = Color.FromArgb(80, 160, 255);
+            dataGridViewCellStyle4.SelectionForeColor = Color.White;
+            dataGridViewCellStyle4.WrapMode = DataGridViewTriState.True;
+            dgvParseRules.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle5.BackColor = Color.White;
+            dataGridViewCellStyle5.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            dgvParseRules.RowsDefaultCellStyle = dataGridViewCellStyle5;
             dgvParseRules.SelectedIndex = -1;
-            dgvParseRules.Size = new Size(716, 470);
+            dgvParseRules.Size = new Size(72, 0);
             dgvParseRules.StripeOddColor = Color.FromArgb(235, 243, 255);
             dgvParseRules.TabIndex = 0;
             // 
@@ -1003,7 +1003,7 @@
             btnOk.Anchor = AnchorStyles.Right;
             btnOk.FillColor = Color.FromArgb(0, 150, 136);
             btnOk.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnOk.Location = new Point(1118, -20);
+            btnOk.Location = new Point(604, 5);
             btnOk.MinimumSize = new Size(1, 1);
             btnOk.Name = "btnOk";
             btnOk.Size = new Size(100, 35);
@@ -1016,7 +1016,7 @@
             // 
             btnCancel.Anchor = AnchorStyles.Right;
             btnCancel.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnCancel.Location = new Point(1233, -20);
+            btnCancel.Location = new Point(710, 5);
             btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(100, 35);

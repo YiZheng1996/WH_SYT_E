@@ -1,11 +1,11 @@
-﻿using MainUI.LogicalConfiguration.Instrument.Models;
+﻿using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.Instrument.Models;
 using MainUI.LogicalConfiguration.Instrument.Parameter;
 using MainUI.LogicalConfiguration.Instrument.Services;
-using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
 
-namespace MainUI.LogicalConfiguration.Forms
+namespace MainUI.LogicalConfiguration.Instrument.Forms
 {
     public partial class Form_InstrumentCommunication : BaseParameterForm
     {
@@ -33,13 +33,17 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void InitializeFormData()
         {
-            foreach (DataType dt in Enum.GetValues(typeof(DataType)))
-                cboCustomDataType.Items.Add(dt);
-            cboCustomDataType.SelectedItem = DataType.String;
+            // 初始化数据类型下拉框 - 显示Description
+            cboCustomDataType.DataSource = EnumExtensions.GetEnumItems<DataType>();
+            cboCustomDataType.DisplayMember = "DisplayName";
+            cboCustomDataType.ValueMember = "Value";
+            cboCustomDataType.SelectedValue = DataType.String;
 
-            foreach (FailureStrategy fs in Enum.GetValues(typeof(FailureStrategy)))
-                cboFailureStrategy.Items.Add(fs);
-            cboFailureStrategy.SelectedItem = FailureStrategy.Abort;
+            // 初始化失败策略下拉框 - 显示Description
+            cboFailureStrategy.DataSource = EnumExtensions.GetEnumItems<FailureStrategy>();
+            cboFailureStrategy.DisplayMember = "DisplayName";
+            cboFailureStrategy.ValueMember = "Value";
+            cboFailureStrategy.SelectedValue = FailureStrategy.Abort;
 
             InitializeParseRulesGrid();
         }
@@ -222,7 +226,8 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void CboFailureStrategy_SelectedIndexChanged(object sender, EventArgs e)
         {
-            txtJumpStep.Enabled = cboFailureStrategy.SelectedItem is FailureStrategy fs && fs == FailureStrategy.JumpToStep;
+            var fs = (FailureStrategy)(cboFailureStrategy.SelectedValue ?? FailureStrategy.Abort);
+            txtJumpStep.Enabled = fs == FailureStrategy.JumpToStep;
         }
 
         private async void BtnTestConnection_Click(object sender, EventArgs e)
@@ -288,8 +293,9 @@ namespace MainUI.LogicalConfiguration.Forms
             txtDescription.Text = _parameter.Description;
             chkCustomCommand.Checked = _parameter.UseCustomCommand;
             txtCustomCommand.Text = _parameter.CustomCommand;
-            if (Enum.TryParse<DataType>(_parameter.CustomCommandDataType.ToString(), out var dt))
-                cboCustomDataType.SelectedItem = dt;
+            //if (Enum.TryParse<DataType>(_parameter.CustomCommandDataType.ToString(), out var dt))
+            //    cboCustomDataType.SelectedItem = dt;
+            cboCustomDataType.SelectedValue = _parameter.CustomCommandDataType;
 
             txtResponseVariable.Text = _parameter.ResponseVariable;
             txtStatusVariable.Text = _parameter.StatusVariable;
@@ -298,7 +304,7 @@ namespace MainUI.LogicalConfiguration.Forms
             txtTimeout.Text = _parameter.CustomTimeout.ToString();
             txtRetryCount.Text = _parameter.RetryCount.ToString();
             txtRetryInterval.Text = _parameter.RetryInterval.ToString();
-            cboFailureStrategy.SelectedItem = _parameter.FailureStrategy;
+            cboFailureStrategy.SelectedValue = _parameter.FailureStrategy;
             txtJumpStep.Text = _parameter.JumpToStepNumber.ToString();
             txtDelayBefore.Text = _parameter.DelayBeforeSend.ToString();
             txtDelayAfter.Text = _parameter.DelayAfterSend.ToString();
@@ -326,7 +332,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
             _parameter.UseCustomCommand = chkCustomCommand.Checked;
             _parameter.CustomCommand = txtCustomCommand.Text;
-            _parameter.CustomCommandDataType = cboCustomDataType.SelectedItem is DataType dataType ? dataType : DataType.String;
+            _parameter.CustomCommandDataType = (DataType)(cboCustomDataType.SelectedValue ?? DataType.String);
 
             _parameter.CommandParameters.Clear();
             foreach (var kvp in _paramControls)
@@ -350,7 +356,7 @@ namespace MainUI.LogicalConfiguration.Forms
             _parameter.RetryCount = retryCount;
             int.TryParse(txtRetryInterval.Text, out var retryInterval);
             _parameter.RetryInterval = retryInterval;
-            _parameter.FailureStrategy = cboFailureStrategy.SelectedItem is FailureStrategy fs ? fs : FailureStrategy.Abort;
+            _parameter.FailureStrategy = (FailureStrategy)(cboFailureStrategy.SelectedValue ?? FailureStrategy.Abort);
             int.TryParse(txtJumpStep.Text, out var jumpStep);
             _parameter.JumpToStepNumber = jumpStep;
             int.TryParse(txtDelayBefore.Text, out var delayBefore);

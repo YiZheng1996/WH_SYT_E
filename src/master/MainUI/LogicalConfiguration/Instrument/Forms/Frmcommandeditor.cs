@@ -1,16 +1,12 @@
 ﻿using MainUI.LogicalConfiguration.Instrument.Models;
-using Sunny.UI;
-using System;
-using System.Collections.Generic;
-using System.Windows.Forms;
 using CommandType = MainUI.LogicalConfiguration.Instrument.Models.CommandType;
 
-namespace MainUI.LogicalConfiguration.Forms
+namespace MainUI.LogicalConfiguration.Instrument.Forms
 {
     /// <summary>
     /// 命令模板编辑窗体
     /// </summary>
-    public partial class FrmCommandEditor : UIForm
+    public partial class FrmCommandEditor
     {
         #region 属性
 
@@ -49,19 +45,17 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void InitializeFormData()
         {
-            // 初始化命令类型下拉框
-            foreach (CommandType ct in Enum.GetValues(typeof(CommandType)))
-            {
-                cboCommandType.Items.Add(ct);
-            }
-            cboCommandType.SelectedItem = CommandType.Query;
+            // 初始化命令类型下拉框 - 显示Description
+            cboCommandType.DataSource = EnumExtensions.GetEnumItems<CommandType>();
+            cboCommandType.DisplayMember = "DisplayName";
+            cboCommandType.ValueMember = "Value";
+            cboCommandType.SelectedValue = CommandType.Query;
 
-            // 初始化数据类型下拉框
-            foreach (DataType dt in Enum.GetValues(typeof(DataType)))
-            {
-                cboDataType.Items.Add(dt);
-            }
-            cboDataType.SelectedItem = DataType.String;
+            // 初始化数据类型下拉框 - 显示Description
+            cboDataType.DataSource = EnumExtensions.GetEnumItems<DataType>();
+            cboDataType.DisplayMember = "DisplayName";
+            cboDataType.ValueMember = "Value";
+            cboDataType.SelectedValue = DataType.String;
         }
 
         private void BindEvents()
@@ -107,8 +101,8 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             txtName.Text = command.Name;
             txtDisplayName.Text = command.DisplayName;
-            cboCommandType.SelectedItem = command.CommandType;
-            cboDataType.SelectedItem = command.DataType;
+            cboCommandType.SelectedValue = command.CommandType;
+            cboDataType.SelectedValue = command.RequestDataType;
             txtTimeout.Text = command.Timeout.ToString();
             chkWaitForResponse.Checked = command.WaitForResponse;
             txtRequestTemplate.Text = command.RequestTemplate;
@@ -153,7 +147,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 var rowIndex = dgvParseRules.Rows.Add(
                     rule.Name,
                     rule.TargetVariable,
-                    rule.ParseType.ToString(),
+                    rule.ParseType,
                     pattern
                 );
                 dgvParseRules.Rows[rowIndex].Tag = rule;
@@ -164,10 +158,10 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             return rule.ParseType switch
             {
-                ParseType.Position => $"起始:{rule.StartIndex}, 长度:{rule.Length}",
-                ParseType.Delimiter => $"分隔符:{rule.Delimiter}, 索引:{rule.FieldIndex}",
-                ParseType.Regex => rule.Pattern,
-                ParseType.Json => rule.JsonPath,
+                "Position" => $"起始:{rule.StartPosition}, 长度:{rule.Length}",
+                "Delimiter" => $"分隔符:{rule.Delimiter}, 索引:{rule.SegmentIndex}",
+                "Regex" => rule.RegexPattern,
+                "Json" => rule.JsonPath,
                 _ => ""
             };
         }
@@ -180,8 +174,8 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             Command.Name = txtName.Text.Trim();
             Command.DisplayName = txtDisplayName.Text.Trim();
-            Command.CommandType = (CommandType)cboCommandType.SelectedItem;
-            Command.DataType = (DataType)cboDataType.SelectedItem;
+            Command.CommandType = (CommandType)(cboCommandType.SelectedValue ?? CommandType.Query);
+            Command.RequestDataType = (DataType)(cboDataType.SelectedValue ?? DataType.String);
             int.TryParse(txtTimeout.Text, out var timeout);
             Command.Timeout = timeout > 0 ? timeout : 3000;
             Command.WaitForResponse = chkWaitForResponse.Checked;
@@ -270,8 +264,10 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 Name = $"Rule{dgvParseRules.Rows.Count + 1}",
                 TargetVariable = $"Result{dgvParseRules.Rows.Count + 1}",
-                ParseType = ParseType.Position,
-                DataType = DataType.String
+                ParseType = "Position",          
+                TargetDataType = DataType.String,
+                StartPosition = 0,               
+                Length = -1                      
             };
 
             var rowIndex = dgvParseRules.Rows.Add(

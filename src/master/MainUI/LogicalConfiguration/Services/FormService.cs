@@ -1,4 +1,5 @@
 ﻿using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.Instrument.Forms;
 using MainUI.LogicalConfiguration.Instrument.Services;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;

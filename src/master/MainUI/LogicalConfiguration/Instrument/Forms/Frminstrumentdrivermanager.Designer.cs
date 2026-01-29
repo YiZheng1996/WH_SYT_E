@@ -1,4 +1,4 @@
-﻿namespace MainUI.LogicalConfiguration.Forms
+﻿namespace MainUI.LogicalConfiguration.Instrument.Forms
 {
     partial class FrmInstrumentDriverManager
     {
@@ -129,8 +129,8 @@
             // splitMain.Panel2
             // 
             splitMain.Panel2.Controls.Add(panelRight);
-            splitMain.Size = new Size(1100, 665);
-            splitMain.SplitterDistance = 350;
+            splitMain.Size = new Size(1233, 665);
+            splitMain.SplitterDistance = 558;
             splitMain.SplitterWidth = 11;
             splitMain.TabIndex = 0;
             // 
@@ -144,7 +144,7 @@
             panelLeft.Margin = new Padding(4, 5, 4, 5);
             panelLeft.MinimumSize = new Size(1, 1);
             panelLeft.Name = "panelLeft";
-            panelLeft.Size = new Size(350, 665);
+            panelLeft.Size = new Size(558, 665);
             panelLeft.TabIndex = 0;
             panelLeft.Text = "仪器列表";
             panelLeft.TextAlignment = ContentAlignment.MiddleCenter;
@@ -196,7 +196,7 @@
             dgvDrivers.RowsDefaultCellStyle = dataGridViewCellStyle5;
             dgvDrivers.SelectedIndex = -1;
             dgvDrivers.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvDrivers.Size = new Size(350, 625);
+            dgvDrivers.Size = new Size(558, 625);
             dgvDrivers.StripeOddColor = Color.FromArgb(235, 243, 255);
             dgvDrivers.TabIndex = 0;
             // 
@@ -212,7 +212,7 @@
             toolbarLeft.Location = new Point(0, 0);
             toolbarLeft.Name = "toolbarLeft";
             toolbarLeft.Padding = new Padding(5);
-            toolbarLeft.Size = new Size(350, 40);
+            toolbarLeft.Size = new Size(558, 40);
             toolbarLeft.TabIndex = 1;
             // 
             // btnAdd
@@ -270,7 +270,7 @@
             // btnImport
             // 
             btnImport.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnImport.Location = new Point(7, 41);
+            btnImport.Location = new Point(343, 7);
             btnImport.Margin = new Padding(2);
             btnImport.MinimumSize = new Size(1, 1);
             btnImport.Name = "btnImport";
@@ -283,7 +283,7 @@
             // btnExport
             // 
             btnExport.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnExport.Location = new Point(91, 41);
+            btnExport.Location = new Point(427, 7);
             btnExport.Margin = new Padding(2);
             btnExport.MinimumSize = new Size(1, 1);
             btnExport.Name = "btnExport";
@@ -302,7 +302,7 @@
             panelRight.Margin = new Padding(4, 5, 4, 5);
             panelRight.MinimumSize = new Size(1, 1);
             panelRight.Name = "panelRight";
-            panelRight.Size = new Size(739, 665);
+            panelRight.Size = new Size(664, 665);
             panelRight.TabIndex = 0;
             panelRight.Text = "驱动配置";
             panelRight.TextAlignment = ContentAlignment.MiddleCenter;
@@ -321,7 +321,7 @@
             tabDetails.MainPage = "";
             tabDetails.Name = "tabDetails";
             tabDetails.SelectedIndex = 0;
-            tabDetails.Size = new Size(739, 665);
+            tabDetails.Size = new Size(664, 665);
             tabDetails.SizeMode = TabSizeMode.Fixed;
             tabDetails.TabIndex = 0;
             tabDetails.TabUnSelectedForeColor = Color.FromArgb(240, 240, 240);
@@ -595,7 +595,7 @@
             tabProtocol.Controls.Add(panelProtocolConfig);
             tabProtocol.Location = new Point(0, 40);
             tabProtocol.Name = "tabProtocol";
-            tabProtocol.Size = new Size(739, 625);
+            tabProtocol.Size = new Size(200, 60);
             tabProtocol.TabIndex = 1;
             tabProtocol.Text = "协议配置";
             // 
@@ -608,7 +608,7 @@
             panelProtocolConfig.Margin = new Padding(4, 5, 4, 5);
             panelProtocolConfig.MinimumSize = new Size(1, 1);
             panelProtocolConfig.Name = "panelProtocolConfig";
-            panelProtocolConfig.Size = new Size(739, 625);
+            panelProtocolConfig.Size = new Size(200, 60);
             panelProtocolConfig.TabIndex = 0;
             panelProtocolConfig.Text = null;
             panelProtocolConfig.TextAlignment = ContentAlignment.MiddleCenter;
@@ -618,7 +618,7 @@
             tabFrame.Controls.Add(layoutFrame);
             tabFrame.Location = new Point(0, 40);
             tabFrame.Name = "tabFrame";
-            tabFrame.Size = new Size(739, 625);
+            tabFrame.Size = new Size(200, 60);
             tabFrame.TabIndex = 2;
             tabFrame.Text = "帧配置";
             // 
@@ -649,7 +649,7 @@
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
-            layoutFrame.Size = new Size(739, 250);
+            layoutFrame.Size = new Size(200, 250);
             layoutFrame.TabIndex = 0;
             // 
             // lblFrameEnabled
@@ -671,7 +671,7 @@
             chkFrameEnabled.Location = new Point(103, 3);
             chkFrameEnabled.MinimumSize = new Size(1, 1);
             chkFrameEnabled.Name = "chkFrameEnabled";
-            chkFrameEnabled.Size = new Size(263, 34);
+            chkFrameEnabled.Size = new Size(1, 34);
             chkFrameEnabled.TabIndex = 1;
             chkFrameEnabled.Text = "启用帧格式配置";
             // 
@@ -696,7 +696,7 @@
             txtFrameHeader.Name = "txtFrameHeader";
             txtFrameHeader.Padding = new Padding(5);
             txtFrameHeader.ShowText = false;
-            txtFrameHeader.Size = new Size(261, 30);
+            txtFrameHeader.Size = new Size(1, 30);
             txtFrameHeader.TabIndex = 3;
             txtFrameHeader.TextAlignment = ContentAlignment.MiddleLeft;
             txtFrameHeader.Watermark = "如: AA55";
@@ -705,7 +705,7 @@
             // 
             lblFrameFooter.Dock = DockStyle.Fill;
             lblFrameFooter.Font = new Font("微软雅黑", 9F);
-            lblFrameFooter.Location = new Point(372, 40);
+            lblFrameFooter.Location = new Point(103, 40);
             lblFrameFooter.Name = "lblFrameFooter";
             lblFrameFooter.Size = new Size(94, 40);
             lblFrameFooter.TabIndex = 4;
@@ -716,13 +716,13 @@
             // 
             txtFrameFooter.Dock = DockStyle.Fill;
             txtFrameFooter.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            txtFrameFooter.Location = new Point(473, 45);
+            txtFrameFooter.Location = new Point(204, 45);
             txtFrameFooter.Margin = new Padding(4, 5, 4, 5);
             txtFrameFooter.MinimumSize = new Size(1, 16);
             txtFrameFooter.Name = "txtFrameFooter";
             txtFrameFooter.Padding = new Padding(5);
             txtFrameFooter.ShowText = false;
-            txtFrameFooter.Size = new Size(262, 30);
+            txtFrameFooter.Size = new Size(1, 30);
             txtFrameFooter.TabIndex = 5;
             txtFrameFooter.TextAlignment = ContentAlignment.MiddleLeft;
             txtFrameFooter.Watermark = "如: 0D0A";
@@ -748,7 +748,7 @@
             txtResponseTerminator.Name = "txtResponseTerminator";
             txtResponseTerminator.Padding = new Padding(5);
             txtResponseTerminator.ShowText = false;
-            txtResponseTerminator.Size = new Size(261, 30);
+            txtResponseTerminator.Size = new Size(1, 30);
             txtResponseTerminator.TabIndex = 7;
             txtResponseTerminator.TextAlignment = ContentAlignment.MiddleLeft;
             txtResponseTerminator.Watermark = "如: \\n 或 \\r\\n";
@@ -757,7 +757,7 @@
             // 
             lblChecksumType.Dock = DockStyle.Fill;
             lblChecksumType.Font = new Font("微软雅黑", 9F);
-            lblChecksumType.Location = new Point(372, 80);
+            lblChecksumType.Location = new Point(103, 80);
             lblChecksumType.Name = "lblChecksumType";
             lblChecksumType.Size = new Size(94, 40);
             lblChecksumType.TabIndex = 8;
@@ -773,12 +773,12 @@
             cboChecksumType.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             cboChecksumType.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cboChecksumType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cboChecksumType.Location = new Point(473, 85);
+            cboChecksumType.Location = new Point(204, 85);
             cboChecksumType.Margin = new Padding(4, 5, 4, 5);
             cboChecksumType.MinimumSize = new Size(63, 0);
             cboChecksumType.Name = "cboChecksumType";
             cboChecksumType.Padding = new Padding(0, 0, 30, 2);
-            cboChecksumType.Size = new Size(262, 30);
+            cboChecksumType.Size = new Size(63, 30);
             cboChecksumType.SymbolSize = 24;
             cboChecksumType.TabIndex = 9;
             cboChecksumType.TextAlignment = ContentAlignment.MiddleLeft;
@@ -791,7 +791,7 @@
             lblFrameTip.ForeColor = Color.Gray;
             lblFrameTip.Location = new Point(3, 120);
             lblFrameTip.Name = "lblFrameTip";
-            lblFrameTip.Size = new Size(733, 40);
+            lblFrameTip.Size = new Size(194, 40);
             lblFrameTip.TabIndex = 10;
             lblFrameTip.Text = "提示：帧头帧尾使用十六进制表示，如 AA55 表示 0xAA 0x55。结束符使用转义字符，如 \\n 表示换行符。";
             // 
@@ -800,7 +800,7 @@
             tabCommands.Controls.Add(layoutCommands);
             tabCommands.Location = new Point(0, 40);
             tabCommands.Name = "tabCommands";
-            tabCommands.Size = new Size(739, 625);
+            tabCommands.Size = new Size(664, 625);
             tabCommands.TabIndex = 3;
             tabCommands.Text = "命令模板";
             // 
@@ -816,7 +816,7 @@
             layoutCommands.RowCount = 2;
             layoutCommands.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutCommands.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutCommands.Size = new Size(739, 625);
+            layoutCommands.Size = new Size(664, 625);
             layoutCommands.TabIndex = 0;
             // 
             // toolbarCommands
@@ -827,7 +827,7 @@
             toolbarCommands.Dock = DockStyle.Fill;
             toolbarCommands.Location = new Point(3, 3);
             toolbarCommands.Name = "toolbarCommands";
-            toolbarCommands.Size = new Size(733, 34);
+            toolbarCommands.Size = new Size(658, 34);
             toolbarCommands.TabIndex = 0;
             // 
             // btnAddCommand
@@ -916,7 +916,7 @@
             dgvCommands.RowsDefaultCellStyle = dataGridViewCellStyle10;
             dgvCommands.SelectedIndex = -1;
             dgvCommands.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvCommands.Size = new Size(733, 579);
+            dgvCommands.Size = new Size(658, 579);
             dgvCommands.StripeOddColor = Color.FromArgb(235, 243, 255);
             dgvCommands.TabIndex = 1;
             // 
@@ -928,7 +928,7 @@
             panelBottom.Dock = DockStyle.Bottom;
             panelBottom.Location = new Point(0, 700);
             panelBottom.Name = "panelBottom";
-            panelBottom.Size = new Size(1100, 50);
+            panelBottom.Size = new Size(1233, 50);
             panelBottom.TabIndex = 1;
             // 
             // btnTestConnection
@@ -948,7 +948,7 @@
             btnSave.Anchor = AnchorStyles.Right;
             btnSave.FillColor = Color.FromArgb(0, 150, 136);
             btnSave.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnSave.Location = new Point(1770, 8);
+            btnSave.Location = new Point(1001, 8);
             btnSave.MinimumSize = new Size(1, 1);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(100, 35);
@@ -961,7 +961,7 @@
             // 
             btnCancel.Anchor = AnchorStyles.Right;
             btnCancel.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnCancel.Location = new Point(1885, 8);
+            btnCancel.Location = new Point(1121, 8);
             btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(100, 35);
@@ -973,9 +973,12 @@
             // FrmInstrumentDriverManager
             // 
             AutoScaleMode = AutoScaleMode.None;
-            ClientSize = new Size(1100, 750);
+            ClientSize = new Size(1233, 750);
+            ControlBox = false;
             Controls.Add(splitMain);
             Controls.Add(panelBottom);
+            MaximizeBox = false;
+            MinimizeBox = false;
             Name = "FrmInstrumentDriverManager";
             ShowIcon = false;
             ShowInTaskbar = false;

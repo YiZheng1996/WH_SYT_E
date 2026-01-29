@@ -1,10 +1,14 @@
-﻿using MainUI.LogicalConfiguration.Instrument.Models;
+﻿using MainUI.LogicalConfiguration.Engine;
+using MainUI.LogicalConfiguration.Instrument.Methods;
+using MainUI.LogicalConfiguration.Instrument.Models;
 using MainUI.LogicalConfiguration.Instrument.Services;
+using MainUI.LogicalConfiguration.LogicalManager;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.Ocsp;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace MainUI.LogicalConfiguration.Forms
+namespace MainUI.LogicalConfiguration.Instrument.Forms
 {
     /// <summary>
     /// 仪器驱动管理窗体
@@ -44,24 +48,21 @@ namespace MainUI.LogicalConfiguration.Forms
         private void InitializeFormData()
         {
             // 初始化设备类型下拉框
-            foreach (InstrumentCategory cat in Enum.GetValues(typeof(InstrumentCategory)))
-            {
-                cboCategory.Items.Add(cat);
-            }
+            cboCategory.DataSource = EnumExtensions.GetEnumItems<InstrumentCategory>();
+            cboCategory.DisplayMember = "DisplayName";
+            cboCategory.ValueMember = "Value";
             cboCategory.SelectedIndex = 0;
 
-            // 初始化协议类型下拉框
-            foreach (ProtocolType pt in Enum.GetValues(typeof(ProtocolType)))
-            {
-                cboProtocolType.Items.Add(pt);
-            }
+            // 初始化协议类型下拉框 - 显示Description
+            cboProtocolType.DataSource = EnumExtensions.GetEnumItems<ProtocolType>();
+            cboProtocolType.DisplayMember = "DisplayName";
+            cboProtocolType.ValueMember = "Value";
             cboProtocolType.SelectedIndex = 0;
 
-            // 初始化校验类型下拉框
-            foreach (ChecksumType ct in Enum.GetValues(typeof(ChecksumType)))
-            {
-                cboChecksumType.Items.Add(ct);
-            }
+            // 初始化校验类型下拉框 - 显示Description
+            cboChecksumType.DataSource = EnumExtensions.GetEnumItems<ChecksumType>();
+            cboChecksumType.DisplayMember = "DisplayName";
+            cboChecksumType.ValueMember = "Value";
             cboChecksumType.SelectedIndex = 0;
         }
 
@@ -163,8 +164,8 @@ namespace MainUI.LogicalConfiguration.Forms
             // 基本信息
             txtName.Text = driver.Name;
             txtDisplayName.Text = driver.DisplayName;
-            cboCategory.SelectedItem = driver.Category;
-            cboProtocolType.SelectedItem = driver.ProtocolType;
+            cboCategory.SelectedValue = driver.Category;
+            cboProtocolType.SelectedValue = driver.ProtocolType;
             txtManufacturer.Text = driver.Manufacturer;
             txtModel.Text = driver.Model;
             chkEnabled.Checked = driver.Enabled;
@@ -188,10 +189,13 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             var config = driver.GetProtocolConfig();
 
+            // 更新协议配置面板
+            UpdateProtocolConfigPanel();
+
+            // 填充数据
             switch (driver.ProtocolType)
             {
                 case ProtocolType.TcpIp:
-                    CreateTcpConfigControls();
                     if (config is TcpProtocolConfig tcp)
                     {
                         SetControlValue("IpAddress", tcp.IpAddress);
@@ -203,7 +207,6 @@ namespace MainUI.LogicalConfiguration.Forms
                     break;
 
                 case ProtocolType.Serial:
-                    CreateSerialConfigControls();
                     if (config is SerialProtocolConfig serial)
                     {
                         SetControlValue("PortName", serial.PortName);
@@ -218,10 +221,10 @@ namespace MainUI.LogicalConfiguration.Forms
 
                 case ProtocolType.ModbusTcp:
                 case ProtocolType.ModbusRtu:
-                    CreateModbusConfigControls();
                     if (config is ModbusProtocolConfig modbus)
                     {
                         SetControlValue("SlaveAddress", modbus.SlaveAddress.ToString());
+
                         if (driver.ProtocolType == ProtocolType.ModbusTcp)
                         {
                             SetControlValue("IpAddress", modbus.IpAddress);
@@ -236,6 +239,17 @@ namespace MainUI.LogicalConfiguration.Forms
                         SetControlValue("ReadTimeout", modbus.ReadTimeout.ToString());
                     }
                     break;
+
+                case ProtocolType.Http:
+                    if (config is HttpProtocolConfig http)
+                    {
+                        SetControlValue("BaseUrl", http.BaseUrl);
+                        SetControlValue("AuthType", http.AuthType);
+                        SetControlValue("Username", http.Username);
+                        SetControlValue("Password", http.Password);
+                        SetControlValue("ContentType", http.ContentType);
+                    }
+                    break;
             }
         }
 
@@ -248,7 +262,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 txtFrameHeader.Text = "";
                 txtFrameFooter.Text = "";
                 txtResponseTerminator.Text = "";
-                cboChecksumType.SelectedItem = ChecksumType.None;
+                cboChecksumType.SelectedValue = ChecksumType.None;
                 return;
             }
 
@@ -256,7 +270,7 @@ namespace MainUI.LogicalConfiguration.Forms
             txtFrameHeader.Text = config.FrameHeader;
             txtFrameFooter.Text = config.FrameFooter;
             txtResponseTerminator.Text = config.ResponseTerminator;
-            cboChecksumType.SelectedItem = config.ChecksumType;
+            cboChecksumType.SelectedValue = config.ChecksumType;
         }
 
         private void LoadCommands(List<InstrumentCommand> commands)
@@ -306,12 +320,17 @@ namespace MainUI.LogicalConfiguration.Forms
             UpdateProtocolConfigPanel();
         }
 
+        /// <summary>
+        /// 根据协议类型更新配置面板
+        /// </summary>
         private void UpdateProtocolConfigPanel()
         {
             panelProtocolConfig.Controls.Clear();
             _protocolControls.Clear();
 
-            var protocolType = cboProtocolType.SelectedItem is ProtocolType pt ? pt : ProtocolType.Serial;
+            var protocolType = cboProtocolType.SelectedItem is ProtocolType pt
+                ? pt
+                : ProtocolType.TcpIp;
 
             var layout = new TableLayoutPanel
             {
@@ -320,36 +339,61 @@ namespace MainUI.LogicalConfiguration.Forms
                 RowCount = 5,
                 Padding = new Padding(10)
             };
+
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
 
+            // 使用正确的枚举值,并传递layout参数
             switch (protocolType)
             {
+                case ProtocolType.TcpIp:
+                    CreateTcpConfigControls(layout);
+                    break;
+
                 case ProtocolType.Serial:
                     CreateSerialConfigControls(layout);
                     break;
 
-                case ProtocolType.TcpClient:
-                case ProtocolType.TcpServer:
-                    CreateTcpConfigControls(layout);
-                    break;
-
-                case ProtocolType.Modbus_RTU:
+                case ProtocolType.ModbusRtu:
                     CreateModbusRtuConfigControls(layout);
                     break;
 
-                case ProtocolType.Modbus_TCP:
+                case ProtocolType.ModbusTcp:
                     CreateModbusTcpConfigControls(layout);
                     break;
 
-                case ProtocolType.VISA:
-                    CreateVisaConfigControls(layout);
+                case ProtocolType.Http:
+                    CreateHttpConfigControls(layout);
+                    break;
+
+                case ProtocolType.Udp:
+                    CreateUdpConfigControls(layout);
+                    break;
+
+                default:
+                    // 默认显示TCP配置
+                    CreateTcpConfigControls(layout);
                     break;
             }
 
             panelProtocolConfig.Controls.Add(layout);
+        }
+
+        #region 协议配置控件创建方法
+
+        private void CreateTcpConfigControls(TableLayoutPanel layout)
+        {
+            int row = 0;
+
+            AddConfigRow(layout, row, "IP地址:", "IpAddress", "192.168.1.100", 0);
+            AddConfigRow(layout, row++, "端口:", "Port", "5000", 2);
+
+            AddConfigRow(layout, row, "连接超时:", "ConnectionTimeout", "5000", 0);
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
+
+            AddConfigRow(layout, row, "保持连接:", "KeepAlive", "true", 0);
         }
 
         private void CreateSerialConfigControls(TableLayoutPanel layout)
@@ -359,21 +403,17 @@ namespace MainUI.LogicalConfiguration.Forms
             // 串口名称
             AddConfigRow(layout, row++, "串口:", "PortName", "COM1");
 
-            // 波特率
+            // 波特率和数据位
             AddConfigRow(layout, row, "波特率:", "BaudRate", "9600", 0);
             AddConfigRow(layout, row++, "数据位:", "DataBits", "8", 2);
 
             // 停止位和校验
-            AddConfigRow(layout, row, "停止位:", "StopBits", "1", 0);
+            AddConfigRow(layout, row, "停止位:", "StopBits", "One", 0);
             AddConfigRow(layout, row++, "校验位:", "Parity", "None", 2);
-        }
 
-        private void CreateTcpConfigControls(TableLayoutPanel layout)
-        {
-            int row = 0;
-
-            AddConfigRow(layout, row, "IP地址:", "IpAddress", "192.168.1.1", 0);
-            AddConfigRow(layout, row++, "端口:", "Port", "5000", 2);
+            // 流控制和超时
+            AddConfigRow(layout, row, "流控制:", "FlowControl", "None", 0);
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
         }
 
         private void CreateModbusRtuConfigControls(TableLayoutPanel layout)
@@ -385,6 +425,12 @@ namespace MainUI.LogicalConfiguration.Forms
 
             AddConfigRow(layout, row, "波特率:", "BaudRate", "9600", 0);
             AddConfigRow(layout, row++, "数据位:", "DataBits", "8", 2);
+
+            AddConfigRow(layout, row, "停止位:", "StopBits", "One", 0);
+            AddConfigRow(layout, row++, "校验位:", "Parity", "None", 2);
+
+            AddConfigRow(layout, row, "字节序:", "ByteOrder", "BigEndian", 0);
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
         }
 
         private void CreateModbusTcpConfigControls(TableLayoutPanel layout)
@@ -392,17 +438,39 @@ namespace MainUI.LogicalConfiguration.Forms
             int row = 0;
 
             AddConfigRow(layout, row, "从站地址:", "SlaveAddress", "1", 0);
-            AddConfigRow(layout, row++, "IP地址:", "IpAddress", "192.168.1.1", 2);
+            AddConfigRow(layout, row++, "IP地址:", "IpAddress", "192.168.1.100", 2);
 
             AddConfigRow(layout, row, "端口:", "Port", "502", 0);
+            AddConfigRow(layout, row++, "字节序:", "ByteOrder", "BigEndian", 2);
+
+            AddConfigRow(layout, row, "读取超时:", "ReadTimeout", "3000", 0);
         }
 
-        private void CreateVisaConfigControls(TableLayoutPanel layout)
+        private void CreateHttpConfigControls(TableLayoutPanel layout)
         {
             int row = 0;
 
-            AddConfigRow(layout, row++, "资源名:", "ResourceName", "TCPIP::192.168.1.1::INSTR");
+            AddConfigRow(layout, row++, "基础URL:", "BaseUrl", "http://192.168.1.100");
+
+            AddConfigRow(layout, row, "认证类型:", "AuthType", "None", 0);
+            AddConfigRow(layout, row++, "内容类型:", "ContentType", "application/json", 2);
+
+            AddConfigRow(layout, row, "用户名:", "Username", "", 0);
+            AddConfigRow(layout, row++, "密码:", "Password", "", 2);
         }
+
+        private void CreateUdpConfigControls(TableLayoutPanel layout)
+        {
+            int row = 0;
+
+            AddConfigRow(layout, row, "远程IP:", "RemoteIpAddress", "192.168.1.100", 0);
+            AddConfigRow(layout, row++, "远程端口:", "RemotePort", "5000", 2);
+
+            AddConfigRow(layout, row, "本地端口:", "LocalPort", "0", 0);
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
+        }
+
+        #endregion
 
         private void AddConfigRow(TableLayoutPanel layout, int row, string label, string name, string defaultValue, int col = 0)
         {
@@ -481,8 +549,8 @@ namespace MainUI.LogicalConfiguration.Forms
 
             driver.Name = txtName.Text.Trim();
             driver.DisplayName = txtDisplayName.Text.Trim();
-            driver.Category = (InstrumentCategory)cboCategory.SelectedItem;
-            driver.ProtocolType = (ProtocolType)cboProtocolType.SelectedItem;
+            driver.Category = (InstrumentCategory)(cboCategory.SelectedValue ?? InstrumentCategory.Other);
+            driver.ProtocolType = (ProtocolType)(cboProtocolType.SelectedValue ?? ProtocolType.TcpIp);
             driver.Manufacturer = txtManufacturer.Text.Trim();
             driver.Model = txtModel.Text.Trim();
             driver.Enabled = chkEnabled.Checked;
@@ -498,7 +566,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 FrameHeader = txtFrameHeader.Text,
                 FrameFooter = txtFrameFooter.Text,
                 ResponseTerminator = txtResponseTerminator.Text,
-                ChecksumType = (ChecksumType)cboChecksumType.SelectedItem
+                ChecksumType = (ChecksumType)(cboChecksumType.SelectedValue ?? ChecksumType.None)
             };
 
             // 命令列表
@@ -516,7 +584,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private ProtocolConfigBase CollectProtocolConfig()
         {
-            var protocolType = (ProtocolType)cboProtocolType.SelectedItem;
+            var protocolType = (ProtocolType)(cboProtocolType.SelectedValue ?? ProtocolType.TcpIp);
 
             switch (protocolType)
             {
@@ -543,31 +611,38 @@ namespace MainUI.LogicalConfiguration.Forms
                     };
 
                 case ProtocolType.ModbusTcp:
-                    var modbusTcp = new ModbusProtocolConfig
-                    {
-                        SlaveAddress = GetControlValue<byte>("SlaveAddress", 1),
-                        IpAddress = GetControlValue<string>("IpAddress"),
-                        Port = GetControlValue<int>("Port", 502),
-                        ByteOrder = GetControlValue<ByteOrder>("ByteOrder", ByteOrder.BigEndian),
-                        ReadTimeout = GetControlValue<int>("ReadTimeout", 3000)
-                    };
-                    modbusTcp.SetModbusType(true);
+                    var modbusTcp = new ModbusProtocolConfig();
+                    modbusTcp.SetModbusType(true); // TCP模式
+                    modbusTcp.SlaveAddress = GetControlValue<byte>("SlaveAddress", 1);
+                    modbusTcp.IpAddress = GetControlValue<string>("IpAddress");
+                    modbusTcp.Port = GetControlValue<int>("Port", 502);
+                    modbusTcp.ByteOrder = GetControlValue<ByteOrder>("ByteOrder", ByteOrder.BigEndian);
+                    modbusTcp.ReadTimeout = GetControlValue<int>("ReadTimeout", 3000);
                     return modbusTcp;
 
                 case ProtocolType.ModbusRtu:
-                    var modbusRtu = new ModbusProtocolConfig
-                    {
-                        SlaveAddress = GetControlValue<byte>("SlaveAddress", 1),
-                        PortName = GetControlValue<string>("PortName"),
-                        BaudRate = GetControlValue<int>("BaudRate", 9600),
-                        ByteOrder = GetControlValue<ByteOrder>("ByteOrder", ByteOrder.BigEndian),
-                        ReadTimeout = GetControlValue<int>("ReadTimeout", 3000)
-                    };
-                    modbusRtu.SetModbusType(false);
+                    var modbusRtu = new ModbusProtocolConfig();
+                    modbusRtu.SetModbusType(false); // RTU模式
+                    modbusRtu.SlaveAddress = GetControlValue<byte>("SlaveAddress", 1);
+                    modbusRtu.PortName = GetControlValue<string>("PortName");
+                    modbusRtu.BaudRate = GetControlValue<int>("BaudRate", 9600);
+                    modbusRtu.DataBits = GetControlValue<int>("DataBits", 8);
+                    modbusRtu.StopBits = GetControlValue<StopBitsType>("StopBits", StopBitsType.One);
+                    modbusRtu.Parity = GetControlValue<ParityType>("Parity", ParityType.None);
+                    modbusRtu.ByteOrder = GetControlValue<ByteOrder>("ByteOrder", ByteOrder.BigEndian);
+                    modbusRtu.ReadTimeout = GetControlValue<int>("ReadTimeout", 3000);
                     return modbusRtu;
 
                 case ProtocolType.Http:
-                case ProtocolType.Udp:
+                    return new HttpProtocolConfig
+                    {
+                        BaseUrl = GetControlValue<string>("BaseUrl"),
+                        //AuthType = GetControlValue<HttpAuthType>("AuthType", HttpAuthType.None),
+                        Username = GetControlValue<string>("Username"),
+                        Password = GetControlValue<string>("Password"),
+                        ContentType = GetControlValue<string>("ContentType", "application/json")
+                    };
+
                 default:
                     return new TcpProtocolConfig();
             }
@@ -782,7 +857,79 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void BtnTestConnection_Click(object sender, EventArgs e)
         {
-            UIMessageTip.ShowWarning("测试连接功能需要配置实际的通讯参数后使用");
+            if (_selectedDriver == null)
+            {
+                UIMessageTip.ShowWarning("请先选择要测试的仪器");
+                return;
+            }
+
+            // 显示加载提示
+            this.ShowWaitForm("正在测试连接...");
+
+            //try
+            //{
+            //    // 创建通讯方法实例
+            //    var variableManager = ServiceLocator.GetService<GlobalVariableManager>();
+            //    var expressionEngine = ServiceLocator.GetService<ExpressionEngine>();
+
+            //    var methods = new InstrumentCommunicationMethods(
+            //        _logger,
+            //        _driverService,
+            //        variableManager,
+            //        expressionEngine
+            //    );
+
+            //    // 执行测试
+            //    var result = await methods.TestConnectionAsync(
+            //        _selectedDriver.DriverId
+            //    );
+
+            //    this.HideWaitForm();
+
+            //    if (result.Success)
+            //    {
+            //        // 显示详细日志
+            //        var logText = $"【连接测试成功】\n\n" +
+            //                     $"仪器名称: {_selectedDriver.DisplayName}\n" +
+            //                     $"协议类型: {_selectedDriver.ProtocolType}\n" +
+            //                     $"耗时: {result.ElapsedMilliseconds}ms\n\n" +
+            //                     $"发送数据(HEX): {result.SentHex ?? "无"}\n" +
+            //                     $"发送数据(STR): {result.SentString ?? "无"}\n\n" +
+            //                     $"接收数据(HEX): {result.ResponseHex ?? "无"}\n" +
+            //                     $"接收数据(STR): {result.ResponseString ?? "无"}";
+
+            //        // 使用富文本框显示日志
+            //        var logForm = new Form
+            //        {
+            //            Text = "连接测试日志",
+            //            Size = new Size(900, 600),
+            //            StartPosition = FormStartPosition.CenterParent
+            //        };
+
+            //        var txtLog = new RichTextBox
+            //        {
+            //            Dock = DockStyle.Fill,
+            //            ReadOnly = true,
+            //            Font = new Font("Consolas", 10),
+            //            Text = logText
+            //        };
+
+            //        logForm.Controls.Add(txtLog);
+            //        logForm.ShowDialog();
+
+            //        UIMessageTip.ShowOk($"连接成功!\n耗时: {result.ElapsedMilliseconds}ms");
+            //    }
+            //    else
+            //    {
+            //        UIMessageTip.ShowError($"连接失败!\n{result.ErrorMessage}");
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    this.HideWaitForm();
+            //    _logger?.LogError(ex, "测试连接时发生错误");
+            //    UIMessageTip.ShowError($"测试失败: {ex.Message}");
+            //}
         }
 
         private async void BtnSave_Click(object sender, EventArgs e)
