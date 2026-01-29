@@ -42,8 +42,8 @@ namespace MainUI
             timerPLC = new System.Windows.Forms.Timer(components);
             statusStrip1 = new StatusStrip();
             tslblUser = new ToolStripStatusLabel();
-            tslblPLC = new ToolStripStatusLabel();
             tslblWorkStation = new ToolStripStatusLabel();
+            tslblPLC = new ToolStripStatusLabel();
             timerHeartbeat = new System.Windows.Forms.Timer(components);
             panelmue = new UIPanel();
             btnDeviceDetection = new UISymbolButton();
@@ -74,7 +74,7 @@ namespace MainUI
             panel1.ForeColor = Color.FromArgb(235, 227, 221);
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(1280, 53);
+            panel1.Size = new Size(1920, 53);
             panel1.TabIndex = 0;
             // 
             // lblTitle
@@ -224,9 +224,9 @@ namespace MainUI
             statusStrip1.BackColor = Color.FromArgb(227, 200, 227);
             statusStrip1.Font = new Font("思源黑体 CN Bold", 9F, FontStyle.Bold);
             statusStrip1.Items.AddRange(new ToolStripItem[] { tslblUser, tslblWorkStation, tslblPLC });
-            statusStrip1.Location = new Point(0, 954);
+            statusStrip1.Location = new Point(0, 1010);
             statusStrip1.Name = "statusStrip1";
-            statusStrip1.Size = new Size(1280, 22);
+            statusStrip1.Size = new Size(1920, 22);
             statusStrip1.TabIndex = 4;
             statusStrip1.Text = "statusStrip1";
             // 
@@ -238,14 +238,6 @@ namespace MainUI
             tslblUser.Size = new Size(56, 17);
             tslblUser.Text = "用户名称";
             // 
-            // tslblPLC
-            // 
-            tslblPLC.Font = new Font("微软雅黑", 9F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            tslblPLC.ForeColor = Color.FromArgb(64, 64, 64);
-            tslblPLC.Name = "tslblPLC";
-            tslblPLC.Size = new Size(55, 17);
-            tslblPLC.Text = "PLC状态";
-            // 
             // tslblWorkStation
             // 
             tslblWorkStation.Font = new Font("微软雅黑", 9F, FontStyle.Bold, GraphicsUnit.Point, 134);
@@ -253,6 +245,14 @@ namespace MainUI
             tslblWorkStation.Name = "tslblWorkStation";
             tslblWorkStation.Size = new Size(56, 17);
             tslblWorkStation.Text = "工位信息";
+            // 
+            // tslblPLC
+            // 
+            tslblPLC.Font = new Font("微软雅黑", 9F, FontStyle.Bold, GraphicsUnit.Point, 134);
+            tslblPLC.ForeColor = Color.FromArgb(64, 64, 64);
+            tslblPLC.Name = "tslblPLC";
+            tslblPLC.Size = new Size(55, 17);
+            tslblPLC.Text = "PLC状态";
             // 
             // timerHeartbeat
             // 
@@ -280,7 +280,7 @@ namespace MainUI
             panelmue.Radius = 20;
             panelmue.RectColor = Color.FromArgb(65, 100, 204);
             panelmue.RectDisableColor = Color.FromArgb(65, 100, 204);
-            panelmue.Size = new Size(113, 889);
+            panelmue.Size = new Size(113, 942);
             panelmue.TabIndex = 5;
             panelmue.Text = null;
             panelmue.TextAlignment = ContentAlignment.MiddleCenter;
@@ -539,9 +539,9 @@ namespace MainUI
             // 
             label5.BackColor = Color.FromArgb(65, 100, 204);
             label5.Dock = DockStyle.Bottom;
-            label5.Location = new Point(0, 950);
+            label5.Location = new Point(0, 1006);
             label5.Name = "label5";
-            label5.Size = new Size(1280, 4);
+            label5.Size = new Size(1920, 4);
             label5.TabIndex = 496;
             label5.Text = "";
             // 
@@ -549,7 +549,7 @@ namespace MainUI
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 237);
-            ClientSize = new Size(1280, 976);
+            ClientSize = new Size(1920, 1032);
             ControlBox = false;
             Controls.Add(label5);
             Controls.Add(PanelHmi);

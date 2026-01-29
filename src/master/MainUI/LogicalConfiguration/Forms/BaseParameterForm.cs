@@ -66,7 +66,7 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         /// <summary>
-        /// 依赖注入构造函数（推荐）
+        /// 依赖注入构造函数
         /// </summary>
         protected BaseParameterForm(IWorkflowStateService workflowState, Microsoft.Extensions.Logging.ILogger logger)
         {

@@ -1,6 +1,7 @@
 ﻿using MainUI.LogicalConfiguration;
 using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.Instrument.Services;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Services;
@@ -150,7 +151,7 @@ namespace MainUI
         {
             var login = new frmLogin
             {
-                lblSoftName = { Text = "制动阀类试验台E" },
+                lblSoftName = { Text = "软件通用平台" },
                 Icon = new Icon("ico.ico")
             };
 
@@ -279,6 +280,15 @@ namespace MainUI
             services.AddSingleton<IFormService, FormService>();// 窗体集合管理类
             services.AddTransient<DataGridViewManager>(); // UI管理器
             services.AddSingleton<WorkflowExecutionService>(); // 工作流执行服务
+
+            // 注册仪器驱动服务 (单例 - 全局共享驱动配置)
+            services.AddSingleton<IInstrumentDriverService, InstrumentDriverService>();
+            // 注册仪器通讯执行方法 (瞬态 - 每次请求创建新实例)
+            services.AddTransient<InstrumentCommunicationMethods>();
+            // 注册配置窗体 (瞬态)
+            services.AddTransient<Form_InstrumentCommunication>();
+            // 注册驱动管理窗体 (瞬态)
+            services.AddTransient<FrmInstrumentDriverManager>();
 
             // 日志服务
             services.AddLogging(builder =>

@@ -1,5 +1,6 @@
 ﻿using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.Infrastructure;
+using MainUI.LogicalConfiguration.Instrument.Models;
 using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
@@ -28,6 +29,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     IWorkflowStateService workflowState,
     ExpressionEngine expressionEngine,
     GlobalVariableManager globalVariableManager,
+    InstrumentCommunicationMethods instrumentCommunicationMethods,
     CommunicationMethods communicationMethods)
     {
         #region 字段和属性
@@ -49,6 +51,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         ?? throw new ArgumentNullException(nameof(communicationMethods));
         private readonly IWorkflowStateService _workflowStateService = workflowState;
         private readonly ExpressionEngine _expressionEngine = expressionEngine;
+        private readonly InstrumentCommunicationMethods _instrumentCommunicationMethods =
+            instrumentCommunicationMethods ?? throw new ArgumentNullException(nameof(instrumentCommunicationMethods));
 
         public event Action<ChildModel, int> StepStatusChanged;
 
@@ -238,6 +242,9 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     // 报表工具
                     "读取单元格" => await ExecuteReadCells(step, cancellationToken),
                     "写入单元格" => await ExecuteWriteCells(step, cancellationToken),
+
+                    // 仪器通讯
+                    "仪器通讯" => await ExecuteInstrumentCommunication(step, cancellationToken),
 
                     // 未知步骤类型
                     _ => DetailedResult.Failed($"不支持的步骤类型: {step.StepName}")
@@ -510,6 +517,65 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             {
                 NlogHelper.Default.Error($"读取单元格异常: {ex.Message}", ex);
                 return DetailedResult.Failed($"读取单元格异常: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 执行仪器通讯
+        /// </summary>
+        /// <param name="step">当前步骤信息</param>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <returns>执行结果</returns>
+        private async Task<DetailedResult> ExecuteInstrumentCommunication(ChildModel step, CancellationToken cancellationToken)
+        {
+            var param = ConvertParameter<Parameter_InstrumentCommunication>(step.StepParameter);
+            if (param == null)
+                return DetailedResult.Failed("参数转换失败");
+
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var result = await _instrumentCommunicationMethods.ExecuteAsync(param, cancellationToken);
+
+                if (result.Success)
+                {
+                    // 记录执行成功信息
+                    NlogHelper.Default.Info($"仪器通讯成功: [{param.InstrumentName}] {param.CommandName}");
+
+                    // 返回成功结果，可包含解析的数据
+                    return DetailedResult.Successful(
+                        result.Success,
+                         $"通讯成功: {result.ResponseString}");
+                }
+                else
+                {
+                    // 根据失败策略处理
+                    if (param.FailureStrategy == FailureStrategy.Continue)
+                    {
+                        NlogHelper.Default.Warn($"仪器通讯失败但继续执行: {result.ErrorMessage}");
+                        return DetailedResult.Successful(message: $"通讯失败(已忽略): {result.ErrorMessage}");
+                    }
+
+                    if (param.FailureStrategy == FailureStrategy.JumpToStep)
+                    {
+                        // TODO: 实现跳转逻辑
+                        NlogHelper.Default.Warn($"仪器通讯失败，跳转到步骤 {param.JumpToStepNumber}");
+                        return DetailedResult.Failed($"通讯失败，需跳转: {result.ErrorMessage}");
+                    }
+
+                    return DetailedResult.Failed($"仪器通讯失败: {result.ErrorMessage}");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                NlogHelper.Default.Info($"仪器通讯被取消: [{param.InstrumentName}]");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                NlogHelper.Default.Error($"仪器通讯异常: [{param.InstrumentName}]", ex);
+                return DetailedResult.Failed($"执行异常: {ex.Message}");
             }
         }
 

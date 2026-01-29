@@ -1646,7 +1646,7 @@
             uiPanel8.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel8.ForeColor = Color.Black;
             uiPanel8.ForeDisableColor = Color.Black;
-            uiPanel8.Location = new Point(785, 467);
+            uiPanel8.Location = new Point(783, 467);
             uiPanel8.Margin = new Padding(4, 5, 4, 5);
             uiPanel8.MinimumSize = new Size(1, 1);
             uiPanel8.Name = "uiPanel8";

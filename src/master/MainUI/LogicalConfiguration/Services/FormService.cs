@@ -1,4 +1,5 @@
 ﻿using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.Instrument.Services;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ namespace MainUI.LogicalConfiguration.Services
         // 这些服务在构造函数中一次性获取，后续直接使用
         private readonly IPLCManager _plcManager;
         private readonly IWorkflowStateService _workflowState;
+        private readonly IInstrumentDriverService _driverService;
         private readonly GlobalVariableManager _variableManager;
         private readonly IPLCConfigurationService _plcConfigService;
         private readonly IFormService _selfReference; // 用于避免循环引用
@@ -34,6 +36,7 @@ namespace MainUI.LogicalConfiguration.Services
                 _workflowState = _serviceProvider.GetRequiredService<IWorkflowStateService>();
                 _plcConfigService = _serviceProvider.GetRequiredService<IPLCConfigurationService>();
                 _variableManager = _serviceProvider.GetRequiredService<GlobalVariableManager>();
+                _driverService = _serviceProvider.GetRequiredService<IInstrumentDriverService>();
                 _selfReference = this; // 自引用，避免循环依赖
             }
             catch (Exception ex)
@@ -105,6 +108,9 @@ namespace MainUI.LogicalConfiguration.Services
                         break;
                     case "串口发送":
                         form = CreateForm<Form_SerialPortSend>();
+                        break;
+                    case "仪器通讯":
+                        form = CreateForm<Form_InstrumentCommunication>();
                         break;
                     default:
                         _logger.LogWarning("未知的窗体类型: {FormName}", formName);
@@ -193,7 +199,7 @@ namespace MainUI.LogicalConfiguration.Services
 
                 // 写入单元格 配置窗体
                 nameof(Form_WriteCells) => (T)(object)new Form_WriteCells(),
- 
+
                 // 系统提示窗体
                 nameof(Form_SystemPrompt) => (T)(object)new Form_SystemPrompt(
                     _workflowState,  // 预加载的服务
@@ -201,7 +207,7 @@ namespace MainUI.LogicalConfiguration.Services
 
                 // 检测工具窗体
                 nameof(Form_Detection) => (T)(object)new Form_Detection(),
-           
+
                 // 点位定义
                 nameof(Form_DefinePoint) => (T)(object)new Form_DefinePoint(
                     _plcConfigService,
@@ -236,6 +242,12 @@ namespace MainUI.LogicalConfiguration.Services
                 nameof(Form_SerialPortSend) => (T)(object)new Form_SerialPortSend(
                     _workflowState,
                     GetSpecificLogger<Form_SerialPortSend>()),
+
+                // 串口发送
+                nameof(Form_InstrumentCommunication) => (T)(object)new Form_InstrumentCommunication(
+                    _workflowState,
+                    _driverService,
+                    GetSpecificLogger<Form_InstrumentCommunication>()),
 
                 // 未知窗体类型
                 _ => throw new NotSupportedException($"不支持的窗体类型: {typeof(T).Name}")
