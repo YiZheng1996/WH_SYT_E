@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace MainUI.LogicalConfiguration.Parameter
+namespace MainUI.LogicalConfiguration.Instrument.Parameter
 {
     /// <summary>
     /// 仪器通讯工具参数

@@ -1,7 +1,7 @@
 ﻿using MainUI.LogicalConfiguration.Instrument.Models;
+using MainUI.LogicalConfiguration.Instrument.Parameter;
 using MainUI.LogicalConfiguration.Instrument.Services;
 using MainUI.LogicalConfiguration.LogicalManager;
-using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +11,6 @@ namespace MainUI.LogicalConfiguration.Forms
     {
         private Parameter_InstrumentCommunication _parameter;
         private readonly IInstrumentDriverService _driverService;
-        private readonly GlobalVariableManager _globalVariable;
         private List<InstrumentDriver> _drivers;
         private InstrumentDriver _selectedDriver;
         private InstrumentCommand _selectedCommand;
@@ -19,12 +18,10 @@ namespace MainUI.LogicalConfiguration.Forms
 
         public Form_InstrumentCommunication(
             IWorkflowStateService workflowState,
-            GlobalVariableManager globalVariable,
             IInstrumentDriverService driverService,
             ILogger<Form_InstrumentCommunication> logger)
             : base(workflowState, logger)
         {
-            _globalVariable = globalVariable ?? throw new ArgumentNullException(nameof(globalVariable));
             _driverService = driverService ?? throw new ArgumentNullException(nameof(driverService));
             _parameter = new Parameter_InstrumentCommunication();
 

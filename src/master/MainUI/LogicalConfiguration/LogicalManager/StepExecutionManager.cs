@@ -1,6 +1,8 @@
 ﻿using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.Infrastructure;
+using MainUI.LogicalConfiguration.Instrument.Methods;
 using MainUI.LogicalConfiguration.Instrument.Models;
+using MainUI.LogicalConfiguration.Instrument.Parameter;
 using MainUI.LogicalConfiguration.Methods;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;

@@ -1,6 +1,7 @@
 ﻿using MainUI.LogicalConfiguration;
 using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.Instrument.Methods;
 using MainUI.LogicalConfiguration.Instrument.Services;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Methods;

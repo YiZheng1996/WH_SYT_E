@@ -1,16 +1,16 @@
 ﻿using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.Instrument.Communication;
 using MainUI.LogicalConfiguration.Instrument.Models;
+using MainUI.LogicalConfiguration.Instrument.Parameter;
 using MainUI.LogicalConfiguration.Instrument.Services;
 using MainUI.LogicalConfiguration.LogicalManager;
-using MainUI.LogicalConfiguration.Parameter;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using CommandType = MainUI.LogicalConfiguration.Instrument.Models.CommandType;
 
-namespace MainUI.LogicalConfiguration.Methods
+namespace MainUI.LogicalConfiguration.Instrument.Methods
 {
     /// <summary>
     /// 仪器通讯执行方法类
@@ -121,7 +121,7 @@ namespace MainUI.LogicalConfiguration.Methods
 
                     requestData = BuildCommandRequest(command, parameter.CommandParameters);
                     timeout = command.Timeout > 0 ? command.Timeout :
-                             (parameter.OverrideTimeout ? parameter.CustomTimeout : protocolConfig.ReadTimeout);
+                             parameter.OverrideTimeout ? parameter.CustomTimeout : protocolConfig.ReadTimeout;
                     waitForResponse = command.WaitForResponse;
                 }
 
