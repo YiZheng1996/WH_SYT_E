@@ -17,11 +17,11 @@
 
         private void InitializeComponent()
         {
-            DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle7 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle9 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle10 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
             mainPanel = new TableLayoutPanel();
             tabControl = new UITabControl();
             tabBasic = new TabPage();
@@ -130,7 +130,7 @@
             tabControl.Controls.Add(tabAdvanced);
             tabControl.Dock = DockStyle.Fill;
             tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
-            tabControl.Font = new Font("微软雅黑", 10F);
+            tabControl.Font = new Font("微软雅黑", 11F, FontStyle.Bold);
             tabControl.ItemSize = new Size(150, 40);
             tabControl.Location = new Point(13, 13);
             tabControl.MainPage = "";
@@ -426,7 +426,7 @@
             tabResponse.Controls.Add(layoutResponse);
             tabResponse.Location = new Point(0, 40);
             tabResponse.Name = "tabResponse";
-            tabResponse.Size = new Size(977, 691);
+            tabResponse.Size = new Size(200, 60);
             tabResponse.TabIndex = 1;
             tabResponse.Text = "响应处理";
             // 
@@ -451,7 +451,7 @@
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 39F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutResponse.Size = new Size(977, 691);
+            layoutResponse.Size = new Size(200, 60);
             layoutResponse.TabIndex = 0;
             // 
             // lblResponseVar
@@ -475,7 +475,7 @@
             txtResponseVariable.Name = "txtResponseVariable";
             txtResponseVariable.Padding = new Padding(5);
             txtResponseVariable.ShowText = false;
-            txtResponseVariable.Size = new Size(849, 28);
+            txtResponseVariable.Size = new Size(72, 28);
             txtResponseVariable.TabIndex = 1;
             txtResponseVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtResponseVariable.Watermark = "将原始响应存储到此变量";
@@ -501,7 +501,7 @@
             txtStatusVariable.Name = "txtStatusVariable";
             txtStatusVariable.Padding = new Padding(5);
             txtStatusVariable.ShowText = false;
-            txtStatusVariable.Size = new Size(849, 29);
+            txtStatusVariable.Size = new Size(72, 29);
             txtStatusVariable.TabIndex = 3;
             txtStatusVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtStatusVariable.Watermark = "存储执行结果(true/false)";
@@ -527,7 +527,7 @@
             txtErrorVariable.Name = "txtErrorVariable";
             txtErrorVariable.Padding = new Padding(5);
             txtErrorVariable.ShowText = false;
-            txtErrorVariable.Size = new Size(849, 30);
+            txtErrorVariable.Size = new Size(72, 30);
             txtErrorVariable.TabIndex = 5;
             txtErrorVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtErrorVariable.Watermark = "失败时存储错误信息";
@@ -539,7 +539,7 @@
             lblParseRules.Location = new Point(3, 117);
             lblParseRules.Name = "lblParseRules";
             lblParseRules.Padding = new Padding(0, 10, 0, 0);
-            lblParseRules.Size = new Size(114, 574);
+            lblParseRules.Size = new Size(114, 1);
             lblParseRules.TabIndex = 6;
             lblParseRules.Text = "解析规则:";
             lblParseRules.TextAlign = ContentAlignment.TopRight;
@@ -554,54 +554,54 @@
             grpParseRules.MinimumSize = new Size(1, 1);
             grpParseRules.Name = "grpParseRules";
             grpParseRules.Padding = new Padding(0, 32, 0, 0);
-            grpParseRules.Size = new Size(849, 564);
+            grpParseRules.Size = new Size(72, 1);
             grpParseRules.TabIndex = 7;
             grpParseRules.Text = "响应数据解析规则";
             grpParseRules.TextAlignment = ContentAlignment.MiddleLeft;
             // 
             // dgvParseRules
             // 
-            dataGridViewCellStyle6.BackColor = Color.FromArgb(235, 243, 255);
-            dgvParseRules.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle1.BackColor = Color.FromArgb(235, 243, 255);
+            dgvParseRules.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             dgvParseRules.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvParseRules.BackgroundColor = Color.White;
             dgvParseRules.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
-            dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle7.BackColor = Color.FromArgb(80, 160, 255);
-            dataGridViewCellStyle7.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            dataGridViewCellStyle7.ForeColor = Color.White;
-            dataGridViewCellStyle7.SelectionBackColor = SystemColors.Highlight;
-            dataGridViewCellStyle7.SelectionForeColor = SystemColors.HighlightText;
-            dataGridViewCellStyle7.WrapMode = DataGridViewTriState.True;
-            dgvParseRules.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle7;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = Color.FromArgb(80, 160, 255);
+            dataGridViewCellStyle2.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            dataGridViewCellStyle2.ForeColor = Color.White;
+            dataGridViewCellStyle2.SelectionBackColor = SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = DataGridViewTriState.True;
+            dgvParseRules.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             dgvParseRules.ColumnHeadersHeight = 32;
-            dataGridViewCellStyle8.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle8.BackColor = SystemColors.Window;
-            dataGridViewCellStyle8.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            dataGridViewCellStyle8.ForeColor = Color.FromArgb(48, 48, 48);
-            dataGridViewCellStyle8.SelectionBackColor = SystemColors.Highlight;
-            dataGridViewCellStyle8.SelectionForeColor = SystemColors.HighlightText;
-            dataGridViewCellStyle8.WrapMode = DataGridViewTriState.False;
-            dgvParseRules.DefaultCellStyle = dataGridViewCellStyle8;
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = SystemColors.Window;
+            dataGridViewCellStyle3.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            dataGridViewCellStyle3.ForeColor = Color.FromArgb(48, 48, 48);
+            dataGridViewCellStyle3.SelectionBackColor = SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.False;
+            dgvParseRules.DefaultCellStyle = dataGridViewCellStyle3;
             dgvParseRules.Dock = DockStyle.Fill;
             dgvParseRules.EnableHeadersVisualStyles = false;
             dgvParseRules.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             dgvParseRules.GridColor = Color.FromArgb(80, 160, 255);
             dgvParseRules.Location = new Point(0, 32);
             dgvParseRules.Name = "dgvParseRules";
-            dataGridViewCellStyle9.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle9.BackColor = Color.FromArgb(235, 243, 255);
-            dataGridViewCellStyle9.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            dataGridViewCellStyle9.ForeColor = Color.FromArgb(48, 48, 48);
-            dataGridViewCellStyle9.SelectionBackColor = Color.FromArgb(80, 160, 255);
-            dataGridViewCellStyle9.SelectionForeColor = Color.White;
-            dataGridViewCellStyle9.WrapMode = DataGridViewTriState.True;
-            dgvParseRules.RowHeadersDefaultCellStyle = dataGridViewCellStyle9;
-            dataGridViewCellStyle10.BackColor = Color.White;
-            dataGridViewCellStyle10.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            dgvParseRules.RowsDefaultCellStyle = dataGridViewCellStyle10;
+            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle4.BackColor = Color.FromArgb(235, 243, 255);
+            dataGridViewCellStyle4.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            dataGridViewCellStyle4.ForeColor = Color.FromArgb(48, 48, 48);
+            dataGridViewCellStyle4.SelectionBackColor = Color.FromArgb(80, 160, 255);
+            dataGridViewCellStyle4.SelectionForeColor = Color.White;
+            dataGridViewCellStyle4.WrapMode = DataGridViewTriState.True;
+            dgvParseRules.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle5.BackColor = Color.White;
+            dataGridViewCellStyle5.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            dgvParseRules.RowsDefaultCellStyle = dataGridViewCellStyle5;
             dgvParseRules.SelectedIndex = -1;
-            dgvParseRules.Size = new Size(849, 532);
+            dgvParseRules.Size = new Size(72, 0);
             dgvParseRules.StripeOddColor = Color.FromArgb(235, 243, 255);
             dgvParseRules.TabIndex = 0;
             // 
@@ -610,7 +610,7 @@
             tabAdvanced.Controls.Add(layoutAdvanced);
             tabAdvanced.Location = new Point(0, 40);
             tabAdvanced.Name = "tabAdvanced";
-            tabAdvanced.Size = new Size(977, 691);
+            tabAdvanced.Size = new Size(200, 60);
             tabAdvanced.TabIndex = 2;
             tabAdvanced.Text = "高级选项";
             // 
@@ -650,7 +650,7 @@
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 31F));
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutAdvanced.Size = new Size(977, 691);
+            layoutAdvanced.Size = new Size(200, 60);
             layoutAdvanced.TabIndex = 0;
             // 
             // lblTimeout
@@ -672,7 +672,7 @@
             panelTimeout.Dock = DockStyle.Fill;
             panelTimeout.Location = new Point(103, 3);
             panelTimeout.Name = "panelTimeout";
-            panelTimeout.Size = new Size(382, 34);
+            panelTimeout.Size = new Size(1, 34);
             panelTimeout.TabIndex = 1;
             // 
             // chkOverrideTimeout
@@ -692,7 +692,7 @@
             txtTimeout.Enabled = false;
             txtTimeout.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             txtTimeout.IntValue = 3000;
-            txtTimeout.Location = new Point(144, 5);
+            txtTimeout.Location = new Point(4, 40);
             txtTimeout.Margin = new Padding(4, 5, 4, 5);
             txtTimeout.MinimumSize = new Size(1, 16);
             txtTimeout.Name = "txtTimeout";
@@ -707,10 +707,10 @@
             // lblTimeoutMs
             // 
             lblTimeoutMs.AutoSize = true;
-            lblTimeoutMs.Location = new Point(231, 0);
+            lblTimeoutMs.Location = new Point(3, 74);
             lblTimeoutMs.Name = "lblTimeoutMs";
             lblTimeoutMs.Padding = new Padding(0, 8, 0, 0);
-            lblTimeoutMs.Size = new Size(28, 28);
+            lblTimeoutMs.Size = new Size(31, 27);
             lblTimeoutMs.TabIndex = 2;
             lblTimeoutMs.Text = "ms";
             // 
@@ -718,7 +718,7 @@
             // 
             lblRetryCount.Dock = DockStyle.Fill;
             lblRetryCount.Font = new Font("微软雅黑", 9F);
-            lblRetryCount.Location = new Point(491, 0);
+            lblRetryCount.Location = new Point(103, 0);
             lblRetryCount.Name = "lblRetryCount";
             lblRetryCount.Size = new Size(94, 40);
             lblRetryCount.TabIndex = 2;
@@ -729,13 +729,13 @@
             // 
             txtRetryCount.Dock = DockStyle.Fill;
             txtRetryCount.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            txtRetryCount.Location = new Point(592, 5);
+            txtRetryCount.Location = new Point(204, 5);
             txtRetryCount.Margin = new Padding(4, 5, 4, 5);
             txtRetryCount.MinimumSize = new Size(1, 16);
             txtRetryCount.Name = "txtRetryCount";
             txtRetryCount.Padding = new Padding(5);
             txtRetryCount.ShowText = false;
-            txtRetryCount.Size = new Size(381, 30);
+            txtRetryCount.Size = new Size(1, 30);
             txtRetryCount.TabIndex = 3;
             txtRetryCount.Text = "0";
             txtRetryCount.TextAlignment = ContentAlignment.MiddleLeft;
@@ -759,7 +759,7 @@
             panelRetryInterval.Dock = DockStyle.Fill;
             panelRetryInterval.Location = new Point(103, 43);
             panelRetryInterval.Name = "panelRetryInterval";
-            panelRetryInterval.Size = new Size(382, 34);
+            panelRetryInterval.Size = new Size(1, 34);
             panelRetryInterval.TabIndex = 5;
             // 
             // txtRetryInterval
@@ -782,10 +782,10 @@
             // lblRetryMs
             // 
             lblRetryMs.AutoSize = true;
-            lblRetryMs.Location = new Point(91, 0);
+            lblRetryMs.Location = new Point(3, 39);
             lblRetryMs.Name = "lblRetryMs";
             lblRetryMs.Padding = new Padding(0, 8, 0, 0);
-            lblRetryMs.Size = new Size(28, 28);
+            lblRetryMs.Size = new Size(31, 27);
             lblRetryMs.TabIndex = 1;
             lblRetryMs.Text = "ms";
             // 
@@ -807,7 +807,7 @@
             panelDelayBefore.Dock = DockStyle.Fill;
             panelDelayBefore.Location = new Point(103, 83);
             panelDelayBefore.Name = "panelDelayBefore";
-            panelDelayBefore.Size = new Size(382, 41);
+            panelDelayBefore.Size = new Size(1, 41);
             panelDelayBefore.TabIndex = 7;
             // 
             // txtDelayBefore
@@ -828,10 +828,10 @@
             // lblDelayBeforeMs
             // 
             lblDelayBeforeMs.AutoSize = true;
-            lblDelayBeforeMs.Location = new Point(91, 0);
+            lblDelayBeforeMs.Location = new Point(3, 39);
             lblDelayBeforeMs.Name = "lblDelayBeforeMs";
             lblDelayBeforeMs.Padding = new Padding(0, 8, 0, 0);
-            lblDelayBeforeMs.Size = new Size(28, 28);
+            lblDelayBeforeMs.Size = new Size(31, 27);
             lblDelayBeforeMs.TabIndex = 1;
             lblDelayBeforeMs.Text = "ms";
             // 
@@ -839,7 +839,7 @@
             // 
             lblDelayAfter.Dock = DockStyle.Fill;
             lblDelayAfter.Font = new Font("微软雅黑", 9F);
-            lblDelayAfter.Location = new Point(491, 80);
+            lblDelayAfter.Location = new Point(103, 80);
             lblDelayAfter.Name = "lblDelayAfter";
             lblDelayAfter.Size = new Size(94, 47);
             lblDelayAfter.TabIndex = 8;
@@ -851,9 +851,9 @@
             panelDelayAfter.Controls.Add(txtDelayAfter);
             panelDelayAfter.Controls.Add(lblDelayAfterMs);
             panelDelayAfter.Dock = DockStyle.Fill;
-            panelDelayAfter.Location = new Point(591, 83);
+            panelDelayAfter.Location = new Point(203, 83);
             panelDelayAfter.Name = "panelDelayAfter";
-            panelDelayAfter.Size = new Size(383, 41);
+            panelDelayAfter.Size = new Size(1, 41);
             panelDelayAfter.TabIndex = 9;
             // 
             // txtDelayAfter
@@ -874,10 +874,10 @@
             // lblDelayAfterMs
             // 
             lblDelayAfterMs.AutoSize = true;
-            lblDelayAfterMs.Location = new Point(91, 0);
+            lblDelayAfterMs.Location = new Point(3, 39);
             lblDelayAfterMs.Name = "lblDelayAfterMs";
             lblDelayAfterMs.Padding = new Padding(0, 8, 0, 0);
-            lblDelayAfterMs.Size = new Size(28, 28);
+            lblDelayAfterMs.Size = new Size(31, 27);
             lblDelayAfterMs.TabIndex = 1;
             lblDelayAfterMs.Text = "ms";
             // 
@@ -906,7 +906,7 @@
             cboFailureStrategy.MinimumSize = new Size(63, 0);
             cboFailureStrategy.Name = "cboFailureStrategy";
             cboFailureStrategy.Padding = new Padding(0, 0, 30, 2);
-            cboFailureStrategy.Size = new Size(380, 32);
+            cboFailureStrategy.Size = new Size(63, 32);
             cboFailureStrategy.SymbolSize = 24;
             cboFailureStrategy.TabIndex = 11;
             cboFailureStrategy.TextAlignment = ContentAlignment.MiddleLeft;
@@ -916,7 +916,7 @@
             // 
             lblJumpStep.Dock = DockStyle.Fill;
             lblJumpStep.Font = new Font("微软雅黑", 9F);
-            lblJumpStep.Location = new Point(491, 127);
+            lblJumpStep.Location = new Point(103, 127);
             lblJumpStep.Name = "lblJumpStep";
             lblJumpStep.Size = new Size(94, 42);
             lblJumpStep.TabIndex = 12;
@@ -928,13 +928,13 @@
             txtJumpStep.Dock = DockStyle.Fill;
             txtJumpStep.Enabled = false;
             txtJumpStep.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            txtJumpStep.Location = new Point(592, 132);
+            txtJumpStep.Location = new Point(204, 132);
             txtJumpStep.Margin = new Padding(4, 5, 4, 5);
             txtJumpStep.MinimumSize = new Size(1, 16);
             txtJumpStep.Name = "txtJumpStep";
             txtJumpStep.Padding = new Padding(5);
             txtJumpStep.ShowText = false;
-            txtJumpStep.Size = new Size(381, 32);
+            txtJumpStep.Size = new Size(1, 32);
             txtJumpStep.TabIndex = 13;
             txtJumpStep.Text = "0";
             txtJumpStep.TextAlignment = ContentAlignment.MiddleLeft;
@@ -959,7 +959,7 @@
             chkEnableLogging.Location = new Point(103, 172);
             chkEnableLogging.MinimumSize = new Size(1, 1);
             chkEnableLogging.Name = "chkEnableLogging";
-            chkEnableLogging.Size = new Size(150, 25);
+            chkEnableLogging.Size = new Size(1, 25);
             chkEnableLogging.TabIndex = 15;
             chkEnableLogging.Text = "启用通讯日志";
             // 
@@ -985,7 +985,7 @@
             txtExecuteCondition.Name = "txtExecuteCondition";
             txtExecuteCondition.Padding = new Padding(5);
             txtExecuteCondition.ShowText = false;
-            txtExecuteCondition.Size = new Size(869, 30);
+            txtExecuteCondition.Size = new Size(92, 30);
             txtExecuteCondition.TabIndex = 17;
             txtExecuteCondition.TextAlignment = ContentAlignment.MiddleLeft;
             txtExecuteCondition.Watermark = "为空时总是执行，如: {Var1} > 0";

@@ -49,13 +49,33 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
 
         #region 查询方法
 
+        /// <summary>
+        /// 获取所有启用的仪器驱动（用于下拉选择等场景）
+        /// </summary>
         public async Task<List<InstrumentDriver>> GetAllDriversAsync()
         {
             await EnsureLoadedAsync();
 
             lock (_lockObject)
             {
+                // 只返回启用的驱动，用于下拉选择等场景
                 return _drivers.Where(d => d.Enabled).ToList();
+            }
+        }
+
+        /// <summary>
+        /// 获取所有仪器驱动（包括禁用的，用于管理界面）
+        /// </summary>
+        /// <returns>所有驱动列表，包括已禁用的驱动</returns>
+        public async Task<List<InstrumentDriver>> GetAllDriversIncludingDisabledAsync()
+        {
+            await EnsureLoadedAsync();
+
+            lock (_lockObject)
+            {
+                // 返回所有驱动，不过滤 Enabled 状态
+                // 用于驱动管理界面，让用户可以看到和管理所有驱动（包括禁用的）
+                return _drivers.ToList();
             }
         }
 

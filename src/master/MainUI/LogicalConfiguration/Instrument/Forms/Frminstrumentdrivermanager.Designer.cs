@@ -619,7 +619,7 @@
             tabFrame.Controls.Add(layoutFrame);
             tabFrame.Location = new Point(0, 40);
             tabFrame.Name = "tabFrame";
-            tabFrame.Size = new Size(664, 625);
+            tabFrame.Size = new Size(200, 60);
             tabFrame.TabIndex = 2;
             tabFrame.Text = "帧配置";
             // 
@@ -650,7 +650,7 @@
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
-            layoutFrame.Size = new Size(664, 250);
+            layoutFrame.Size = new Size(200, 250);
             layoutFrame.TabIndex = 0;
             // 
             // lblFrameEnabled
@@ -672,7 +672,7 @@
             chkFrameEnabled.Location = new Point(103, 3);
             chkFrameEnabled.MinimumSize = new Size(1, 1);
             chkFrameEnabled.Name = "chkFrameEnabled";
-            chkFrameEnabled.Size = new Size(226, 34);
+            chkFrameEnabled.Size = new Size(1, 34);
             chkFrameEnabled.TabIndex = 1;
             chkFrameEnabled.Text = "启用帧格式配置";
             // 
@@ -697,7 +697,7 @@
             txtFrameHeader.Name = "txtFrameHeader";
             txtFrameHeader.Padding = new Padding(5);
             txtFrameHeader.ShowText = false;
-            txtFrameHeader.Size = new Size(224, 30);
+            txtFrameHeader.Size = new Size(1, 30);
             txtFrameHeader.TabIndex = 3;
             txtFrameHeader.TextAlignment = ContentAlignment.MiddleLeft;
             txtFrameHeader.Watermark = "如: AA55";
@@ -706,7 +706,7 @@
             // 
             lblFrameFooter.Dock = DockStyle.Fill;
             lblFrameFooter.Font = new Font("微软雅黑", 11F);
-            lblFrameFooter.Location = new Point(335, 40);
+            lblFrameFooter.Location = new Point(103, 40);
             lblFrameFooter.Name = "lblFrameFooter";
             lblFrameFooter.Size = new Size(94, 40);
             lblFrameFooter.TabIndex = 4;
@@ -717,13 +717,13 @@
             // 
             txtFrameFooter.Dock = DockStyle.Fill;
             txtFrameFooter.Font = new Font("微软雅黑", 12F);
-            txtFrameFooter.Location = new Point(436, 45);
+            txtFrameFooter.Location = new Point(204, 45);
             txtFrameFooter.Margin = new Padding(4, 5, 4, 5);
             txtFrameFooter.MinimumSize = new Size(1, 16);
             txtFrameFooter.Name = "txtFrameFooter";
             txtFrameFooter.Padding = new Padding(5);
             txtFrameFooter.ShowText = false;
-            txtFrameFooter.Size = new Size(224, 30);
+            txtFrameFooter.Size = new Size(1, 30);
             txtFrameFooter.TabIndex = 5;
             txtFrameFooter.TextAlignment = ContentAlignment.MiddleLeft;
             txtFrameFooter.Watermark = "如: 0D0A";
@@ -749,7 +749,7 @@
             txtResponseTerminator.Name = "txtResponseTerminator";
             txtResponseTerminator.Padding = new Padding(5);
             txtResponseTerminator.ShowText = false;
-            txtResponseTerminator.Size = new Size(224, 30);
+            txtResponseTerminator.Size = new Size(1, 30);
             txtResponseTerminator.TabIndex = 7;
             txtResponseTerminator.TextAlignment = ContentAlignment.MiddleLeft;
             txtResponseTerminator.Watermark = "如: \\n 或 \\r\\n";
@@ -758,7 +758,7 @@
             // 
             lblChecksumType.Dock = DockStyle.Fill;
             lblChecksumType.Font = new Font("微软雅黑", 11F);
-            lblChecksumType.Location = new Point(335, 80);
+            lblChecksumType.Location = new Point(103, 80);
             lblChecksumType.Name = "lblChecksumType";
             lblChecksumType.Size = new Size(94, 40);
             lblChecksumType.TabIndex = 8;
@@ -774,12 +774,12 @@
             cboChecksumType.Font = new Font("微软雅黑", 12F);
             cboChecksumType.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cboChecksumType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cboChecksumType.Location = new Point(436, 85);
+            cboChecksumType.Location = new Point(204, 85);
             cboChecksumType.Margin = new Padding(4, 5, 4, 5);
             cboChecksumType.MinimumSize = new Size(63, 0);
             cboChecksumType.Name = "cboChecksumType";
             cboChecksumType.Padding = new Padding(0, 0, 30, 2);
-            cboChecksumType.Size = new Size(224, 30);
+            cboChecksumType.Size = new Size(63, 30);
             cboChecksumType.SymbolSize = 24;
             cboChecksumType.TabIndex = 9;
             cboChecksumType.TextAlignment = ContentAlignment.MiddleLeft;
@@ -792,7 +792,7 @@
             lblFrameTip.ForeColor = Color.Gray;
             lblFrameTip.Location = new Point(3, 120);
             lblFrameTip.Name = "lblFrameTip";
-            lblFrameTip.Size = new Size(658, 40);
+            lblFrameTip.Size = new Size(194, 40);
             lblFrameTip.TabIndex = 10;
             lblFrameTip.Text = "提示：帧头帧尾使用十六进制表示，如 AA55 表示 0xAA 0x55。结束符使用转义字符，如 \\n 表示换行符。";
             // 
@@ -801,7 +801,7 @@
             tabCommands.Controls.Add(layoutCommands);
             tabCommands.Location = new Point(0, 40);
             tabCommands.Name = "tabCommands";
-            tabCommands.Size = new Size(200, 60);
+            tabCommands.Size = new Size(664, 625);
             tabCommands.TabIndex = 3;
             tabCommands.Text = "命令模板";
             // 
@@ -817,7 +817,7 @@
             layoutCommands.RowCount = 2;
             layoutCommands.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutCommands.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutCommands.Size = new Size(200, 60);
+            layoutCommands.Size = new Size(664, 625);
             layoutCommands.TabIndex = 0;
             // 
             // toolbarCommands
@@ -828,7 +828,7 @@
             toolbarCommands.Dock = DockStyle.Fill;
             toolbarCommands.Location = new Point(3, 3);
             toolbarCommands.Name = "toolbarCommands";
-            toolbarCommands.Size = new Size(194, 34);
+            toolbarCommands.Size = new Size(658, 34);
             toolbarCommands.TabIndex = 0;
             // 
             // btnAddCommand
@@ -860,7 +860,7 @@
             // btnDeleteCommand
             // 
             btnDeleteCommand.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnDeleteCommand.Location = new Point(2, 36);
+            btnDeleteCommand.Location = new Point(190, 2);
             btnDeleteCommand.Margin = new Padding(2);
             btnDeleteCommand.MinimumSize = new Size(1, 1);
             btnDeleteCommand.Name = "btnDeleteCommand";
@@ -918,7 +918,7 @@
             dgvCommands.RowTemplate.Height = 35;
             dgvCommands.SelectedIndex = -1;
             dgvCommands.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvCommands.Size = new Size(194, 14);
+            dgvCommands.Size = new Size(658, 579);
             dgvCommands.StripeOddColor = Color.FromArgb(235, 243, 255);
             dgvCommands.TabIndex = 1;
             // 

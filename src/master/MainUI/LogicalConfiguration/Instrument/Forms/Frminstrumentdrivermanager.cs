@@ -116,7 +116,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             try
             {
-                _drivers = (await _driverService.GetAllDriversAsync()).ToList();
+                _drivers = (await _driverService.GetAllDriversIncludingDisabledAsync()).ToList();
                 RefreshDriverList();
             }
             catch (Exception ex)
@@ -139,6 +139,20 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                     driver.Enabled ? "启用" : "禁用"
                 );
                 dgvDrivers.Rows[rowIndex].Tag = driver;
+
+                // 为禁用的驱动添加视觉提示
+                if (driver.Enabled) continue;
+
+                var row = dgvDrivers.Rows[rowIndex];
+
+                // 灰色文字
+                row.DefaultCellStyle.ForeColor = Color.Gray;
+
+                // 斜体字
+                row.DefaultCellStyle.Font = new Font(dgvDrivers.Font, FontStyle.Italic);
+
+                // 浅灰色背景
+                row.DefaultCellStyle.BackColor = Color.FromArgb(245, 245, 245);
             }
 
             if (dgvDrivers.Rows.Count > 0)
@@ -543,6 +557,13 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             var driver = _selectedDriver ?? new InstrumentDriver();
 
+            // 如果是更新操作，保留原 DriverId
+            if (_selectedDriver != null && !string.IsNullOrEmpty(_selectedDriver.DriverId))
+            {
+                driver.DriverId = _selectedDriver.DriverId;
+                driver.CreatedTime = _selectedDriver.CreatedTime; // 保留创建时间
+            }
+
             driver.Name = txtName.Text.Trim();
             driver.DisplayName = txtDisplayName.Text.Trim();
             driver.Category = (InstrumentCategory)(cboCategory.SelectedValue ?? InstrumentCategory.Other);
@@ -686,7 +707,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             txtName.Focus();
         }
 
-        private void BtnDelete_Click(object sender, EventArgs e)
+        /// <summary>
+        /// 删除驱动按钮点击事件
+        /// </summary>
+        private async void BtnDelete_Click(object sender, EventArgs e)
         {
             if (_selectedDriver == null)
             {
@@ -694,20 +718,43 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return;
             }
 
-            if (MessageHelper.MessageYes($"确定要删除驱动 [{_selectedDriver.DisplayName}] 吗？") != DialogResult.OK)
+            if (MessageHelper.MessageYes(this, $"确定要删除驱动 [{_selectedDriver.DisplayName}] 吗？") != DialogResult.OK)
                 return;
 
             try
             {
-                _driverService.DeleteDriverAsync(_selectedDriver.Name).Wait();
-                _drivers.Remove(_selectedDriver);
-                RefreshDriverList();
-                ClearForm();
-                MessageHelper.MessageOK(this, "删除成功");
+                var result = await _driverService.DeleteDriverAsync(_selectedDriver.DriverId);
+
+                // 根据返回值判断是否真正删除成功
+                if (result)
+                {
+                    // 从内存列表中移除
+                    _drivers.Remove(_selectedDriver);
+
+                    // 刷新界面
+                    RefreshDriverList();
+                    ClearForm();
+
+                    MessageHelper.MessageOK(this, "删除成功");
+                    _logger?.LogInformation("删除驱动成功: {DisplayName} (ID: {DriverId})",
+                        _selectedDriver.DisplayName,
+                        _selectedDriver.DriverId);
+                }
+                else
+                {
+                    // 删除失败，可能是驱动不存在或已被删除
+                    MessageHelper.MessageOK(this, "删除失败：驱动不存在或已被删除");
+                    _logger?.LogWarning("删除驱动失败: {DisplayName} (ID: {DriverId})",
+                        _selectedDriver.DisplayName,
+                        _selectedDriver.DriverId);
+
+                    // 刷新列表，确保界面数据与实际一致
+                    await LoadDriversAsync();
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "删除驱动失败");
+                _logger?.LogError(ex, "删除驱动时发生异常: {DisplayName}", _selectedDriver.DisplayName);
                 MessageHelper.MessageOK(this, $"删除失败: {ex.Message}");
             }
         }
@@ -723,6 +770,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             var cloned = _selectedDriver.Clone();
             cloned.Name = $"{_selectedDriver.Name}_Copy";
             cloned.DisplayName = $"{_selectedDriver.DisplayName} (副本)";
+
+            // 清空 DriverId，表示这是新驱动
+            cloned.DriverId = null;  // 或 string.Empty
 
             _selectedDriver = cloned;
             LoadDriverToForm(cloned);
@@ -853,7 +903,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (_selectedDriver == null)
             {
-                MessageHelper.MessageOK(this, "请先选择要测试的仪器"); 
+                MessageHelper.MessageOK(this, "请先选择要测试的仪器");
                 return;
             }
 
@@ -954,13 +1004,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                     await LoadDriversAsync();
 
                     // 选中刚保存的驱动
+                    // 通过 DriverId 或 Name 选中
                     foreach (DataGridViewRow row in dgvDrivers.Rows)
                     {
-                        if (row.Tag is InstrumentDriver d && d.Name == driver.Name)
-                        {
-                            row.Selected = true;
-                            break;
-                        }
+                        if (row.Tag is not InstrumentDriver d ||
+                            (d.DriverId != driver.DriverId && d.Name != driver.Name)) continue;
+
+                        row.Selected = true;
+                        dgvDrivers.FirstDisplayedScrollingRowIndex = row.Index; // 滚动到可见位置
+                        break;
                     }
                 }
                 else
@@ -982,6 +1034,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private bool ValidateInput()
         {
+            // 驱动名称检查
             if (string.IsNullOrWhiteSpace(txtName.Text))
             {
                 MessageHelper.MessageOK(this, "请输入驱动名称");
@@ -989,11 +1042,56 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return false;
             }
 
+            // 显示名称检查
             if (string.IsNullOrWhiteSpace(txtDisplayName.Text))
             {
                 MessageHelper.MessageOK(this, "请输入显示名称");
                 txtDisplayName.Focus();
                 return false;
+            }
+
+            // 驱动名称唯一性检查（新建或修改名称时）
+            if (_selectedDriver == null ||
+                string.IsNullOrEmpty(_selectedDriver.DriverId) ||
+                _selectedDriver.Name != txtName.Text.Trim())
+            {
+                var existingDriver = _drivers.FirstOrDefault(d =>
+                    d.Name.Equals(txtName.Text.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                    d.DriverId != _selectedDriver?.DriverId);
+
+                if (existingDriver != null)
+                {
+                    MessageHelper.MessageOK(this, "驱动名称已存在，请使用其他名称");
+                    txtName.Focus();
+                    return false;
+                }
+            }
+
+            // 协议配置检查
+            var protocolType = (ProtocolType)(cboProtocolType.SelectedValue ?? ProtocolType.TcpIp);
+            switch (protocolType)
+            {
+                case ProtocolType.TcpIp:
+                    if (string.IsNullOrWhiteSpace(GetControlValue<string>("IpAddress")))
+                    {
+                        MessageHelper.MessageOK(this, "请输入 IP 地址");
+                        return false;
+                    }
+                    break;
+                case ProtocolType.Serial:
+                    if (string.IsNullOrWhiteSpace(GetControlValue<string>("PortName")))
+                    {
+                        MessageHelper.MessageOK(this, "请选择串口");
+                        return false;
+                    }
+                    break;
+                case ProtocolType.ModbusTcp:
+                case ProtocolType.ModbusRtu:
+                case ProtocolType.Http:
+                case ProtocolType.Udp:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             return true;

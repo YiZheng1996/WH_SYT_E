@@ -91,6 +91,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         /// </summary>
         private void BindEvents()
         {
+            _driverService.DriversChanged += OnDriversChanged;
             cboInstrument.SelectedIndexChanged += CboInstrument_SelectedIndexChanged;
             cboCommand.SelectedIndexChanged += CboCommand_SelectedIndexChanged;
             chkCustomCommand.CheckedChanged += ChkCustomCommand_CheckedChanged;
@@ -175,64 +176,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             LoadCommandParametersWithValues();
         }
 
-        /// <summary>
-        /// 加载命令参数
-        /// </summary>
-        //private void LoadCommandParameters()
-        //{
-        //    _paramControls.Clear();
-        //    flowParams.Controls.Clear();
-        //    if (_selectedCommand == null) return;
+        private  void OnDriversChanged()
+        {
+            if (IsDisposed || !IsHandleCreated) return;
 
-        //    foreach (var param in _selectedCommand.Parameters)
-        //    {
-        //        var panel = new Panel { Width = flowParams.Width - 30, Height = 35, Margin = new Padding(0, 0, 0, 5) };
-        //        var label = new Label
-        //        {
-        //            Text = $"{param.DisplayName}:",
-        //            Width = 120,
-        //            TextAlign = System.Drawing.ContentAlignment.MiddleRight,
-        //            Location = new System.Drawing.Point(0, 5)
-        //        };
-
-        //        Control inputControl;
-        //        if (param.Options?.Count > 0)
-        //        {
-        //            var combo = new UIComboBox
-        //            {
-        //                Width = 200,
-        //                Location = new System.Drawing.Point(125, 0),
-        //                DropDownStyle = UIDropDownStyle.DropDown
-        //            };
-        //            foreach (var opt in param.Options) combo.Items.Add(opt);
-        //            combo.Text = param.DefaultValue;
-        //            inputControl = combo;
-        //        }
-        //        else
-        //        {
-        //            inputControl = new UITextBox
-        //            {
-        //                Width = 200,
-        //                Location = new System.Drawing.Point(125, 0),
-        //                Text = param.DefaultValue,
-        //                Watermark = param.Description
-        //            };
-        //        }
-
-        //        if (_parameter?.CommandParameters?.ContainsKey(param.Name) == true)
-        //        {
-        //            if (inputControl is UIComboBox combo)
-        //                combo.Text = _parameter.CommandParameters[param.Name];
-        //            else if (inputControl is UITextBox textBox)
-        //                textBox.Text = _parameter.CommandParameters[param.Name];
-        //        }
-
-        //        _paramControls[param.Name] = inputControl;
-        //        panel.Controls.Add(label);
-        //        panel.Controls.Add(inputControl);
-        //        flowParams.Controls.Add(panel);
-        //    }
-        //}
+            if (InvokeRequired)
+                BeginInvoke((async void () => await LoadDriversAsync()));
+            else
+                _ = LoadDriversAsync();
+        }
 
         private void CboInstrument_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -595,6 +547,13 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return false;
             }
             return true;
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            if (_driverService != null)
+                _driverService.DriversChanged -= OnDriversChanged;
+            base.OnFormClosed(e);
         }
 
         private class ComboBoxItem

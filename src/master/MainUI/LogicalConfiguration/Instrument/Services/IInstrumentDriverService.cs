@@ -8,9 +8,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
     public interface IInstrumentDriverService
     {
         /// <summary>
-        /// 获取所有仪器驱动
+        /// 获取所有启用的仪器驱动（用于下拉选择等场景）
         /// </summary>
         Task<List<InstrumentDriver>> GetAllDriversAsync();
+
+        /// <summary>
+        /// 获取所有仪器驱动（包括禁用的，用于管理界面）
+        /// </summary>
+        Task<List<InstrumentDriver>> GetAllDriversIncludingDisabledAsync();
 
         /// <summary>
         /// 根据ID获取仪器驱动
@@ -77,6 +82,4 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
         /// </summary>
         event Action DriversChanged;
     }
-
-     
 }
