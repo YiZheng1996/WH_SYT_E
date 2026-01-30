@@ -53,7 +53,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                 // 检查执行条件
                 if (!string.IsNullOrEmpty(parameter.ExecuteCondition))
                 {
-                    var conditionResult = _expressionEngine.EvaluateCondition(parameter.ExecuteCondition);
+                    var conditionResult = await _expressionEngine.EvaluateExpressionAsync(parameter.ExecuteCondition);
                     if (!conditionResult.Success)
                     {
                         _logger.LogInformation("执行条件不满足，跳过仪器通讯: {Condition}", parameter.ExecuteCondition);
@@ -233,19 +233,17 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
             // 合并覆盖参数
             try
             {
-                var overrideConfig = driver.ProtocolType switch
+                ProtocolConfigBase overrideConfig = driver.ProtocolType switch
                 {
                     ProtocolType.TcpIp => parameter.GetOverrideConfig<TcpProtocolConfig>(),
                     ProtocolType.Serial => parameter.GetOverrideConfig<SerialProtocolConfig>(),
                     ProtocolType.ModbusTcp or ProtocolType.ModbusRtu => parameter.GetOverrideConfig<ModbusProtocolConfig>(),
                     ProtocolType.Http => parameter.GetOverrideConfig<HttpProtocolConfig>(),
-                    ProtocolType.Udp => throw new NotImplementedException(),
+                    ProtocolType.Udp => throw new NotImplementedException("UDP协议尚未实现"),
                     _ => null
                 };
 
                 return overrideConfig ?? baseConfig;
-
-                return baseConfig;
             }
             catch
             {

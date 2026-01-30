@@ -1,11 +1,7 @@
-﻿using MainUI.LogicalConfiguration.Engine;
-using MainUI.LogicalConfiguration.Instrument.Methods;
-using MainUI.LogicalConfiguration.Instrument.Models;
+﻿using MainUI.LogicalConfiguration.Instrument.Models;
 using MainUI.LogicalConfiguration.Instrument.Services;
-using MainUI.LogicalConfiguration.LogicalManager;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Asn1.Ocsp;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace MainUI.LogicalConfiguration.Instrument.Forms
@@ -126,7 +122,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "加载驱动列表失败");
-                UIMessageTip.ShowError($"加载驱动列表失败: {ex.Message}");
+                MessageHelper.MessageOK(this, $"加载驱动列表失败: {ex.Message}");
             }
         }
 
@@ -479,7 +475,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 Text = label,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleRight,
-                Font = new Font("微软雅黑", 9F)
+                Font = new Font("微软雅黑", 11F)
             };
 
             var txt = new UITextBox
@@ -684,7 +680,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (_selectedDriver == null)
             {
-                UIMessageTip.ShowWarning("请先选择要编辑的驱动");
+                MessageHelper.MessageOK(this, "请先选择要编辑的驱动");
                 return;
             }
             txtName.Focus();
@@ -694,7 +690,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (_selectedDriver == null)
             {
-                UIMessageTip.ShowWarning("请先选择要删除的驱动");
+                MessageHelper.MessageOK(this, "请先选择要删除的驱动");
                 return;
             }
 
@@ -707,12 +703,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 _drivers.Remove(_selectedDriver);
                 RefreshDriverList();
                 ClearForm();
-                UIMessageTip.ShowOk("删除成功");
+                MessageHelper.MessageOK(this, "删除成功");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "删除驱动失败");
-                UIMessageTip.ShowError($"删除失败: {ex.Message}");
+                MessageHelper.MessageOK(this, $"删除失败: {ex.Message}");
             }
         }
 
@@ -720,7 +716,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (_selectedDriver == null)
             {
-                UIMessageTip.ShowWarning("请先选择要复制的驱动");
+                MessageHelper.MessageOK(this, "请先选择要复制的驱动");
                 return;
             }
 
@@ -730,7 +726,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             _selectedDriver = cloned;
             LoadDriverToForm(cloned);
-            UIMessageTip.ShowOk("已复制，请修改后保存");
+            MessageHelper.MessageOK(this, "已复制，请修改后保存");
         }
 
         private async void BtnImport_Click(object sender, EventArgs e)
@@ -747,12 +743,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             var imported = await _driverService.ImportDriverAsync(ofd.FileName);
             if (imported != null)
             {
-                UIMessageTip.ShowOk($"导入成功: {imported.DisplayName}");
+                MessageHelper.MessageOK(this, $"导入成功: {imported.DisplayName}");
                 await LoadDriversAsync();
             }
             else
             {
-                UIMessageTip.ShowError("导入失败");
+                MessageHelper.MessageOK(this, "导入失败");
             }
         }
 
@@ -760,7 +756,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (_drivers == null || _drivers.Count == 0)
             {
-                UIMessageTip.ShowWarning("没有可导出的驱动配置");
+                MessageHelper.MessageOK(this, "没有可导出的驱动配置");
                 return;
             }
 
@@ -778,12 +774,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 var json = JsonConvert.SerializeObject(_drivers, Formatting.Indented);
                 File.WriteAllText(dialog.FileName, json);
-                UIMessageTip.ShowOk("导出成功");
+                MessageHelper.MessageOK(this, "导出成功");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "导出驱动配置失败");
-                UIMessageTip.ShowError($"导出失败: {ex.Message}");
+                MessageHelper.MessageOK(this, $"导出失败: {ex.Message}");
             }
         }
 
@@ -794,46 +790,44 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         private void BtnAddCommand_Click(object sender, EventArgs e)
         {
             using var form = new FrmCommandEditor(null);
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                var cmd = form.Command;
-                var rowIndex = dgvCommands.Rows.Add(
-                    cmd.Name,
-                    cmd.DisplayName,
-                    cmd.CommandType.ToString(),
-                    cmd.RequestTemplate
-                );
-                dgvCommands.Rows[rowIndex].Tag = cmd;
-            }
+            if (VarHelper.ShowDialogWithOverlayEx(this, form) != DialogResult.OK) return;
+
+            var cmd = form.Command;
+            var rowIndex = dgvCommands.Rows.Add(
+                cmd.Name,
+                cmd.DisplayName,
+                cmd.CommandType.ToString(),
+                cmd.RequestTemplate
+            );
+            dgvCommands.Rows[rowIndex].Tag = cmd;
         }
 
         private void BtnEditCommand_Click(object sender, EventArgs e)
         {
             if (dgvCommands.SelectedRows.Count == 0)
             {
-                UIMessageTip.ShowWarning("请选择要编辑的命令");
+                MessageHelper.MessageOK(this, "请选择要编辑的命令");
                 return;
             }
 
             var cmd = dgvCommands.SelectedRows[0].Tag as InstrumentCommand;
             using var form = new FrmCommandEditor(cmd);
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                var updated = form.Command;
-                var row = dgvCommands.SelectedRows[0];
-                row.Cells["Name"].Value = updated.Name;
-                row.Cells["DisplayName"].Value = updated.DisplayName;
-                row.Cells["CommandType"].Value = updated.CommandType.ToString();
-                row.Cells["RequestTemplate"].Value = updated.RequestTemplate;
-                row.Tag = updated;
-            }
+            if (VarHelper.ShowDialogWithOverlayEx(this, form) != DialogResult.OK) return;
+
+            var updated = form.Command;
+            var row = dgvCommands.SelectedRows[0];
+            row.Cells["Name"].Value = updated.Name;
+            row.Cells["DisplayName"].Value = updated.DisplayName;
+            row.Cells["CommandType"].Value = updated.CommandType.ToString();
+            row.Cells["RequestTemplate"].Value = updated.RequestTemplate;
+            row.Tag = updated;
         }
 
         private void BtnDeleteCommand_Click(object sender, EventArgs e)
         {
             if (dgvCommands.SelectedRows.Count == 0)
             {
-                UIMessageTip.ShowWarning("请选择要删除的命令");
+                MessageHelper.MessageOK(this, "请选择要删除的命令");
                 return;
             }
 
@@ -859,7 +853,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (_selectedDriver == null)
             {
-                UIMessageTip.ShowWarning("请先选择要测试的仪器");
+                MessageHelper.MessageOK(this, "请先选择要测试的仪器"); 
                 return;
             }
 
@@ -990,14 +984,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (string.IsNullOrWhiteSpace(txtName.Text))
             {
-                UIMessageTip.ShowWarning("请输入驱动名称");
+                MessageHelper.MessageOK(this, "请输入驱动名称");
                 txtName.Focus();
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(txtDisplayName.Text))
             {
-                UIMessageTip.ShowWarning("请输入显示名称");
+                MessageHelper.MessageOK(this, "请输入显示名称");
                 txtDisplayName.Focus();
                 return false;
             }
