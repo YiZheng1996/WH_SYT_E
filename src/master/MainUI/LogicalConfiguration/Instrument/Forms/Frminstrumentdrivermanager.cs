@@ -1,8 +1,10 @@
-﻿using MainUI.LogicalConfiguration.Instrument.Models;
+﻿using AntdUI;
+using MainUI.LogicalConfiguration.Instrument.Models;
 using MainUI.LogicalConfiguration.Instrument.Services;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using Label = System.Windows.Forms.Label;
 
 namespace MainUI.LogicalConfiguration.Instrument.Forms
 {
@@ -134,8 +136,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 var rowIndex = dgvDrivers.Rows.Add(
                     driver.DisplayName,
-                    GetCategoryDisplayName(driver.Category),
-                    driver.ProtocolType.ToString(),
+                    driver.Category.GetDescription(),
+                    driver.ProtocolType.GetDescription(),
                     driver.Enabled ? "启用" : "禁用"
                 );
                 dgvDrivers.Rows[rowIndex].Tag = driver;
@@ -295,7 +297,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 var rowIndex = dgvCommands.Rows.Add(
                     cmd.Name,
                     cmd.DisplayName,
-                    cmd.CommandType.ToString(),
+                    cmd.CommandType.GetDescription(),
                     cmd.RequestTemplate
                 );
                 dgvCommands.Rows[rowIndex].Tag = cmd;
@@ -338,7 +340,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             panelProtocolConfig.Controls.Clear();
             _protocolControls.Clear();
 
-            var protocolType = cboProtocolType.SelectedItem is ProtocolType pt
+            var protocolType = cboProtocolType.SelectedValue is ProtocolType pt
                 ? pt
                 : ProtocolType.TcpIp;
 
@@ -784,21 +786,91 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             using var ofd = new OpenFileDialog
             {
                 Filter = "JSON文件|*.json",
-                Title = "导入仪器驱动配置"
+                Title = "导入仪器驱动配置",
+                Multiselect = false  // 单个文件，但文件内可以是数组
             };
 
             if (ofd.ShowDialog() != DialogResult.OK)
                 return;
 
-            var imported = await _driverService.ImportDriverAsync(ofd.FileName);
-            if (imported != null)
+            try
             {
-                MessageHelper.MessageOK(this, $"导入成功: {imported.DisplayName}");
+                var json = await File.ReadAllTextAsync(ofd.FileName);
+
+                List<InstrumentDriver> driversToImport = new();
+
+                // 尝试解析为数组
+                try
+                {
+                    var array = JsonConvert.DeserializeObject<List<InstrumentDriver>>(json);
+                    if (array != null && array.Count > 0)
+                    {
+                        driversToImport = array;
+                    }
+                }
+                catch
+                {
+                    // 尝试解析为单个对象
+                    var single = JsonConvert.DeserializeObject<InstrumentDriver>(json);
+                    if (single != null)
+                    {
+                        driversToImport.Add(single);
+                    }
+                }
+
+                if (driversToImport.Count == 0)
+                {
+                    MessageHelper.MessageOK(this, "文件格式无效或无有效数据", TType.Warn);
+                    return;
+                }
+
+                // 批量导入
+                int successCount = 0;
+                int skipCount = 0;
+                List<string> skippedNames = new();
+
+                foreach (var driver in driversToImport)
+                {
+                    // 生成新ID
+                    driver.DriverId = Guid.NewGuid().ToString("N");
+
+                    // 检查名称冲突
+                    var existing = _drivers.FirstOrDefault(d =>
+                        d.Name.Equals(driver.Name, StringComparison.OrdinalIgnoreCase));
+
+                    if (existing != null)
+                    {
+                        driver.Name = $"{driver.Name}_{DateTime.Now:yyyyMMddHHmmss}";
+                        driver.DisplayName = $"{driver.DisplayName} (导入)";
+                    }
+
+                    if (await _driverService.AddDriverAsync(driver))
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        skipCount++;
+                        skippedNames.Add(driver.DisplayName);
+                    }
+                }
+
                 await LoadDriversAsync();
+
+                // 显示导入结果
+                var message = $"导入完成!\n\n成功: {successCount} 个\n失败: {skipCount} 个";
+                if (skippedNames.Count > 0)
+                {
+                    message += $"\n\n失败列表:\n{string.Join("\n", skippedNames)}";
+                }
+
+                MessageHelper.MessageOK(this, message,
+                    skipCount == 0 ? TType.Success : TType.Warn);
             }
-            else
+            catch (Exception ex)
             {
-                MessageHelper.MessageOK(this, "导入失败");
+                _logger?.LogError(ex, "导入失败");
+                MessageHelper.MessageOK(this, $"导入失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -810,11 +882,53 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return;
             }
 
+            // 询问导出范围
+            bool exportAll;
+            if (dgvDrivers.SelectedRows.Count == 0)
+            {
+                exportAll = true; // 无选中则导出全部
+            }
+            else
+            {
+                var result = MessageHelper.MessageYes(this,
+                    $"当前选中 {dgvDrivers.SelectedRows.Count} 个驱动\n\n是否导出【全部】驱动?\n\n选择'否'将只导出选中的驱动");
+                exportAll = (result == DialogResult.OK);
+            }
+
+            List<InstrumentDriver> driversToExport;
+            string defaultFileName;
+
+            if (exportAll)
+            {
+                // 导出全部
+                driversToExport = _drivers;
+                defaultFileName = $"InstrumentDrivers_All_{DateTime.Now:yyyyMMdd}.json";
+            }
+            else
+            {
+                // 导出选中
+                driversToExport = dgvDrivers.SelectedRows
+                    .Cast<DataGridViewRow>()
+                    .Select(r => r.Tag as InstrumentDriver)
+                    .Where(d => d != null)
+                    .ToList();
+
+                if (driversToExport.Count == 0)
+                {
+                    MessageHelper.MessageOK(this, "请先选择要导出的驱动");
+                    return;
+                }
+
+                defaultFileName = driversToExport.Count == 1
+                    ? $"{driversToExport[0].Name}_{DateTime.Now:yyyyMMdd}.json"
+                    : $"InstrumentDrivers_Selected{driversToExport.Count}_{DateTime.Now:yyyyMMdd}.json";
+            }
+
             using var dialog = new SaveFileDialog
             {
                 Filter = "JSON文件|*.json",
                 Title = "导出仪器驱动配置",
-                FileName = $"InstrumentDrivers_{DateTime.Now:yyyyMMdd}.json"
+                FileName = defaultFileName
             };
 
             if (dialog.ShowDialog() != DialogResult.OK)
@@ -822,14 +936,20 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             try
             {
-                var json = JsonConvert.SerializeObject(_drivers, Formatting.Indented);
+                var json = JsonConvert.SerializeObject(
+                    driversToExport.Count == 1 ? (object)driversToExport[0] : driversToExport,
+                    Formatting.Indented);
+
                 File.WriteAllText(dialog.FileName, json);
-                MessageHelper.MessageOK(this, "导出成功");
+
+                MessageHelper.MessageOK(this,
+                    $"导出成功!\n\n数量: {driversToExport.Count} 个驱动\n文件: {Path.GetFileName(dialog.FileName)}",
+                    TType.Success);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "导出驱动配置失败");
-                MessageHelper.MessageOK(this, $"导出失败: {ex.Message}");
+                MessageHelper.MessageOK(this, $"导出失败: {ex.Message}", TType.Error);
             }
         }
 
@@ -868,7 +988,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             var row = dgvCommands.SelectedRows[0];
             row.Cells["Name"].Value = updated.Name;
             row.Cells["DisplayName"].Value = updated.DisplayName;
-            row.Cells["CommandType"].Value = updated.CommandType.ToString();
+            row.Cells["CommandType"].Value = updated.CommandType.GetDescription();
             row.Cells["RequestTemplate"].Value = updated.RequestTemplate;
             row.Tag = updated;
         }
@@ -1099,23 +1219,5 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         #endregion
 
-        #region 辅助方法
-
-        private string GetCategoryDisplayName(InstrumentCategory category)
-        {
-            return category switch
-            {
-                InstrumentCategory.Multimeter => "万用表",
-                InstrumentCategory.Oscilloscope => "示波器",
-                InstrumentCategory.PowerSupply => "电源",
-                InstrumentCategory.SignalGenerator => "信号发生器",
-                InstrumentCategory.Sensor => "传感器",
-                InstrumentCategory.PLC => "PLC",
-                InstrumentCategory.Other => "其他",
-                _ => category.ToString()
-            };
-        }
-
-        #endregion
     }
 }
