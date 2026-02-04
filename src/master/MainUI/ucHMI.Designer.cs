@@ -82,6 +82,7 @@ namespace MainUI
             tabs1 = new Tabs();
             tabPageTestDetails = new AntdUI.TabPage();
             btnTestDetails = new AntdUI.Button();
+            btnCommunicationTest = new UIButton();
             uiTitlePanel3.SuspendLayout();
             uiTitlePanel8.SuspendLayout();
             uiTitlePanel4.SuspendLayout();
@@ -89,6 +90,7 @@ namespace MainUI
             tabPage1.SuspendLayout();
             uiPanel6.SuspendLayout();
             tabPage3.SuspendLayout();
+            grpRainy.SuspendLayout();
             tabs1.SuspendLayout();
             SuspendLayout();
             // 
@@ -971,6 +973,7 @@ namespace MainUI
             // grpRainy
             // 
             grpRainy.BackColor = Color.FromArgb(236, 236, 237);
+            grpRainy.Controls.Add(btnCommunicationTest);
             grpRainy.Dock = DockStyle.Fill;
             grpRainy.FillColor = Color.FromArgb(236, 236, 237);
             grpRainy.FillColor2 = Color.FromArgb(236, 236, 237);
@@ -1030,6 +1033,18 @@ namespace MainUI
             btnTestDetails.WaveSize = 1;
             btnTestDetails.Click += btnTestDetails_Click;
             // 
+            // btnCommunicationTest
+            // 
+            btnCommunicationTest.Font = new Font("微软雅黑", 12F);
+            btnCommunicationTest.Location = new Point(24, 867);
+            btnCommunicationTest.MinimumSize = new Size(1, 1);
+            btnCommunicationTest.Name = "btnCommunicationTest";
+            btnCommunicationTest.Size = new Size(120, 35);
+            btnCommunicationTest.TabIndex = 99;
+            btnCommunicationTest.Text = "通讯测试";
+            btnCommunicationTest.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnCommunicationTest.Click += btnCommunicationTest_Click;
+            // 
             // UcHMI
             // 
             AutoScaleMode = AutoScaleMode.None;
@@ -1056,6 +1071,7 @@ namespace MainUI
             tabPage1.ResumeLayout(false);
             uiPanel6.ResumeLayout(false);
             tabPage3.ResumeLayout(false);
+            grpRainy.ResumeLayout(false);
             tabs1.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -1109,5 +1125,6 @@ namespace MainUI
         private UITextBox uiTextBox6;
         private AntdUI.TabPage tabPageTestDetails;
         private AntdUI.Button btnTestDetails;
+        private Sunny.UI.UIButton btnCommunicationTest;
     }
 }

@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.Forms;
+﻿using MainUI.LogicalConfiguration.Controls;
+using MainUI.LogicalConfiguration.Forms;
 using MainUI.LogicalConfiguration.Instrument.Models;
 using MainUI.LogicalConfiguration.Instrument.Parameter;
 using MainUI.LogicalConfiguration.Instrument.Services;
@@ -29,6 +30,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             InitializeFormData();
             BindEvents();
             _ = LoadDriversAsync();
+            AttachExpressionPanels();
         }
 
         public Parameter_InstrumentCommunication Parameter
@@ -66,6 +68,54 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             lblParseRules.Visible = false;
         }
 
+        private void AttachExpressionPanels()
+        {
+            try
+            {
+                // 目标变量
+                ExpressionInputPanel.AttachTo(txtResponseVariable, new InputPanelOptions
+                {
+                    Mode = InputMode.VariableOnly,
+                    EnabledModules = InputModules.Variable,
+                    Title = "选择目标变量",
+                    ShowValidation = false,
+                    ShowPreview = false,
+                    CloseOnSubmit = true
+                });
+                txtResponseVariable.Watermark = "点击选择目标变量 (按F2打开面板)";
+
+                // 目标变量
+                ExpressionInputPanel.AttachTo(txtStatusVariable, new InputPanelOptions
+                {
+                    Mode = InputMode.VariableOnly,
+                    EnabledModules = InputModules.Variable,
+                    Title = "选择目标变量",
+                    ShowValidation = false,
+                    ShowPreview = false,
+                    CloseOnSubmit = true
+                });
+                txtStatusVariable.Watermark = "点击选择目标变量 (按F2打开面板)";
+
+                // 目标变量
+                ExpressionInputPanel.AttachTo(txtErrorVariable, new InputPanelOptions
+                {
+                    Mode = InputMode.VariableOnly,
+                    EnabledModules = InputModules.Variable,
+                    Title = "选择目标变量",
+                    ShowValidation = false,
+                    ShowPreview = false,
+                    CloseOnSubmit = true
+                });
+                txtErrorVariable.Watermark = "点击选择目标变量 (按F2打开面板)";
+
+                Logger?.LogDebug("表达式输入面板附加完成");
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "附加表达式输入面板失败");
+            }
+        }
+
         /// <summary>
         /// 初始化解析规则网格
         /// </summary>
@@ -101,6 +151,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             btnTestConnection.Click += BtnTestConnection_Click;
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
+            FormClosing += Form_InstrumentCommunication_FormClosing;
         }
 
         /// <summary>
@@ -281,6 +332,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             this.Close();
         }
 
+        private void Form_InstrumentCommunication_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            ExpressionInputPanel.CloseActivePanel();
+        }
         protected override void LoadParameterToForm()
         {
             if (_parameter == null) return;

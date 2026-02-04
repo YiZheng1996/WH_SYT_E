@@ -43,16 +43,15 @@ namespace MainUI
             _countdownService = new CountdownService(LabTestTime);
             _controlInitService = new ControlInitializationService(controls);
 
-            if (_workflowService != null)
-            {
-                // 订阅工作流服务的事件
-                _workflowService.ProgressMessage += OnWorkflowProgressMessage;
-                _workflowService.ErrorOccurred += OnWorkflowError;
-                _workflowService.ConfigurationLoaded += OnConfigurationLoaded;
-                _workflowService.WorkflowStarted += OnWorkflowStarted;
-                _workflowService.WorkflowCompleted += OnWorkflowCompleted;
-                _workflowService.StepStatusChanged += OnWorkflowStepStatusChanged;
-            }
+            if (_workflowService == null) return;
+
+            // 订阅工作流服务的事件
+            _workflowService.ProgressMessage += OnWorkflowProgressMessage;
+            _workflowService.ErrorOccurred += OnWorkflowError;
+            _workflowService.ConfigurationLoaded += OnConfigurationLoaded;
+            _workflowService.WorkflowStarted += OnWorkflowStarted;
+            _workflowService.WorkflowCompleted += OnWorkflowCompleted;
+            _workflowService.StepStatusChanged += OnWorkflowStepStatusChanged;
         }
 
         #region 工作流事件处理
@@ -1353,5 +1352,15 @@ namespace MainUI
         }
 
         #endregion
+
+        /// <summary>
+        /// 通讯测试按钮点击事件
+        /// </summary>
+        private void btnCommunicationTest_Click(object sender, EventArgs e)
+        {
+            // 显示通讯测试工具选择窗体
+            using var testToolSelector = new FrmCommunicationTestSelector();
+            VarHelper.ShowDialogWithOverlay(frm, testToolSelector);
+        }
     }
 }
