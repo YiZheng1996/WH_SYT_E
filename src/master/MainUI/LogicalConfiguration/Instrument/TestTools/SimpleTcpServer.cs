@@ -35,14 +35,22 @@ namespace MainUI.LogicalConfiguration.Instrument.TestTools
             if (_isRunning)
                 return;
 
-            _listener = new TcpListener(IPAddress.Any, port);
-            _listener.Start();
-            _isRunning = true;
-
-            Log($"TCP服务器已启动，端口: {port}");
-
-            // 接受客户端连接
-            Task.Run(AcceptClientsAsync);
+            try
+            {
+                _listener = new TcpListener(IPAddress.Any, port);
+                _listener.Start();
+                _isRunning = true;
+                Log($"TCP服务器已启动，端口: {port}");
+                Task.Run(AcceptClientsAsync);
+            }
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
+            {
+                throw new InvalidOperationException($"端口 {port} 已被占用", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"启动TCP服务器失败: {ex.Message}", ex);
+            }
         }
 
         private async Task AcceptClientsAsync()
@@ -161,6 +169,19 @@ namespace MainUI.LogicalConfiguration.Instrument.TestTools
         public void Dispose()
         {
             Stop();
+
+            // 确保所有客户端连接都已关闭
+            lock (_lockObj)
+            {
+                foreach (var client in _clients.ToList())
+                {
+                    try { client?.Close(); } catch { }
+                    try { client?.Dispose(); } catch { }
+                }
+                _clients.Clear();
+            }
+
+            _listener = null;
         }
     }
 }

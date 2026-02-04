@@ -106,7 +106,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             var result = new CommunicationResult
             {
                 SentData = data,
-                SentString = Encoding.ASCII.GetString(data)
+                SentString = EncodingHelper.SmartDecode(data)  // 智能解码
             };
 
             var sw = Stopwatch.StartNew();
@@ -138,7 +138,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 var responseData = await ReceiveAsync(frameConfig, timeout, cancellationToken);
 
                 result.RawResponse = responseData;
-                result.ResponseString = responseData != null ? Encoding.ASCII.GetString(responseData) : "";
+                result.RawResponse = responseData;
+                result.ResponseString = responseData != null ?
+                    EncodingHelper.SmartDecode(responseData) : "";  // 智能解码
                 result.Success = responseData != null && responseData.Length > 0;
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
 

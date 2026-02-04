@@ -27,40 +27,52 @@ namespace MainUI.LogicalConfiguration.Instrument.TestTools
             if (_isRunning)
                 return;
 
-            // 配置端口1 (发送端)
-            _port1 = new SerialPort
+            // 检查串口是否存在
+            var availablePorts = SerialPort.GetPortNames();
+            if (!availablePorts.Contains(port1Name))
+                throw new ArgumentException($"串口 {port1Name} 不存在");
+            if (!availablePorts.Contains(port2Name))
+                throw new ArgumentException($"串口 {port2Name} 不存在");
+
+            try
             {
-                PortName = port1Name,
-                BaudRate = baudRate,
-                DataBits = 8,
-                StopBits = StopBits.One,
-                Parity = Parity.None,
-                ReadTimeout = 1000,
-                WriteTimeout = 1000
-            };
+                // 配置端口1 (发送端)
+                _port1 = new SerialPort
+                {
+                    PortName = port1Name,
+                    BaudRate = baudRate,
+                    DataBits = 8,
+                    StopBits = StopBits.One,
+                    Parity = Parity.None,
+                    ReadTimeout = 1000,
+                    WriteTimeout = 1000
+                };
 
-            // 配置端口2 (接收端 - 回环)
-            _port2 = new SerialPort
+                // 配置端口2 (接收端 - 回环)
+                _port2 = new SerialPort
+                {
+                    PortName = port2Name,
+                    BaudRate = baudRate,
+                    DataBits = 8,
+                    StopBits = StopBits.One,
+                    Parity = Parity.None,
+                    ReadTimeout = 1000,
+                    WriteTimeout = 1000
+                };
+
+                _port1.Open();
+                _port2.Open();
+
+                _isRunning = true;
+                Log($"串口回环已启动: {port1Name} <-> {port2Name}");
+            }
+            catch (UnauthorizedAccessException)
             {
-                PortName = port2Name,
-                BaudRate = baudRate,
-                DataBits = 8,
-                StopBits = StopBits.One,
-                Parity = Parity.None,
-                ReadTimeout = 1000,
-                WriteTimeout = 1000
-            };
-
-            _port1.Open();
-            _port2.Open();
-
-            _isRunning = true;
-            Log($"串口回环已启动: {port1Name} <-> {port2Name}, 波特率: {baudRate}");
-
-            // 监听端口2的数据并回显
-            if (EchoMode)
+                throw new InvalidOperationException($"串口被占用或权限不足");
+            }
+            catch (IOException ex)
             {
-                _port2.DataReceived += Port2_DataReceived;
+                throw new InvalidOperationException($"串口通讯错误: {ex.Message}", ex);
             }
         }
 

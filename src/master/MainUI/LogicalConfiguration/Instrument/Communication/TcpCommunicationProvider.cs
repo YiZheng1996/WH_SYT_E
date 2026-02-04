@@ -3,6 +3,7 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
 using System.Text;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using ProtocolType = MainUI.LogicalConfiguration.Instrument.Models.ProtocolType;
 
 namespace MainUI.LogicalConfiguration.Instrument.Communication
@@ -106,7 +107,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             var result = new CommunicationResult
             {
                 SentData = data,
-                SentString = Encoding.ASCII.GetString(data)
+                SentString = EncodingHelper.SmartDecode(data)  // 使用智能解码
             };
 
             var sw = Stopwatch.StartNew();
@@ -135,11 +136,22 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 var responseData = await ReceiveAsync(frameConfig, timeout, cancellationToken);
 
                 result.RawResponse = responseData;
-                result.ResponseString = responseData != null ? Encoding.ASCII.GetString(responseData) : "";
+                // 使用智能解码
+                result.ResponseString = responseData != null ?
+                    EncodingHelper.SmartDecode(responseData) : "";
                 result.Success = responseData != null && responseData.Length > 0;
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
 
-                logger?.LogDebug("TCP接收: {Data}", result.ResponseString);
+                // 调试日志：显示编码诊断信息（可选）
+                if (logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    logger.LogTrace("TCP接收编码诊断:\n{Diagnosis}",
+                        EncodingHelper.DiagnoseEncoding(responseData));
+                }
+                else
+                {
+                    logger?.LogDebug("TCP接收: {Data}", result.ResponseString);
+                }
 
                 return result;
             }

@@ -53,7 +53,7 @@
             uiPanel1.Margin = new Padding(4, 5, 4, 5);
             uiPanel1.MinimumSize = new Size(1, 1);
             uiPanel1.Name = "uiPanel1";
-            uiPanel1.Size = new Size(1000, 220);
+            uiPanel1.Size = new Size(1000, 255);
             uiPanel1.TabIndex = 0;
             uiPanel1.Text = null;
             uiPanel1.TextAlignment = ContentAlignment.MiddleCenter;
@@ -62,7 +62,7 @@
             // 
             btnConnect.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnConnect.Font = new Font("微软雅黑", 12F);
-            btnConnect.Location = new Point(870, 180);
+            btnConnect.Location = new Point(870, 215);
             btnConnect.MinimumSize = new Size(1, 1);
             btnConnect.Name = "btnConnect";
             btnConnect.Size = new Size(115, 35);
@@ -79,7 +79,7 @@
             pnlConfig.Margin = new Padding(4, 5, 4, 5);
             pnlConfig.MinimumSize = new Size(1, 1);
             pnlConfig.Name = "pnlConfig";
-            pnlConfig.Size = new Size(970, 120);
+            pnlConfig.Size = new Size(970, 155);
             pnlConfig.TabIndex = 2;
             pnlConfig.Text = null;
             pnlConfig.TextAlignment = ContentAlignment.MiddleCenter;
@@ -120,12 +120,12 @@
             uiPanel2.Controls.Add(uiGroupBox1);
             uiPanel2.Dock = DockStyle.Fill;
             uiPanel2.Font = new Font("微软雅黑", 12F);
-            uiPanel2.Location = new Point(0, 255);
+            uiPanel2.Location = new Point(0, 290);
             uiPanel2.Margin = new Padding(4, 5, 4, 5);
             uiPanel2.MinimumSize = new Size(1, 1);
             uiPanel2.Name = "uiPanel2";
             uiPanel2.Padding = new Padding(5);
-            uiPanel2.Size = new Size(1000, 493);
+            uiPanel2.Size = new Size(1000, 508);
             uiPanel2.TabIndex = 1;
             uiPanel2.Text = null;
             uiPanel2.TextAlignment = ContentAlignment.MiddleCenter;
@@ -141,7 +141,7 @@
             uiGroupBox2.MinimumSize = new Size(1, 1);
             uiGroupBox2.Name = "uiGroupBox2";
             uiGroupBox2.Padding = new Padding(10, 32, 10, 10);
-            uiGroupBox2.Size = new Size(990, 333);
+            uiGroupBox2.Size = new Size(990, 348);
             uiGroupBox2.TabIndex = 1;
             uiGroupBox2.Text = "通讯日志";
             uiGroupBox2.TextAlignment = ContentAlignment.MiddleLeft;
@@ -153,7 +153,7 @@
             rtbLog.BorderStyle = BorderStyle.FixedSingle;
             rtbLog.Location = new Point(15, 64);
             rtbLog.Name = "rtbLog";
-            rtbLog.Size = new Size(960, 254);
+            rtbLog.Size = new Size(960, 269);
             rtbLog.TabIndex = 1;
             rtbLog.Text = "";
             // 
@@ -267,9 +267,9 @@
             // 
             uiLabel3.Font = new Font("微软雅黑", 12F);
             uiLabel3.ForeColor = Color.FromArgb(48, 48, 48);
-            uiLabel3.Location = new Point(140, 40);
+            uiLabel3.Location = new Point(114, 40);
             uiLabel3.Name = "uiLabel3";
-            uiLabel3.Size = new Size(75, 29);
+            uiLabel3.Size = new Size(101, 29);
             uiLabel3.TabIndex = 2;
             uiLabel3.Text = "超时(ms):";
             uiLabel3.TextAlign = ContentAlignment.MiddleRight;
@@ -306,7 +306,7 @@
             // FrmCommunicationTest
             // 
             AutoScaleMode = AutoScaleMode.None;
-            ClientSize = new Size(1000, 748);
+            ClientSize = new Size(1000, 798);
             Controls.Add(uiPanel2);
             Controls.Add(uiPanel1);
             Name = "FrmCommunicationTest";

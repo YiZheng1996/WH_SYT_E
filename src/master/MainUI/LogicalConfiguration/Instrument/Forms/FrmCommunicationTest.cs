@@ -52,7 +52,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         // 获取当前选择的协议类型
         private ProtocolType GetSelectedProtocolType()
         {
-            return (ProtocolType)cboProtocolType.SelectedValue;
+            if (cboProtocolType.SelectedValue is ProtocolType pt)
+                return pt;
+
+            // 默认返回TcpIp
+            return ProtocolType.TcpIp;
         }
 
         private void UpdateConfigPanel()
@@ -166,7 +170,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             row++;
 
             // 校验位
-            var lblParity = new UILabel { Text = "校验位:", TextAlign = ContentAlignment.MiddleRight };
+            var lblParity = new UILabel
+            {
+                Text = "校验位:",
+                TextAlign = ContentAlignment.MiddleRight,
+                //AutoSize = true
+            };
             var cboParity = new UIComboBox { Name = "cboParity", DropDownStyle = (UIDropDownStyle)ComboBoxStyle.DropDownList };
             cboParity.DataSource = Enum.GetValues(typeof(ParityType));
             cboParity.SelectedItem = ParityType.None;
@@ -181,7 +190,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void AddConfigControl(TableLayoutPanel layout, int row, int col, string label, string name, string defaultValue)
         {
-            var lbl = new UILabel { Text = label, TextAlign = ContentAlignment.MiddleRight };
+            var lbl = new UILabel { Text = label, TextAlign = ContentAlignment.MiddleRight, AutoSize = true };
             var txt = new UITextBox { Name = name, Text = defaultValue };
             layout.Controls.Add(lbl, col, row);
             layout.Controls.Add(txt, col + 1, row);
@@ -487,14 +496,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             if (control == null)
                 return default(T);
 
-            if (control is TextBox txt)
+            if (control is UITextBox txt)
             {
                 if (typeof(T) == typeof(string))
                     return (T)(object)txt.Text;
                 if (typeof(T) == typeof(int))
                     return (T)(object)int.Parse(txt.Text);
             }
-            else if (control is ComboBox cbo)
+            else if (control is UIComboBox cbo)
             {
                 if (typeof(T) == typeof(string))
                     return (T)(object)cbo.Text;
@@ -503,7 +512,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 if (typeof(T).IsEnum)
                     return (T)cbo.SelectedItem;
             }
-            else if (control is CheckBox chk)
+            else if (control is UICheckBox chk)
             {
                 return (T)(object)chk.Checked;
             }
