@@ -725,6 +725,7 @@
             Text = "试验逻辑配置";
             TitleColor = Color.FromArgb(81, 114, 221);
             TitleFont = new Font("微软雅黑", 14F, FontStyle.Bold);
+            WindowState = FormWindowState.Maximized;
             ZoomScaleRect = new Rectangle(15, 15, 1200, 700);
             splitContainerMain.Panel1.ResumeLayout(false);
             splitContainerMain.Panel2.ResumeLayout(false);

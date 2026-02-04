@@ -62,9 +62,9 @@ namespace MainUI.Procedure.Controls
 
             // 主面板设置
             Height = 85;
-            Width = 860;
+            Width = 470;
             BackColor = BackgroundColors.Waiting;
-            Margin = new Padding(0, 0, 0, 12);
+            Margin = new Padding(0, 0, 12, 12);
 
             // 状态指示条(左侧5px)
             statusIndicator = new Panel
@@ -349,12 +349,11 @@ namespace MainUI.Procedure.Controls
             Height = 70 + detailsPanel.Height + 15;
 
             // 调整进度条位置(如果有)
-            if (progressBar.Visible)
-            {
-                Height += 15;
-                progressBar.Location = new Point(15, 73 + detailsPanel.Height + 8);
-                progressBar.Width = contentPanel.Width - 30;
-            }
+            if (!progressBar.Visible) return;
+
+            Height += 15;
+            progressBar.Location = new Point(15, 73 + detailsPanel.Height + 8);
+            progressBar.Width = contentPanel.Width - 30;
         }
 
         /// <summary>
@@ -418,7 +417,7 @@ namespace MainUI.Procedure.Controls
                 "循环工具" => DisplayLoopParameters(stepParameter, yPosition),
                 "检测工具" => DisplayDetectionToolParameters(stepParameter, yPosition),
                 "消息通知" => DisplayMessageNotificationParameters(stepParameter, yPosition),
-
+                "仪器通讯" or "InstrumentCommunication" => DisplayInstrumentCommunicationParameters(stepParameter, yPosition),
                 _ => DisplayGenericParameters(stepParameter, yPosition)
             };
         }
@@ -763,7 +762,7 @@ namespace MainUI.Procedure.Controls
                         Color.FromArgb(40, 167, 69));
                     yPosition += 22;
                 }
-          
+
                 // 超时和重试
                 yPosition = AddSubSectionTitle("超时和重试", yPosition);
 
@@ -2177,6 +2176,218 @@ namespace MainUI.Procedure.Controls
             }
         }
 
+        /// <summary>
+        /// 仪表通讯参数展示 - 表格式
+        /// 精简显示核心配置和运行时信息
+        /// 
+        /// 显示策略:
+        /// 1. 核心配置: 仪器名称、命令类型、命令内容
+        /// 2. 通讯参数: 超时时间、重试次数、失败策略
+        /// 3. 数据保存: 响应/状态/错误变量(有值时显示)
+        /// 4. 运行详情: 实际响应、执行耗时、错误信息(执行后显示)
+        /// </summary>
+        private int DisplayInstrumentCommunicationParameters(object stepParameter, int yPosition)
+        {
+            try
+            {
+                var jsonStr = stepParameter is string s ? s : JsonConvert.SerializeObject(stepParameter);
+                var json = JObject.Parse(jsonStr);
+
+                // 定义列宽
+                int col1Width = 110;
+                int col2Width = detailsPanel.Width - col1Width - 10;
+
+                // 第一部分: 仪表通讯配置
+                yPosition = AddSubSectionTitle("仪表通讯配置", yPosition);
+
+                // 表头
+                AddTableCell("配置项", yPosition, 0, col1Width, true);
+                AddTableCell("配置值", yPosition, col1Width, col2Width, true);
+                yPosition += 25;
+
+                // 仪器名称 - 主题蓝色突出显示
+                var instrumentName = json["InstrumentName"]?.ToString() ?? "(未选择)";
+                AddTableCell("仪器名称", yPosition, 0, col1Width, false);
+                AddTableCell(instrumentName, yPosition, col1Width, col2Width, false,
+                    Color.FromArgb(65, 100, 204)); // 主题蓝色
+                yPosition += 22;
+
+                // 命令配置 - 区分自定义命令和预定义命令
+                var useCustomCommand = json["UseCustomCommand"]?.Value<bool>() ?? false;
+                if (useCustomCommand)
+                {
+                    // 自定义命令模式
+                    AddTableCell("命令类型", yPosition, 0, col1Width, false);
+                    AddTableCell("自定义命令", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+
+                    var customCommand = json["CustomCommand"]?.ToString() ?? "";
+                    var customDataType = json["CustomCommandDataType"]?.ToString() ?? "String";
+
+                    // 显示命令内容和数据类型
+                    AddTableCell("命令内容", yPosition, 0, col1Width, false);
+                    AddTableCell($"{customCommand} ({customDataType})", yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(100, 100, 100)); // 灰色
+                    yPosition += 22;
+                }
+                else
+                {
+                    // 预定义命令模式
+                    var commandName = json["CommandName"]?.ToString() ?? "(未选择)";
+                    AddTableCell("预定义命令", yPosition, 0, col1Width, false);
+                    AddTableCell(commandName, yPosition, col1Width, col2Width, false,
+                        Color.FromArgb(0, 102, 204)); // 深蓝色
+                    yPosition += 22;
+
+                    // 如果有命令参数,显示关键参数(最多2个,避免界面过长)
+                    var commandParams = json["CommandParameters"];
+                    if (commandParams != null && commandParams.HasValues)
+                    {
+                        int paramCount = 0;
+                        foreach (var param in commandParams)
+                        {
+                            if (paramCount >= 2) break; // 限制最多显示2个参数
+
+                            var paramName = param.Path.Split('.').LastOrDefault();
+                            var paramValue = param.First?.ToString();
+
+                            if (!string.IsNullOrEmpty(paramValue))
+                            {
+                                AddTableCell($"  参数:{paramName}", yPosition, 0, col1Width, false);
+                                AddTableCell(paramValue, yPosition, col1Width, col2Width, false,
+                                    Color.FromArgb(120, 120, 120)); // 次要灰色
+                                yPosition += 22;
+                                paramCount++;
+                            }
+                        }
+                    }
+                }
+
+                // 第二部分: 通讯参数
+                yPosition = AddSubSectionTitle("通讯参数", yPosition);
+
+                // 超时时间 - 必显示
+                var timeout = json["Timeout"]?.Value<int>() ?? 5000;
+                AddTableCell("超时时间", yPosition, 0, col1Width, false);
+                AddTableCell($"{timeout} ms", yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+                // 重试次数 - 仅在大于0时显示
+                var retryCount = json["RetryCount"]?.Value<int>() ?? 0;
+                if (retryCount > 0)
+                {
+                    AddTableCell("重试次数", yPosition, 0, col1Width, false);
+                    AddTableCell($"{retryCount} 次", yPosition, col1Width, col2Width, false);
+                    yPosition += 22;
+                }
+
+                // 失败策略 - 转换为中文显示
+                var failureStrategy = json["FailureStrategy"]?.ToString() ?? "Abort";
+                var strategyText = failureStrategy switch
+                {
+                    "Abort" => "终止测试",
+                    "Continue" => "继续执行",
+                    "Retry" => "自动重试",
+                    _ => failureStrategy
+                };
+                AddTableCell("失败策略", yPosition, 0, col1Width, false);
+                AddTableCell(strategyText, yPosition, col1Width, col2Width, false);
+                yPosition += 22;
+
+
+                // 第三部分: 数据保存(仅在有配置时显示)
+                var responseVar = json["ResponseVariable"]?.ToString();
+                var statusVar = json["StatusVariable"]?.ToString();
+                var errorVar = json["ErrorVariable"]?.ToString();
+
+                if (!string.IsNullOrEmpty(responseVar) || !string.IsNullOrEmpty(statusVar) || !string.IsNullOrEmpty(errorVar))
+                {
+                    yPosition = AddSubSectionTitle("数据保存", yPosition);
+
+                    // 响应数据保存变量 - 绿色
+                    if (!string.IsNullOrEmpty(responseVar))
+                    {
+                        AddTableCell("响应数据→", yPosition, 0, col1Width, false);
+                        AddTableCell(responseVar, yPosition, col1Width, col2Width, false,
+                            Color.FromArgb(40, 167, 69)); // 成功绿
+                        yPosition += 22;
+                    }
+
+                    // 执行状态保存变量 - 绿色
+                    if (!string.IsNullOrEmpty(statusVar))
+                    {
+                        AddTableCell("执行状态→", yPosition, 0, col1Width, false);
+                        AddTableCell(statusVar, yPosition, col1Width, col2Width, false,
+                            Color.FromArgb(40, 167, 69)); // 成功绿
+                        yPosition += 22;
+                    }
+
+                    // 错误信息保存变量 - 红色
+                    if (!string.IsNullOrEmpty(errorVar))
+                    {
+                        AddTableCell("错误信息→", yPosition, 0, col1Width, false);
+                        AddTableCell(errorVar, yPosition, col1Width, col2Width, false,
+                            Color.FromArgb(220, 53, 69)); // 错误红
+                        yPosition += 22;
+                    }
+                }
+
+                // 第四部分: 运行时信息(仅在执行后显示)
+                // 注意: 这些字段需要在工具执行时动态添加到参数对象中
+                var actualResponse = json["ActualResponse"]?.ToString();
+                var executionTime = json["ExecutionTime"]?.Value<int>();
+                var actualError = json["ActualError"]?.ToString();
+
+                if (!string.IsNullOrEmpty(actualResponse) || executionTime.HasValue || !string.IsNullOrEmpty(actualError))
+                {
+                    yPosition = AddSeparatorLine(yPosition);
+                    yPosition = AddSubSectionTitle("运行详情", yPosition);
+
+                    AddTableCell("实际情况", yPosition, 0, col1Width, true);
+                    AddTableCell("实际值", yPosition, col1Width, col2Width, true);
+                    yPosition += 25;
+
+                    // 实际响应数据 - 过长则截断
+                    if (!string.IsNullOrEmpty(actualResponse))
+                    {
+                        // 截断过长的响应数据,避免界面过长
+                        var displayResponse = actualResponse.Length > 100
+                            ? actualResponse.Substring(0, 100) + "..."
+                            : actualResponse;
+
+                        AddTableCell("返回数据", yPosition, 0, col1Width, false);
+                        AddTableCell(displayResponse, yPosition, col1Width, col2Width, false,
+                            StatusColors.Success); // 成功绿色
+                        yPosition += 22;
+                    }
+
+                    // 实际执行时间
+                    if (executionTime.HasValue)
+                    {
+                        AddTableCell("执行耗时", yPosition, 0, col1Width, false);
+                        AddTableCell($"{executionTime.Value} ms", yPosition, col1Width, col2Width, false);
+                        yPosition += 22;
+                    }
+
+                    // 错误详情(如果有错误)
+                    if (!string.IsNullOrEmpty(actualError))
+                    {
+                        AddTableCell("错误详情", yPosition, 0, col1Width, false);
+                        AddTableCell(actualError, yPosition, col1Width, col2Width, false,
+                            StatusColors.Failed); // 失败红色
+                        yPosition += 22;
+                    }
+                }
+
+                return yPosition;
+            }
+            catch (Exception ex)
+            {
+                // 解析失败时回退到通用参数显示
+                Debug.WriteLine($"DisplayInstrumentCommunicationParameters 错误: {ex}");
+                return DisplayGenericParameters(stepParameter, yPosition);
+            }
+        }
 
         /// <summary>
         /// 添加分隔线（辅助方法）
@@ -2472,7 +2683,7 @@ namespace MainUI.Procedure.Controls
                 lblStepTime.Location = new Point(contentPanel.Width - lblStepTime.Width - 15, 10);
             }
         }
- 
+
         private void CirclePanel_Paint(object sender, PaintEventArgs e)
         {
             var g = e.Graphics;

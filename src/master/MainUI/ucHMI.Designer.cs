@@ -33,7 +33,7 @@ namespace MainUI
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UcHMI));
-            Tabs.StyleLine styleLine2 = new Tabs.StyleLine();
+            Tabs.StyleLine styleLine1 = new Tabs.StyleLine();
             uiTitlePanel3 = new UITitlePanel();
             TableItemPoint = new Table();
             btnProductSelection = new UIButton();
@@ -100,7 +100,7 @@ namespace MainUI
             uiTitlePanel3.FillColor2 = Color.FromArgb(236, 236, 236);
             uiTitlePanel3.FillDisableColor = Color.FromArgb(49, 54, 64);
             uiTitlePanel3.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
-            uiTitlePanel3.Location = new Point(0, 309);
+            uiTitlePanel3.Location = new Point(0, 311);
             uiTitlePanel3.Margin = new Padding(4, 5, 4, 5);
             uiTitlePanel3.MinimumSize = new Size(1, 1);
             uiTitlePanel3.Name = "uiTitlePanel3";
@@ -109,7 +109,7 @@ namespace MainUI
             uiTitlePanel3.RectColor = Color.FromArgb(236, 236, 236);
             uiTitlePanel3.RectDisableColor = Color.FromArgb(236, 236, 236);
             uiTitlePanel3.ShowText = false;
-            uiTitlePanel3.Size = new Size(253, 373);
+            uiTitlePanel3.Size = new Size(253, 427);
             uiTitlePanel3.TabIndex = 398;
             uiTitlePanel3.Text = "试验项点";
             uiTitlePanel3.TextAlignment = ContentAlignment.MiddleCenter;
@@ -124,10 +124,10 @@ namespace MainUI
             TableItemPoint.Font = new Font("微软雅黑", 11F);
             TableItemPoint.ForeColor = Color.Black;
             TableItemPoint.Gap = 12;
-            TableItemPoint.Location = new Point(1, 32);
+            TableItemPoint.Location = new Point(1, 31);
             TableItemPoint.Name = "TableItemPoint";
             TableItemPoint.RowSelectedBg = Color.Transparent;
-            TableItemPoint.Size = new Size(251, 340);
+            TableItemPoint.Size = new Size(251, 395);
             TableItemPoint.TabIndex = 53;
             TableItemPoint.CheckedChanged += TableItemPoint_CheckedChanged;
             // 
@@ -466,7 +466,7 @@ namespace MainUI
             btnStartTest.ForeColor = Color.FromArgb(235, 227, 221);
             btnStartTest.ForeDisableColor = Color.FromArgb(235, 227, 221);
             btnStartTest.LightColor = Color.FromArgb(245, 251, 241);
-            btnStartTest.Location = new Point(4, 830);
+            btnStartTest.Location = new Point(2, 886);
             btnStartTest.MinimumSize = new Size(1, 1);
             btnStartTest.Name = "btnStartTest";
             btnStartTest.Radius = 7;
@@ -491,7 +491,7 @@ namespace MainUI
             uiTitlePanel8.FillColor2 = Color.FromArgb(236, 236, 236);
             uiTitlePanel8.FillDisableColor = Color.FromArgb(236, 236, 236);
             uiTitlePanel8.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
-            uiTitlePanel8.Location = new Point(0, 729);
+            uiTitlePanel8.Location = new Point(0, 785);
             uiTitlePanel8.Margin = new Padding(4, 5, 4, 5);
             uiTitlePanel8.MinimumSize = new Size(1, 1);
             uiTitlePanel8.Name = "uiTitlePanel8";
@@ -539,7 +539,7 @@ namespace MainUI
             btnStopTest.ForeColor = Color.FromArgb(235, 227, 221);
             btnStopTest.ForeDisableColor = Color.FromArgb(235, 227, 221);
             btnStopTest.LightColor = Color.FromArgb(253, 243, 243);
-            btnStopTest.Location = new Point(130, 830);
+            btnStopTest.Location = new Point(128, 886);
             btnStopTest.MinimumSize = new Size(1, 1);
             btnStopTest.Name = "btnStopTest";
             btnStopTest.Radius = 7;
@@ -811,7 +811,7 @@ namespace MainUI
             panelHand.FillColor2 = Color.White;
             panelHand.FillDisableColor = Color.White;
             panelHand.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            panelHand.Location = new Point(1, 685);
+            panelHand.Location = new Point(1, 741);
             panelHand.Margin = new Padding(4, 5, 4, 5);
             panelHand.MinimumSize = new Size(1, 1);
             panelHand.Name = "panelHand";
@@ -829,7 +829,7 @@ namespace MainUI
             tabPage1.Dock = DockStyle.Fill;
             tabPage1.Location = new Point(0, 0);
             tabPage1.Name = "tabPage1";
-            tabPage1.Size = new Size(900, 856);
+            tabPage1.Size = new Size(1535, 910);
             tabPage1.TabIndex = 1;
             tabPage1.Text = "tabPage1";
             // 
@@ -846,14 +846,14 @@ namespace MainUI
             uiPanel6.FillColor2 = Color.White;
             uiPanel6.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             uiPanel6.ForeColor = Color.FromArgb(46, 46, 46);
-            uiPanel6.Location = new Point(0, 797);
+            uiPanel6.Location = new Point(0, 851);
             uiPanel6.Margin = new Padding(4, 5, 4, 5);
             uiPanel6.MinimumSize = new Size(1, 1);
             uiPanel6.Name = "uiPanel6";
             uiPanel6.Radius = 10;
             uiPanel6.RectColor = Color.White;
             uiPanel6.RectDisableColor = Color.White;
-            uiPanel6.Size = new Size(900, 59);
+            uiPanel6.Size = new Size(1535, 59);
             uiPanel6.TabIndex = 1;
             uiPanel6.Text = null;
             uiPanel6.TextAlignment = ContentAlignment.MiddleCenter;
@@ -951,7 +951,7 @@ namespace MainUI
             panelReport.Radius = 0;
             panelReport.RectColor = Color.Transparent;
             panelReport.RectDisableColor = Color.FromArgb(236, 236, 236);
-            panelReport.Size = new Size(900, 792);
+            panelReport.Size = new Size(1535, 792);
             panelReport.TabIndex = 399;
             panelReport.Text = null;
             panelReport.TextAlignment = ContentAlignment.MiddleCenter;
@@ -964,7 +964,7 @@ namespace MainUI
             tabPage3.Location = new Point(0, 0);
             tabPage3.Name = "tabPage3";
             tabPage3.Showed = true;
-            tabPage3.Size = new Size(900, 856);
+            tabPage3.Size = new Size(1535, 910);
             tabPage3.TabIndex = 0;
             tabPage3.Text = "工艺界面";
             // 
@@ -982,7 +982,7 @@ namespace MainUI
             grpRainy.Radius = 0;
             grpRainy.RectColor = Color.FromArgb(236, 236, 237);
             grpRainy.RectDisableColor = Color.FromArgb(236, 236, 237);
-            grpRainy.Size = new Size(900, 856);
+            grpRainy.Size = new Size(1535, 910);
             grpRainy.TabIndex = 521;
             grpRainy.Text = null;
             grpRainy.TextAlignment = ContentAlignment.MiddleCenter;
@@ -991,16 +991,16 @@ namespace MainUI
             // 
             tabs1.BackColor = Color.FromArgb(236, 236, 237);
             tabs1.Controls.Add(tabPage3);
-            tabs1.Controls.Add(tabPage1);
             tabs1.Controls.Add(tabPageTestDetails);
+            tabs1.Controls.Add(tabPage1);
             tabs1.Location = new Point(257, 33);
             tabs1.Name = "tabs1";
             tabs1.Pages.Add(tabPage3);
             tabs1.Pages.Add(tabPage1);
             tabs1.Pages.Add(tabPageTestDetails);
             tabs1.ScrollForeHover = SystemColors.ActiveBorder;
-            tabs1.Size = new Size(900, 856);
-            tabs1.Style = styleLine2;
+            tabs1.Size = new Size(1535, 910);
+            tabs1.Style = styleLine1;
             tabs1.TabIndex = 405;
             tabs1.TabMenuVisible = false;
             // 
@@ -1009,7 +1009,7 @@ namespace MainUI
             tabPageTestDetails.Dock = DockStyle.Fill;
             tabPageTestDetails.Location = new Point(0, 0);
             tabPageTestDetails.Name = "tabPageTestDetails";
-            tabPageTestDetails.Size = new Size(900, 856);
+            tabPageTestDetails.Size = new Size(1535, 910);
             tabPageTestDetails.TabIndex = 2;
             tabPageTestDetails.Text = "tabPage2";
             // 
@@ -1047,7 +1047,7 @@ namespace MainUI
             Font = new Font("宋体", 11F);
             Margin = new Padding(4);
             Name = "UcHMI";
-            Size = new Size(1155, 889);
+            Size = new Size(1795, 945);
             uiTitlePanel3.ResumeLayout(false);
             uiTitlePanel8.ResumeLayout(false);
             uiTitlePanel4.ResumeLayout(false);

@@ -172,7 +172,6 @@ namespace MainUI.Procedure.Controls
             panelStepList.AutoSize = true;
             panelStepList.BackColor = Color.FromArgb(245, 247, 250);
             panelStepList.Dock = DockStyle.Fill;
-            panelStepList.FlowDirection = FlowDirection.TopDown;
             panelStepList.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             panelStepList.Location = new Point(0, 15);
             panelStepList.Margin = new Padding(4, 5, 4, 5);
@@ -181,7 +180,6 @@ namespace MainUI.Procedure.Controls
             panelStepList.Padding = new Padding(15, 0, 15, 12);
             panelStepList.Size = new Size(900, 665);
             panelStepList.TabIndex = 0;
-            panelStepList.WrapContents = false;
             // 
             // UcTestDetails
             // 

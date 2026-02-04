@@ -267,9 +267,6 @@ namespace MainUI.LogicalConfiguration.Controls
 
             // 将 DataGridView 添加到 Panel 中
             panelDataGrid.Controls.Add(_dataGridView);
-
-            //// 将 Panel 添加到控件中
-            //Controls.Add(panelDataGrid);
         }
 
         /// <summary>
@@ -309,12 +306,13 @@ namespace MainUI.LogicalConfiguration.Controls
                 SortMode = DataGridViewColumnSortMode.NotSortable
             });
 
-            // 第4列: StepDetails - 步骤详情 (由StepDetailsProvider生成) ← 关键!
+            // 第4列: StepDetails - 步骤详情 (由StepDetailsProvider生成)
             _dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "ColStepDetails",
                 HeaderText = "详情",
-                Width = 300,
+                //Width = 300,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
                 ReadOnly = true,
                 SortMode = DataGridViewColumnSortMode.NotSortable
             });

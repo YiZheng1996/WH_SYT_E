@@ -546,7 +546,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 if (typeof(T) == typeof(byte))
                     return byte.TryParse(text, out var b) ? (T)(object)b : defaultValue;
             }
-            catch { }
+            catch
+            {
+                // ignored
+            }
 
             return defaultValue;
         }

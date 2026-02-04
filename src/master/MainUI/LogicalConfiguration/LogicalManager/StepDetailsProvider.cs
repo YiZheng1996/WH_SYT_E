@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.Parameter;
+﻿using MainUI.LogicalConfiguration.Instrument.Parameter;
+using MainUI.LogicalConfiguration.Parameter;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -39,6 +40,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "检测工具" => GetDetectionToolPreview(step),
                     "读取PLC" => GetReadPLCPreview(step),
                     "写入PLC" => GetWritePLCPreview(step),
+                    "仪器通讯" => GetInstrumentCommunicationPreview(step),
                     "以太网发送" => GetEthernetSendPreview(step),
                     "串口发送" => GetSerialPortSendPreview(step),
                     "读取单元格" => GetReadCellsPreview(step),
@@ -461,7 +463,16 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             return $"[{portInfo}] {format}: {contentPreview}{responseInfo}";
         }
 
+        // 添加对应的预览方法
+        private string GetInstrumentCommunicationPreview(ChildModel step)
+        {
+            if (!TryGetParameter<Parameter_InstrumentCommunication>(step.StepParameter, out var param))
+                return "未配置";
 
+            return param.UseCustomCommand
+                ? $"[{param.InstrumentName}] 自定义命令"
+                : $"[{param.InstrumentName}] {param.CommandName}";
+        }
         #endregion
 
         #region 辅助方法

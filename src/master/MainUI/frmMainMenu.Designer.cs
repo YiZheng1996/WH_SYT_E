@@ -93,7 +93,7 @@ namespace MainUI
             lblTitle.Radius = 40;
             lblTitle.RectColor = Color.FromArgb(65, 100, 204);
             lblTitle.RectDisableColor = Color.FromArgb(65, 100, 204);
-            lblTitle.Size = new Size(1063, 50);
+            lblTitle.Size = new Size(1700, 50);
             lblTitle.TabIndex = 0;
             lblTitle.Text = "试验台名称";
             lblTitle.TextAlignment = ContentAlignment.MiddleLeft;
@@ -106,7 +106,7 @@ namespace MainUI
             lblDateTime.BackColor = Color.Transparent;
             lblDateTime.Font = new Font("微软雅黑", 12.75F, FontStyle.Bold, GraphicsUnit.Point, 134);
             lblDateTime.ForeColor = Color.White;
-            lblDateTime.Location = new Point(807, 14);
+            lblDateTime.Location = new Point(1444, 14);
             lblDateTime.Name = "lblDateTime";
             lblDateTime.Size = new Size(179, 24);
             lblDateTime.TabIndex = 4;
@@ -116,7 +116,7 @@ namespace MainUI
             // 
             picRunStatus.BackColor = Color.Transparent;
             picRunStatus.Image = (Image)resources.GetObject("picRunStatus.Image");
-            picRunStatus.Location = new Point(995, 2);
+            picRunStatus.Location = new Point(1628, 3);
             picRunStatus.Name = "picRunStatus";
             picRunStatus.Size = new Size(47, 43);
             picRunStatus.SizeMode = PictureBoxSizeMode.CenterImage;
@@ -165,7 +165,7 @@ namespace MainUI
             btnExit.ForeColor = Color.FromArgb(235, 227, 221);
             btnExit.ForeDisableColor = Color.FromArgb(235, 227, 221);
             btnExit.Image = (Image)resources.GetObject("btnExit.Image");
-            btnExit.Location = new Point(3, 834);
+            btnExit.Location = new Point(3, 888);
             btnExit.MinimumSize = new Size(1, 1);
             btnExit.Name = "btnExit";
             btnExit.Radius = 30;
@@ -196,7 +196,7 @@ namespace MainUI
             btnChangePwd.ForeColor = Color.FromArgb(235, 227, 221);
             btnChangePwd.ForeDisableColor = Color.FromArgb(235, 227, 221);
             btnChangePwd.Image = (Image)resources.GetObject("btnChangePwd.Image");
-            btnChangePwd.Location = new Point(3, 785);
+            btnChangePwd.Location = new Point(3, 839);
             btnChangePwd.MinimumSize = new Size(1, 1);
             btnChangePwd.Name = "btnChangePwd";
             btnChangePwd.Radius = 30;
@@ -280,7 +280,7 @@ namespace MainUI
             panelmue.Radius = 20;
             panelmue.RectColor = Color.FromArgb(65, 100, 204);
             panelmue.RectDisableColor = Color.FromArgb(65, 100, 204);
-            panelmue.Size = new Size(113, 942);
+            panelmue.Size = new Size(113, 945);
             panelmue.TabIndex = 5;
             panelmue.Text = null;
             panelmue.TextAlignment = ContentAlignment.MiddleCenter;
@@ -530,7 +530,7 @@ namespace MainUI
             PanelHmi.Name = "PanelHmi";
             PanelHmi.RectColor = Color.FromArgb(236, 236, 237);
             PanelHmi.RectDisableColor = Color.FromArgb(236, 236, 237);
-            PanelHmi.Size = new Size(1155, 889);
+            PanelHmi.Size = new Size(1795, 945);
             PanelHmi.TabIndex = 6;
             PanelHmi.Text = null;
             PanelHmi.TextAlignment = ContentAlignment.MiddleCenter;
