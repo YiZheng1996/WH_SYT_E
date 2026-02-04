@@ -132,7 +132,6 @@
             label3 = new AntdUI.Label();
             uiLabel19 = new UILabel();
             LabPE07 = new UILabel();
-            panel2 = new Panel();
             uiPanel11.SuspendLayout();
             uiPanel20.SuspendLayout();
             uiPanel9.SuspendLayout();
@@ -1695,20 +1694,11 @@
             LabPE07.Text = "1000.0";
             LabPE07.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // panel2
-            // 
-            panel2.BorderStyle = BorderStyle.FixedSingle;
-            panel2.Location = new Point(1328, 338);
-            panel2.Name = "panel2";
-            panel2.Size = new Size(200, 100);
-            panel2.TabIndex = 634;
-            // 
             // UcHMI_FLE
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(243, 245, 247);
-            Controls.Add(panel2);
             Controls.Add(uiPanel8);
             Controls.Add(uiPipe25);
             Controls.Add(uiLabel2);
@@ -1789,7 +1779,7 @@
             Controls.Add(uiPipe17);
             Controls.Add(uiPipe28);
             Name = "UcHMI_FLE";
-            Size = new Size(1531, 856);
+            Size = new Size(1535, 910);
             Load += UcHMI_PBU_Load;
             uiPanel11.ResumeLayout(false);
             uiPanel11.PerformLayout();
@@ -1916,6 +1906,5 @@
         private AntdUI.Label label3;
         private UILabel uiLabel19;
         private UILabel LabPE07;
-        private Panel panel2;
     }
 }

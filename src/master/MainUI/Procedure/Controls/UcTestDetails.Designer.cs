@@ -62,7 +62,7 @@ namespace MainUI.Procedure.Controls
             panelInfo.Radius = 8;
             panelInfo.Shadow = 8;
             panelInfo.ShadowOpacity = 1F;
-            panelInfo.Size = new Size(900, 170);
+            panelInfo.Size = new Size(1535, 170);
             panelInfo.TabIndex = 0;
             // 
             // lblCurrentTest
@@ -81,7 +81,7 @@ namespace MainUI.Procedure.Controls
             // 
             statusPanel.BackColor = Color.Transparent;
             statusPanel.Controls.Add(statusBadge);
-            statusPanel.Location = new Point(700, 20);
+            statusPanel.Location = new Point(1335, 20);
             statusPanel.Name = "statusPanel";
             statusPanel.Size = new Size(180, 36);
             statusPanel.TabIndex = 4;
@@ -147,7 +147,7 @@ namespace MainUI.Procedure.Controls
             progressBar.Location = new Point(28, 117);
             progressBar.Name = "progressBar";
             progressBar.Radius = 4;
-            progressBar.Size = new Size(844, 30);
+            progressBar.Size = new Size(1479, 30);
             progressBar.TabIndex = 5;
             progressBar.Value = 0.1F;
             progressBar.ValueRatio = 0.8F;
@@ -161,7 +161,7 @@ namespace MainUI.Procedure.Controls
             panelSteps.Location = new Point(0, 170);
             panelSteps.Name = "panelSteps";
             panelSteps.Padding = new Padding(0, 15, 0, 0);
-            panelSteps.Size = new Size(900, 680);
+            panelSteps.Size = new Size(1535, 740);
             panelSteps.TabIndex = 1;
             // 
             // panelStepList
@@ -178,7 +178,7 @@ namespace MainUI.Procedure.Controls
             panelStepList.MinimumSize = new Size(1, 1);
             panelStepList.Name = "panelStepList";
             panelStepList.Padding = new Padding(15, 0, 15, 12);
-            panelStepList.Size = new Size(900, 665);
+            panelStepList.Size = new Size(1535, 725);
             panelStepList.TabIndex = 0;
             // 
             // UcTestDetails
@@ -193,7 +193,7 @@ namespace MainUI.Procedure.Controls
             ForeColor = Color.FromArgb(82, 86, 89);
             Location = new Point(12, 4);
             Name = "UcTestDetails";
-            Size = new Size(900, 850);
+            Size = new Size(1535, 910);
             panelInfo.ResumeLayout(false);
             panelInfo.PerformLayout();
             statusPanel.ResumeLayout(false);

@@ -862,7 +862,7 @@ namespace MainUI
             // 
             inputNumber.BackColor = Color.FromArgb(218, 220, 230);
             inputNumber.Font = new Font("微软雅黑", 14F, FontStyle.Bold);
-            inputNumber.Location = new Point(175, 14);
+            inputNumber.Location = new Point(224, 14);
             inputNumber.Name = "inputNumber";
             inputNumber.Size = new Size(116, 37);
             inputNumber.TabIndex = 494;
@@ -875,7 +875,7 @@ namespace MainUI
             btnPageDown.FillDisableColor = Color.FromArgb(80, 160, 255);
             btnPageDown.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
             btnPageDown.ForeDisableColor = Color.White;
-            btnPageDown.Location = new Point(297, 14);
+            btnPageDown.Location = new Point(346, 14);
             btnPageDown.MinimumSize = new Size(1, 1);
             btnPageDown.Name = "btnPageDown";
             btnPageDown.RectDisableColor = Color.FromArgb(80, 160, 255);
@@ -891,7 +891,7 @@ namespace MainUI
             btnPageUp.FillDisableColor = Color.FromArgb(70, 75, 85);
             btnPageUp.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
             btnPageUp.ForeDisableColor = Color.White;
-            btnPageUp.Location = new Point(37, 14);
+            btnPageUp.Location = new Point(86, 14);
             btnPageUp.MinimumSize = new Size(1, 1);
             btnPageUp.Name = "btnPageUp";
             btnPageUp.RectDisableColor = Color.FromArgb(80, 160, 255);
@@ -908,7 +908,7 @@ namespace MainUI
             btnPrintReport.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
             btnPrintReport.ForeDisableColor = Color.White;
             btnPrintReport.Image = (Image)resources.GetObject("btnPrintReport.Image");
-            btnPrintReport.Location = new Point(748, 14);
+            btnPrintReport.Location = new Point(1360, 14);
             btnPrintReport.MinimumSize = new Size(1, 1);
             btnPrintReport.Name = "btnPrintReport";
             btnPrintReport.RectDisableColor = Color.FromArgb(80, 160, 255);
@@ -925,7 +925,7 @@ namespace MainUI
             btnSaveReport.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
             btnSaveReport.ForeDisableColor = Color.White;
             btnSaveReport.Image = (Image)resources.GetObject("btnSaveReport.Image");
-            btnSaveReport.Location = new Point(592, 14);
+            btnSaveReport.Location = new Point(1204, 14);
             btnSaveReport.MinimumSize = new Size(1, 1);
             btnSaveReport.Name = "btnSaveReport";
             btnSaveReport.RectDisableColor = Color.FromArgb(80, 160, 255);
@@ -951,7 +951,7 @@ namespace MainUI
             panelReport.Radius = 0;
             panelReport.RectColor = Color.Transparent;
             panelReport.RectDisableColor = Color.FromArgb(236, 236, 236);
-            panelReport.Size = new Size(1535, 792);
+            panelReport.Size = new Size(1535, 841);
             panelReport.TabIndex = 399;
             panelReport.Text = null;
             panelReport.TextAlignment = ContentAlignment.MiddleCenter;
@@ -991,8 +991,8 @@ namespace MainUI
             // 
             tabs1.BackColor = Color.FromArgb(236, 236, 237);
             tabs1.Controls.Add(tabPage3);
-            tabs1.Controls.Add(tabPageTestDetails);
             tabs1.Controls.Add(tabPage1);
+            tabs1.Controls.Add(tabPageTestDetails);
             tabs1.Location = new Point(257, 33);
             tabs1.Name = "tabs1";
             tabs1.Pages.Add(tabPage3);
