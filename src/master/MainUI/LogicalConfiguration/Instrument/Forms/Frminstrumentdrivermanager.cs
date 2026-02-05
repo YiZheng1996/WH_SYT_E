@@ -398,11 +398,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             int row = 0;
 
-            AddConfigRow(layout, row, "IP地址:", "IpAddress", "192.168.1.100", 0);
-            AddConfigRow(layout, row++, "端口:", "Port", "5000", 2);
+            // IP地址 - 添加IP地址验证
+            AddConfigRow(layout, row, "IP地址:", "IpAddress", "192.168.1.100", 0, ValidationType.IpAddress);
+            // 端口 - 添加端口号验证
+            AddConfigRow(layout, row++, "端口:", "Port", "5000", 2, ValidationType.Port);
 
-            AddConfigRow(layout, row, "连接超时:", "ConnectionTimeout", "5000", 0);
-            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
+            // 连接超时 - 添加超时验证
+            AddConfigRow(layout, row, "连接超时:", "ConnectionTimeout", "5000", 0, ValidationType.Timeout);
+            // 读取超时 - 添加超时验证
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2, ValidationType.Timeout);
 
             AddConfigRow(layout, row, "保持连接:", "KeepAlive", "true", 0);
         }
@@ -411,13 +415,16 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             int row = 0;
 
-            // 串口名称 - 改为下拉框
-            AddConfigComboBox(layout, row++, "串口:", "PortName", PortNames, "COM1");
+            // 串口名称 - 允许手动输入（用于特殊串口如 \\.\COM15）
+            AddConfigComboBox(layout, row++, "串口:", "PortName",
+                GetAvailablePorts(), "COM1", 0, allowCustomInput: true);
 
-            // 波特率 - 改为下拉框
-            AddConfigComboBox(layout, row, "波特率:", "BaudRate", BaudRates, 9600, 0);
-            // 数据位 - 改为下拉框
-            AddConfigComboBox(layout, row++, "数据位:", "DataBits", DataBitsList, 8, 2);
+            // 波特率 - 允许手动输入（用于特殊波特率）
+            AddConfigComboBox(layout, row, "波特率:", "BaudRate",
+                BaudRates, 9600, 0, allowCustomInput: true);
+            // 数据位 - 不允许手动输入（固定选项）
+            AddConfigComboBox(layout, row++, "数据位:", "DataBits",
+                DataBitsList, 8, 2, allowCustomInput: false);
 
             // 停止位 - 使用枚举下拉框
             AddConfigComboBox(layout, row, "停止位:", "StopBits",
@@ -437,10 +444,13 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             int row = 0;
 
-            AddConfigRow(layout, row, "从站地址:", "SlaveAddress", "1", 0);
-            AddConfigComboBox(layout, row++, "串口:", "PortName", PortNames, "COM1", 2);
+            // 从站地址 - 添加正整数验证
+            AddConfigRow(layout, row, "从站地址:", "SlaveAddress", "1", 0, ValidationType.PositiveInteger);
+            AddConfigComboBox(layout, row++, "串口:", "PortName",
+                GetAvailablePorts(), "COM1", 2, allowCustomInput: true);
 
-            AddConfigComboBox(layout, row, "波特率:", "BaudRate", BaudRates, 9600, 0);
+            AddConfigComboBox(layout, row, "波特率:", "BaudRate",
+                BaudRates, 9600, 0, allowCustomInput: true);
             AddConfigComboBox(layout, row++, "数据位:", "DataBits", DataBitsList, 8, 2);
 
             AddConfigComboBox(layout, row, "停止位:", "StopBits",
@@ -449,7 +459,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 Enum.GetValues(typeof(ParityType)), ParityType.None, 2);
 
             AddConfigComboBox(layout, row, "字节序:", "ByteOrder", ByteOrders, "BigEndian", 0);
-            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
+            // 读取超时 - 添加超时验证
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2, ValidationType.Timeout);
         }
 
         private void CreateModbusTcpConfigControls(TableLayoutPanel layout)
@@ -470,10 +481,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             int row = 0;
 
-            AddConfigRow(layout, row++, "基础URL:", "BaseUrl", "http://192.168.1.100");
+            // 基础URL - 添加URL验证
+            AddConfigRow(layout, row++, "基础URL:", "BaseUrl",
+                "http://192.168.0.100", 0, ValidationType.Url);
 
-            AddConfigComboBox(layout, row, "认证类型:", "AuthType", AuthTypes, "None", 0);
-            AddConfigComboBox(layout, row++, "内容类型:", "ContentType", ContentTypes, "application/json", 2);
+            AddConfigComboBox(layout, row, "认证类型:", "AuthType",
+                AuthTypes, "None", 0, allowCustomInput: false);
+            AddConfigComboBox(layout, row++, "内容类型:", "ContentType",
+                ContentTypes, "application/json", 2, allowCustomInput: true);
 
             AddConfigRow(layout, row, "用户名:", "Username", "", 0);
             AddConfigRow(layout, row++, "密码:", "Password", "", 2);
@@ -492,7 +507,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         #endregion
 
-        private void AddConfigRow(TableLayoutPanel layout, int row, string label, string name, string defaultValue, int col = 0)
+        /// <summary>
+        /// 添加文本框配置行（支持验证）
+        /// </summary>
+        private void AddConfigRow(TableLayoutPanel layout, int row, string label,
+            string name, string defaultValue, int col = 0, ValidationType? validationType = null)
         {
             var lbl = new Label
             {
@@ -509,6 +528,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 Name = name
             };
 
+            // 添加验证
+            if (validationType.HasValue)
+            {
+                AddValidationToTextBox(txt, validationType.Value);
+            }
+
             layout.Controls.Add(lbl, col, row);
             layout.Controls.Add(txt, col + 1, row);
 
@@ -516,8 +541,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         }
 
         // 支持下拉框的重载方法
+        /// <summary>
+        /// 添加下拉框配置行
+        /// </summary>
+        /// <param name="allowCustomInput">是否允许用户手动输入（默认false只能选择）</param>
         private void AddConfigComboBox(TableLayoutPanel layout, int row, string label,
-            string name, object dataSource, object defaultValue, int col = 0)
+            string name, object dataSource, object defaultValue, int col = 0, bool allowCustomInput = false)
         {
             var lbl = new Label
             {
@@ -531,7 +560,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 Dock = DockStyle.Fill,
                 Name = name,
-                DropDownStyle = UIDropDownStyle.DropDownList // 只允许选择，不允许输入
+                // 根据参数决定是否允许手动输入
+                DropDownStyle = allowCustomInput ? UIDropDownStyle.DropDown : UIDropDownStyle.DropDownList
             };
 
             switch (dataSource)
@@ -550,7 +580,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 {
                     cbo.DataSource = new List<string>(stringList);
                     if (defaultValue != null)
-                        cbo.SelectedItem = defaultValue.ToString();
+                    {
+                        var index = ((List<string>)cbo.DataSource).IndexOf(defaultValue.ToString());
+                        if (index >= 0)
+                            cbo.SelectedIndex = index;
+                        else if (allowCustomInput)
+                            cbo.Text = defaultValue.ToString(); // 允许输入时直接设置文本
+                    }
+
                     break;
                 }
                 // 整数列表
@@ -558,7 +595,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 {
                     cbo.DataSource = new List<int>(intList);
                     if (defaultValue != null)
-                        cbo.SelectedItem = Convert.ToInt32(defaultValue);
+                    {
+                        var value = Convert.ToInt32(defaultValue);
+                        var index = ((List<int>)cbo.DataSource).IndexOf(value);
+                        if (index >= 0)
+                            cbo.SelectedIndex = index;
+                        else if (allowCustomInput)
+                            cbo.Text = value.ToString(); // 允许输入时直接设置文本
+                    }
+
                     break;
                 }
             }
@@ -566,7 +611,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             layout.Controls.Add(lbl, col, row);
             layout.Controls.Add(cbo, col + 1, row);
 
-            _protocolControls[name] = cbo; // 保存到同一个字典
+            _protocolControls[name] = cbo;
         }
 
         private void SetControlValue(string key, object value)
@@ -1321,6 +1366,165 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             "text/plain",
             "application/x-www-form-urlencoded"
         };
+
+        /// <summary>
+        /// 获取系统可用串口列表（动态检测）
+        /// </summary>
+        private static List<string> GetAvailablePorts()
+        {
+            try
+            {
+                var ports = System.IO.Ports.SerialPort.GetPortNames()
+                    .OrderBy(p => p)
+                    .ToList();
+
+                // 如果没有检测到串口，至少提供一个默认选项
+                if (!ports.Any())
+                {
+                    ports.Add("COM1");
+                }
+
+                return ports;
+            }
+            catch (Exception)
+            {
+                // 检测失败时返回默认串口列表
+                return new List<string>
+                {
+                    "COM1", "COM2", "COM3", "COM4", "COM5",
+                    "COM6", "COM7", "COM8", "COM9", "COM10"
+                };
+            }
+        }
+
+        #endregion
+
+        #region 输入验证
+
+        /// <summary>
+        /// 为文本框添加实时验证
+        /// </summary>
+        private void AddValidationToTextBox(UITextBox textBox, ValidationType type)
+        {
+            textBox.TextChanged += (s, e) => ValidateTextBox(textBox, type);
+            textBox.Leave += (s, e) => ValidateTextBox(textBox, type);
+        }
+
+        /// <summary>
+        /// 验证类型枚举
+        /// </summary>
+        private enum ValidationType
+        {
+            IpAddress,      // IP地址
+            Port,           // 端口号
+            Timeout,        // 超时时间
+            PositiveInteger,// 正整数
+            Url,            // URL地址
+            NotEmpty        // 非空
+        }
+
+        /// <summary>
+        /// 验证文本框内容
+        /// </summary>
+        private void ValidateTextBox(UITextBox textBox, ValidationType type)
+        {
+            if (string.IsNullOrWhiteSpace(textBox.Text))
+            {
+                // 空值处理
+                if (type != ValidationType.NotEmpty)
+                {
+                    ResetTextBoxStyle(textBox);
+                    return;
+                }
+            }
+
+            bool isValid = type switch
+            {
+                ValidationType.IpAddress => ValidateIpAddress(textBox.Text),
+                ValidationType.Port => ValidatePort(textBox.Text),
+                ValidationType.Timeout => ValidateTimeout(textBox.Text),
+                ValidationType.PositiveInteger => ValidatePositiveInteger(textBox.Text),
+                ValidationType.Url => ValidateUrl(textBox.Text),
+                ValidationType.NotEmpty => !string.IsNullOrWhiteSpace(textBox.Text),
+                _ => true
+            };
+
+            if (isValid)
+            {
+                ResetTextBoxStyle(textBox);
+                textBox.Watermark = null;
+            }
+            else
+            {
+                SetErrorStyle(textBox);
+                textBox.Watermark = GetValidationMessage(type);
+            }
+        }
+
+        /// <summary>
+        /// 设置错误样式
+        /// </summary>
+        private void SetErrorStyle(UITextBox textBox)
+        {
+            textBox.RectColor = Color.Red;
+            textBox.ForeColor = Color.Red;
+        }
+
+        /// <summary>
+        /// 重置文本框样式
+        /// </summary>
+        private void ResetTextBoxStyle(UITextBox textBox)
+        {
+            textBox.RectColor = Color.FromArgb(220, 220, 220);
+            textBox.ForeColor = Color.Black;
+        }
+
+        /// <summary>
+        /// 获取验证提示消息
+        /// </summary>
+        private string GetValidationMessage(ValidationType type)
+        {
+            return type switch
+            {
+                ValidationType.IpAddress => "请输入有效的IP地址（例如：192.168.1.100）",
+                ValidationType.Port => "请输入有效的端口号（1-65535）",
+                ValidationType.Timeout => "请输入有效的超时时间（毫秒，0-300000）",
+                ValidationType.PositiveInteger => "请输入正整数",
+                ValidationType.Url => "请输入有效的URL地址",
+                ValidationType.NotEmpty => "此字段不能为空",
+                _ => "输入格式不正确"
+            };
+        }
+
+        #region 具体验证方法
+
+        private bool ValidateIpAddress(string input)
+        {
+            return System.Net.IPAddress.TryParse(input, out _);
+        }
+
+        private bool ValidatePort(string input)
+        {
+            return int.TryParse(input, out var port) && port > 0 && port <= 65535;
+        }
+
+        private bool ValidateTimeout(string input)
+        {
+            return int.TryParse(input, out var timeout) && timeout >= 0 && timeout <= 300000;
+        }
+
+        private bool ValidatePositiveInteger(string input)
+        {
+            return int.TryParse(input, out var value) && value > 0;
+        }
+
+        private bool ValidateUrl(string input)
+        {
+            return Uri.TryCreate(input, UriKind.Absolute, out var uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+        }
+
+        #endregion
 
         #endregion
     }
