@@ -88,7 +88,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             dgvCommands.CellDoubleClick += DgvCommands_CellDoubleClick;
 
             // 底部按钮事件
-            btnTestConnection.Click += BtnTestConnection_Click;
             btnSave.Click += BtnSave_Click;
             btnCancel.Click += BtnCancel_Click;
         }
@@ -412,19 +411,25 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             int row = 0;
 
-            // 串口名称
-            AddConfigRow(layout, row++, "串口:", "PortName", "COM1");
+            // 串口名称 - 改为下拉框
+            AddConfigComboBox(layout, row++, "串口:", "PortName", PortNames, "COM1");
 
-            // 波特率和数据位
-            AddConfigRow(layout, row, "波特率:", "BaudRate", "9600", 0);
-            AddConfigRow(layout, row++, "数据位:", "DataBits", "8", 2);
+            // 波特率 - 改为下拉框
+            AddConfigComboBox(layout, row, "波特率:", "BaudRate", BaudRates, 9600, 0);
+            // 数据位 - 改为下拉框
+            AddConfigComboBox(layout, row++, "数据位:", "DataBits", DataBitsList, 8, 2);
 
-            // 停止位和校验
-            AddConfigRow(layout, row, "停止位:", "StopBits", "One", 0);
-            AddConfigRow(layout, row++, "校验位:", "Parity", "None", 2);
+            // 停止位 - 使用枚举下拉框
+            AddConfigComboBox(layout, row, "停止位:", "StopBits",
+                Enum.GetValues(typeof(StopBitsType)), StopBitsType.One, 0);
+            // 校验位 - 使用枚举下拉框
+            AddConfigComboBox(layout, row++, "校验位:", "Parity",
+                Enum.GetValues(typeof(ParityType)), ParityType.None, 2);
 
-            // 流控制和超时
-            AddConfigRow(layout, row, "流控制:", "FlowControl", "None", 0);
+            // 流控制 - 使用枚举下拉框
+            AddConfigComboBox(layout, row, "流控制:", "FlowControl",
+                Enum.GetValues(typeof(FlowControlType)), FlowControlType.None, 0);
+            // 读取超时 - 保持文本框
             AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
         }
 
@@ -433,15 +438,17 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             int row = 0;
 
             AddConfigRow(layout, row, "从站地址:", "SlaveAddress", "1", 0);
-            AddConfigRow(layout, row++, "串口:", "PortName", "COM1", 2);
+            AddConfigComboBox(layout, row++, "串口:", "PortName", PortNames, "COM1", 2);
 
-            AddConfigRow(layout, row, "波特率:", "BaudRate", "9600", 0);
-            AddConfigRow(layout, row++, "数据位:", "DataBits", "8", 2);
+            AddConfigComboBox(layout, row, "波特率:", "BaudRate", BaudRates, 9600, 0);
+            AddConfigComboBox(layout, row++, "数据位:", "DataBits", DataBitsList, 8, 2);
 
-            AddConfigRow(layout, row, "停止位:", "StopBits", "One", 0);
-            AddConfigRow(layout, row++, "校验位:", "Parity", "None", 2);
+            AddConfigComboBox(layout, row, "停止位:", "StopBits",
+                Enum.GetValues(typeof(StopBitsType)), StopBitsType.One, 0);
+            AddConfigComboBox(layout, row++, "校验位:", "Parity",
+                Enum.GetValues(typeof(ParityType)), ParityType.None, 2);
 
-            AddConfigRow(layout, row, "字节序:", "ByteOrder", "BigEndian", 0);
+            AddConfigComboBox(layout, row, "字节序:", "ByteOrder", ByteOrders, "BigEndian", 0);
             AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
         }
 
@@ -453,9 +460,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             AddConfigRow(layout, row++, "IP地址:", "IpAddress", "192.168.1.100", 2);
 
             AddConfigRow(layout, row, "端口:", "Port", "502", 0);
-            AddConfigRow(layout, row++, "字节序:", "ByteOrder", "BigEndian", 2);
+            AddConfigComboBox(layout, row++, "字节序:", "ByteOrder", ByteOrders, "BigEndian", 2);
 
-            AddConfigRow(layout, row, "读取超时:", "ReadTimeout", "3000", 0);
+            AddConfigRow(layout, row, "连接超时:", "ConnectionTimeout", "5000", 0);
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
         }
 
         private void CreateHttpConfigControls(TableLayoutPanel layout)
@@ -464,8 +472,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             AddConfigRow(layout, row++, "基础URL:", "BaseUrl", "http://192.168.1.100");
 
-            AddConfigRow(layout, row, "认证类型:", "AuthType", "None", 0);
-            AddConfigRow(layout, row++, "内容类型:", "ContentType", "application/json", 2);
+            AddConfigComboBox(layout, row, "认证类型:", "AuthType", AuthTypes, "None", 0);
+            AddConfigComboBox(layout, row++, "内容类型:", "ContentType", ContentTypes, "application/json", 2);
 
             AddConfigRow(layout, row, "用户名:", "Username", "", 0);
             AddConfigRow(layout, row++, "密码:", "Password", "", 2);
@@ -507,6 +515,60 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             _protocolControls[name] = txt;
         }
 
+        // 支持下拉框的重载方法
+        private void AddConfigComboBox(TableLayoutPanel layout, int row, string label,
+            string name, object dataSource, object defaultValue, int col = 0)
+        {
+            var lbl = new Label
+            {
+                Text = label,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleRight,
+                Font = new Font("微软雅黑", 11F)
+            };
+
+            var cbo = new UIComboBox
+            {
+                Dock = DockStyle.Fill,
+                Name = name,
+                DropDownStyle = UIDropDownStyle.DropDownList // 只允许选择，不允许输入
+            };
+
+            switch (dataSource)
+            {
+                // 根据数据源类型设置下拉框
+                // 枚举类型
+                case Array enumArray:
+                {
+                    cbo.DataSource = enumArray;
+                    if (defaultValue != null)
+                        cbo.SelectedItem = defaultValue;
+                    break;
+                }
+                // 字符串列表
+                case IEnumerable<string> stringList:
+                {
+                    cbo.DataSource = new List<string>(stringList);
+                    if (defaultValue != null)
+                        cbo.SelectedItem = defaultValue.ToString();
+                    break;
+                }
+                // 整数列表
+                case IEnumerable<int> intList:
+                {
+                    cbo.DataSource = new List<int>(intList);
+                    if (defaultValue != null)
+                        cbo.SelectedItem = Convert.ToInt32(defaultValue);
+                    break;
+                }
+            }
+
+            layout.Controls.Add(lbl, col, row);
+            layout.Controls.Add(cbo, col + 1, row);
+
+            _protocolControls[name] = cbo; // 保存到同一个字典
+        }
+
         private void SetControlValue(string key, object value)
         {
             if (!_protocolControls.TryGetValue(key, out var control))
@@ -517,12 +579,38 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 case UITextBox txt:
                     txt.Text = value?.ToString() ?? "";
                     break;
+
                 case UIComboBox cbo:
-                    if (value is Enum)
-                        cbo.SelectedItem = value;
-                    else
-                        cbo.Text = value?.ToString() ?? "";
+                    if (value is Enum enumValue)
+                    {
+                        // 枚举类型直接设置
+                        cbo.SelectedItem = enumValue;
+                    }
+                    else if (value is int intValue && cbo.DataSource is List<int>)
+                    {
+                        // 整数类型（如波特率）
+                        cbo.SelectedItem = intValue;
+                    }
+                    else if (value is string strValue)
+                    {
+                        // 字符串类型尝试匹配
+                        cbo.SelectedItem = strValue;
+
+                        // 如果没找到匹配项，尝试解析枚举
+                        if (cbo.SelectedItem == null && cbo.DataSource is Array)
+                        {
+                            foreach (var item in (Array)cbo.DataSource)
+                            {
+                                if (item.ToString() == strValue)
+                                {
+                                    cbo.SelectedItem = item;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     break;
+
                 case UICheckBox chk:
                     chk.Checked = value is bool b && b;
                     break;
@@ -534,21 +622,70 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             if (!_protocolControls.TryGetValue(name, out var control))
                 return defaultValue;
 
-            var text = control is UITextBox txt ? txt.Text :
-                       control is UIComboBox cbo ? cbo.Text : "";
+            try
+            {
+                switch (control)
+                {
+                    case UITextBox txt:
+                        return ConvertValue<T>(txt.Text, defaultValue);
+
+                    case UIComboBox cbo:
+                        if (cbo.SelectedItem == null)
+                            return defaultValue;
+
+                        // 如果目标类型是枚举且选中项也是枚举
+                        if (typeof(T).IsEnum && cbo.SelectedItem is Enum)
+                            return (T)cbo.SelectedItem;
+
+                        // 如果目标类型是 int 且选中项是 int
+                        if (typeof(T) == typeof(int) && cbo.SelectedItem is int)
+                            return (T)cbo.SelectedItem;
+
+                        // 如果目标类型是 string
+                        if (typeof(T) == typeof(string))
+                            return (T)(object)cbo.SelectedItem.ToString();
+
+                        // 尝试转换选中项的字符串表示
+                        return ConvertValue<T>(cbo.SelectedItem.ToString(), defaultValue);
+
+                    case UICheckBox chk:
+                        if (typeof(T) == typeof(bool))
+                            return (T)(object)chk.Checked;
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, $"获取控件 {name} 的值失败，使用默认值");
+            }
+
+            return defaultValue;
+        }
+
+        // 辅助转换方法
+        private T ConvertValue<T>(string text, T defaultValue)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return defaultValue;
 
             try
             {
                 if (typeof(T) == typeof(string))
                     return (T)(object)text;
+
                 if (typeof(T) == typeof(int))
                     return int.TryParse(text, out var i) ? (T)(object)i : defaultValue;
+
                 if (typeof(T) == typeof(byte))
                     return byte.TryParse(text, out var b) ? (T)(object)b : defaultValue;
+
+                if (typeof(T).IsEnum)
+                    return Enum.TryParse(typeof(T), text, true, out var enumValue)
+                        ? (T)enumValue : defaultValue;
             }
             catch
             {
-                // ignored
+                // 转换失败返回默认值
             }
 
             return defaultValue;
@@ -1022,83 +1159,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         #region 底部按钮事件
 
-        private void BtnTestConnection_Click(object sender, EventArgs e)
-        {
-            if (_selectedDriver == null)
-            {
-                MessageHelper.MessageOK(this, "请先选择要测试的仪器");
-                return;
-            }
-
-            // 显示加载提示
-            this.ShowWaitForm("正在测试连接...");
-
-            //try
-            //{
-            //    // 创建通讯方法实例
-            //    var variableManager = ServiceLocator.GetService<GlobalVariableManager>();
-            //    var expressionEngine = ServiceLocator.GetService<ExpressionEngine>();
-
-            //    var methods = new InstrumentCommunicationMethods(
-            //        _logger,
-            //        _driverService,
-            //        variableManager,
-            //        expressionEngine
-            //    );
-
-            //    // 执行测试
-            //    var result = await methods.TestConnectionAsync(
-            //        _selectedDriver.DriverId
-            //    );
-
-            //    this.HideWaitForm();
-
-            //    if (result.Success)
-            //    {
-            //        // 显示详细日志
-            //        var logText = $"【连接测试成功】\n\n" +
-            //                     $"仪器名称: {_selectedDriver.DisplayName}\n" +
-            //                     $"协议类型: {_selectedDriver.ProtocolType}\n" +
-            //                     $"耗时: {result.ElapsedMilliseconds}ms\n\n" +
-            //                     $"发送数据(HEX): {result.SentHex ?? "无"}\n" +
-            //                     $"发送数据(STR): {result.SentString ?? "无"}\n\n" +
-            //                     $"接收数据(HEX): {result.ResponseHex ?? "无"}\n" +
-            //                     $"接收数据(STR): {result.ResponseString ?? "无"}";
-
-            //        // 使用富文本框显示日志
-            //        var logForm = new Form
-            //        {
-            //            Text = "连接测试日志",
-            //            Size = new Size(900, 600),
-            //            StartPosition = FormStartPosition.CenterParent
-            //        };
-
-            //        var txtLog = new RichTextBox
-            //        {
-            //            Dock = DockStyle.Fill,
-            //            ReadOnly = true,
-            //            Font = new Font("Consolas", 10),
-            //            Text = logText
-            //        };
-
-            //        logForm.Controls.Add(txtLog);
-            //        logForm.ShowDialog();
-
-            //        UIMessageTip.ShowOk($"连接成功!\n耗时: {result.ElapsedMilliseconds}ms");
-            //    }
-            //    else
-            //    {
-            //        UIMessageTip.ShowError($"连接失败!\n{result.ErrorMessage}");
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    this.HideWaitForm();
-            //    _logger?.LogError(ex, "测试连接时发生错误");
-            //    UIMessageTip.ShowError($"测试失败: {ex.Message}");
-            //}
-        }
-
         private async void BtnSave_Click(object sender, EventArgs e)
         {
             if (!ValidateInput())
@@ -1222,5 +1282,46 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         #endregion
 
+        #region 协议配置下拉框选项
+
+        // 串口号列表
+        private static readonly List<string> PortNames = new()
+        {
+            "COM1", "COM2", "COM3", "COM4", "COM5",
+            "COM6", "COM7", "COM8", "COM9", "COM10"
+        };
+
+        // 波特率列表
+        private static readonly List<int> BaudRates = new()
+        {
+            1200, 2400, 4800, 9600, 14400, 19200,
+            38400, 57600, 115200, 128000, 256000
+        };
+
+        // 数据位列表
+        private static readonly List<int> DataBitsList = new() { 5, 6, 7, 8 };
+
+        // 字节序选项
+        private static readonly List<string> ByteOrders = new()
+        {
+            "BigEndian", "LittleEndian"
+        };
+
+        // HTTP认证类型
+        private static readonly List<string> AuthTypes = new()
+        {
+            "None", "Basic", "Bearer", "ApiKey"
+        };
+
+        // HTTP内容类型
+        private static readonly List<string> ContentTypes = new()
+        {
+            "application/json",
+            "application/xml",
+            "text/plain",
+            "application/x-www-form-urlencoded"
+        };
+
+        #endregion
     }
 }
