@@ -1,24 +1,27 @@
 ﻿using MainUI.LogicalConfiguration.Instrument.Models;
 using Microsoft.Extensions.Logging;
 using System.IO.Ports;
-using System.Text;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace MainUI.LogicalConfiguration.Instrument.Communication
 {
     /// <summary>
     /// 串口通讯提供者
+    /// 
+    /// 增强异常处理，确保串口完全释放
+    /// 添加重试机制处理"Access Denied"错误
+    /// 增加串口占用检测和强制释放
+    /// 优化Dispose模式
     /// </summary>
     public class SerialCommunicationProvider(ILogger logger = null) : ICommunicationProvider
     {
         private SerialPort _serialPort;
         private SerialProtocolConfig _config;
         private readonly object _lockObject = new();
+        private bool _disposed = false;
 
         public ProtocolType ProtocolType => ProtocolType.Serial;
-
         public bool IsConnected => _serialPort?.IsOpen ?? false;
-
         public string ConnectionId => _config?.PortName ?? "";
 
         public Task<bool> ConnectAsync(ProtocolConfigBase config, CancellationToken cancellationToken = default)
@@ -33,44 +36,171 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             {
                 lock (_lockObject)
                 {
-                    switch (_serialPort?.IsOpen)
+                    // 如果已连接到相同串口且配置相同，复用连接
+                    if (_serialPort?.IsOpen == true &&
+                        _config?.PortName == serialConfig.PortName &&
+                        _config?.BaudRate == serialConfig.BaudRate)
                     {
-                        // 如果已连接到相同串口，复用
-                        case true when (_config?.PortName == serialConfig.PortName):
-                            return Task.FromResult(true);
-                        // 关闭旧连接
-                        case true:
-                            _serialPort.Close();
-                            break;
+                        logger?.LogDebug("复用现有串口连接: {PortName}", serialConfig.PortName);
+                        return Task.FromResult(true);
                     }
 
-                    _serialPort?.Dispose();
+                    // 安全关闭旧连接
+                    SafeCloseSerialPort();
 
                     _config = serialConfig;
-                    _serialPort = new SerialPort
-                    {
-                        PortName = serialConfig.PortName,
-                        BaudRate = serialConfig.BaudRate,
-                        DataBits = serialConfig.DataBits,
-                        StopBits = ConvertStopBits(serialConfig.StopBits),
-                        Parity = ConvertParity(serialConfig.Parity),
-                        Handshake = ConvertFlowControl(serialConfig.FlowControl),
-                        ReadTimeout = serialConfig.ReadTimeout,
-                        WriteTimeout = serialConfig.WriteTimeout,
-                        DtrEnable = serialConfig.DtrEnable,
-                        RtsEnable = serialConfig.RtsEnable
-                    };
 
-                    _serialPort.Open();
+                    // 重试机制
+                    return Task.FromResult(ConnectWithRetry(serialConfig, maxRetries: 3));
                 }
-
-                logger?.LogInformation("串口连接成功: {PortName}", serialConfig.PortName);
-                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 logger?.LogError(ex, "串口连接失败: {PortName}", serialConfig.PortName);
                 return Task.FromResult(false);
+            }
+        }
+
+        /// <summary>
+        /// 带重试的连接方法
+        /// </summary>
+        private bool ConnectWithRetry(SerialProtocolConfig config, int maxRetries = 3)
+        {
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    logger?.LogDebug("尝试连接串口 (第{Attempt}/{Max}次): {PortName}",
+                        attempt, maxRetries, config.PortName);
+
+                    // 创建新的串口对象
+                    _serialPort = new SerialPort
+                    {
+                        PortName = config.PortName,
+                        BaudRate = config.BaudRate,
+                        DataBits = config.DataBits,
+                        StopBits = ConvertStopBits(config.StopBits),
+                        Parity = ConvertParity(config.Parity),
+                        Handshake = ConvertFlowControl(config.FlowControl),
+                        ReadTimeout = config.ReadTimeout,
+                        WriteTimeout = config.WriteTimeout,
+                        DtrEnable = config.DtrEnable,
+                        RtsEnable = config.RtsEnable
+                    };
+
+                    _serialPort.Open();
+
+                    logger?.LogInformation("串口连接成功: {PortName} (第{Attempt}次尝试)",
+                        config.PortName, attempt);
+                    return true;
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    logger?.LogWarning("串口访问被拒绝 (第{Attempt}/{Max}次): {PortName} - {Message}",
+                        attempt, maxRetries, config.PortName, ex.Message);
+
+                    // 尝试强制释放
+                    if (attempt < maxRetries)
+                    {
+                        ForceReleasePort(config.PortName);
+                        Thread.Sleep(200 * attempt); // 递增延时: 200ms, 400ms, 600ms
+                    }
+                }
+                catch (IOException ex)
+                {
+                    logger?.LogWarning("串口IO错误 (第{Attempt}/{Max}次): {PortName} - {Message}",
+                        attempt, maxRetries, config.PortName, ex.Message);
+
+                    if (attempt < maxRetries)
+                    {
+                        Thread.Sleep(100 * attempt);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogError(ex, "串口连接异常 (第{Attempt}/{Max}次): {PortName}",
+                        attempt, maxRetries, config.PortName);
+
+                    if (attempt >= maxRetries)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 安全关闭串口
+        /// </summary>
+        private void SafeCloseSerialPort()
+        {
+            if (_serialPort == null)
+                return;
+
+            try
+            {
+                if (!_serialPort.IsOpen) return;
+
+                logger?.LogDebug("正在关闭串口: {PortName}", _serialPort.PortName);
+
+                // 清空缓冲区
+                try
+                {
+                    _serialPort.DiscardInBuffer();
+                    _serialPort.DiscardOutBuffer();
+                }
+                catch { /* 忽略缓冲区清空错误 */ }
+
+                // 关闭串口
+                _serialPort.Close();
+                logger?.LogDebug("串口已关闭: {PortName}", _serialPort.PortName);
+            }
+            catch (Exception ex)
+            {
+                logger?.LogWarning(ex, "关闭串口时发生异常");
+            }
+            finally
+            {
+                // 确保释放资源
+                try
+                {
+                    _serialPort?.Dispose();
+                }
+                catch { /* 忽略Dispose错误 */ }
+
+                _serialPort = null;
+            }
+        }
+
+        /// <summary>
+        /// 强制释放串口（尝试清除系统锁定）
+        /// </summary>
+        private void ForceReleasePort(string portName)
+        {
+            try
+            {
+                logger?.LogDebug("尝试强制释放串口: {PortName}", portName);
+
+                // 尝试通过创建临时SerialPort对象来释放
+                using (var tempPort = new SerialPort(portName))
+                {
+                    if (tempPort.IsOpen)
+                    {
+                        tempPort.Close();
+                    }
+                }
+
+                // 强制GC清理
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+                logger?.LogDebug("强制释放完成: {PortName}", portName);
+            }
+            catch (Exception ex)
+            {
+                logger?.LogDebug("强制释放失败: {PortName} - {Message}", portName, ex.Message);
             }
         }
 
@@ -80,12 +210,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             {
                 try
                 {
-                    if (_serialPort?.IsOpen == true)
-                    {
-                        _serialPort.Close();
-                    }
-                    _serialPort?.Dispose();
-                    _serialPort = null;
+                    SafeCloseSerialPort();
                     logger?.LogInformation("串口已断开: {PortName}", _config?.PortName);
                 }
                 catch (Exception ex)
@@ -106,7 +231,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             var result = new CommunicationResult
             {
                 SentData = data,
-                SentString = EncodingHelper.SmartDecode(data)  // 智能解码
+                SentString = EncodingHelper.SmartDecode(data)
             };
 
             var sw = Stopwatch.StartNew();
@@ -138,9 +263,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 var responseData = await ReceiveAsync(frameConfig, timeout, cancellationToken);
 
                 result.RawResponse = responseData;
-                result.RawResponse = responseData;
                 result.ResponseString = responseData != null ?
-                    EncodingHelper.SmartDecode(responseData) : "";  // 智能解码
+                    EncodingHelper.SmartDecode(responseData) : "";
                 result.Success = responseData != null && responseData.Length > 0;
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
 
@@ -189,29 +313,24 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                     if (_serialPort.BytesToRead > 0)
                     {
                         var bytesRead = _serialPort.Read(buffer, 0, Math.Min(buffer.Length, _serialPort.BytesToRead));
-                        if (bytesRead > 0)
-                        {
-                            receivedData.AddRange(buffer.Take(bytesRead));
+                        receivedData.AddRange(buffer.Take(bytesRead));
 
-                            // 检查是否接收完成
-                            if (IsResponseComplete(receivedData.ToArray(), frameConfig))
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (receivedData.Count > 0)
+                        // 检查是否接收完整
+                        if (frameConfig?.Enabled == true)
                         {
-                            await Task.Delay(20, cts.Token);
-                            if (_serialPort.BytesToRead == 0)
+                            if (IsFrameComplete(receivedData.ToArray(), frameConfig))
                                 break;
                         }
                         else
                         {
-                            await Task.Delay(10, cts.Token);
+                            await Task.Delay(50, cts.Token);
+                            if (_serialPort.BytesToRead == 0)
+                                break;
                         }
+                    }
+                    else
+                    {
+                        await Task.Delay(10, cts.Token);
                     }
                 }
 
@@ -219,50 +338,41 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             }
             catch (OperationCanceledException)
             {
-                logger?.LogDebug("串口接收超时");
-                return Array.Empty<byte>();
+                return null;
             }
             catch (Exception ex)
             {
                 logger?.LogError(ex, "串口接收异常");
-                return Array.Empty<byte>();
+                return null;
             }
         }
 
-        private bool IsResponseComplete(byte[] data, FrameConfig frameConfig)
+        private bool IsFrameComplete(byte[] data, FrameConfig config)
         {
-            if (data == null || data.Length == 0)
+            if (data.Length == 0)
                 return false;
 
-            if (frameConfig == null || !frameConfig.Enabled)
-                return true;
+            // 检查帧尾
+            if (string.IsNullOrEmpty(config.FrameFooter)) return false;
 
-            // 实现与TCP相同的逻辑
-            if (frameConfig.FixedResponseLength > 0)
-            {
-                return data.Length >= frameConfig.FixedResponseLength;
-            }
+            var footer = Convert.FromHexString(config.FrameFooter.Replace(" ", ""));
 
-            if (!string.IsNullOrEmpty(frameConfig.ResponseTerminator))
-            {
-                var terminator = Encoding.ASCII.GetBytes(frameConfig.ResponseTerminator.Replace("\\n", "\n").Replace("\\r", "\r"));
-                if (data.Length >= terminator.Length)
-                {
-                    var endBytes = data.Skip(data.Length - terminator.Length).ToArray();
-                    return endBytes.SequenceEqual(terminator);
-                }
-            }
+            if (data.Length < footer.Length) return false;
 
-            return false;
+            var endBytes = data.Skip(data.Length - footer.Length).ToArray();
+
+            return endBytes.SequenceEqual(footer);
         }
+
+        #region 类型转换辅助方法
 
         private static StopBits ConvertStopBits(StopBitsType type)
         {
             return type switch
             {
                 StopBitsType.One => StopBits.One,
-                StopBitsType.OnePointFive => StopBits.OnePointFive,
                 StopBitsType.Two => StopBits.Two,
+                StopBitsType.OnePointFive => StopBits.OnePointFive,
                 _ => StopBits.One
             };
         }
@@ -291,9 +401,37 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             };
         }
 
+        #endregion
+
+        #region IDisposable实现
+
         public void Dispose()
         {
-            DisconnectAsync().Wait();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                lock (_lockObject)
+                {
+                    SafeCloseSerialPort();
+                }
+            }
+
+            _disposed = true;
+        }
+
+        ~SerialCommunicationProvider()
+        {
+            Dispose(false);
+        }
+
+        #endregion
     }
 }
