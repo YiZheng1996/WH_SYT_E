@@ -31,8 +31,8 @@ namespace MainUI.LogicalConfiguration.Instrument.TestTools
         {
             Log("--- TCP测试 ---");
 
-            SimpleTcpServer? server = null;
-            TcpCommunicationProvider? provider = null;
+            SimpleTcpServer server = null;
+            TcpCommunicationProvider provider = null;
 
             try
             {
@@ -86,8 +86,8 @@ namespace MainUI.LogicalConfiguration.Instrument.TestTools
         {
             Log("--- 串口测试 ---");
 
-            SerialLoopbackTester? loopback = null;
-            SerialCommunicationProvider? provider = null;
+            SerialLoopbackTester loopback = null;
+            SerialCommunicationProvider provider = null;
 
             try
             {

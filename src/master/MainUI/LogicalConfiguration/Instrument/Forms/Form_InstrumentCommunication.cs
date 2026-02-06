@@ -286,7 +286,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             try
             {
-                var factory = new Instrument.Communication.CommunicationProviderFactory();
+                var factory = new Communication.CommunicationProviderFactory();
                 var provider = factory.CreateProvider(_selectedDriver.ProtocolType);
                 var connected = await provider.ConnectAsync(_selectedDriver.GetProtocolConfig());
                 await provider.DisconnectAsync();

@@ -27,9 +27,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
         public static CommunicationProviderFactory Instance => _instance.Value;
 
         /// <summary>
-        /// 私有构造函数
+        /// 构造函数
         /// </summary>
-        private CommunicationProviderFactory()
+        public CommunicationProviderFactory()
         {
         }
 
@@ -58,7 +58,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
         /// <summary>
         /// 创建新的通讯提供者
         /// </summary>
-        private ICommunicationProvider CreateProvider(ProtocolType protocolType)
+        public ICommunicationProvider CreateProvider(ProtocolType protocolType)
         {
             return protocolType switch
             {
@@ -117,7 +117,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 _logger?.LogWarning(ex, "移除提供者时发生异常: {Key}", key);
                 return false;
             }
-            return false;
         }
 
         /// <summary>

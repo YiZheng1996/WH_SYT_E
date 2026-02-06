@@ -27,7 +27,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
         private readonly IInstrumentDriverService _driverService = driverService ?? throw new ArgumentNullException(nameof(driverService));
         private readonly GlobalVariableManager _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
         private readonly ExpressionEngine _expressionEngine = expressionEngine ?? throw new ArgumentNullException(nameof(expressionEngine));
-        private readonly CommunicationProviderFactory _providerFactory = new(logger);
+        private readonly CommunicationProviderFactory _providerFactory = new();
 
         #endregion
 
@@ -309,10 +309,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
 
                     return false; // 立即返回，不再检查成功标识
                 }
-                else
-                {
-                    _logger.LogDebug("未检测到失败标识: [{Indicator}]", command.FailureIndicator);
-                }
+
+                _logger.LogDebug("未检测到失败标识: [{Indicator}]", command.FailureIndicator);
             }
 
             // 检查成功标识(使用不区分大小写匹配)
