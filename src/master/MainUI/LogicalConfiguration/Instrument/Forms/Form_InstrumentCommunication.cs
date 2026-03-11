@@ -1,5 +1,6 @@
 ﻿using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.Instrument.Communication;
 using MainUI.LogicalConfiguration.Instrument.Models;
 using MainUI.LogicalConfiguration.Instrument.Parameter;
 using MainUI.LogicalConfiguration.Instrument.Services;
@@ -192,11 +193,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // 驱动加载完成后，重新加载仪器选择
             LoadInstrumentSelection();
 
-            if (string.IsNullOrEmpty(_parameter?.DriverId)) return;
+            //if (string.IsNullOrEmpty(_parameter?.DriverId)) return;
 
-            var item = cboInstrument.Items.Cast<ComboBoxItem>()
-                .FirstOrDefault(i => ((InstrumentDriver)i.Value).DriverId == _parameter.DriverId);
-            if (item != null) cboInstrument.SelectedItem = item;
+            //var item = cboInstrument.Items.Cast<ComboBoxItem>()
+            //    .FirstOrDefault(i => ((InstrumentDriver)i.Value).DriverId == _parameter.DriverId);
+            //if (item != null) cboInstrument.SelectedItem = item;
         }
 
         /// <summary>
@@ -204,6 +205,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         /// </summary>
         private void LoadCommands()
         {
+            // 先 Detach 旧的输入面板
+            foreach (var ctrl in _paramControls.Values)
+            {
+                if (ctrl is UITextBox txt)
+                    ExpressionInputPanel.DetachFrom(txt);
+            }
             cboCommand.Items.Clear();
             _paramControls.Clear();
             flowParams.Controls.Clear();
@@ -227,7 +234,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             LoadCommandParametersWithValues();
         }
 
-        private  void OnDriversChanged()
+        private void OnDriversChanged()
         {
             if (IsDisposed || !IsHandleCreated) return;
 
@@ -286,25 +293,30 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             try
             {
-                var factory = new Communication.CommunicationProviderFactory();
-                var provider = factory.CreateProvider(_selectedDriver.ProtocolType);
-                var connected = await provider.ConnectAsync(_selectedDriver.GetProtocolConfig());
+                // ← 修复：使用单例工厂，connectionId 传入驱动ID避免与运行时连接混用
+                var testConnectionId = $"TEST_{_selectedDriver.DriverId}";
+                var provider = CommunicationProviderFactory.Instance.CreateProvider(_selectedDriver.ProtocolType);
+
+                var config = _selectedDriver.GetProtocolConfig();
+                var connected = await provider.ConnectAsync(config);
+
                 await provider.DisconnectAsync();
                 provider.Dispose();
 
                 if (connected)
                     UIMessageTip.ShowOk("连接测试成功！");
                 else
-                    UIMessageTip.ShowError("连接测试失败");
+                    UIMessageTip.ShowError("连接测试失败，请检查连接配置");
             }
             catch (Exception ex)
             {
                 UIMessageTip.ShowError($"测试异常: {ex.Message}");
+                Logger?.LogError(ex, "连接测试异常");
             }
             finally
             {
                 btnTestConnection.Enabled = true;
-                btnTestConnection.Text = "测试";
+                btnTestConnection.Text = "测试连接";
             }
         }
 
@@ -419,70 +431,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             }
         }
 
-        /// <summary>
-        /// 加载命令参数
-        /// </summary>
-        private void LoadCommandParametersWithValues()
-        {
-            _paramControls.Clear();
-            flowParams.Controls.Clear();
-
-            if (_selectedCommand == null) return;
-
-            foreach (var param in _selectedCommand.Parameters)
-            {
-                var panel = new Panel
-                {
-                    Width = flowParams.Width - 30,
-                    Height = 35,
-                    Margin = new Padding(0, 0, 0, 5)
-                };
-
-                var label = new Label
-                {
-                    Text = $"{param.DisplayName}:",
-                    Width = 120,
-                    TextAlign = System.Drawing.ContentAlignment.MiddleRight,
-                    Location = new System.Drawing.Point(0, 5)
-                };
-
-                Control inputControl;
-
-                // 获取已保存的值
-                string savedValue = _parameter?.CommandParameters?.ContainsKey(param.Name) == true
-                    ? _parameter.CommandParameters[param.Name]
-                    : param.DefaultValue;
-
-                if (param.Options?.Count > 0)
-                {
-                    var combo = new UIComboBox
-                    {
-                        Width = 200,
-                        Location = new System.Drawing.Point(125, 0),
-                        DropDownStyle = UIDropDownStyle.DropDown
-                    };
-                    foreach (var opt in param.Options)
-                        combo.Items.Add(opt);
-                    combo.Text = savedValue;
-                    inputControl = combo;
-                }
-                else
-                {
-                    inputControl = new UITextBox
-                    {
-                        Width = 200,
-                        Location = new System.Drawing.Point(125, 0),
-                        Text = savedValue,
-                        Watermark = param.Description
-                    };
-                }
-
-                _paramControls[param.Name] = inputControl;
-                panel.Controls.Add(label);
-                panel.Controls.Add(inputControl);
-                flowParams.Controls.Add(panel);
-            }
-        }
 
         /// <summary>
         /// 加载解析规则到DataGridView
@@ -588,19 +536,45 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (!chkCustomCommand.Checked && cboInstrument.SelectedItem == null)
             {
-                UIMessageTip.ShowWarning("请选择仪器");
+                MessageHelper.MessageOK(this, "请选择仪器");
                 return false;
             }
+
             if (!chkCustomCommand.Checked && cboCommand.SelectedItem == null)
             {
-                UIMessageTip.ShowWarning("请选择命令");
+                MessageHelper.MessageOK(this, "请选择命令");
                 return false;
             }
+
             if (chkCustomCommand.Checked && string.IsNullOrWhiteSpace(txtCustomCommand.Text))
             {
-                UIMessageTip.ShowWarning("请输入自定义命令内容");
+                MessageHelper.MessageOK(this, "请输入自定义命令内容");
                 return false;
             }
+
+            // ── 必填参数校验 ──────────────────────────
+            if (!chkCustomCommand.Checked && _selectedCommand != null)
+            {
+                foreach (var param in _selectedCommand.Parameters.Where(p => p.Required))
+                {
+                    if (!_paramControls.TryGetValue(param.Name, out var ctrl)) continue;
+
+                    var val = ctrl switch
+                    {
+                        UIComboBox combo => combo.Text,
+                        UITextBox txt => txt.Text,
+                        _ => ""
+                    };
+
+                    if (string.IsNullOrWhiteSpace(val))
+                    {
+                        MessageHelper.MessageOK(this, $"参数「{param.DisplayName}」为必填项，请填写");
+                        ctrl.Focus();
+                        return false;
+                    }
+                }
+            }
+
             return true;
         }
 
@@ -617,5 +591,264 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             public object Value { get; set; }
             public override string ToString() => Text;
         }
+
+        #region 命令参数动态渲染
+
+        /// <summary>
+        /// 根据选中的命令动态渲染参数输入行（含已保存的值回填）
+        /// </summary>
+        private void LoadCommandParametersWithValues()
+        {
+            // 清理旧控件：先 Detach 所有 ExpressionInputPanel，再清除
+            foreach (var ctrl in _paramControls.Values)
+            {
+                if (ctrl is UITextBox txt)
+                    ExpressionInputPanel.DetachFrom(txt);
+            }
+            _paramControls.Clear();
+            flowParams.Controls.Clear();
+
+            if (_selectedCommand == null) return;
+
+            // 没有参数时显示提示
+            if (_selectedCommand.Parameters == null || _selectedCommand.Parameters.Count == 0)
+            {
+                flowParams.Controls.Add(MakeNoParamHint());
+                return;
+            }
+
+            foreach (var param in _selectedCommand.Parameters)
+            {
+                // 取已保存的值，回退到参数默认值
+                string savedValue = _parameter?.CommandParameters?.TryGetValue(param.Name, out var sv) == true
+                    ? sv
+                    : param.DefaultValue ?? "";
+
+                var row = BuildParamRow(param, savedValue);
+                flowParams.Controls.Add(row);
+            }
+        }
+
+        /// <summary>
+        /// 构建单个参数的输入行 Panel
+        /// </summary>
+        private Panel BuildParamRow(CommandParameter param, string savedValue)
+        {
+            // ── 外层行容器 ────────────────────────────────
+            var row = new Panel
+            {
+                Width = Math.Max(flowParams.Width > 0 ? flowParams.Width - 8 : 400, 300),
+                Height = 42,
+                Margin = new Padding(0, 0, 0, 6),
+                Tag = param.Name
+            };
+
+            // ── 必填红星 ──────────────────────────────────
+            if (param.Required)
+            {
+                var star = new Label
+                {
+                    Text = "*",
+                    ForeColor = Color.Red,
+                    Font = new Font("微软雅黑", 12F, FontStyle.Bold),
+                    AutoSize = true,
+                    Location = new Point(0, 10)
+                };
+                row.Controls.Add(star);
+            }
+
+            // ── 标签（显示名称 + 类型提示）────────────────
+            var lbl = new UILabel
+            {
+                Text = $"{param.DisplayName}:",
+                Font = new Font("微软雅黑", 11F),
+                TextAlign = ContentAlignment.MiddleRight,
+                Location = new Point(10, 8),
+                Size = new Size(130, 26),
+                ForeColor = Color.FromArgb(48, 48, 48)
+            };
+            row.Controls.Add(lbl);
+
+            // ── 类型角标 ──────────────────────────────────
+            var typeTag = new Label
+            {
+                Text = GetDataTypeTag(param.DataType),
+                Font = new Font("微软雅黑", 9F),
+                ForeColor = Color.FromArgb(120, 120, 180),
+                AutoSize = true,
+                Location = new Point(146, 14)
+            };
+            row.Controls.Add(typeTag);
+
+            // ── 输入控件 ──────────────────────────────────
+            Control inputCtrl;
+
+            if (param.Options?.Count > 0)
+            {
+                // 有预定义选项 → 下拉框
+                inputCtrl = BuildComboInput(param, savedValue);
+            }
+            else
+            {
+                // 自由输入 → UITextBox + ExpressionInputPanel
+                inputCtrl = BuildTextInput(param, savedValue);
+            }
+
+            inputCtrl.Location = new Point(196, 6);
+            inputCtrl.Width = Math.Max(row.Width - 310, 160);
+            row.Controls.Add(inputCtrl);
+
+            // ── 范围提示标签 ──────────────────────────────
+            if (param.MinValue.HasValue || param.MaxValue.HasValue)
+            {
+                var rangeLbl = new Label
+                {
+                    Text = BuildRangeHint(param),
+                    Font = new Font("微软雅黑", 9F),
+                    ForeColor = Color.FromArgb(100, 100, 200),
+                    AutoSize = true,
+                    Location = new Point(inputCtrl.Right + 6, 14)
+                };
+                row.Controls.Add(rangeLbl);
+            }
+            else if (!string.IsNullOrEmpty(param.Description))
+            {
+                // 无范围但有描述 → 小提示
+                var descLbl = new Label
+                {
+                    Text = param.Description,
+                    Font = new Font("微软雅黑", 9F),
+                    ForeColor = Color.FromArgb(150, 150, 150),
+                    AutoSize = true,
+                    Location = new Point(inputCtrl.Right + 6, 14)
+                };
+                row.Controls.Add(descLbl);
+            }
+
+            // 存入字典，供保存时收集
+            _paramControls[param.Name] = inputCtrl;
+
+            return row;
+        }
+
+        /// <summary>
+        /// 构建下拉选项输入控件（参数定义了 Options 时）
+        /// </summary>
+        private UIComboBox BuildComboInput(CommandParameter param, string savedValue)
+        {
+            var combo = new UIComboBox
+            {
+                DropDownStyle = UIDropDownStyle.DropDownList,
+                Font = new Font("微软雅黑", 12F),
+                Height = 30,
+                FillColor = Color.White,
+                ItemHoverColor = Color.FromArgb(155, 200, 255),
+                ItemSelectForeColor = Color.FromArgb(235, 243, 255),
+                Padding = new Padding(0, 0, 30, 2),
+                SymbolSize = 24
+            };
+
+            foreach (var opt in param.Options)
+                combo.Items.Add(opt);
+
+            // 回填已保存的值
+            int idx = combo.Items.IndexOf(savedValue);
+            combo.SelectedIndex = idx >= 0 ? idx : (combo.Items.Count > 0 ? 0 : -1);
+
+            return combo;
+        }
+
+        /// <summary>
+        /// 构建文本输入控件，附加 ExpressionInputPanel
+        /// 支持直接输入固定值，也支持 {变量名} 引用变量
+        /// </summary>
+        private UITextBox BuildTextInput(CommandParameter param, string savedValue)
+        {
+            var txt = new UITextBox
+            {
+                Font = new Font("微软雅黑", 12F),
+                Height = 30,
+                Padding = new Padding(5),
+                ShowText = false,
+                TextAlignment = ContentAlignment.MiddleLeft,
+                Text = savedValue,
+                Watermark = BuildWatermark(param)
+            };
+
+            // 根据数据类型决定开放哪些输入模式
+            var modules = param.DataType == DataType.Boolean
+                ? InputModules.Variable | InputModules.Constant
+                : InputModules.Variable | InputModules.Expression | InputModules.Constant;
+
+            ExpressionInputPanel.AttachTo(txt, new InputPanelOptions
+            {
+                Mode = InputMode.Expression,
+                EnabledModules = modules,
+                Title = $"输入参数值：{param.DisplayName}",
+                ShowValidation = false,
+                ShowPreview = true,
+                CloseOnSubmit = true
+            });
+
+            return txt;
+        }
+
+        /// <summary>
+        /// 无参数时显示的提示控件
+        /// </summary>
+        private static Label MakeNoParamHint() => new Label
+        {
+            Text = "该命令无需参数",
+            Font = new Font("微软雅黑", 11F),
+            ForeColor = Color.FromArgb(160, 160, 160),
+            AutoSize = true,
+            Margin = new Padding(4, 8, 0, 0)
+        };
+
+        /// <summary>
+        /// 数据类型短标签，显示在参数名旁边
+        /// </summary>
+        private static string GetDataTypeTag(DataType type) => type switch
+        {
+            DataType.Integer => "[整数]",
+            DataType.Double => "[小数]",
+            DataType.Boolean => "[布尔]",
+            DataType.String => "[文本]",
+            _ => $"[{type}]"
+        };
+
+        /// <summary>
+        /// 根据参数定义构造输入框水印提示文字
+        /// </summary>
+        private static string BuildWatermark(CommandParameter param)
+        {
+            var parts = new List<string>();
+
+            if (!string.IsNullOrEmpty(param.DefaultValue))
+                parts.Add($"默认 {param.DefaultValue}");
+
+            if (param.MinValue.HasValue || param.MaxValue.HasValue)
+                parts.Add(BuildRangeHint(param));
+
+            parts.Add("支持 {变量名} 引用变量");
+
+            return string.Join("，", parts);
+        }
+
+        /// <summary>
+        /// 构建范围提示文字，如 [0 ~ 300]
+        /// </summary>
+        private static string BuildRangeHint(CommandParameter param)
+        {
+            if (param.MinValue.HasValue && param.MaxValue.HasValue)
+                return $"[{param.MinValue} ~ {param.MaxValue}]";
+            if (param.MinValue.HasValue)
+                return $"[≥ {param.MinValue}]";
+            if (param.MaxValue.HasValue)
+                return $"[≤ {param.MaxValue}]";
+            return "";
+        }
+
+        #endregion
     }
 }

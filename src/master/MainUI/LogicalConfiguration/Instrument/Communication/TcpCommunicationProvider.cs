@@ -3,25 +3,27 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
 using System.Text;
+using System.Diagnostics;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using ProtocolType = MainUI.LogicalConfiguration.Instrument.Models.ProtocolType;
 
 namespace MainUI.LogicalConfiguration.Instrument.Communication
 {
     /// <summary>
-    /// TCP/IP通讯提供者
+    /// TCP/IP 通讯提供者
     /// </summary>
     public class TcpCommunicationProvider(ILogger logger = null) : ICommunicationProvider
     {
         private TcpClient _client;
         private NetworkStream _stream;
         private TcpProtocolConfig _config;
-        private readonly object _lockObject = new();
+        private readonly SemaphoreSlim _connectLock = new(1, 1);   // ← 用 SemaphoreSlim 替代 lock，支持 async
 
         public ProtocolType ProtocolType => ProtocolType.TcpIp;
-
         public bool IsConnected => _client?.Connected ?? false;
         public string ConnectionId => _config != null ? $"{_config.IpAddress}:{_config.Port}" : "";
+
+        // ── 连接 ─────────────────────────────────────────────────────────────
 
         public async Task<bool> ConnectAsync(ProtocolConfigBase config, CancellationToken cancellationToken = default)
         {
@@ -31,31 +33,31 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 return false;
             }
 
+            await _connectLock.WaitAsync(cancellationToken);
             try
             {
-                lock (_lockObject)
+                // 复用已有连接
+                if (_client?.Connected == true
+                    && _config?.IpAddress == tcpConfig.IpAddress
+                    && _config?.Port == tcpConfig.Port)
                 {
-                    // 如果已连接到相同地址，复用连接
-                    if (_client?.Connected == true && _config?.IpAddress == tcpConfig.IpAddress && _config?.Port == tcpConfig.Port)
-                    {
-                        return true;
-                    }
-
-                    // 断开旧连接
-                    _stream?.Dispose();
-                    _client?.Dispose();
-
-                    _config = tcpConfig;
-                    _client = new TcpClient
-                    {
-                        ReceiveTimeout = tcpConfig.ReadTimeout,
-                        SendTimeout = tcpConfig.WriteTimeout,
-                        ReceiveBufferSize = tcpConfig.ReceiveBufferSize,
-                        SendBufferSize = tcpConfig.SendBufferSize
-                    };
+                    logger?.LogDebug("复用TCP连接: {ConnectionId}", ConnectionId);
+                    return true;
                 }
 
-                // 使用超时连接
+                // 断开旧连接
+                DisposeConnection();
+
+                _config = tcpConfig;
+                _client = new TcpClient
+                {
+                    ReceiveTimeout = tcpConfig.ReadTimeout,
+                    SendTimeout = tcpConfig.WriteTimeout,
+                    ReceiveBufferSize = tcpConfig.ReceiveBufferSize,
+                    SendBufferSize = tcpConfig.SendBufferSize,
+                    NoDelay = true    // 仪器通讯通常报文小，禁用 Nagle
+                };
+
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(tcpConfig.ConnectionTimeout);
 
@@ -68,34 +70,31 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             catch (OperationCanceledException)
             {
                 logger?.LogWarning("TCP连接超时: {Address}:{Port}", tcpConfig.IpAddress, tcpConfig.Port);
+                DisposeConnection();
                 return false;
             }
             catch (Exception ex)
             {
                 logger?.LogError(ex, "TCP连接失败: {Address}:{Port}", tcpConfig.IpAddress, tcpConfig.Port);
+                DisposeConnection();
                 return false;
+            }
+            finally
+            {
+                _connectLock.Release();
             }
         }
 
+        // ── 断开 ─────────────────────────────────────────────────────────────
+
         public Task DisconnectAsync()
         {
-            lock (_lockObject)
-            {
-                try
-                {
-                    _stream?.Dispose();
-                    _client?.Dispose();
-                    _stream = null;
-                    _client = null;
-                    logger?.LogInformation("TCP连接已断开: {ConnectionId}", ConnectionId);
-                }
-                catch (Exception ex)
-                {
-                    logger?.LogWarning(ex, "断开TCP连接时发生异常");
-                }
-            }
+            DisposeConnection();
+            logger?.LogInformation("TCP连接已断开: {ConnectionId}", ConnectionId);
             return Task.CompletedTask;
         }
+
+        // ── 发送并接收 ───────────────────────────────────────────────────────
 
         public async Task<CommunicationResult> SendAndReceiveAsync(
             byte[] data,
@@ -107,23 +106,18 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             var result = new CommunicationResult
             {
                 SentData = data,
-                SentString = EncodingHelper.SmartDecode(data)  // 使用智能解码
+                SentString = EncodingHelper.SmartDecode(data)
             };
-
             var sw = Stopwatch.StartNew();
 
             try
             {
                 if (!IsConnected)
-                {
                     return CommunicationResult.Failed("TCP未连接");
-                }
 
-                // 发送数据
                 await _stream.WriteAsync(data, cancellationToken);
                 await _stream.FlushAsync(cancellationToken);
-
-                logger?.LogDebug("TCP发送: {Data}", BitConverter.ToString(data));
+                logger?.LogDebug("TCP发送({Bytes}B): {Hex}", data.Length, BitConverter.ToString(data));
 
                 if (!waitForResponse)
                 {
@@ -132,26 +126,17 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                     return result;
                 }
 
-                // 接收响应
                 var responseData = await ReceiveAsync(frameConfig, timeout, cancellationToken);
 
                 result.RawResponse = responseData;
-                // 使用智能解码
-                result.ResponseString = responseData != null ?
-                    EncodingHelper.SmartDecode(responseData) : "";
-                result.Success = responseData != null && responseData.Length > 0;
+                result.ResponseString = responseData?.Length > 0 ? EncodingHelper.SmartDecode(responseData) : "";
+                result.Success = responseData?.Length > 0;
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
 
-                // 调试日志：显示编码诊断信息（可选）
                 if (logger?.IsEnabled(LogLevel.Trace) == true)
-                {
-                    logger.LogTrace("TCP接收编码诊断:\n{Diagnosis}",
-                        EncodingHelper.DiagnoseEncoding(responseData));
-                }
+                    logger.LogTrace("TCP接收编码诊断:\n{Diagnosis}", EncodingHelper.DiagnoseEncoding(responseData));
                 else
-                {
-                    logger?.LogDebug("TCP接收: {Data}", result.ResponseString);
-                }
+                    logger?.LogDebug("TCP接收({Bytes}B): {Text}", responseData?.Length ?? 0, result.ResponseString);
 
                 return result;
             }
@@ -163,20 +148,20 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             }
             catch (Exception ex)
             {
-                result.ErrorMessage = $"通讯异常: {ex.Message}";
+                result.ErrorMessage = $"TCP通讯异常: {ex.Message}";
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
                 logger?.LogError(ex, "TCP通讯异常");
                 return result;
             }
         }
 
+        // ── 仅发送 ───────────────────────────────────────────────────────────
+
         public async Task<bool> SendAsync(byte[] data, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (!IsConnected)
-                    return false;
-
+                if (!IsConnected) return false;
                 await _stream.WriteAsync(data, cancellationToken);
                 await _stream.FlushAsync(cancellationToken);
                 return true;
@@ -188,6 +173,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             }
         }
 
+        // ── 接收 ─────────────────────────────────────────────────────────────
+
         public async Task<byte[]> ReceiveAsync(FrameConfig frameConfig, int timeout, CancellationToken cancellationToken = default)
         {
             try
@@ -195,47 +182,40 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(timeout);
 
-                var buffer = new byte[_config?.ReceiveBufferSize ?? 4096];
-                var receivedData = new List<byte>();
+                var bufferSize = _config?.ReceiveBufferSize ?? 4096;
+                var buffer = new byte[bufferSize];
+                var receivedData = new List<byte>(bufferSize);
 
-                // 简化的接收逻辑
+                // 流式读取：每次 ReadAsync 阻塞等待数据，不再轮询 DataAvailable
                 while (!cts.Token.IsCancellationRequested)
                 {
-                    if (_stream.DataAvailable)
+                    // 设置单次读取超时（避免一直阻塞）
+                    _client.ReceiveTimeout = Math.Min(timeout, 200);
+                    int bytesRead;
+                    try
                     {
-                        var bytesRead = await _stream.ReadAsync(buffer, cts.Token);
-                        if (bytesRead > 0)
-                        {
-                            receivedData.AddRange(buffer.Take(bytesRead));
+                        bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, bufferSize), cts.Token);
+                    }
+                    catch (IOException) // ReadTimeout 触发 IOException
+                    {
+                        // 已有数据但无更多 → 认为接收完毕
+                        if (receivedData.Count > 0) break;
+                        continue;
+                    }
 
-                            // 检查是否接收完成
-                            if (IsResponseComplete(receivedData.ToArray(), frameConfig))
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // 如果已有数据且没有更多数据可读，认为接收完成
-                        if (receivedData.Count > 0)
-                        {
-                            await Task.Delay(50, cts.Token);
-                            if (!_stream.DataAvailable)
-                                break;
-                        }
-                        else
-                        {
-                            await Task.Delay(10, cts.Token);
-                        }
-                    }
+                    if (bytesRead == 0) break; // 连接关闭
+
+                    receivedData.AddRange(buffer.Take(bytesRead));
+
+                    if (IsResponseComplete(receivedData.ToArray(), frameConfig))
+                        break;
                 }
 
                 return receivedData.ToArray();
             }
             catch (OperationCanceledException)
             {
-                logger?.LogDebug("TCP接收超时");
+                logger?.LogDebug("TCP接收超时/取消，已收 {Bytes}B", 0);
                 return Array.Empty<byte>();
             }
             catch (Exception ex)
@@ -245,62 +225,61 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             }
         }
 
-        private bool IsResponseComplete(byte[] data, FrameConfig frameConfig)
+        // ── 帧完整性判断 ─────────────────────────────────────────────────────
+
+        private static bool IsResponseComplete(byte[] data, FrameConfig frameConfig)
         {
-            if (data == null || data.Length == 0)
-                return false;
+            if (data == null || data.Length == 0) return false;
+            if (frameConfig == null || !frameConfig.Enabled) return true;
 
-            if (frameConfig == null || !frameConfig.Enabled)
-                return true;
-
-            // 检查固定长度
+            // 1. 固定长度
             if (frameConfig.FixedResponseLength > 0)
-            {
                 return data.Length >= frameConfig.FixedResponseLength;
-            }
 
-            // 检查结束标记
+            // 2. 终止符（支持 \r\n 转义）
             if (!string.IsNullOrEmpty(frameConfig.ResponseTerminator))
             {
-                var terminator = Encoding.ASCII.GetBytes(frameConfig.ResponseTerminator.Replace("\\n", "\n").Replace("\\r", "\r"));
-                if (data.Length >= terminator.Length)
+                var termBytes = Encoding.ASCII.GetBytes(
+                    frameConfig.ResponseTerminator.Replace("\\r", "\r").Replace("\\n", "\n"));
+                if (data.Length >= termBytes.Length)
                 {
-                    var endBytes = data.Skip(data.Length - terminator.Length).ToArray();
-                    return endBytes.SequenceEqual(terminator);
+                    var tail = data.AsSpan(data.Length - termBytes.Length);
+                    if (tail.SequenceEqual(termBytes)) return true;
                 }
             }
 
-            // 检查帧尾
+            // 3. 帧尾 Hex（如 "0D 0A"）
             if (!string.IsNullOrEmpty(frameConfig.FrameFooter))
             {
-                var footer = HexStringToBytes(frameConfig.FrameFooter);
-                if (footer.Length > 0 && data.Length >= footer.Length)
+                try
                 {
-                    var endBytes = data.Skip(data.Length - footer.Length).ToArray();
-                    return endBytes.SequenceEqual(footer);
+                    var footer = Convert.FromHexString(frameConfig.FrameFooter.Replace(" ", ""));
+                    if (data.Length >= footer.Length)
+                    {
+                        var tail = data.AsSpan(data.Length - footer.Length);
+                        if (tail.SequenceEqual(footer)) return true;
+                    }
                 }
+                catch { /* 格式错误则忽略 */ }
             }
 
             return false;
         }
 
-        private static byte[] HexStringToBytes(string hex)
-        {
-            hex = hex.Replace(" ", "").Replace("-", "");
-            if (hex.Length % 2 != 0)
-                hex = "0" + hex;
+        // ── 资源释放 ─────────────────────────────────────────────────────────
 
-            var bytes = new byte[hex.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-            }
-            return bytes;
+        private void DisposeConnection()
+        {
+            try { _stream?.Dispose(); } catch { }
+            try { _client?.Dispose(); } catch { }
+            _stream = null;
+            _client = null;
         }
 
         public void Dispose()
         {
-            DisconnectAsync().Wait();
+            DisposeConnection();
+            _connectLock.Dispose();
         }
     }
 }

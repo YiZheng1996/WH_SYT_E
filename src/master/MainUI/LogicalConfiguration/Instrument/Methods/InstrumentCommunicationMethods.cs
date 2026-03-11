@@ -114,7 +114,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                 else
                 {
                     // 使用预定义命令
-                    command = driver.GetCommand(parameter.CommandName) ?? 
+                    command = driver.GetCommand(parameter.CommandName) ??
                               driver.Commands.FirstOrDefault(c => c.CommandId == parameter.CommandId);
 
                     if (command == null)
@@ -417,12 +417,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
         /// 构建命令请求数据
         /// </summary>
         private byte[] BuildCommandRequest(
-            InstrumentCommand command,
-            Dictionary<string, string> parameters)
+        InstrumentCommand command,
+        Dictionary<string, string> parameters)
         {
             var template = command.RequestTemplate;
 
-            // 替换参数占位符
+            // 1. 替换参数占位符 {ParamName}
             if (parameters != null)
             {
                 foreach (var param in parameters)
@@ -433,17 +433,124 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                 }
             }
 
-            // 替换变量引用
+            // 2. 替换变量引用 {$VarName}
             template = ResolveVariables(template);
 
-            // 根据数据类型转换
+            // 3. Modbus 协议特殊处理：生成 PDU bytes
+            if (template.StartsWith("MODBUS:", StringComparison.OrdinalIgnoreCase))
+            {
+                return BuildModbusPdu(template[7..], command); // 去掉 "MODBUS:" 前缀
+            }
+
+            // 4. 普通协议按数据类型编码
             return command.RequestDataType switch
             {
                 DataType.Hex => HexStringToBytes(template),
-                DataType.ByteArray => Encoding.UTF8.GetBytes(template), // 字节数组使用UTF8编码
-                _ => Encoding.UTF8.GetBytes(template) // 默认使用UTF8编码
+                DataType.ByteArray => Encoding.UTF8.GetBytes(template),
+                _ => Encoding.UTF8.GetBytes(template)
             };
         }
+
+        /// <summary>
+        /// 从模板字符串构建 Modbus PDU
+        /// 格式示例：
+        ///   "FC=03,Addr=40001,Count=2"   → 读保持寄存器
+        ///   "FC=06,Addr=40001,Value=100" → 写单寄存器
+        ///   "FC=10,Addr=40001,Count=2,Values=100,200" → 写多寄存器
+        /// </summary>
+        private byte[] BuildModbusPdu(string template, InstrumentCommand command)
+        {
+            // 解析 key=value 对
+            var kvPairs = template.Split(',')
+                .Select(s => s.Trim().Split('='))
+                .Where(a => a.Length == 2)
+                .ToDictionary(
+                    a => a[0].Trim().ToUpperInvariant(),
+                    a => a[1].Trim(),
+                    StringComparer.OrdinalIgnoreCase);
+
+            if (!kvPairs.TryGetValue("FC", out var fcStr) || !byte.TryParse(fcStr, out var fc))
+            {
+                _logger.LogError("Modbus模板缺少有效的功能码FC: {Template}", template);
+                return Array.Empty<byte>();
+            }
+
+            // 从驱动配置取从站地址（通过 command 找不到，从 _driverService 找）
+            // 简化处理：SlaveAddress 在 ModbusProtocolConfig 里，这里约定默认为 1
+            // 若需要精确，可在 Parameters 里加一个 SlaveAddr 参数
+            byte slaveAddr = 1;
+            if (kvPairs.TryGetValue("SLAVE", out var slaveStr))
+                byte.TryParse(slaveStr, out slaveAddr);
+
+            var pdu = new List<byte> { slaveAddr, fc };
+
+            switch (fc)
+            {
+                case 0x03: // 读保持寄存器
+                case 0x04: // 读输入寄存器
+                    if (kvPairs.TryGetValue("ADDR", out var addrStr3) &&
+                        kvPairs.TryGetValue("COUNT", out var countStr))
+                    {
+                        ushort addr = ParseRegisterAddress(addrStr3);
+                        ushort count = ushort.Parse(countStr);
+                        pdu.AddRange(BitConverter.GetBytes(addr).Reverse());
+                        pdu.AddRange(BitConverter.GetBytes(count).Reverse());
+                    }
+                    break;
+
+                case 0x06: // 写单寄存器
+                    if (kvPairs.TryGetValue("ADDR", out var addrStr6) &&
+                        kvPairs.TryGetValue("VALUE", out var valueStr6))
+                    {
+                        ushort addr = ParseRegisterAddress(addrStr6);
+                        ushort value = ushort.Parse(valueStr6);
+                        pdu.AddRange(BitConverter.GetBytes(addr).Reverse());
+                        pdu.AddRange(BitConverter.GetBytes(value).Reverse());
+                    }
+                    break;
+
+                case 0x10: // 写多寄存器
+                    if (kvPairs.TryGetValue("ADDR", out var addrStr10) &&
+                        kvPairs.TryGetValue("COUNT", out var countStr10) &&
+                        kvPairs.TryGetValue("VALUES", out var valuesStr))
+                    {
+                        ushort addr = ParseRegisterAddress(addrStr10);
+                        ushort count = ushort.Parse(countStr10);
+                        var vals = valuesStr.Split(';').Select(ushort.Parse).ToArray();
+
+                        pdu.AddRange(BitConverter.GetBytes(addr).Reverse());
+                        pdu.AddRange(BitConverter.GetBytes(count).Reverse());
+                        pdu.Add((byte)(count * 2)); // Byte Count
+                        foreach (var v in vals)
+                            pdu.AddRange(BitConverter.GetBytes(v).Reverse());
+                    }
+                    break;
+
+                default:
+                    _logger.LogWarning("不支持的Modbus功能码: 0x{FC:X2}", fc);
+                    break;
+            }
+
+            return pdu.ToArray();
+        }
+
+        /// <summary>
+        /// 解析寄存器地址（支持 40001 格式和 0 开始的直接地址）
+        /// 40001 → 0, 30001 → 0 (去掉类型前缀)
+        /// </summary>
+        private static ushort ParseRegisterAddress(string addrStr)
+        {
+            if (!ushort.TryParse(addrStr, out ushort addr)) return 0;
+
+            // Modbus 传统地址：40001 = 保持寄存器 1 → 实际地址 0
+            if (addr >= 40001 && addr <= 49999) return (ushort)(addr - 40001);
+            if (addr >= 30001 && addr <= 39999) return (ushort)(addr - 30001);
+            if (addr >= 10001 && addr <= 19999) return (ushort)(addr - 10001);
+            if (addr >= 1 && addr <= 9999) return (ushort)(addr - 1);
+
+            return addr; // 直接地址
+        }
+
 
         /// <summary>
         /// 解析变量引用

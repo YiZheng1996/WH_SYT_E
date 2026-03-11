@@ -211,23 +211,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void BtnAddParam_Click(object sender, EventArgs e)
         {
-            var param = new CommandParameter
-            {
-                Name = $"Param{dgvParameters.Rows.Count + 1}",
-                DisplayName = $"参数{dgvParameters.Rows.Count + 1}",
-                DataType = DataType.String,
-                Required = false
-            };
-
-            var rowIndex = dgvParameters.Rows.Add(
-                param.Name,
-                param.DisplayName,
-                param.DataType.ToString(),
-                param.DefaultValue,
-                param.Required ? "是" : "否"
-            );
-            dgvParameters.Rows[rowIndex].Tag = param;
-            dgvParameters.Rows[rowIndex].Selected = true;
+            using var frm = new FrmCommandParameterEditor();
+            var frmResult = VarHelper.ShowDialogWithOverlayEx(this, frm);
+            if (frmResult != DialogResult.OK) return;
+            AddParameterRow(frm.Parameter);
         }
 
         private void BtnDeleteParam_Click(object sender, EventArgs e)
@@ -246,12 +233,16 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void DgvParameters_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
-            {
-                // 允许直接编辑单元格
-                var cell = dgvParameters.Rows[e.RowIndex].Cells[e.ColumnIndex];
-                dgvParameters.BeginEdit(true);
-            }
+            if (e.RowIndex < 0) return;
+            var row = dgvParameters.Rows[e.RowIndex];
+            if (row.Tag is not CommandParameter param) return;
+
+            using var frm = new FrmCommandParameterEditor(param);
+            if (frm.ShowDialog(this) != DialogResult.OK) return;
+
+            // 用编辑后的对象更新行
+            row.Tag = frm.Parameter;
+            RefreshParameterRow(row, frm.Parameter);
         }
 
         #endregion
@@ -260,24 +251,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void BtnAddRule_Click(object sender, EventArgs e)
         {
-            var rule = new ResponseParseRule
-            {
-                Name = $"Rule{dgvParseRules.Rows.Count + 1}",
-                TargetVariable = $"Result{dgvParseRules.Rows.Count + 1}",
-                ParseType = "Position",          
-                TargetDataType = DataType.String,
-                StartPosition = 0,               
-                Length = -1                      
-            };
-
-            var rowIndex = dgvParseRules.Rows.Add(
-                rule.Name,
-                rule.TargetVariable,
-                rule.ParseType.ToString(),
-                GetParseRulePattern(rule)
-            );
-            dgvParseRules.Rows[rowIndex].Tag = rule;
-            dgvParseRules.Rows[rowIndex].Selected = true;
+            using var frm = new FrmParseRuleEditor();
+            var frmResult = VarHelper.ShowDialogWithOverlayEx(this, frm);
+            if (frmResult != DialogResult.OK) return;
+            AddParseRuleRow(frm.Rule);
         }
 
         private void BtnDeleteRule_Click(object sender, EventArgs e)
@@ -296,11 +273,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void DgvParseRules_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            if (e.RowIndex < 0) return;
+            var row = dgvParseRules.Rows[e.RowIndex];
+            if (row.Tag is not ResponseParseRule rule) return;
 
-            // 允许直接编辑单元格
-            var cell = dgvParseRules.Rows[e.RowIndex].Cells[e.ColumnIndex];
-            dgvParseRules.BeginEdit(true);
+            using var frm = new FrmParseRuleEditor(rule);
+            if (frm.ShowDialog(this) != DialogResult.OK) return;
+
+            row.Tag = frm.Rule;
+            RefreshParseRuleRow(row, frm.Rule);
         }
 
         #endregion
@@ -345,6 +326,66 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             txtRequestTemplate.Focus();
             return false;
 
+        }
+
+        #endregion
+
+        #region 辅助方法
+        private void RefreshParameterRow(DataGridViewRow row, CommandParameter p)
+        {
+            row.Cells["Name"].Value = p.Name;
+            row.Cells["DisplayName"].Value = p.DisplayName;
+            row.Cells["DataType"].Value = p.DataType.GetDescription();
+            row.Cells["DefaultValue"].Value = p.DefaultValue;
+            row.Cells["Required"].Value = p.Required ? "是" : "否";
+        }
+
+        private void RefreshParseRuleRow(DataGridViewRow row, ResponseParseRule rule)
+        {
+            row.Cells["Name"].Value = rule.Name;
+            row.Cells["TargetVariable"].Value = rule.TargetVariable;
+            row.Cells["ParseType"].Value = GetParseTypeDisplayName(rule.ParseType);
+            row.Cells["Pattern"].Value = GetParseRulePattern(rule);
+        }
+
+        private string GetParseTypeDisplayName(string type) => type switch
+        {
+            "Position" => "位置截取",
+            "Delimiter" => "分隔符分割",
+            "Regex" => "正则表达式",
+            "Json" => "JSON路径",
+            _ => type
+        };
+
+        /// <summary>
+        /// 向参数表格新增一行
+        /// </summary>
+        private void AddParameterRow(CommandParameter param)
+        {
+            var rowIndex = dgvParameters.Rows.Add(
+                param.Name,
+                param.DisplayName,
+                param.DataType.GetDescription(),
+                param.DefaultValue,
+                param.Required ? "是" : "否"
+            );
+            dgvParameters.Rows[rowIndex].Tag = param;
+            dgvParameters.Rows[rowIndex].Selected = true;
+        }
+
+        /// <summary>
+        /// 向解析规则表格新增一行
+        /// </summary>
+        private void AddParseRuleRow(ResponseParseRule rule)
+        {
+            var rowIndex = dgvParseRules.Rows.Add(
+                rule.Name,
+                rule.TargetVariable,
+                GetParseTypeDisplayName(rule.ParseType),
+                GetParseRulePattern(rule)
+            );
+            dgvParseRules.Rows[rowIndex].Tag = rule;
+            dgvParseRules.Rows[rowIndex].Selected = true;
         }
 
         #endregion
