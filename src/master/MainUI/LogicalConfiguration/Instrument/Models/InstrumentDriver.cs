@@ -10,7 +10,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         /// <summary>
         /// 驱动唯一标识
         /// </summary>
-        public string DriverId { get; set; } = Guid.NewGuid().ToString("N");
+        public string DriverId { get; set; }
 
         /// <summary>
         /// 仪器名称

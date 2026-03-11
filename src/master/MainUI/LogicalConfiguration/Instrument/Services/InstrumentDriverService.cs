@@ -171,7 +171,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                 var index = _drivers.FindIndex(d => d.DriverId == driver.DriverId);
                 if (index < 0)
                 {
+                    // 临时诊断日志
                     _logger.LogWarning("未找到要更新的仪器驱动: {DriverId}", driver.DriverId);
+                    _logger.LogWarning("当前内存中所有驱动ID: {Ids}",
+                        string.Join(", ", _drivers.Select(d => d.DriverId)));
                     return false;
                 }
 

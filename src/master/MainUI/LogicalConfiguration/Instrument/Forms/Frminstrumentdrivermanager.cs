@@ -18,20 +18,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         private readonly IInstrumentDriverService _driverService;
         private readonly ILogger _logger;
         private List<InstrumentDriver> _drivers = [];
-        //private InstrumentDriver _selectedDriver;
-
-        private InstrumentDriver _selectedDriverBacking;
-        private InstrumentDriver _selectedDriver
-        {
-            get => _selectedDriverBacking;
-            set
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"[_selectedDriver 被赋值] DriverId={value?.DriverId ?? "null"} " +
-                    $"\n调用栈:\n{new System.Diagnostics.StackTrace(true)}");
-                _selectedDriverBacking = value;
-            }
-        }
+        private InstrumentDriver _selectedDriver;
         private Dictionary<string, Control> _protocolControls = [];
 
         #endregion
@@ -319,7 +306,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             txtName.Text = "";
             txtDisplayName.Text = "";
             cboCategory.SelectedIndex = 0;
+
+            // 解绑，防止触发 UpdateProtocolConfigPanel 和 _protocolControls 状态异常
+            cboProtocolType.SelectedIndexChanged -= CboProtocolType_SelectedIndexChanged;
             cboProtocolType.SelectedIndex = 0;
+            cboProtocolType.SelectedIndexChanged += CboProtocolType_SelectedIndexChanged;
+
             txtManufacturer.Text = "";
             txtModel.Text = "";
             chkEnabled.Checked = true;
@@ -330,6 +322,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             txtResponseTerminator.Text = "";
             cboChecksumType.SelectedIndex = 0;
             dgvCommands.Rows.Clear();
+
+            // 清表单后主动重建协议面板，确保 _protocolControls 状态正确
+            UpdateProtocolConfigPanel();
         }
 
         #endregion
@@ -750,17 +745,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         #region 数据收集
 
-        private InstrumentDriver CollectDriverFromForm()
+        // 参数由外部传入，内部不再自己判断 isNew
+        private InstrumentDriver CollectDriverFromForm(bool isNew, string existingId, DateTime existingCreatedTime)
         {
-            // 新建时创建全新对象，编辑时复用原对象
-            bool isNew = _selectedDriver == null || string.IsNullOrEmpty(_selectedDriver.DriverId);
-            var driver = isNew ? new InstrumentDriver() : _selectedDriver;
+            var driver = new InstrumentDriver(); // 始终新建对象，不复用引用
 
-            // 编辑模式：保留原 DriverId 和创建时间
             if (!isNew)
             {
-                driver.DriverId = _selectedDriver.DriverId;
-                driver.CreatedTime = _selectedDriver.CreatedTime;
+                driver.DriverId = existingId;           // 从外部传入，不从 _selectedDriver 读
+                driver.CreatedTime = existingCreatedTime;
             }
 
             driver.Name = txtName.Text.Trim();
@@ -772,10 +765,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             driver.Enabled = chkEnabled.Checked;
             driver.Description = txtDescription.Text.Trim();
 
-            // 协议配置
             driver.SetProtocolConfig(CollectProtocolConfig());
 
-            // 帧配置
             driver.FrameConfig = new FrameConfig
             {
                 Enabled = chkFrameEnabled.Checked,
@@ -785,14 +776,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 ChecksumType = (ChecksumType)(cboChecksumType.SelectedValue ?? ChecksumType.None)
             };
 
-            // 命令列表
             driver.Commands.Clear();
             foreach (DataGridViewRow row in dgvCommands.Rows)
             {
                 if (row.Tag is InstrumentCommand cmd)
-                {
                     driver.Commands.Add(cmd);
-                }
             }
 
             return driver;
@@ -928,43 +916,36 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return;
             }
 
-            if (MessageHelper.MessageYes(this, $"确定要删除驱动 [{_selectedDriver.DisplayName}] 吗？") != DialogResult.OK)
+            // ★ await 前保存，后续不再依赖 _selectedDriver
+            var driverToDelete = _selectedDriver;
+
+            if (MessageHelper.MessageYes(this, $"确定要删除驱动 [{driverToDelete.DisplayName}] 吗？") != DialogResult.OK)
                 return;
 
             try
             {
-                var result = await _driverService.DeleteDriverAsync(_selectedDriver.DriverId);
+                var result = await _driverService.DeleteDriverAsync(driverToDelete.DriverId);
 
-                // 根据返回值判断是否真正删除成功
                 if (result)
                 {
-                    // 从内存列表中移除
-                    _drivers.Remove(_selectedDriver);
-
-                    // 刷新界面
+                    _drivers.Remove(driverToDelete);
                     RefreshDriverList();
                     ClearForm();
-
                     MessageHelper.MessageOK(this, "删除成功");
                     _logger?.LogInformation("删除驱动成功: {DisplayName} (ID: {DriverId})",
-                        _selectedDriver.DisplayName,
-                        _selectedDriver.DriverId);
+                        driverToDelete.DisplayName, driverToDelete.DriverId);  // ★ 用本地变量
                 }
                 else
                 {
-                    // 删除失败，可能是驱动不存在或已被删除
                     MessageHelper.MessageOK(this, "删除失败：驱动不存在或已被删除");
                     _logger?.LogWarning("删除驱动失败: {DisplayName} (ID: {DriverId})",
-                        _selectedDriver.DisplayName,
-                        _selectedDriver.DriverId);
-
-                    // 刷新列表，确保界面数据与实际一致
+                        driverToDelete.DisplayName, driverToDelete.DriverId);
                     await LoadDriversAsync();
                 }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "删除驱动时发生异常: {DisplayName}", _selectedDriver.DisplayName);
+                _logger?.LogError(ex, "删除驱动时发生异常: {DisplayName}", driverToDelete.DisplayName);
                 MessageHelper.MessageOK(this, $"删除失败: {ex.Message}");
             }
         }
@@ -1040,7 +1021,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 foreach (var driver in driversToImport)
                 {
                     // 生成新ID
-                    driver.DriverId = Guid.NewGuid().ToString("N");
+                    //driver.DriverId = Guid.NewGuid().ToString("N");
 
                     // 检查名称冲突
                     var existing = _drivers.FirstOrDefault(d =>
@@ -1234,51 +1215,60 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             try
             {
-                var driver = CollectDriverFromForm();
+                // 唯一的判断点，await 之前确定，全程不变
+                bool isNew = _selectedDriver == null || string.IsNullOrEmpty(_selectedDriver.DriverId);
+                string existingId = isNew ? null : _selectedDriver.DriverId;
+                DateTime existingCreatedTime = isNew ? DateTime.Now : _selectedDriver.CreatedTime;
 
-                // ★ 临时加这几行，运行时看输出窗口
-                System.Diagnostics.Debug.WriteLine($"[保存] 新建模式: {_selectedDriver == null || string.IsNullOrEmpty(_selectedDriver.DriverId)}");
-                System.Diagnostics.Debug.WriteLine($"[保存] driver.Name: {driver.Name}");
-                System.Diagnostics.Debug.WriteLine($"[保存] driver.DriverId: {driver.DriverId}");
+                // CollectDriverFromForm 不再自己判断，直接从外部接收
+                var driver = CollectDriverFromForm(isNew, existingId, existingCreatedTime);
 
                 bool result;
-                if (_selectedDriver == null || string.IsNullOrEmpty(_selectedDriver.DriverId))
+                if (isNew)
                 {
-                    // 新建
                     result = await _driverService.AddDriverAsync(driver);
-                    System.Diagnostics.Debug.WriteLine($"[保存] AddDriverAsync 返回: {result}");
                 }
                 else
                 {
-                    // 更新 - 确保使用原 DriverId
-                    driver.DriverId = _selectedDriver.DriverId;
                     result = await _driverService.UpdateDriverAsync(driver);
-                    System.Diagnostics.Debug.WriteLine($"[保存] UpdateDriverAsync 返回: {result}");
                 }
 
                 if (result)
                 {
                     MessageHelper.MessageOK(this, "保存成功");
+                    var savedId = driver.DriverId;
+                    var savedName = driver.Name;
+
                     await LoadDriversAsync();
 
-                    foreach (DataGridViewRow row in dgvDrivers.Rows)
+                    dgvDrivers.SelectionChanged -= DgvDrivers_SelectionChanged;
+                    try
                     {
-                        if (row.Tag is not InstrumentDriver d ||
-                            (d.DriverId != driver.DriverId && d.Name != driver.Name)) continue;
-                        row.Selected = true;
-                        dgvDrivers.FirstDisplayedScrollingRowIndex = row.Index;
-                        break;
+                        foreach (DataGridViewRow row in dgvDrivers.Rows)
+                        {
+                            if (row.Tag is not InstrumentDriver d) continue;
+                            if (d.DriverId != savedId && d.Name != savedName) continue;
+                            row.Selected = true;
+                            dgvDrivers.FirstDisplayedScrollingRowIndex = row.Index;
+                            _selectedDriver = d;
+                            break;
+                        }
+                    }
+                    finally
+                    {
+                        dgvDrivers.SelectionChanged += DgvDrivers_SelectionChanged;
                     }
                 }
                 else
                 {
-                    MessageHelper.MessageOK(this, "保存失败");
+                    MessageHelper.MessageOK(this, isNew
+                        ? "保存失败（驱动名称已存在）"
+                        : "保存失败（未找到要更新的驱动）");
                 }
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "保存驱动失败");
-                System.Diagnostics.Debug.WriteLine($"[保存] 异常: {ex}");
                 MessageHelper.MessageOK(this, $"保存失败: {ex.Message}");
             }
         }
@@ -1306,22 +1296,16 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return false;
             }
 
-            // _drivers != null 的防空判断
-            if (_drivers != null &&
-                (_selectedDriver == null ||
-                 string.IsNullOrEmpty(_selectedDriver.DriverId) ||
-                 _selectedDriver.Name != txtName.Text.Trim()))
-            {
-                var existingDriver = _drivers.FirstOrDefault(d =>
-                    d.Name.Equals(txtName.Text.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                    d.DriverId != _selectedDriver?.DriverId);
+            // 直接查重，排除自身即可
+            var duplicate = _drivers?.FirstOrDefault(d =>
+                d.Name.Equals(txtName.Text.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                d.DriverId != _selectedDriver?.DriverId);
 
-                if (existingDriver != null)
-                {
-                    MessageHelper.MessageOK(this, "驱动名称已存在，请使用其他名称");
-                    txtName.Focus();
-                    return false;
-                }
+            if (duplicate != null)
+            {
+                MessageHelper.MessageOK(this, "驱动名称已存在，请使用其他名称");
+                txtName.Focus();
+                return false;
             }
 
             // 协议配置检查
