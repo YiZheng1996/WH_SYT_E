@@ -17,9 +17,22 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private readonly IInstrumentDriverService _driverService;
         private readonly ILogger _logger;
-        private List<InstrumentDriver> _drivers;
-        private InstrumentDriver _selectedDriver;
-        private Dictionary<string, Control> _protocolControls = new();
+        private List<InstrumentDriver> _drivers = [];
+        //private InstrumentDriver _selectedDriver;
+
+        private InstrumentDriver _selectedDriverBacking;
+        private InstrumentDriver _selectedDriver
+        {
+            get => _selectedDriverBacking;
+            set
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"[_selectedDriver 被赋值] DriverId={value?.DriverId ?? "null"} " +
+                    $"\n调用栈:\n{new System.Diagnostics.StackTrace(true)}");
+                _selectedDriverBacking = value;
+            }
+        }
+        private Dictionary<string, Control> _protocolControls = [];
 
         #endregion
 
@@ -141,24 +154,21 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 );
                 dgvDrivers.Rows[rowIndex].Tag = driver;
 
-                // 为禁用的驱动添加视觉提示
                 if (driver.Enabled) continue;
-
                 var row = dgvDrivers.Rows[rowIndex];
-
-                // 灰色文字
                 row.DefaultCellStyle.ForeColor = Color.Gray;
-
-                // 斜体字
                 row.DefaultCellStyle.Font = new Font(dgvDrivers.Font, FontStyle.Italic);
-
-                // 浅灰色背景
                 row.DefaultCellStyle.BackColor = Color.FromArgb(245, 245, 245);
             }
 
-            if (dgvDrivers.Rows.Count > 0)
+            // 只有当前不是新建状态时，才自动选中第一行
+            // 新建状态的判断：_selectedDriver 不为null 但 DriverId 为空
+            bool isAddingNew = _selectedDriver != null && string.IsNullOrEmpty(_selectedDriver.DriverId);
+            if (!isAddingNew && dgvDrivers.Rows.Count > 0)
             {
+                dgvDrivers.SelectionChanged -= DgvDrivers_SelectionChanged; // 防止触发覆盖
                 dgvDrivers.Rows[0].Selected = true;
+                dgvDrivers.SelectionChanged += DgvDrivers_SelectionChanged;
             }
         }
 
@@ -569,43 +579,43 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 // 根据数据源类型设置下拉框
                 // 枚举类型
                 case Array enumArray:
-                {
-                    cbo.DataSource = enumArray;
-                    if (defaultValue != null)
-                        cbo.SelectedItem = defaultValue;
-                    break;
-                }
+                    {
+                        cbo.DataSource = enumArray;
+                        if (defaultValue != null)
+                            cbo.SelectedItem = defaultValue;
+                        break;
+                    }
                 // 字符串列表
                 case IEnumerable<string> stringList:
-                {
-                    cbo.DataSource = new List<string>(stringList);
-                    if (defaultValue != null)
                     {
-                        var index = ((List<string>)cbo.DataSource).IndexOf(defaultValue.ToString());
-                        if (index >= 0)
-                            cbo.SelectedIndex = index;
-                        else if (allowCustomInput)
-                            cbo.Text = defaultValue.ToString(); // 允许输入时直接设置文本
-                    }
+                        cbo.DataSource = new List<string>(stringList);
+                        if (defaultValue != null)
+                        {
+                            var index = ((List<string>)cbo.DataSource).IndexOf(defaultValue.ToString());
+                            if (index >= 0)
+                                cbo.SelectedIndex = index;
+                            else if (allowCustomInput)
+                                cbo.Text = defaultValue.ToString(); // 允许输入时直接设置文本
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 // 整数列表
                 case IEnumerable<int> intList:
-                {
-                    cbo.DataSource = new List<int>(intList);
-                    if (defaultValue != null)
                     {
-                        var value = Convert.ToInt32(defaultValue);
-                        var index = ((List<int>)cbo.DataSource).IndexOf(value);
-                        if (index >= 0)
-                            cbo.SelectedIndex = index;
-                        else if (allowCustomInput)
-                            cbo.Text = value.ToString(); // 允许输入时直接设置文本
-                    }
+                        cbo.DataSource = new List<int>(intList);
+                        if (defaultValue != null)
+                        {
+                            var value = Convert.ToInt32(defaultValue);
+                            var index = ((List<int>)cbo.DataSource).IndexOf(value);
+                            if (index >= 0)
+                                cbo.SelectedIndex = index;
+                            else if (allowCustomInput)
+                                cbo.Text = value.ToString(); // 允许输入时直接设置文本
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
 
             layout.Controls.Add(lbl, col, row);
@@ -742,13 +752,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private InstrumentDriver CollectDriverFromForm()
         {
-            var driver = _selectedDriver ?? new InstrumentDriver();
+            // 新建时创建全新对象，编辑时复用原对象
+            bool isNew = _selectedDriver == null || string.IsNullOrEmpty(_selectedDriver.DriverId);
+            var driver = isNew ? new InstrumentDriver() : _selectedDriver;
 
-            // 如果是更新操作，保留原 DriverId
-            if (_selectedDriver != null && !string.IsNullOrEmpty(_selectedDriver.DriverId))
+            // 编辑模式：保留原 DriverId 和创建时间
+            if (!isNew)
             {
                 driver.DriverId = _selectedDriver.DriverId;
-                driver.CreatedTime = _selectedDriver.CreatedTime; // 保留创建时间
+                driver.CreatedTime = _selectedDriver.CreatedTime;
             }
 
             driver.Name = txtName.Text.Trim();
@@ -879,8 +891,19 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void BtnAdd_Click(object sender, EventArgs e)
         {
+            // 先解绑，防止 ClearForm 过程中 SelectionChanged 覆盖新建状态
+            dgvDrivers.SelectionChanged -= DgvDrivers_SelectionChanged;
+
+            // 取消列表选中
+            dgvDrivers.ClearSelection();
+
+            // 清空表单，设置新建标记
             ClearForm();
-            _selectedDriver = new InstrumentDriver();
+            _selectedDriver = new InstrumentDriver(); // DriverId 为空，标记为新建
+
+            // 重新绑定事件
+            dgvDrivers.SelectionChanged += DgvDrivers_SelectionChanged;
+
             txtName.Focus();
         }
 
@@ -1213,45 +1236,50 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 var driver = CollectDriverFromForm();
 
+                // ★ 临时加这几行，运行时看输出窗口
+                System.Diagnostics.Debug.WriteLine($"[保存] 新建模式: {_selectedDriver == null || string.IsNullOrEmpty(_selectedDriver.DriverId)}");
+                System.Diagnostics.Debug.WriteLine($"[保存] driver.Name: {driver.Name}");
+                System.Diagnostics.Debug.WriteLine($"[保存] driver.DriverId: {driver.DriverId}");
+
                 bool result;
                 if (_selectedDriver == null || string.IsNullOrEmpty(_selectedDriver.DriverId))
                 {
                     // 新建
                     result = await _driverService.AddDriverAsync(driver);
+                    System.Diagnostics.Debug.WriteLine($"[保存] AddDriverAsync 返回: {result}");
                 }
                 else
                 {
-                    // 更新
+                    // 更新 - 确保使用原 DriverId
                     driver.DriverId = _selectedDriver.DriverId;
                     result = await _driverService.UpdateDriverAsync(driver);
+                    System.Diagnostics.Debug.WriteLine($"[保存] UpdateDriverAsync 返回: {result}");
                 }
 
                 if (result)
                 {
-                    MessageHelper.MessageOK("保存成功");
+                    MessageHelper.MessageOK(this, "保存成功");
                     await LoadDriversAsync();
 
-                    // 选中刚保存的驱动
-                    // 通过 DriverId 或 Name 选中
                     foreach (DataGridViewRow row in dgvDrivers.Rows)
                     {
                         if (row.Tag is not InstrumentDriver d ||
                             (d.DriverId != driver.DriverId && d.Name != driver.Name)) continue;
-
                         row.Selected = true;
-                        dgvDrivers.FirstDisplayedScrollingRowIndex = row.Index; // 滚动到可见位置
+                        dgvDrivers.FirstDisplayedScrollingRowIndex = row.Index;
                         break;
                     }
                 }
                 else
                 {
-                    MessageHelper.MessageOK(("保存失败"));
+                    MessageHelper.MessageOK(this, "保存失败");
                 }
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "保存驱动失败");
-                MessageHelper.MessageOK(($"保存失败: {ex.Message}"));
+                System.Diagnostics.Debug.WriteLine($"[保存] 异常: {ex}");
+                MessageHelper.MessageOK(this, $"保存失败: {ex.Message}");
             }
         }
 
@@ -1278,10 +1306,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return false;
             }
 
-            // 驱动名称唯一性检查（新建或修改名称时）
-            if (_selectedDriver == null ||
-                string.IsNullOrEmpty(_selectedDriver.DriverId) ||
-                _selectedDriver.Name != txtName.Text.Trim())
+            // _drivers != null 的防空判断
+            if (_drivers != null &&
+                (_selectedDriver == null ||
+                 string.IsNullOrEmpty(_selectedDriver.DriverId) ||
+                 _selectedDriver.Name != txtName.Text.Trim()))
             {
                 var existingDriver = _drivers.FirstOrDefault(d =>
                     d.Name.Equals(txtName.Text.Trim(), StringComparison.OrdinalIgnoreCase) &&
