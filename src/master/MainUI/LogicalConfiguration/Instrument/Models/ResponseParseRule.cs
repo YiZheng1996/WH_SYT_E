@@ -1,4 +1,7 @@
-﻿namespace MainUI.LogicalConfiguration.Instrument.Models
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+namespace MainUI.LogicalConfiguration.Instrument.Models
 {
     /// <summary>
     /// 响应解析规则
@@ -18,7 +21,7 @@
         /// <summary>
         /// 解析类型
         /// </summary>
-        public string ParseType { get; set; } = "Position"; // Position, Delimiter, Regex, Json
+        public ParseType ParseType { get; set; } = ParseType.Position;
 
         /// <summary>
         /// 起始位置(Position类型)
@@ -26,7 +29,7 @@
         public int StartPosition { get; set; } = 0;
 
         /// <summary>
-        /// 长度(Position类型)
+        /// 长度(Position类型)，-1表示到末尾
         /// </summary>
         public int Length { get; set; } = -1;
 

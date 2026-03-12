@@ -2238,29 +2238,6 @@ namespace MainUI.Procedure.Controls
                     AddTableCell(commandName, yPosition, col1Width, col2Width, false,
                         Color.FromArgb(0, 102, 204)); // 深蓝色
                     yPosition += 22;
-
-                    // 如果有命令参数,显示关键参数(最多2个,避免界面过长)
-                    var commandParams = json["CommandParameters"];
-                    if (commandParams != null && commandParams.HasValues)
-                    {
-                        int paramCount = 0;
-                        foreach (var param in commandParams)
-                        {
-                            if (paramCount >= 2) break; // 限制最多显示2个参数
-
-                            var paramName = param.Path.Split('.').LastOrDefault();
-                            var paramValue = param.First?.ToString();
-
-                            if (!string.IsNullOrEmpty(paramValue))
-                            {
-                                AddTableCell($"  参数:{paramName}", yPosition, 0, col1Width, false);
-                                AddTableCell(paramValue, yPosition, col1Width, col2Width, false,
-                                    Color.FromArgb(120, 120, 120)); // 次要灰色
-                                yPosition += 22;
-                                paramCount++;
-                            }
-                        }
-                    }
                 }
 
                 // 第二部分: 通讯参数

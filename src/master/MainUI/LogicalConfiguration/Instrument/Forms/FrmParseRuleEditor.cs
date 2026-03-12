@@ -1,34 +1,35 @@
 ﻿using System.Text.RegularExpressions;
 using MainUI.LogicalConfiguration.Instrument.Models;
-using Newtonsoft.Json.Linq;
 using Sunny.UI;
 
 namespace MainUI.LogicalConfiguration.Instrument.Forms
 {
-    /// <summary>
-    /// 响应解析规则编辑窗体
-    /// 根据解析类型（Position / Delimiter / Regex / Json）动态显示对应输入面板
-    /// </summary>
     public partial class FrmParseRuleEditor : UIForm
     {
-        #region 解析类型定义
+        #region 正则预设模板
 
-        private static readonly (string Value, string Text)[] ParseTypeItems =
+        private static readonly (string DisplayName, string Pattern, string Hint)[] RegexTemplates =
         {
-            ("Position",  "位置截取  —  指定起始位置和长度"),
-            ("Delimiter", "分隔符分割 — 按字符拆分取指定段"),
-            ("Regex",     "正则表达式 — 用正则匹配提取内容"),
-            ("Json",      "JSON路径   — 按点路径读取JSON字段"),
+            ("— 选择常用模板 —",         "",                         ""),
+            ("提取第一个数字（含小数/科学计数）", @"([+-]?\d+\.?\d*(?:[eE][+-]?\d+)?)", "适用: +1.234E+01 / 12.5 / -0.3"),
+            ("提取冒号后的值",            @":\s*([^\r\n,;]+)",         "适用: VOLT:12.34 / TEMP:25.3°C"),
+            ("空格前的第一段",            @"^(\S+)",                   "适用: 12.34 V / 1.5 OK"),
+            ("提取括号内的内容",          @"\(([^)]+)\)",              "适用: VALUE(12.34) / RESULT(OK)"),
+            ("去掉单位取纯数字",          @"([+-]?\d+\.?\d*)",         "适用: 12.34V / 1.5A / 25℃"),
+            ("提取引号内的字符串",        @"""([^""]+)""",             "适用: STATUS:\"OK\" / NAME:\"CH1\""),
+            ("提取第N个逗号段（改索引）", @"(?:[^,]*,){1}([^,]*)",     "适用: A,12.34,C 取第2段，{1}改为段数-1"),
         };
 
         #endregion
 
         #region 属性
 
-        /// <summary>
-        /// 编辑完成后的解析规则对象
-        /// </summary>
         public ResponseParseRule Rule { get; private set; }
+
+        /// <summary>
+        /// 是否处于高级模式（决定正则选项是否可见）
+        /// </summary>
+        private bool _isAdvancedMode = false;
 
         #endregion
 
@@ -39,10 +40,20 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             InitializeComponent();
             InitFormData();
             BindEvents();
+            ApplyAdvancedMode(); // 初始化时应用一次，隐藏正则选项
 
             if (rule != null)
             {
                 Rule = CloneRule(rule);
+
+                // 如果已有规则是正则类型，自动打开高级模式
+                if (rule.ParseType == ParseType.Regex)
+                {
+                    _isAdvancedMode = true;
+                    chkAdvancedMode.Checked = true;
+                    ApplyAdvancedMode();
+                }
+
                 LoadToForm(rule);
                 this.Text = "编辑解析规则";
             }
@@ -50,7 +61,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 Rule = new ResponseParseRule();
                 this.Text = "添加解析规则";
-                cboParseType.SelectedIndex = 0; // 默认 Position
+                cboParseType.SelectedValue = ParseType.Position;
             }
         }
 
@@ -60,23 +71,71 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void InitFormData()
         {
-            // 解析方式下拉 - 用 string[] 方式绑定，保持简单
-            foreach (var item in ParseTypeItems)
-                cboParseType.Items.Add(item.Text);
+            // 解析方式下拉
+            cboParseType.DataSource = EnumExtensions.GetEnumItems<ParseType>();
+            cboParseType.DisplayMember = "DisplayName";
+            cboParseType.ValueMember = "Value";
+            cboParseType.SelectedValue = ParseType.Position;
 
             // 结果类型下拉
             cboTargetDataType.DataSource = EnumExtensions.GetEnumItems<DataType>();
             cboTargetDataType.DisplayMember = "DisplayName";
             cboTargetDataType.ValueMember = "Value";
             cboTargetDataType.SelectedValue = DataType.String;
+
+            // 正则预设模板下拉
+            cboRegexTemplate.Items.Clear();
+            foreach (var t in RegexTemplates)
+                cboRegexTemplate.Items.Add(t.DisplayName);
+            cboRegexTemplate.SelectedIndex = 0;
         }
 
         private void BindEvents()
         {
             cboParseType.SelectedIndexChanged += CboParseType_SelectedIndexChanged;
+            chkAdvancedMode.CheckedChanged += ChkAdvancedMode_CheckedChanged;
+            cboRegexTemplate.SelectedIndexChanged += CboRegexTemplate_SelectedIndexChanged;
             btnTestRegex.Click += BtnTestRegex_Click;
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += (s, e) => DialogResult = DialogResult.Cancel;
+        }
+
+        #endregion
+
+        #region 高级模式
+
+        /// <summary>
+        /// 根据 _isAdvancedMode 状态，控制正则选项在下拉列表中的可见性
+        /// </summary>
+        private void ApplyAdvancedMode()
+        {
+            // 记录当前选中值
+            var currentValue = cboParseType.SelectedValue is ParseType pt ? pt : ParseType.Position;
+
+            // 重新绑定数据源，根据模式决定是否包含 Regex
+            var items = EnumExtensions.GetEnumItems<ParseType>()
+                .Where(i => _isAdvancedMode || (ParseType)i.Value != ParseType.Regex)
+                .ToList();
+
+            cboParseType.DataSource = null;
+            cboParseType.DataSource = items;
+            cboParseType.DisplayMember = "DisplayName";
+            cboParseType.ValueMember = "Value";
+
+            // 恢复选中值；若当前是 Regex 但关闭了高级模式，回退到 Position
+            if (!_isAdvancedMode && currentValue == ParseType.Regex)
+                cboParseType.SelectedValue = ParseType.Position;
+            else
+                cboParseType.SelectedValue = currentValue;
+
+            // 高级模式说明标签
+            lblAdvancedHint.Visible = _isAdvancedMode;
+        }
+
+        private void ChkAdvancedMode_CheckedChanged(object sender, EventArgs e)
+        {
+            _isAdvancedMode = chkAdvancedMode.Checked;
+            ApplyAdvancedMode();
         }
 
         #endregion
@@ -87,6 +146,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             txtName.Text = rule.Name;
             txtTargetVariable.Text = rule.TargetVariable;
+            cboParseType.SelectedValue = rule.ParseType;
 
             if (cboTargetDataType.Items.Count > 0)
                 cboTargetDataType.SelectedValue = rule.TargetDataType;
@@ -94,11 +154,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             numScaleFactor.Value = rule.ScaleFactor;
             numOffset.Value = rule.Offset;
 
-            // 选中解析类型
-            int idx = Array.FindIndex(ParseTypeItems, t => t.Value == rule.ParseType);
-            cboParseType.SelectedIndex = idx >= 0 ? idx : 0;
-
-            // 填充各类型字段
             numStartPosition.Value = rule.StartPosition;
             numLength.Value = rule.Length < 0 ? -1 : rule.Length;
             txtDelimiter.Text = rule.Delimiter;
@@ -114,76 +169,80 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void CboParseType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            int idx = cboParseType.SelectedIndex;
-            if (idx < 0 || idx >= ParseTypeItems.Length) return;
+            if (cboParseType.SelectedValue is not ParseType type) return;
 
-            string type = ParseTypeItems[idx].Value;
-            panelPosition.Visible = type == "Position";
-            panelDelimiter.Visible = type == "Delimiter";
-            panelRegex.Visible = type == "Regex";
-            panelJson.Visible = type == "Json";
+            panelPosition.Visible = type == ParseType.Position;
+            panelDelimiter.Visible = type == ParseType.Delimiter;
+            panelRegex.Visible = type == ParseType.Regex;
+            panelJson.Visible = type == ParseType.Json;
+        }
+
+        /// <summary>
+        /// 选择预设模板后，自动填充正则框并显示说明
+        /// </summary>
+        private void CboRegexTemplate_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int idx = cboRegexTemplate.SelectedIndex;
+            if (idx <= 0 || idx >= RegexTemplates.Length) return; // 0 是占位项
+
+            var template = RegexTemplates[idx];
+            txtRegexPattern.Text = template.Pattern;
+            lblRegexHint.Text = template.Hint; // 更新说明文字
         }
 
         private void BtnOk_Click(object sender, EventArgs e)
         {
-            // ── 基础验证
             if (string.IsNullOrWhiteSpace(txtName.Text))
             {
-                MessageHelper.MessageOK(this, $"规则名称不能为空{txtName}");
+                MessageHelper.MessageOK(this, "规则名称不能为空");
                 txtName.Focus();
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(txtTargetVariable.Text))
             {
-                MessageHelper.MessageOK(this, $"目标变量不能为空{txtTargetVariable}");
+                MessageHelper.MessageOK(this, "目标变量不能为空");
                 txtTargetVariable.Focus();
                 return;
             }
 
-            int idx = cboParseType.SelectedIndex;
-            if (idx < 0)
+            if (cboParseType.SelectedValue is not ParseType type)
             {
                 UIMessageTip.ShowWarning("请选择解析方式");
                 return;
             }
 
-            string type = ParseTypeItems[idx].Value;
-
-            // ── 各类型特定验证
-            if (type == "Regex" && string.IsNullOrWhiteSpace(txtRegexPattern.Text))
+            if (type == ParseType.Regex && string.IsNullOrWhiteSpace(txtRegexPattern.Text))
             {
-                MessageHelper.MessageOK(this, $"正则表达式不能为空{txtRegexPattern}");
+                MessageHelper.MessageOK(this, "正则表达式不能为空");
                 txtRegexPattern.Focus();
                 return;
             }
 
-            if (type == "Json" && string.IsNullOrWhiteSpace(txtJsonPath.Text))
+            if (type == ParseType.Json && string.IsNullOrWhiteSpace(txtJsonPath.Text))
             {
-                MessageHelper.MessageOK(this, $"JSON路径不能为空{txtJsonPath}");
+                MessageHelper.MessageOK(this, "JSON路径不能为空");
                 txtJsonPath.Focus();
                 return;
             }
 
-            if (type == "Regex")
+            if (type == ParseType.Regex)
             {
                 try { _ = new Regex(txtRegexPattern.Text); }
                 catch
                 {
-                    MessageHelper.MessageOK(this, $"正则表达式语法错误，请检查{txtRegexPattern}");
+                    MessageHelper.MessageOK(this, "正则表达式语法错误，请检查");
                     txtRegexPattern.Focus();
                     return;
                 }
             }
 
-            // ── 写回 Rule
             Rule.Name = txtName.Text.Trim();
             Rule.TargetVariable = txtTargetVariable.Text.Trim();
             Rule.ParseType = type;
             Rule.TargetDataType = (DataType)(cboTargetDataType.SelectedValue ?? DataType.String);
             Rule.ScaleFactor = (double)numScaleFactor.Value;
             Rule.Offset = (double)numOffset.Value;
-
             Rule.StartPosition = (int)numStartPosition.Value;
             Rule.Length = (int)numLength.Value;
             Rule.Delimiter = txtDelimiter.Text.Length > 0 ? txtDelimiter.Text : ",";
@@ -195,9 +254,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             DialogResult = DialogResult.OK;
         }
 
-        /// <summary>
-        /// 正则测试：输入示例响应文本，实时看匹配结果
-        /// </summary>
         private void BtnTestRegex_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtRegexPattern.Text))

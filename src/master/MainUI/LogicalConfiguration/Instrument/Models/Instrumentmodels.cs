@@ -229,6 +229,25 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         JumpToStep
     }
 
+    /// <summary>
+    /// 响应解析类型
+    /// </summary>
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum ParseType
+    {
+        [Description("位置截取")]
+        Position,
+
+        [Description("分隔符分割")]
+        Delimiter,
+
+        [Description("正则表达式")]
+        Regex,
+
+        [Description("JSON路径")]
+        Json
+    }
+
     #endregion
-  
+
 }

@@ -39,6 +39,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             lblSegmentIndex = new UILabel();
             lblDelimiterHint = new UILabel();
             panelRegex = new Panel();
+            lblRegexTemplate = new UILabel();
+            cboRegexTemplate = new UIComboBox();
+            lblAdvancedHint = new UILabel();
             txtRegexPattern = new UITextBox();
             lblRegexPattern = new UILabel();
             btnTestRegex = new UIButton();
@@ -58,6 +61,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             numOffset = new UIDoubleUpDown();
             lblConvertHint = new UILabel();
             panelBottom = new Panel();
+            chkAdvancedMode = new UICheckBox();
             btnCancel = new UIButton();
             btnOk = new UIButton();
             panelMain.SuspendLayout();
@@ -82,7 +86,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             panelMain.Location = new Point(0, 35);
             panelMain.Name = "panelMain";
             panelMain.Padding = new Padding(12, 12, 12, 4);
-            panelMain.Size = new Size(588, 450);
+            panelMain.Size = new Size(588, 499);
             panelMain.TabIndex = 0;
             // 
             // grpBasic
@@ -223,18 +227,18 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // 
             // grpParseParams
             // 
+            grpParseParams.Controls.Add(panelRegex);
             grpParseParams.Controls.Add(panelJson);
             grpParseParams.Controls.Add(panelDelimiter);
-            grpParseParams.Controls.Add(panelRegex);
             grpParseParams.Controls.Add(panelPosition);
             grpParseParams.Dock = DockStyle.Bottom;
             grpParseParams.Font = new Font("微软雅黑", 12F);
-            grpParseParams.Location = new Point(12, 298);
+            grpParseParams.Location = new Point(12, 296);
             grpParseParams.Margin = new Padding(4, 8, 4, 8);
             grpParseParams.MinimumSize = new Size(1, 1);
             grpParseParams.Name = "grpParseParams";
             grpParseParams.Padding = new Padding(10, 32, 10, 10);
-            grpParseParams.Size = new Size(564, 148);
+            grpParseParams.Size = new Size(564, 199);
             grpParseParams.TabIndex = 1;
             grpParseParams.Text = "解析参数配置";
             grpParseParams.TextAlignment = ContentAlignment.MiddleLeft;
@@ -367,22 +371,66 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // 
             // panelRegex
             // 
+            panelRegex.Controls.Add(lblRegexTemplate);
+            panelRegex.Controls.Add(cboRegexTemplate);
             panelRegex.Controls.Add(txtRegexPattern);
             panelRegex.Controls.Add(lblRegexPattern);
+            panelRegex.Controls.Add(lblAdvancedHint);
             panelRegex.Controls.Add(btnTestRegex);
             panelRegex.Controls.Add(lblRegexGroup);
             panelRegex.Controls.Add(numRegexGroup);
             panelRegex.Controls.Add(lblRegexHint);
-            panelRegex.Location = new Point(10, 36);
+            panelRegex.Location = new Point(10, 30);
             panelRegex.Name = "panelRegex";
-            panelRegex.Size = new Size(541, 96);
+            panelRegex.Size = new Size(541, 163);
             panelRegex.TabIndex = 2;
             panelRegex.Visible = false;
+            // 
+            // lblRegexTemplate
+            // 
+            lblRegexTemplate.AutoSize = true;
+            lblRegexTemplate.Font = new Font("微软雅黑", 11F);
+            lblRegexTemplate.ForeColor = Color.FromArgb(48, 48, 48);
+            lblRegexTemplate.Location = new Point(19, 35);
+            lblRegexTemplate.Name = "lblRegexTemplate";
+            lblRegexTemplate.Size = new Size(73, 20);
+            lblRegexTemplate.TabIndex = 0;
+            lblRegexTemplate.Text = "常用模板:";
+            // 
+            // cboRegexTemplate
+            // 
+            cboRegexTemplate.DataSource = null;
+            cboRegexTemplate.DropDownStyle = UIDropDownStyle.DropDownList;
+            cboRegexTemplate.FillColor = Color.White;
+            cboRegexTemplate.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            cboRegexTemplate.ItemHoverColor = Color.FromArgb(155, 200, 255);
+            cboRegexTemplate.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
+            cboRegexTemplate.Location = new Point(92, 31);
+            cboRegexTemplate.Margin = new Padding(4, 5, 4, 5);
+            cboRegexTemplate.MinimumSize = new Size(63, 0);
+            cboRegexTemplate.Name = "cboRegexTemplate";
+            cboRegexTemplate.Padding = new Padding(0, 0, 30, 2);
+            cboRegexTemplate.Size = new Size(442, 29);
+            cboRegexTemplate.SymbolSize = 24;
+            cboRegexTemplate.TabIndex = 1;
+            cboRegexTemplate.TextAlignment = ContentAlignment.MiddleLeft;
+            cboRegexTemplate.Watermark = "";
+            // 
+            // lblAdvancedHint
+            // 
+            lblAdvancedHint.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            lblAdvancedHint.ForeColor = Color.FromArgb(180, 100, 0);
+            lblAdvancedHint.Location = new Point(5, 2);
+            lblAdvancedHint.Name = "lblAdvancedHint";
+            lblAdvancedHint.Size = new Size(420, 20);
+            lblAdvancedHint.TabIndex = 2;
+            lblAdvancedHint.Text = "⚠ 正则表达式由工程师配置，普通用户请使用常用模板";
+            lblAdvancedHint.Visible = false;
             // 
             // txtRegexPattern
             // 
             txtRegexPattern.Font = new Font("微软雅黑", 12F);
-            txtRegexPattern.Location = new Point(90, 2);
+            txtRegexPattern.Location = new Point(92, 72);
             txtRegexPattern.Margin = new Padding(4, 5, 4, 5);
             txtRegexPattern.MinimumSize = new Size(1, 16);
             txtRegexPattern.Name = "txtRegexPattern";
@@ -398,7 +446,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             lblRegexPattern.AutoSize = true;
             lblRegexPattern.Font = new Font("微软雅黑", 11F);
             lblRegexPattern.ForeColor = Color.FromArgb(48, 48, 48);
-            lblRegexPattern.Location = new Point(2, 6);
+            lblRegexPattern.Location = new Point(4, 76);
             lblRegexPattern.Name = "lblRegexPattern";
             lblRegexPattern.Size = new Size(88, 20);
             lblRegexPattern.TabIndex = 0;
@@ -409,7 +457,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // 
             btnTestRegex.FillColor = Color.FromArgb(40, 167, 69);
             btnTestRegex.Font = new Font("微软雅黑", 11F);
-            btnTestRegex.Location = new Point(294, 1);
+            btnTestRegex.Location = new Point(296, 71);
             btnTestRegex.MinimumSize = new Size(1, 1);
             btnTestRegex.Name = "btnTestRegex";
             btnTestRegex.Size = new Size(80, 30);
@@ -422,7 +470,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             lblRegexGroup.AutoSize = true;
             lblRegexGroup.Font = new Font("微软雅黑", 11F);
             lblRegexGroup.ForeColor = Color.FromArgb(48, 48, 48);
-            lblRegexGroup.Location = new Point(374, 6);
+            lblRegexGroup.Location = new Point(376, 76);
             lblRegexGroup.Name = "lblRegexGroup";
             lblRegexGroup.Size = new Size(43, 20);
             lblRegexGroup.TabIndex = 2;
@@ -432,7 +480,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // numRegexGroup
             // 
             numRegexGroup.Font = new Font("微软雅黑", 12F);
-            numRegexGroup.Location = new Point(426, 2);
+            numRegexGroup.Location = new Point(423, 72);
             numRegexGroup.Margin = new Padding(4, 5, 4, 5);
             numRegexGroup.Maximum = 99D;
             numRegexGroup.Minimum = 0D;
@@ -450,7 +498,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // 
             lblRegexHint.Font = new Font("微软雅黑", 10F);
             lblRegexHint.ForeColor = Color.FromArgb(100, 100, 200);
-            lblRegexHint.Location = new Point(3, 44);
+            lblRegexHint.Location = new Point(5, 110);
             lblRegexHint.Name = "lblRegexHint";
             lblRegexHint.Size = new Size(468, 44);
             lblRegexHint.TabIndex = 3;
@@ -633,14 +681,27 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // panelBottom
             // 
             panelBottom.BackColor = Color.White;
+            panelBottom.Controls.Add(chkAdvancedMode);
             panelBottom.Controls.Add(btnCancel);
             panelBottom.Controls.Add(btnOk);
             panelBottom.Dock = DockStyle.Bottom;
-            panelBottom.Location = new Point(0, 485);
+            panelBottom.Location = new Point(0, 534);
             panelBottom.Name = "panelBottom";
             panelBottom.Padding = new Padding(0, 8, 16, 8);
             panelBottom.Size = new Size(588, 52);
             panelBottom.TabIndex = 1;
+            // 
+            // chkAdvancedMode
+            // 
+            chkAdvancedMode.CheckBoxColor = Color.FromArgb(65, 100, 204);
+            chkAdvancedMode.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            chkAdvancedMode.ForeColor = Color.FromArgb(48, 48, 48);
+            chkAdvancedMode.Location = new Point(15, 11);
+            chkAdvancedMode.MinimumSize = new Size(1, 1);
+            chkAdvancedMode.Name = "chkAdvancedMode";
+            chkAdvancedMode.Size = new Size(258, 30);
+            chkAdvancedMode.TabIndex = 0;
+            chkAdvancedMode.Text = "高级模式（启用正则表达式）";
             // 
             // btnCancel
             // 
@@ -668,7 +729,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // FrmParseRuleEditor
             // 
             AutoScaleMode = AutoScaleMode.None;
-            ClientSize = new Size(588, 537);
+            ClientSize = new Size(588, 586);
             Controls.Add(panelMain);
             Controls.Add(panelBottom);
             Font = new Font("微软雅黑", 12F);
@@ -750,5 +811,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         private Panel panelBottom;
         private UIButton btnOk;
         private UIButton btnCancel;
+
+        // ── 控件声明区追加 ──
+        private UILabel lblRegexTemplate;
+        private UIComboBox cboRegexTemplate;
+        private UILabel lblAdvancedHint;
+        private UICheckBox chkAdvancedMode;
     }
 }

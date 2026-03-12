@@ -488,7 +488,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                             {
                                 Name = "Voltage",
                                 TargetVariable = "MeasuredVoltage",
-                                ParseType = "Position",
+                                ParseType = ParseType.Position,
                                 StartPosition = 0,
                                 Length = -1,
                                 TargetDataType = DataType.Double
@@ -509,7 +509,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                             {
                                 Name = "ACVoltage",
                                 TargetVariable = "MeasuredACVoltage",
-                                ParseType = "Position",
+                                ParseType = ParseType.Position,
                                 StartPosition = 0,
                                 Length = -1,
                                 TargetDataType = DataType.Double
@@ -530,7 +530,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                             {
                                 Name = "Resistance",
                                 TargetVariable = "MeasuredResistance",
-                                ParseType = "Position",
+                                ParseType = ParseType.Position,
                                 StartPosition = 0,
                                 Length = -1,
                                 TargetDataType = DataType.Double
@@ -592,7 +592,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                             {
                                 Name = "Temperature",
                                 TargetVariable = "CurrentTemperature",
-                                ParseType = "Position",
+                                ParseType = ParseType.Position,
                                 StartPosition = 2,
                                 Length = 4,
                                 TargetDataType = DataType.Double,

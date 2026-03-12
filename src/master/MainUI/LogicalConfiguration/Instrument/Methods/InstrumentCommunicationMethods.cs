@@ -541,25 +541,22 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
             {
                 try
                 {
-                    object parsedValue = null;
-
-                    switch (rule.ParseType?.ToLower())
+                    object parsedValue = rule.ParseType switch
                     {
-                        case "regex":
-                            parsedValue = ParseByRegex(result.ResponseString, rule);
-                            break;
-                        case "position":
-                            parsedValue = ParseByPosition(result.ResponseString, rule);
-                            break;
-                        case "split":
-                            parsedValue = ParseBySplit(result.ResponseString, rule);
-                            break;
-                        default:
-                            _logger.LogWarning("未知的解析类型: {Type}", rule.ParseType);
-                            continue;
+                        ParseType.Regex => ParseByRegex(result.ResponseString, rule),
+                        ParseType.Position => ParseByPosition(result.ResponseString, rule),
+                        ParseType.Delimiter => ParseBySplit(result.ResponseString, rule),
+                        ParseType.Json => ParseByJson(result.ResponseString, rule),  // Json 分支
+                        _ => null
+                    };
+
+                    if (parsedValue == null)
+                    {
+                        _logger.LogWarning("解析结果为空: 规则[{Rule}] 类型[{Type}]", rule.Name, rule.ParseType);
+                        continue;
                     }
 
-                    if (parsedValue == null || string.IsNullOrEmpty(rule.TargetVariable)) continue;
+                    if (string.IsNullOrEmpty(rule.TargetVariable)) continue;
 
                     // 类型转换
                     var convertedValue = ConvertToTargetType(parsedValue, rule.TargetDataType);
@@ -568,18 +565,37 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                     _variableManager.UpdateVariableValue(
                         rule.TargetVariable,
                         convertedValue,
-                        $"解析自仪器响应");
+                        "解析自仪器响应");
 
                     _logger.LogDebug(
                         "解析成功: 规则[{Rule}] -> 变量[{Var}] = {Value}",
-                        rule.Name,
-                        rule.TargetVariable,
-                        convertedValue);
+                        rule.Name, rule.TargetVariable, convertedValue);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "解析规则执行失败: {Rule}", rule.Name);
                 }
+            }
+        }
+
+        /// <summary>
+        /// JSON路径解析
+        /// </summary>
+        private object ParseByJson(string response, ResponseParseRule rule)
+        {
+            if (string.IsNullOrWhiteSpace(rule.JsonPath))
+                return null;
+
+            try
+            {
+                var jObj = Newtonsoft.Json.Linq.JToken.Parse(response);
+                var token = jObj.SelectToken(rule.JsonPath);
+                return token?.ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "JSON解析失败: 路径[{Path}]", rule.JsonPath);
+                return null;
             }
         }
 

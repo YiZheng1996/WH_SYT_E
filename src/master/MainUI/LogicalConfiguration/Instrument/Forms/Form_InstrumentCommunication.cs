@@ -212,7 +212,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 cboCommand.Items.Add(new ComboBoxItem
                 {
-                    Text = $"{cmd.DisplayName} ({cmd.CommandType})",
+                    Text = $"{cmd.DisplayName} ({cmd.CommandType.Description()})",
                     Value = cmd
                 });
             }
@@ -410,14 +410,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             }
         }
 
-
         /// <summary>
         /// 加载解析规则到DataGridView
         /// </summary>
         private void LoadParseRules()
         {
             dgvParseRules.Rows.Clear();
-
             if (_parameter.CustomParseRules == null || _parameter.CustomParseRules.Count == 0)
                 return;
 
@@ -428,12 +426,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
                 row.Cells["Name"].Value = rule.Name;
                 row.Cells["TargetVariable"].Value = rule.TargetVariable;
-                row.Cells["ParseType"].Value = rule.ParseType;
-
-                // 根据ParseType组合不同的参数
+                row.Cells["ParseType"].Value = rule.ParseType.GetDescription();
                 row.Cells["Pattern"].Value = GetParseRulePattern(rule);
-
-                // 保存完整的rule对象到Tag，方便后续编辑
                 row.Tag = rule;
             }
         }
@@ -445,14 +439,13 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             return rule.ParseType switch
             {
-                "Position" => $"起始:{rule.StartPosition}, 长度:{rule.Length}",
-                "Delimiter" => $"分隔符:{rule.Delimiter}, 索引:{rule.SegmentIndex}",
-                "Regex" => rule.RegexPattern,
-                "Json" => rule.JsonPath,
+                ParseType.Position => $"起始:{rule.StartPosition}, 长度:{rule.Length}",
+                ParseType.Delimiter => $"分隔符:{rule.Delimiter}, 索引:{rule.SegmentIndex}",
+                ParseType.Regex => rule.RegexPattern,
+                ParseType.Json => rule.JsonPath,
                 _ => ""
             };
         }
-
 
         protected override void SaveFormToParameter()
         {

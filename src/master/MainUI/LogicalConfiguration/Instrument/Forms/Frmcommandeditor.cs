@@ -99,36 +99,30 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             LoadParseRules(command.ParseRules);
         }
-
-
         private void LoadParseRules(List<ResponseParseRule> rules)
         {
             dgvParseRules.Rows.Clear();
-
-            if (rules == null)
-                return;
+            if (rules == null) return;
 
             foreach (var rule in rules)
             {
-                var pattern = GetParseRulePattern(rule);
                 var rowIndex = dgvParseRules.Rows.Add(
                     rule.Name,
                     rule.TargetVariable,
-                    GetParseTypeDisplayName(rule.ParseType),
-                    pattern
+                    rule.ParseType.GetDescription(),  // ← 改为枚举描述
+                    GetParseRulePattern(rule)
                 );
                 dgvParseRules.Rows[rowIndex].Tag = rule;
             }
         }
-
         private string GetParseRulePattern(ResponseParseRule rule)
         {
             return rule.ParseType switch
             {
-                "Position" => $"起始:{rule.StartPosition}, 长度:{rule.Length}",
-                "Delimiter" => $"分隔符:{rule.Delimiter}, 索引:{rule.SegmentIndex}",
-                "Regex" => rule.RegexPattern,
-                "Json" => rule.JsonPath,
+                ParseType.Position => $"起始:{rule.StartPosition}, 长度:{rule.Length}",
+                ParseType.Delimiter => $"分隔符:{rule.Delimiter}, 索引:{rule.SegmentIndex}",
+                ParseType.Regex => rule.RegexPattern,
+                ParseType.Json => rule.JsonPath,
                 _ => ""
             };
         }
@@ -192,10 +186,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (e.RowIndex < 0) return;
             var row = dgvParseRules.Rows[e.RowIndex];
-            if (row.Tag is not ResponseParseRule rule) return;
+            if (row.Tag is not ResponseParseRule) return;
 
-            using var frm = new FrmParseRuleEditor(rule);
-            if (frm.ShowDialog(this) != DialogResult.OK) return;
+            using var frm = new FrmParseRuleEditor();
+            var frmResult = VarHelper.ShowDialogWithOverlayEx(this, frm);
+            if (frmResult != DialogResult.OK) return;
 
             row.Tag = frm.Rule;
             RefreshParseRuleRow(row, frm.Rule);
@@ -255,18 +250,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             row.Cells["Name"].Value = rule.Name;
             row.Cells["TargetVariable"].Value = rule.TargetVariable;
-            row.Cells["ParseType"].Value = GetParseTypeDisplayName(rule.ParseType);
+            row.Cells["ParseType"].Value = rule.ParseType.GetDescription();
             row.Cells["Pattern"].Value = GetParseRulePattern(rule);
         }
-
-        private string GetParseTypeDisplayName(string type) => type switch
-        {
-            "Position" => "位置截取",
-            "Delimiter" => "分隔符分割",
-            "Regex" => "正则表达式",
-            "Json" => "JSON路径",
-            _ => type
-        };
 
         /// <summary>
         /// 向解析规则表格新增一行
@@ -276,7 +262,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             var rowIndex = dgvParseRules.Rows.Add(
                 rule.Name,
                 rule.TargetVariable,
-                GetParseTypeDisplayName(rule.ParseType),
+                rule.ParseType,
                 GetParseRulePattern(rule)
             );
             dgvParseRules.Rows[rowIndex].Tag = rule;
