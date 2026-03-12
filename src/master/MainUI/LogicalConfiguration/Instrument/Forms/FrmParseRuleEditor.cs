@@ -145,7 +145,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         private void LoadToForm(ResponseParseRule rule)
         {
             txtName.Text = rule.Name;
-            txtTargetVariable.Text = rule.TargetVariable;
             cboParseType.SelectedValue = rule.ParseType;
 
             if (cboTargetDataType.Items.Count > 0)
@@ -199,13 +198,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(txtTargetVariable.Text))
-            {
-                MessageHelper.MessageOK(this, "目标变量不能为空");
-                txtTargetVariable.Focus();
-                return;
-            }
-
             if (cboParseType.SelectedValue is not ParseType type)
             {
                 UIMessageTip.ShowWarning("请选择解析方式");
@@ -238,7 +230,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             }
 
             Rule.Name = txtName.Text.Trim();
-            Rule.TargetVariable = txtTargetVariable.Text.Trim();
             Rule.ParseType = type;
             Rule.TargetDataType = (DataType)(cboTargetDataType.SelectedValue ?? DataType.String);
             Rule.ScaleFactor = (double)numScaleFactor.Value;
@@ -280,7 +271,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         private static ResponseParseRule CloneRule(ResponseParseRule r) => new ResponseParseRule
         {
             Name = r.Name,
-            TargetVariable = r.TargetVariable,
             ParseType = r.ParseType,
             StartPosition = r.StartPosition,
             Length = r.Length,

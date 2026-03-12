@@ -51,6 +51,12 @@
         public DateTime Timestamp { get; set; } = DateTime.Now;
 
         /// <summary>
+        /// 解析结果集合，Key=规则名称，Value=解析后的值
+        /// 由调用方（步骤执行层）决定如何使用这些值
+        /// </summary>
+        public Dictionary<string, object> ParsedValues { get; set; } = [];
+
+        /// <summary>
         /// 创建成功结果
         /// </summary>
         public static CommunicationResult Successful(string response = "", Dictionary<string, object> parsedData = null)

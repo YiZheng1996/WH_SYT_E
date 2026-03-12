@@ -14,11 +14,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         public string Name { get; set; } = "";
 
         /// <summary>
-        /// 目标变量名(解析结果存储位置)
-        /// </summary>
-        public string TargetVariable { get; set; } = "";
-
-        /// <summary>
         /// 解析类型
         /// </summary>
         public ParseType ParseType { get; set; } = ParseType.Position;

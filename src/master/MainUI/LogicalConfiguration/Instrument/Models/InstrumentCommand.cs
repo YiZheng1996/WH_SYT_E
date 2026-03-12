@@ -120,7 +120,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
                     clone.ParseRules.Add(new ResponseParseRule
                     {
                         Name = rule.Name,
-                        TargetVariable = rule.TargetVariable,
                         ParseType = rule.ParseType,
                         StartPosition = rule.StartPosition,
                         Length = rule.Length,

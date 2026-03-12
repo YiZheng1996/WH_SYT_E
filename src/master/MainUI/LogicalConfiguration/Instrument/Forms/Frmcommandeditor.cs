@@ -75,7 +75,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // 解析规则表格列
             dgvParseRules.Columns.Clear();
             dgvParseRules.Columns.Add("Name", "规则名称");
-            dgvParseRules.Columns.Add("TargetVariable", "目标变量");
             dgvParseRules.Columns.Add("ParseType", "解析方式");
             dgvParseRules.Columns.Add("Pattern", "解析参数");
         }
@@ -108,8 +107,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 var rowIndex = dgvParseRules.Rows.Add(
                     rule.Name,
-                    rule.TargetVariable,
-                    rule.ParseType.GetDescription(),  // ← 改为枚举描述
+                    rule.ParseType.GetDescription(),
                     GetParseRulePattern(rule)
                 );
                 dgvParseRules.Rows[rowIndex].Tag = rule;
@@ -249,7 +247,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         private void RefreshParseRuleRow(DataGridViewRow row, ResponseParseRule rule)
         {
             row.Cells["Name"].Value = rule.Name;
-            row.Cells["TargetVariable"].Value = rule.TargetVariable;
             row.Cells["ParseType"].Value = rule.ParseType.GetDescription();
             row.Cells["Pattern"].Value = GetParseRulePattern(rule);
         }
@@ -261,7 +258,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             var rowIndex = dgvParseRules.Rows.Add(
                 rule.Name,
-                rule.TargetVariable,
                 rule.ParseType,
                 GetParseRulePattern(rule)
             );

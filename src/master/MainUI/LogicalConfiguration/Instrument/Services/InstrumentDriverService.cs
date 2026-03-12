@@ -487,7 +487,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                             new ResponseParseRule
                             {
                                 Name = "Voltage",
-                                TargetVariable = "MeasuredVoltage",
                                 ParseType = ParseType.Position,
                                 StartPosition = 0,
                                 Length = -1,
@@ -508,7 +507,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                             new ResponseParseRule
                             {
                                 Name = "ACVoltage",
-                                TargetVariable = "MeasuredACVoltage",
                                 ParseType = ParseType.Position,
                                 StartPosition = 0,
                                 Length = -1,
@@ -529,7 +527,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                             new ResponseParseRule
                             {
                                 Name = "Resistance",
-                                TargetVariable = "MeasuredResistance",
                                 ParseType = ParseType.Position,
                                 StartPosition = 0,
                                 Length = -1,
@@ -591,7 +588,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                             new ResponseParseRule
                             {
                                 Name = "Temperature",
-                                TargetVariable = "CurrentTemperature",
                                 ParseType = ParseType.Position,
                                 StartPosition = 2,
                                 Length = 4,

@@ -117,4 +117,16 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="lblRegexHint.Text" xml:space="preserve">
+    <value>   提示：分组=0 取整体匹配；分组=N 取第N个括号 ( ) 内的内容。
+   ① 响应="TEMP=25.6"    表达式="TEMP=([\d.]+)"          分组=1  →  "25.6"
+   ② 响应="CH1:CURR=0.25" 表达式="CH(\d):(\w+)=([\d.]+)" 分组=3  →  "0.25"
+   ③ 响应="25.60"         表达式="[\d.]+"                 分组=0  →  "25.60"</value>
+  </data>
+  <data name="lblJsonHint.Text" xml:space="preserve">
+    <value>   提示：用 "." 分隔层级，数组用 [N] 取第N项（从0开始）。
+   ① 响应={"temp":25.6}                     路径="temp"          →  25.6
+   ② 响应={"data":{"volt":12.34}}            路径="data.volt"     →  12.34
+   ③ 响应={"ch":[{"val":1.1},{"val":2.2}]}   路径="ch[1].val"     →  2.2</value>
+  </data>
 </root>

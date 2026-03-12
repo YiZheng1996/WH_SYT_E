@@ -62,10 +62,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             cboFailureStrategy.SelectedValue = FailureStrategy.Abort;
 
             InitializeParseRulesGrid();
-
-            // 隐藏解析规则面板
-            grpParseRules.Visible = false;
-            lblParseRules.Visible = false;
         }
 
         private void AttachExpressionPanels()
@@ -275,7 +271,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             try
             {
-                // ← 修复：使用单例工厂，connectionId 传入驱动ID避免与运行时连接混用
+                // 使用单例工厂，connectionId 传入驱动ID避免与运行时连接混用
                 var testConnectionId = $"TEST_{_selectedDriver.DriverId}";
                 var provider = CommunicationProviderFactory.Instance.CreateProvider(_selectedDriver.ProtocolType);
 
@@ -425,7 +421,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 var row = dgvParseRules.Rows[rowIndex];
 
                 row.Cells["Name"].Value = rule.Name;
-                row.Cells["TargetVariable"].Value = rule.TargetVariable;
                 row.Cells["ParseType"].Value = rule.ParseType.GetDescription();
                 row.Cells["Pattern"].Value = GetParseRulePattern(rule);
                 row.Tag = rule;
@@ -489,7 +484,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             _parameter.EnableLogging = chkEnableLogging.Checked;
             _parameter.ExecuteCondition = txtExecuteCondition.Text;
             //_parameter.OverrideConnectionParams = chkOverrideConnection?.Checked ?? false;
-            // _parameter.OverrideParamsJson = txtOverrideParamsJson?.Text ?? "";
+            //_parameter.OverrideParamsJson = txtOverrideParamsJson?.Text ?? "";
         }
 
         protected override bool ValidateInput()

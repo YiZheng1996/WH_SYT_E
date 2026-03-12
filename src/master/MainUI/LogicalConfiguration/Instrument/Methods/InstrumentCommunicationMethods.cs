@@ -13,7 +13,7 @@ using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 namespace MainUI.LogicalConfiguration.Instrument.Methods
 {
     /// <summary>
-    /// 仪器通讯执行方法类 - 修复版
+    /// 仪器通讯执行方法类
     /// </summary>
     public class InstrumentCommunicationMethods(
         ILogger<InstrumentCommunicationMethods> logger,
@@ -187,7 +187,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                         if (parseRules != null && parseRules.Count > 0)
                         {
                             _logger.LogDebug("开始解析响应数据，规则数量: {Count}", parseRules.Count);
-                            ParseResponse(result, parseRules);
+                            result.ParsedValues = ParseResponse(result, parseRules);
+                            _logger.LogDebug("解析完成，共得到 {Count} 条结果", result.ParsedValues.Count);
                         }
                     }
                 }
@@ -533,10 +534,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
         }
 
         /// <summary>
-        /// 解析响应数据
+        /// 解析响应数据，返回 规则名→解析结果 的字典
         /// </summary>
-        private void ParseResponse(CommunicationResult result, List<ResponseParseRule> rules)
+        private Dictionary<string, object> ParseResponse(CommunicationResult result, List<ResponseParseRule> rules)
         {
+            var parsedResults = new Dictionary<string, object>();
+
             foreach (var rule in rules)
             {
                 try
@@ -546,7 +549,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                         ParseType.Regex => ParseByRegex(result.ResponseString, rule),
                         ParseType.Position => ParseByPosition(result.ResponseString, rule),
                         ParseType.Delimiter => ParseBySplit(result.ResponseString, rule),
-                        ParseType.Json => ParseByJson(result.ResponseString, rule),  // Json 分支
+                        ParseType.Json => ParseByJson(result.ResponseString, rule),
                         _ => null
                     };
 
@@ -556,26 +559,19 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                         continue;
                     }
 
-                    if (string.IsNullOrEmpty(rule.TargetVariable)) continue;
 
-                    // 类型转换
                     var convertedValue = ConvertToTargetType(parsedValue, rule.TargetDataType);
+                    parsedResults[rule.Name] = convertedValue;
 
-                    // 保存到变量
-                    _variableManager.UpdateVariableValue(
-                        rule.TargetVariable,
-                        convertedValue,
-                        "解析自仪器响应");
-
-                    _logger.LogDebug(
-                        "解析成功: 规则[{Rule}] -> 变量[{Var}] = {Value}",
-                        rule.Name, rule.TargetVariable, convertedValue);
+                    _logger.LogDebug("解析成功: 规则[{Rule}] = {Value}", rule.Name, convertedValue);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "解析规则执行失败: {Rule}", rule.Name);
                 }
             }
+
+            return parsedResults;
         }
 
         /// <summary>
@@ -607,12 +603,19 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
             var regex = new Regex(rule.RegexPattern);
             var match = regex.Match(response);
 
-            if (match.Success)
+            if (!match.Success) return null;
+
+            int groupIndex = rule.RegexGroupIndex;
+
+            // 分组索引越界保护
+            if (groupIndex >= match.Groups.Count)
             {
-                return match.Groups.Count > 1 ? match.Groups[1].Value : match.Value;
+                _logger.LogWarning("正则分组索引 {Index} 超出范围，实际共 {Count} 个分组",
+                    groupIndex, match.Groups.Count);
+                return null;
             }
 
-            return null;
+            return match.Groups[groupIndex].Value;
         }
 
         /// <summary>
