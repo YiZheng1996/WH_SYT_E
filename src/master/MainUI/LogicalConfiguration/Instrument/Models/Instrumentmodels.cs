@@ -86,12 +86,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         [Description("写入")]
         Write,
 
-        [Description("查询")]
-        Query,
-
-        [Description("控制")]
-        Control,
-
         [Description("自定义")]
         Custom
     }

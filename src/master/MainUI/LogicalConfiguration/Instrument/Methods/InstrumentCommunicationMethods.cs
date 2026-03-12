@@ -122,7 +122,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                         return CommunicationResult.Failed($"未找到命令: {parameter.CommandName}");
                     }
 
-                    requestData = BuildCommandRequest(command, parameter.CommandParameters);
+                    requestData = BuildCommandRequest(command);
                     timeout = command.Timeout > 0
                         ? command.Timeout
                         : (parameter.OverrideTimeout ? parameter.CustomTimeout : protocolConfig.ReadTimeout);
@@ -403,7 +403,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
         /// </summary>
         private byte[] BuildCustomRequest(Parameter_InstrumentCommunication parameter)
         {
-            var content = ResolveVariables(parameter.CustomCommand);
+            var content = parameter.CustomCommand;
 
             return parameter.CustomCommandDataType switch
             {
@@ -416,33 +416,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
         /// <summary>
         /// 构建命令请求数据
         /// </summary>
-        private byte[] BuildCommandRequest(
-        InstrumentCommand command,
-        Dictionary<string, string> parameters)
+        private byte[] BuildCommandRequest(InstrumentCommand command)
         {
             var template = command.RequestTemplate;
 
-            // 1. 替换参数占位符 {ParamName}
-            if (parameters != null)
-            {
-                foreach (var param in parameters)
-                {
-                    var placeholder = $"{{{param.Key}}}";
-                    var value = ResolveVariables(param.Value);
-                    template = template.Replace(placeholder, value);
-                }
-            }
-
-            // 2. 替换变量引用 {$VarName}
-            template = ResolveVariables(template);
-
-            // 3. Modbus 协议特殊处理：生成 PDU bytes
+            // Modbus 协议特殊处理
             if (template.StartsWith("MODBUS:", StringComparison.OrdinalIgnoreCase))
-            {
-                return BuildModbusPdu(template[7..], command); // 去掉 "MODBUS:" 前缀
-            }
+                return BuildModbusPdu(template[7..], command);
 
-            // 4. 普通协议按数据类型编码
             return command.RequestDataType switch
             {
                 DataType.Hex => HexStringToBytes(template),
@@ -549,25 +530,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
             if (addr >= 1 && addr <= 9999) return (ushort)(addr - 1);
 
             return addr; // 直接地址
-        }
-
-
-        /// <summary>
-        /// 解析变量引用
-        /// </summary>
-        private string ResolveVariables(string content)
-        {
-            if (string.IsNullOrEmpty(content))
-                return content;
-
-            // 匹配 {$变量名} 格式
-            var regex = new Regex(@"\{\$(\w+)\}");
-            return regex.Replace(content, match =>
-            {
-                var varName = match.Groups[1].Value;
-                var variable = _variableManager.FindVariableByName(varName);
-                return variable?.VarValue?.ToString() ?? match.Value;
-            });
         }
 
         /// <summary>

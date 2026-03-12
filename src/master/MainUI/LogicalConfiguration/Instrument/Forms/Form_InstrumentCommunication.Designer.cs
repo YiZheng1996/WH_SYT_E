@@ -41,9 +41,6 @@
             panelCustomCommand = new FlowLayoutPanel();
             txtCustomCommand = new UITextBox();
             cboCustomDataType = new UIComboBox();
-            lblParams = new Label();
-            panelCommandParams = new UIPanel();
-            flowParams = new FlowLayoutPanel();
             tabResponse = new TabPage();
             layoutResponse = new TableLayoutPanel();
             lblResponseVar = new Label();
@@ -93,7 +90,6 @@
             layoutBasic.SuspendLayout();
             panelInstrument.SuspendLayout();
             panelCustomCommand.SuspendLayout();
-            panelCommandParams.SuspendLayout();
             tabResponse.SuspendLayout();
             layoutResponse.SuspendLayout();
             grpParseRules.SuspendLayout();
@@ -167,8 +163,6 @@
             layoutBasic.Controls.Add(chkCustomCommand, 1, 3);
             layoutBasic.Controls.Add(lblCommandContent, 0, 4);
             layoutBasic.Controls.Add(panelCustomCommand, 1, 4);
-            layoutBasic.Controls.Add(lblParams, 0, 5);
-            layoutBasic.Controls.Add(panelCommandParams, 1, 5);
             layoutBasic.Dock = DockStyle.Fill;
             layoutBasic.Location = new Point(0, 0);
             layoutBasic.Name = "layoutBasic";
@@ -382,51 +376,12 @@
             cboCustomDataType.TextAlignment = ContentAlignment.MiddleLeft;
             cboCustomDataType.Watermark = "";
             // 
-            // lblParams
-            // 
-            lblParams.Dock = DockStyle.Fill;
-            lblParams.Font = new Font("微软雅黑", 11F);
-            lblParams.Location = new Point(3, 189);
-            lblParams.Name = "lblParams";
-            lblParams.Padding = new Padding(0, 10, 0, 0);
-            lblParams.Size = new Size(94, 502);
-            lblParams.TabIndex = 10;
-            lblParams.Text = "命令参数:";
-            lblParams.TextAlign = ContentAlignment.TopRight;
-            // 
-            // panelCommandParams
-            // 
-            panelCommandParams.Controls.Add(flowParams);
-            panelCommandParams.Dock = DockStyle.Fill;
-            panelCommandParams.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            panelCommandParams.Location = new Point(104, 194);
-            panelCommandParams.Margin = new Padding(4, 5, 4, 5);
-            panelCommandParams.MinimumSize = new Size(1, 1);
-            panelCommandParams.Name = "panelCommandParams";
-            panelCommandParams.Size = new Size(869, 492);
-            panelCommandParams.TabIndex = 11;
-            panelCommandParams.Text = "命令参数";
-            panelCommandParams.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // flowParams
-            // 
-            flowParams.AutoScroll = true;
-            flowParams.Dock = DockStyle.Fill;
-            flowParams.FlowDirection = FlowDirection.TopDown;
-            flowParams.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            flowParams.Location = new Point(0, 0);
-            flowParams.Name = "flowParams";
-            flowParams.Padding = new Padding(10);
-            flowParams.Size = new Size(869, 492);
-            flowParams.TabIndex = 0;
-            flowParams.WrapContents = false;
-            // 
             // tabResponse
             // 
             tabResponse.Controls.Add(layoutResponse);
             tabResponse.Location = new Point(0, 40);
             tabResponse.Name = "tabResponse";
-            tabResponse.Size = new Size(977, 691);
+            tabResponse.Size = new Size(200, 60);
             tabResponse.TabIndex = 1;
             tabResponse.Text = "响应处理";
             // 
@@ -451,7 +406,7 @@
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 39F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutResponse.Size = new Size(977, 691);
+            layoutResponse.Size = new Size(200, 60);
             layoutResponse.TabIndex = 0;
             // 
             // lblResponseVar
@@ -475,7 +430,7 @@
             txtResponseVariable.Name = "txtResponseVariable";
             txtResponseVariable.Padding = new Padding(5);
             txtResponseVariable.ShowText = false;
-            txtResponseVariable.Size = new Size(849, 28);
+            txtResponseVariable.Size = new Size(72, 28);
             txtResponseVariable.TabIndex = 1;
             txtResponseVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtResponseVariable.Watermark = "将原始响应存储到此变量";
@@ -501,7 +456,7 @@
             txtStatusVariable.Name = "txtStatusVariable";
             txtStatusVariable.Padding = new Padding(5);
             txtStatusVariable.ShowText = false;
-            txtStatusVariable.Size = new Size(849, 29);
+            txtStatusVariable.Size = new Size(72, 29);
             txtStatusVariable.TabIndex = 3;
             txtStatusVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtStatusVariable.Watermark = "存储执行结果(true/false)";
@@ -527,7 +482,7 @@
             txtErrorVariable.Name = "txtErrorVariable";
             txtErrorVariable.Padding = new Padding(5);
             txtErrorVariable.ShowText = false;
-            txtErrorVariable.Size = new Size(849, 30);
+            txtErrorVariable.Size = new Size(72, 30);
             txtErrorVariable.TabIndex = 5;
             txtErrorVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtErrorVariable.Watermark = "失败时存储错误信息";
@@ -539,7 +494,7 @@
             lblParseRules.Location = new Point(3, 117);
             lblParseRules.Name = "lblParseRules";
             lblParseRules.Padding = new Padding(0, 10, 0, 0);
-            lblParseRules.Size = new Size(114, 574);
+            lblParseRules.Size = new Size(114, 1);
             lblParseRules.TabIndex = 6;
             lblParseRules.Text = "解析规则:";
             lblParseRules.TextAlign = ContentAlignment.TopRight;
@@ -554,7 +509,7 @@
             grpParseRules.MinimumSize = new Size(1, 1);
             grpParseRules.Name = "grpParseRules";
             grpParseRules.Padding = new Padding(0, 32, 0, 0);
-            grpParseRules.Size = new Size(849, 564);
+            grpParseRules.Size = new Size(72, 1);
             grpParseRules.TabIndex = 7;
             grpParseRules.Text = "响应数据解析规则";
             grpParseRules.TextAlignment = ContentAlignment.MiddleLeft;
@@ -601,7 +556,7 @@
             dataGridViewCellStyle5.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             dgvParseRules.RowsDefaultCellStyle = dataGridViewCellStyle5;
             dgvParseRules.SelectedIndex = -1;
-            dgvParseRules.Size = new Size(849, 532);
+            dgvParseRules.Size = new Size(72, 0);
             dgvParseRules.StripeOddColor = Color.FromArgb(235, 243, 255);
             dgvParseRules.TabIndex = 0;
             // 
@@ -1049,7 +1004,6 @@
             layoutBasic.ResumeLayout(false);
             panelInstrument.ResumeLayout(false);
             panelCustomCommand.ResumeLayout(false);
-            panelCommandParams.ResumeLayout(false);
             tabResponse.ResumeLayout(false);
             layoutResponse.ResumeLayout(false);
             grpParseRules.ResumeLayout(false);
@@ -1095,9 +1049,6 @@
         private System.Windows.Forms.FlowLayoutPanel panelCustomCommand;
         private Sunny.UI.UITextBox txtCustomCommand;
         private Sunny.UI.UIComboBox cboCustomDataType;
-        private System.Windows.Forms.Label lblParams;
-        private Sunny.UI.UIPanel panelCommandParams;
-        private System.Windows.Forms.FlowLayoutPanel flowParams;
 
         private System.Windows.Forms.TableLayoutPanel layoutResponse;
         private System.Windows.Forms.Label lblResponseVar;

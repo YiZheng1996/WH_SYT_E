@@ -66,16 +66,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Parameter
 
         #endregion
 
-        #region 命令参数
-
-        /// <summary>
-        /// 命令参数值(参数名->值)
-        /// 值可以是固定值或变量引用(如 "{变量名}")
-        /// </summary>
-        public Dictionary<string, string> CommandParameters { get; set; } = new();
-
-        #endregion
-
         #region 响应处理
 
         /// <summary>

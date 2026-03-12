@@ -478,7 +478,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                     {
                         Name = "ReadDCVoltage",
                         DisplayName = "读取直流电压",
-                        CommandType = CommandType.Query,
+                        CommandType = CommandType.Read,
                         Description = "测量并返回直流电压值",
                         RequestTemplate = "MEAS:VOLT:DC?\n",
                         WaitForResponse = true,
@@ -499,7 +499,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                     {
                         Name = "ReadACVoltage",
                         DisplayName = "读取交流电压",
-                        CommandType = CommandType.Query,
+                        CommandType = CommandType.Read,
                         Description = "测量并返回交流电压值",
                         RequestTemplate = "MEAS:VOLT:AC?\n",
                         WaitForResponse = true,
@@ -520,7 +520,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                     {
                         Name = "ReadResistance",
                         DisplayName = "读取电阻",
-                        CommandType = CommandType.Query,
+                        CommandType = CommandType.Read,
                         Description = "测量并返回电阻值",
                         RequestTemplate = "MEAS:RES?\n",
                         WaitForResponse = true,
@@ -541,7 +541,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                     {
                         Name = "GetIdentity",
                         DisplayName = "获取设备信息",
-                        CommandType = CommandType.Query,
+                        CommandType = CommandType.Read,
                         Description = "查询设备标识信息",
                         RequestTemplate = "*IDN?\n",
                         WaitForResponse = true
@@ -608,19 +608,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                         Description = "设置目标温度值",
                         RequestTemplate = "ST{Temperature}",
                         WaitForResponse = true,
-                        Parameters = new List<CommandParameter>
-                        {
-                            new CommandParameter
-                            {
-                                Name = "Temperature",
-                                DisplayName = "目标温度",
-                                DataType = DataType.Double,
-                                Required = true,
-                                Description = "要设置的目标温度值",
-                                MinValue = 0,
-                                MaxValue = 300
-                            }
-                        },
                         SuccessIndicator = "OK"
                     }
                 }
@@ -657,25 +644,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                         Description = "读取保持寄存器(功能码03)",
                         RequestTemplate = "03,{StartAddress},{Count}",
                         WaitForResponse = true,
-                        Parameters = new List<CommandParameter>
-                        {
-                            new CommandParameter
-                            {
-                                Name = "StartAddress",
-                                DisplayName = "起始地址",
-                                DataType = DataType.Integer,
-                                DefaultValue = "0",
-                                Required = true
-                            },
-                            new CommandParameter
-                            {
-                                Name = "Count",
-                                DisplayName = "寄存器数量",
-                                DataType = DataType.Integer,
-                                DefaultValue = "1",
-                                Required = true
-                            }
-                        }
                     },
                     new InstrumentCommand
                     {
@@ -685,24 +653,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Services
                         Description = "写入单个保持寄存器(功能码06)",
                         RequestTemplate = "06,{Address},{Value}",
                         WaitForResponse = true,
-                        Parameters = new List<CommandParameter>
-                        {
-                            new CommandParameter
-                            {
-                                Name = "Address",
-                                DisplayName = "寄存器地址",
-                                DataType = DataType.Integer,
-                                DefaultValue = "0",
-                                Required = true
-                            },
-                            new CommandParameter
-                            {
-                                Name = "Value",
-                                DisplayName = "写入值",
-                                DataType = DataType.Integer,
-                                Required = true
-                            }
-                        }
                     }
                 }
             };

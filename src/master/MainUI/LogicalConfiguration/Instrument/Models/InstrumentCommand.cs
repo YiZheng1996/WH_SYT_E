@@ -29,7 +29,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         /// <summary>
         /// 命令类型
         /// </summary>
-        public CommandType CommandType { get; set; } = CommandType.Query;
+        public CommandType CommandType { get; set; }
 
         /// <summary>
         /// 命令描述
@@ -47,11 +47,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         /// 请求数据类型
         /// </summary>
         public DataType RequestDataType { get; set; } = DataType.String;
-
-        /// <summary>
-        /// 命令参数定义
-        /// </summary>
-        public List<CommandParameter> Parameters { get; set; } = new();
 
         /// <summary>
         /// 响应解析规则列表
@@ -115,27 +110,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
                 WaitForResponse = this.WaitForResponse,
                 SortOrder = this.SortOrder
             };
-
-            // 深拷贝参数列表
-            if (this.Parameters != null)
-            {
-                clone.Parameters = new List<CommandParameter>();
-                foreach (var param in this.Parameters)
-                {
-                    clone.Parameters.Add(new CommandParameter
-                    {
-                        Name = param.Name,
-                        DisplayName = param.DisplayName,
-                        DataType = param.DataType,
-                        DefaultValue = param.DefaultValue,
-                        Required = param.Required,
-                        Description = param.Description,
-                        Options = param.Options != null ? new List<string>(param.Options) : null,
-                        MinValue = param.MinValue,
-                        MaxValue = param.MaxValue
-                    });
-                }
-            }
 
             // 深拷贝解析规则列表
             if (this.ParseRules != null)

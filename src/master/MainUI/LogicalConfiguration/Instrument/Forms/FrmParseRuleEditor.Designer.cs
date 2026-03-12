@@ -28,29 +28,29 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             lblTargetDataType = new UILabel();
             cboTargetDataType = new UIComboBox();
             grpParseParams = new UIGroupBox();
+            panelJson = new Panel();
+            lblJsonPath = new UILabel();
+            txtJsonPath = new UITextBox();
+            lblJsonHint = new UILabel();
+            panelDelimiter = new Panel();
+            numSegmentIndex = new UIIntegerUpDown();
+            lblDelimiter = new UILabel();
+            txtDelimiter = new UITextBox();
+            lblSegmentIndex = new UILabel();
+            lblDelimiterHint = new UILabel();
+            panelRegex = new Panel();
+            txtRegexPattern = new UITextBox();
+            lblRegexPattern = new UILabel();
+            btnTestRegex = new UIButton();
+            lblRegexGroup = new UILabel();
+            numRegexGroup = new UIIntegerUpDown();
+            lblRegexHint = new UILabel();
             panelPosition = new Panel();
             lblStartPos = new UILabel();
             numStartPosition = new UIIntegerUpDown();
             lblLength = new UILabel();
             numLength = new UIIntegerUpDown();
             lblPositionHint = new UILabel();
-            panelDelimiter = new Panel();
-            lblDelimiter = new UILabel();
-            txtDelimiter = new UITextBox();
-            lblSegmentIndex = new UILabel();
-            numSegmentIndex = new UIIntegerUpDown();
-            lblDelimiterHint = new UILabel();
-            panelRegex = new Panel();
-            lblRegexPattern = new UILabel();
-            txtRegexPattern = new UITextBox();
-            btnTestRegex = new UIButton();
-            lblRegexGroup = new UILabel();
-            numRegexGroup = new UIIntegerUpDown();
-            lblRegexHint = new UILabel();
-            panelJson = new Panel();
-            lblJsonPath = new UILabel();
-            txtJsonPath = new UITextBox();
-            lblJsonHint = new UILabel();
             grpConvert = new UIGroupBox();
             lblScaleFactor = new UILabel();
             numScaleFactor = new UIDoubleUpDown();
@@ -63,10 +63,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             panelMain.SuspendLayout();
             grpBasic.SuspendLayout();
             grpParseParams.SuspendLayout();
-            panelPosition.SuspendLayout();
+            panelJson.SuspendLayout();
             panelDelimiter.SuspendLayout();
             panelRegex.SuspendLayout();
-            panelJson.SuspendLayout();
+            panelPosition.SuspendLayout();
             grpConvert.SuspendLayout();
             panelBottom.SuspendLayout();
             SuspendLayout();
@@ -239,6 +239,224 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             grpParseParams.Text = "解析参数配置";
             grpParseParams.TextAlignment = ContentAlignment.MiddleLeft;
             // 
+            // panelJson
+            // 
+            panelJson.Controls.Add(lblJsonPath);
+            panelJson.Controls.Add(txtJsonPath);
+            panelJson.Controls.Add(lblJsonHint);
+            panelJson.Location = new Point(10, 36);
+            panelJson.Name = "panelJson";
+            panelJson.Size = new Size(541, 96);
+            panelJson.TabIndex = 3;
+            panelJson.Visible = false;
+            // 
+            // lblJsonPath
+            // 
+            lblJsonPath.AutoSize = true;
+            lblJsonPath.Font = new Font("微软雅黑", 11F);
+            lblJsonPath.ForeColor = Color.FromArgb(48, 48, 48);
+            lblJsonPath.Location = new Point(5, 6);
+            lblJsonPath.Name = "lblJsonPath";
+            lblJsonPath.Size = new Size(82, 20);
+            lblJsonPath.TabIndex = 0;
+            lblJsonPath.Text = "JSON路径:";
+            lblJsonPath.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // txtJsonPath
+            // 
+            txtJsonPath.Font = new Font("微软雅黑", 12F);
+            txtJsonPath.Location = new Point(93, 2);
+            txtJsonPath.Margin = new Padding(4, 5, 4, 5);
+            txtJsonPath.MinimumSize = new Size(1, 16);
+            txtJsonPath.Name = "txtJsonPath";
+            txtJsonPath.Padding = new Padding(5);
+            txtJsonPath.ShowText = false;
+            txtJsonPath.Size = new Size(380, 30);
+            txtJsonPath.TabIndex = 0;
+            txtJsonPath.TextAlignment = ContentAlignment.MiddleLeft;
+            txtJsonPath.Watermark = "如 data.temp";
+            // 
+            // lblJsonHint
+            // 
+            lblJsonHint.Font = new Font("微软雅黑", 10F);
+            lblJsonHint.ForeColor = Color.FromArgb(100, 100, 200);
+            lblJsonHint.Location = new Point(4, 44);
+            lblJsonHint.Name = "lblJsonHint";
+            lblJsonHint.Size = new Size(468, 44);
+            lblJsonHint.TabIndex = 1;
+            lblJsonHint.Text = "   提示：用\"点\"分隔层级路径。\r\n   示例：响应={\"data\":{\"temp\":25.6}}，路径=\"data.temp\" → 25.6";
+            lblJsonHint.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // panelDelimiter
+            // 
+            panelDelimiter.Controls.Add(numSegmentIndex);
+            panelDelimiter.Controls.Add(lblDelimiter);
+            panelDelimiter.Controls.Add(txtDelimiter);
+            panelDelimiter.Controls.Add(lblSegmentIndex);
+            panelDelimiter.Controls.Add(lblDelimiterHint);
+            panelDelimiter.Location = new Point(10, 36);
+            panelDelimiter.Name = "panelDelimiter";
+            panelDelimiter.Size = new Size(541, 96);
+            panelDelimiter.TabIndex = 1;
+            panelDelimiter.Visible = false;
+            // 
+            // numSegmentIndex
+            // 
+            numSegmentIndex.Font = new Font("微软雅黑", 12F);
+            numSegmentIndex.Location = new Point(381, 2);
+            numSegmentIndex.Margin = new Padding(4, 5, 4, 5);
+            numSegmentIndex.Maximum = 999D;
+            numSegmentIndex.Minimum = 0D;
+            numSegmentIndex.MinimumSize = new Size(1, 16);
+            numSegmentIndex.Name = "numSegmentIndex";
+            numSegmentIndex.Padding = new Padding(5);
+            numSegmentIndex.ShowText = false;
+            numSegmentIndex.Size = new Size(121, 30);
+            numSegmentIndex.TabIndex = 1;
+            numSegmentIndex.Text = "0";
+            numSegmentIndex.TextAlignment = ContentAlignment.MiddleCenter;
+            // 
+            // lblDelimiter
+            // 
+            lblDelimiter.AutoSize = true;
+            lblDelimiter.Font = new Font("微软雅黑", 11F);
+            lblDelimiter.ForeColor = Color.FromArgb(48, 48, 48);
+            lblDelimiter.Location = new Point(9, 6);
+            lblDelimiter.Name = "lblDelimiter";
+            lblDelimiter.Size = new Size(58, 20);
+            lblDelimiter.TabIndex = 0;
+            lblDelimiter.Text = "分隔符:";
+            lblDelimiter.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // txtDelimiter
+            // 
+            txtDelimiter.Font = new Font("微软雅黑", 12F);
+            txtDelimiter.Location = new Point(75, 2);
+            txtDelimiter.Margin = new Padding(4, 5, 4, 5);
+            txtDelimiter.MinimumSize = new Size(1, 16);
+            txtDelimiter.Name = "txtDelimiter";
+            txtDelimiter.Padding = new Padding(5);
+            txtDelimiter.ShowText = false;
+            txtDelimiter.Size = new Size(176, 30);
+            txtDelimiter.TabIndex = 0;
+            txtDelimiter.TextAlignment = ContentAlignment.MiddleLeft;
+            txtDelimiter.Watermark = "如 ,";
+            // 
+            // lblSegmentIndex
+            // 
+            lblSegmentIndex.AutoSize = true;
+            lblSegmentIndex.Font = new Font("微软雅黑", 11F);
+            lblSegmentIndex.ForeColor = Color.FromArgb(48, 48, 48);
+            lblSegmentIndex.Location = new Point(258, 6);
+            lblSegmentIndex.Name = "lblSegmentIndex";
+            lblSegmentIndex.Size = new Size(122, 20);
+            lblSegmentIndex.TabIndex = 1;
+            lblSegmentIndex.Text = "取第几段(从0起):";
+            lblSegmentIndex.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // lblDelimiterHint
+            // 
+            lblDelimiterHint.Font = new Font("微软雅黑", 10F);
+            lblDelimiterHint.ForeColor = Color.FromArgb(100, 100, 200);
+            lblDelimiterHint.Location = new Point(4, 44);
+            lblDelimiterHint.Name = "lblDelimiterHint";
+            lblDelimiterHint.Size = new Size(468, 44);
+            lblDelimiterHint.TabIndex = 2;
+            lblDelimiterHint.Text = "   提示：用分隔符拆分响应，取指定序号的片段。\r\n   示例：响应=\"10.5,20.3,30.1\"，分隔符=\",\"，取第0段 → \"10.5\"";
+            lblDelimiterHint.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // panelRegex
+            // 
+            panelRegex.Controls.Add(txtRegexPattern);
+            panelRegex.Controls.Add(lblRegexPattern);
+            panelRegex.Controls.Add(btnTestRegex);
+            panelRegex.Controls.Add(lblRegexGroup);
+            panelRegex.Controls.Add(numRegexGroup);
+            panelRegex.Controls.Add(lblRegexHint);
+            panelRegex.Location = new Point(10, 36);
+            panelRegex.Name = "panelRegex";
+            panelRegex.Size = new Size(541, 96);
+            panelRegex.TabIndex = 2;
+            panelRegex.Visible = false;
+            // 
+            // txtRegexPattern
+            // 
+            txtRegexPattern.Font = new Font("微软雅黑", 12F);
+            txtRegexPattern.Location = new Point(90, 2);
+            txtRegexPattern.Margin = new Padding(4, 5, 4, 5);
+            txtRegexPattern.MinimumSize = new Size(1, 16);
+            txtRegexPattern.Name = "txtRegexPattern";
+            txtRegexPattern.Padding = new Padding(5);
+            txtRegexPattern.ShowText = false;
+            txtRegexPattern.Size = new Size(200, 30);
+            txtRegexPattern.TabIndex = 0;
+            txtRegexPattern.TextAlignment = ContentAlignment.MiddleLeft;
+            txtRegexPattern.Watermark = "如 ([\\d.]+)";
+            // 
+            // lblRegexPattern
+            // 
+            lblRegexPattern.AutoSize = true;
+            lblRegexPattern.Font = new Font("微软雅黑", 11F);
+            lblRegexPattern.ForeColor = Color.FromArgb(48, 48, 48);
+            lblRegexPattern.Location = new Point(2, 6);
+            lblRegexPattern.Name = "lblRegexPattern";
+            lblRegexPattern.Size = new Size(88, 20);
+            lblRegexPattern.TabIndex = 0;
+            lblRegexPattern.Text = "正则表达式:";
+            lblRegexPattern.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // btnTestRegex
+            // 
+            btnTestRegex.FillColor = Color.FromArgb(40, 167, 69);
+            btnTestRegex.Font = new Font("微软雅黑", 11F);
+            btnTestRegex.Location = new Point(294, 1);
+            btnTestRegex.MinimumSize = new Size(1, 1);
+            btnTestRegex.Name = "btnTestRegex";
+            btnTestRegex.Size = new Size(80, 30);
+            btnTestRegex.TabIndex = 1;
+            btnTestRegex.Text = "🔍 测试";
+            btnTestRegex.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            // 
+            // lblRegexGroup
+            // 
+            lblRegexGroup.AutoSize = true;
+            lblRegexGroup.Font = new Font("微软雅黑", 11F);
+            lblRegexGroup.ForeColor = Color.FromArgb(48, 48, 48);
+            lblRegexGroup.Location = new Point(374, 6);
+            lblRegexGroup.Name = "lblRegexGroup";
+            lblRegexGroup.Size = new Size(43, 20);
+            lblRegexGroup.TabIndex = 2;
+            lblRegexGroup.Text = "分组:";
+            lblRegexGroup.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // numRegexGroup
+            // 
+            numRegexGroup.Font = new Font("微软雅黑", 12F);
+            numRegexGroup.Location = new Point(426, 2);
+            numRegexGroup.Margin = new Padding(4, 5, 4, 5);
+            numRegexGroup.Maximum = 99D;
+            numRegexGroup.Minimum = 0D;
+            numRegexGroup.MinimumSize = new Size(1, 16);
+            numRegexGroup.Name = "numRegexGroup";
+            numRegexGroup.Padding = new Padding(5);
+            numRegexGroup.ShowText = false;
+            numRegexGroup.Size = new Size(111, 30);
+            numRegexGroup.TabIndex = 2;
+            numRegexGroup.Text = "1";
+            numRegexGroup.TextAlignment = ContentAlignment.MiddleCenter;
+            numRegexGroup.Value = 1;
+            // 
+            // lblRegexHint
+            // 
+            lblRegexHint.Font = new Font("微软雅黑", 10F);
+            lblRegexHint.ForeColor = Color.FromArgb(100, 100, 200);
+            lblRegexHint.Location = new Point(3, 44);
+            lblRegexHint.Name = "lblRegexHint";
+            lblRegexHint.Size = new Size(468, 44);
+            lblRegexHint.TabIndex = 3;
+            lblRegexHint.Text = "   提示：分组=0取整体匹配，分组=1取第一个括号内容。\r\n   示例：响应=\"TEMP=25.6\"，表达式=\"TEMP=([\\d.]+)\"，分组=1 → \"25.6\"";
+            lblRegexHint.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // panelPosition
             // 
             panelPosition.Controls.Add(lblStartPos);
@@ -319,224 +537,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             lblPositionHint.TabIndex = 2;
             lblPositionHint.Text = "   提示：从第0位开始计数。长度=-1 表示截取到末尾。\r\n   示例：响应=\"OK25.6END\"，起始=2，长度=4 → \"25.6\"";
             lblPositionHint.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // panelDelimiter
-            // 
-            panelDelimiter.Controls.Add(numSegmentIndex);
-            panelDelimiter.Controls.Add(lblDelimiter);
-            panelDelimiter.Controls.Add(txtDelimiter);
-            panelDelimiter.Controls.Add(lblSegmentIndex);
-            panelDelimiter.Controls.Add(lblDelimiterHint);
-            panelDelimiter.Location = new Point(10, 36);
-            panelDelimiter.Name = "panelDelimiter";
-            panelDelimiter.Size = new Size(541, 96);
-            panelDelimiter.TabIndex = 1;
-            panelDelimiter.Visible = false;
-            // 
-            // lblDelimiter
-            // 
-            lblDelimiter.AutoSize = true;
-            lblDelimiter.Font = new Font("微软雅黑", 11F);
-            lblDelimiter.ForeColor = Color.FromArgb(48, 48, 48);
-            lblDelimiter.Location = new Point(9, 6);
-            lblDelimiter.Name = "lblDelimiter";
-            lblDelimiter.Size = new Size(58, 20);
-            lblDelimiter.TabIndex = 0;
-            lblDelimiter.Text = "分隔符:";
-            lblDelimiter.TextAlign = ContentAlignment.MiddleRight;
-            // 
-            // txtDelimiter
-            // 
-            txtDelimiter.Font = new Font("微软雅黑", 12F);
-            txtDelimiter.Location = new Point(75, 2);
-            txtDelimiter.Margin = new Padding(4, 5, 4, 5);
-            txtDelimiter.MinimumSize = new Size(1, 16);
-            txtDelimiter.Name = "txtDelimiter";
-            txtDelimiter.Padding = new Padding(5);
-            txtDelimiter.ShowText = false;
-            txtDelimiter.Size = new Size(176, 30);
-            txtDelimiter.TabIndex = 0;
-            txtDelimiter.TextAlignment = ContentAlignment.MiddleLeft;
-            txtDelimiter.Watermark = "如 ,";
-            // 
-            // lblSegmentIndex
-            // 
-            lblSegmentIndex.AutoSize = true;
-            lblSegmentIndex.Font = new Font("微软雅黑", 11F);
-            lblSegmentIndex.ForeColor = Color.FromArgb(48, 48, 48);
-            lblSegmentIndex.Location = new Point(258, 6);
-            lblSegmentIndex.Name = "lblSegmentIndex";
-            lblSegmentIndex.Size = new Size(122, 20);
-            lblSegmentIndex.TabIndex = 1;
-            lblSegmentIndex.Text = "取第几段(从0起):";
-            lblSegmentIndex.TextAlign = ContentAlignment.MiddleRight;
-            // 
-            // numSegmentIndex
-            // 
-            numSegmentIndex.Font = new Font("微软雅黑", 12F);
-            numSegmentIndex.Location = new Point(381, 2);
-            numSegmentIndex.Margin = new Padding(4, 5, 4, 5);
-            numSegmentIndex.Maximum = 999D;
-            numSegmentIndex.Minimum = 0D;
-            numSegmentIndex.MinimumSize = new Size(1, 16);
-            numSegmentIndex.Name = "numSegmentIndex";
-            numSegmentIndex.Padding = new Padding(5);
-            numSegmentIndex.ShowText = false;
-            numSegmentIndex.Size = new Size(121, 30);
-            numSegmentIndex.TabIndex = 1;
-            numSegmentIndex.Text = "0";
-            numSegmentIndex.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // lblDelimiterHint
-            // 
-            lblDelimiterHint.Font = new Font("微软雅黑", 10F);
-            lblDelimiterHint.ForeColor = Color.FromArgb(100, 100, 200);
-            lblDelimiterHint.Location = new Point(4, 44);
-            lblDelimiterHint.Name = "lblDelimiterHint";
-            lblDelimiterHint.Size = new Size(468, 44);
-            lblDelimiterHint.TabIndex = 2;
-            lblDelimiterHint.Text = "   提示：用分隔符拆分响应，取指定序号的片段。\r\n   示例：响应=\"10.5,20.3,30.1\"，分隔符=\",\"，取第0段 → \"10.5\"";
-            lblDelimiterHint.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // panelRegex
-            // 
-            panelRegex.Controls.Add(txtRegexPattern);
-            panelRegex.Controls.Add(lblRegexPattern);
-            panelRegex.Controls.Add(btnTestRegex);
-            panelRegex.Controls.Add(lblRegexGroup);
-            panelRegex.Controls.Add(numRegexGroup);
-            panelRegex.Controls.Add(lblRegexHint);
-            panelRegex.Location = new Point(10, 36);
-            panelRegex.Name = "panelRegex";
-            panelRegex.Size = new Size(541, 96);
-            panelRegex.TabIndex = 2;
-            panelRegex.Visible = false;
-            // 
-            // lblRegexPattern
-            // 
-            lblRegexPattern.AutoSize = true;
-            lblRegexPattern.Font = new Font("微软雅黑", 11F);
-            lblRegexPattern.ForeColor = Color.FromArgb(48, 48, 48);
-            lblRegexPattern.Location = new Point(2, 6);
-            lblRegexPattern.Name = "lblRegexPattern";
-            lblRegexPattern.Size = new Size(88, 20);
-            lblRegexPattern.TabIndex = 0;
-            lblRegexPattern.Text = "正则表达式:";
-            lblRegexPattern.TextAlign = ContentAlignment.MiddleRight;
-            // 
-            // txtRegexPattern
-            // 
-            txtRegexPattern.Font = new Font("微软雅黑", 12F);
-            txtRegexPattern.Location = new Point(90, 2);
-            txtRegexPattern.Margin = new Padding(4, 5, 4, 5);
-            txtRegexPattern.MinimumSize = new Size(1, 16);
-            txtRegexPattern.Name = "txtRegexPattern";
-            txtRegexPattern.Padding = new Padding(5);
-            txtRegexPattern.ShowText = false;
-            txtRegexPattern.Size = new Size(200, 30);
-            txtRegexPattern.TabIndex = 0;
-            txtRegexPattern.TextAlignment = ContentAlignment.MiddleLeft;
-            txtRegexPattern.Watermark = "如 ([\\d.]+)";
-            // 
-            // btnTestRegex
-            // 
-            btnTestRegex.FillColor = Color.FromArgb(40, 167, 69);
-            btnTestRegex.Font = new Font("微软雅黑", 11F);
-            btnTestRegex.Location = new Point(294, 1);
-            btnTestRegex.MinimumSize = new Size(1, 1);
-            btnTestRegex.Name = "btnTestRegex";
-            btnTestRegex.Size = new Size(80, 30);
-            btnTestRegex.TabIndex = 1;
-            btnTestRegex.Text = "🔍 测试";
-            btnTestRegex.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            // 
-            // lblRegexGroup
-            // 
-            lblRegexGroup.AutoSize = true;
-            lblRegexGroup.Font = new Font("微软雅黑", 11F);
-            lblRegexGroup.ForeColor = Color.FromArgb(48, 48, 48);
-            lblRegexGroup.Location = new Point(374, 6);
-            lblRegexGroup.Name = "lblRegexGroup";
-            lblRegexGroup.Size = new Size(43, 20);
-            lblRegexGroup.TabIndex = 2;
-            lblRegexGroup.Text = "分组:";
-            lblRegexGroup.TextAlign = ContentAlignment.MiddleRight;
-            // 
-            // numRegexGroup
-            // 
-            numRegexGroup.Font = new Font("微软雅黑", 12F);
-            numRegexGroup.Location = new Point(426, 2);
-            numRegexGroup.Margin = new Padding(4, 5, 4, 5);
-            numRegexGroup.Maximum = 99D;
-            numRegexGroup.Minimum = 0D;
-            numRegexGroup.MinimumSize = new Size(1, 16);
-            numRegexGroup.Name = "numRegexGroup";
-            numRegexGroup.Padding = new Padding(5);
-            numRegexGroup.ShowText = false;
-            numRegexGroup.Size = new Size(111, 30);
-            numRegexGroup.TabIndex = 2;
-            numRegexGroup.Text = "1";
-            numRegexGroup.TextAlignment = ContentAlignment.MiddleCenter;
-            numRegexGroup.Value = 1;
-            // 
-            // lblRegexHint
-            // 
-            lblRegexHint.Font = new Font("微软雅黑", 10F);
-            lblRegexHint.ForeColor = Color.FromArgb(100, 100, 200);
-            lblRegexHint.Location = new Point(3, 44);
-            lblRegexHint.Name = "lblRegexHint";
-            lblRegexHint.Size = new Size(468, 44);
-            lblRegexHint.TabIndex = 3;
-            lblRegexHint.Text = "   提示：分组=0取整体匹配，分组=1取第一个括号内容。\r\n   示例：响应=\"TEMP=25.6\"，表达式=\"TEMP=([\\d.]+)\"，分组=1 → \"25.6\"";
-            lblRegexHint.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // panelJson
-            // 
-            panelJson.Controls.Add(lblJsonPath);
-            panelJson.Controls.Add(txtJsonPath);
-            panelJson.Controls.Add(lblJsonHint);
-            panelJson.Location = new Point(10, 36);
-            panelJson.Name = "panelJson";
-            panelJson.Size = new Size(541, 96);
-            panelJson.TabIndex = 3;
-            panelJson.Visible = false;
-            // 
-            // lblJsonPath
-            // 
-            lblJsonPath.AutoSize = true;
-            lblJsonPath.Font = new Font("微软雅黑", 11F);
-            lblJsonPath.ForeColor = Color.FromArgb(48, 48, 48);
-            lblJsonPath.Location = new Point(5, 6);
-            lblJsonPath.Name = "lblJsonPath";
-            lblJsonPath.Size = new Size(82, 20);
-            lblJsonPath.TabIndex = 0;
-            lblJsonPath.Text = "JSON路径:";
-            lblJsonPath.TextAlign = ContentAlignment.MiddleRight;
-            // 
-            // txtJsonPath
-            // 
-            txtJsonPath.Font = new Font("微软雅黑", 12F);
-            txtJsonPath.Location = new Point(93, 2);
-            txtJsonPath.Margin = new Padding(4, 5, 4, 5);
-            txtJsonPath.MinimumSize = new Size(1, 16);
-            txtJsonPath.Name = "txtJsonPath";
-            txtJsonPath.Padding = new Padding(5);
-            txtJsonPath.ShowText = false;
-            txtJsonPath.Size = new Size(380, 30);
-            txtJsonPath.TabIndex = 0;
-            txtJsonPath.TextAlignment = ContentAlignment.MiddleLeft;
-            txtJsonPath.Watermark = "如 data.temperature";
-            // 
-            // lblJsonHint
-            // 
-            lblJsonHint.Font = new Font("微软雅黑", 10F);
-            lblJsonHint.ForeColor = Color.FromArgb(100, 100, 200);
-            lblJsonHint.Location = new Point(4, 44);
-            lblJsonHint.Name = "lblJsonHint";
-            lblJsonHint.Size = new Size(468, 44);
-            lblJsonHint.TabIndex = 1;
-            lblJsonHint.Text = "   提示：用\"点\"分隔层级路径。\r\n   示例：响应={\"data\":{\"temp\":25.6}}，路径=\"data.temp\" → 25.6";
-            lblJsonHint.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // grpConvert
             // 
@@ -687,14 +687,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             grpBasic.ResumeLayout(false);
             grpBasic.PerformLayout();
             grpParseParams.ResumeLayout(false);
-            panelPosition.ResumeLayout(false);
-            panelPosition.PerformLayout();
+            panelJson.ResumeLayout(false);
+            panelJson.PerformLayout();
             panelDelimiter.ResumeLayout(false);
             panelDelimiter.PerformLayout();
             panelRegex.ResumeLayout(false);
             panelRegex.PerformLayout();
-            panelJson.ResumeLayout(false);
-            panelJson.PerformLayout();
+            panelPosition.ResumeLayout(false);
+            panelPosition.PerformLayout();
             grpConvert.ResumeLayout(false);
             grpConvert.PerformLayout();
             panelBottom.ResumeLayout(false);

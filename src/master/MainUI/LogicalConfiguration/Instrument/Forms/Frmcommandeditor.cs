@@ -49,7 +49,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             cboCommandType.DataSource = EnumExtensions.GetEnumItems<CommandType>();
             cboCommandType.DisplayMember = "DisplayName";
             cboCommandType.ValueMember = "Value";
-            cboCommandType.SelectedValue = CommandType.Query;
+            cboCommandType.SelectedValue = CommandType.Read;
 
             // 初始化数据类型下拉框 - 显示Description
             cboDataType.DataSource = EnumExtensions.GetEnumItems<DataType>();
@@ -60,11 +60,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void BindEvents()
         {
-            // 参数操作
-            btnAddParam.Click += BtnAddParam_Click;
-            btnDeleteParam.Click += BtnDeleteParam_Click;
-            dgvParameters.CellDoubleClick += DgvParameters_CellDoubleClick;
-
             // 解析规则操作
             btnAddRule.Click += BtnAddRule_Click;
             btnDeleteRule.Click += BtnDeleteRule_Click;
@@ -77,14 +72,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private void InitializeGridColumns()
         {
-            // 参数表格列
-            dgvParameters.Columns.Clear();
-            dgvParameters.Columns.Add("Name", "参数名");
-            dgvParameters.Columns.Add("DisplayName", "显示名称");
-            dgvParameters.Columns.Add("DataType", "数据类型");
-            dgvParameters.Columns.Add("DefaultValue", "默认值");
-            dgvParameters.Columns.Add("Required", "必填");
-
             // 解析规则表格列
             dgvParseRules.Columns.Clear();
             dgvParseRules.Columns.Add("Name", "规则名称");
@@ -110,29 +97,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             txtFailureIndicator.Text = command.FailureIndicator;
             txtDescription.Text = command.Description;
 
-            LoadParameters(command.Parameters);
             LoadParseRules(command.ParseRules);
         }
 
-        private void LoadParameters(List<CommandParameter> parameters)
-        {
-            dgvParameters.Rows.Clear();
-
-            if (parameters == null)
-                return;
-
-            foreach (var param in parameters)
-            {
-                var rowIndex = dgvParameters.Rows.Add(
-                    param.Name,
-                    param.DisplayName,
-                    param.DataType.ToString(),
-                    param.DefaultValue,
-                    param.Required ? "是" : "否"
-                );
-                dgvParameters.Rows[rowIndex].Tag = param;
-            }
-        }
 
         private void LoadParseRules(List<ResponseParseRule> rules)
         {
@@ -147,7 +114,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 var rowIndex = dgvParseRules.Rows.Add(
                     rule.Name,
                     rule.TargetVariable,
-                    rule.ParseType,
+                    GetParseTypeDisplayName(rule.ParseType),
                     pattern
                 );
                 dgvParseRules.Rows[rowIndex].Tag = rule;
@@ -174,7 +141,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             Command.Name = txtName.Text.Trim();
             Command.DisplayName = txtDisplayName.Text.Trim();
-            Command.CommandType = (CommandType)(cboCommandType.SelectedValue ?? CommandType.Query);
+            Command.CommandType = (CommandType)(cboCommandType.SelectedValue ?? CommandType.Read);
             Command.RequestDataType = (DataType)(cboDataType.SelectedValue ?? DataType.String);
             int.TryParse(txtTimeout.Text, out var timeout);
             Command.Timeout = timeout > 0 ? timeout : 3000;
@@ -183,16 +150,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             Command.SuccessIndicator = txtSuccessIndicator.Text.Trim();
             Command.FailureIndicator = txtFailureIndicator.Text.Trim();
             Command.Description = txtDescription.Text.Trim();
-
-            // 收集参数
-            Command.Parameters.Clear();
-            foreach (DataGridViewRow row in dgvParameters.Rows)
-            {
-                if (row.Tag is CommandParameter param)
-                {
-                    Command.Parameters.Add(param);
-                }
-            }
 
             // 收集解析规则
             Command.ParseRules.Clear();
@@ -203,46 +160,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                     Command.ParseRules.Add(rule);
                 }
             }
-        }
-
-        #endregion
-
-        #region 参数操作事件
-
-        private void BtnAddParam_Click(object sender, EventArgs e)
-        {
-            using var frm = new FrmCommandParameterEditor();
-            var frmResult = VarHelper.ShowDialogWithOverlayEx(this, frm);
-            if (frmResult != DialogResult.OK) return;
-            AddParameterRow(frm.Parameter);
-        }
-
-        private void BtnDeleteParam_Click(object sender, EventArgs e)
-        {
-            if (dgvParameters.SelectedRows.Count == 0)
-            {
-                UIMessageTip.ShowWarning("请选择要删除的参数");
-                return;
-            }
-
-            if (MessageHelper.MessageYes("确定要删除选中的参数吗？") != DialogResult.OK)
-                return;
-
-            dgvParameters.Rows.Remove(dgvParameters.SelectedRows[0]);
-        }
-
-        private void DgvParameters_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex < 0) return;
-            var row = dgvParameters.Rows[e.RowIndex];
-            if (row.Tag is not CommandParameter param) return;
-
-            using var frm = new FrmCommandParameterEditor(param);
-            if (frm.ShowDialog(this) != DialogResult.OK) return;
-
-            // 用编辑后的对象更新行
-            row.Tag = frm.Parameter;
-            RefreshParameterRow(row, frm.Parameter);
         }
 
         #endregion
@@ -265,7 +182,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return;
             }
 
-            if (MessageHelper.MessageYes("确定要删除选中的规则吗？") != DialogResult.OK)
+            if (MessageHelper.MessageYes(this, "确定要删除选中的规则吗？") != DialogResult.OK)
                 return;
 
             dgvParseRules.Rows.Remove(dgvParseRules.SelectedRows[0]);
@@ -308,37 +225,31 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (string.IsNullOrWhiteSpace(txtName.Text))
             {
-                UIMessageTip.ShowWarning("请输入命令名称");
+                MessageHelper.MessageOK(this, "请输入命令名称");
                 txtName.Focus();
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(txtDisplayName.Text))
             {
-                UIMessageTip.ShowWarning("请输入显示名称");
+                MessageHelper.MessageOK(this, "请输入显示名称");
                 txtDisplayName.Focus();
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(txtRequestTemplate.Text)) return true;
+            if (string.IsNullOrWhiteSpace(txtRequestTemplate.Text))
+            {
+                MessageHelper.MessageOK(this, "请输入请求模板");
+                txtRequestTemplate.Focus();
+                return false;
+            }
 
-            UIMessageTip.ShowWarning("请输入请求模板");
-            txtRequestTemplate.Focus();
-            return false;
-
+            return true;
         }
 
         #endregion
 
         #region 辅助方法
-        private void RefreshParameterRow(DataGridViewRow row, CommandParameter p)
-        {
-            row.Cells["Name"].Value = p.Name;
-            row.Cells["DisplayName"].Value = p.DisplayName;
-            row.Cells["DataType"].Value = p.DataType.GetDescription();
-            row.Cells["DefaultValue"].Value = p.DefaultValue;
-            row.Cells["Required"].Value = p.Required ? "是" : "否";
-        }
 
         private void RefreshParseRuleRow(DataGridViewRow row, ResponseParseRule rule)
         {
@@ -356,22 +267,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             "Json" => "JSON路径",
             _ => type
         };
-
-        /// <summary>
-        /// 向参数表格新增一行
-        /// </summary>
-        private void AddParameterRow(CommandParameter param)
-        {
-            var rowIndex = dgvParameters.Rows.Add(
-                param.Name,
-                param.DisplayName,
-                param.DataType.GetDescription(),
-                param.DefaultValue,
-                param.Required ? "是" : "否"
-            );
-            dgvParameters.Rows[rowIndex].Tag = param;
-            dgvParameters.Rows[rowIndex].Selected = true;
-        }
 
         /// <summary>
         /// 向解析规则表格新增一行
