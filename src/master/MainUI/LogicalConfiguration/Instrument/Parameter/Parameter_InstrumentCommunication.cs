@@ -78,16 +78,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Parameter
         /// </summary>
         public string ResponseVariable { get; set; } = "";
 
-        /// <summary>
-        /// 自定义解析规则(覆盖命令模板中的解析规则)
-        /// </summary>
-        public List<ResponseParseRule> CustomParseRules { get; set; } = new();
-
-        /// <summary>
-        /// 是否使用自定义解析规则
-        /// </summary>
-        public bool UseCustomParseRules { get; set; } = false;
-
         #endregion
 
         #region 超时和重试

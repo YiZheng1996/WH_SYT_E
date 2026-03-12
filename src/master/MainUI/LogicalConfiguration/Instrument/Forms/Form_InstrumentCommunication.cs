@@ -9,6 +9,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MainUI.LogicalConfiguration.Instrument.Forms
 {
+    /// <summary>
+    /// 仪器通讯配置
+    /// </summary>
     public partial class Form_InstrumentCommunication : BaseParameterForm
     {
         private Parameter_InstrumentCommunication _parameter;
@@ -60,8 +63,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             cboFailureStrategy.DisplayMember = "DisplayName";
             cboFailureStrategy.ValueMember = "Value";
             cboFailureStrategy.SelectedValue = FailureStrategy.Abort;
-
-            InitializeParseRulesGrid();
         }
 
         private void AttachExpressionPanels()
@@ -110,26 +111,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 Logger?.LogError(ex, "附加表达式输入面板失败");
             }
-        }
-
-        /// <summary>
-        /// 初始化解析规则网格
-        /// </summary>
-        private void InitializeParseRulesGrid()
-        {
-            dgvParseRules.Columns.Clear();
-            dgvParseRules.Columns.Add("Name", "规则名称");
-            dgvParseRules.Columns.Add("TargetVariable", "目标变量");
-
-            var parseTypeColumn = new DataGridViewComboBoxColumn
-            {
-                Name = "ParseType",
-                HeaderText = "解析方式",
-                DataPropertyName = "ParseType"
-            };
-            parseTypeColumn.Items.AddRange("Position", "Delimiter", "Regex", "Json");
-            dgvParseRules.Columns.Add(parseTypeColumn);
-            dgvParseRules.Columns.Add("Pattern", "解析参数");
         }
 
         /// <summary>
@@ -359,9 +340,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             // 加载仪器选择
             LoadInstrumentSelection();
-
-            // 加载解析规则
-            LoadParseRules();
         }
 
         /// <summary>
@@ -404,42 +382,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 Logger?.LogWarning("未找到驱动ID: {DriverId}", _parameter.DriverId);
             }
-        }
-
-        /// <summary>
-        /// 加载解析规则到DataGridView
-        /// </summary>
-        private void LoadParseRules()
-        {
-            dgvParseRules.Rows.Clear();
-            if (_parameter.CustomParseRules == null || _parameter.CustomParseRules.Count == 0)
-                return;
-
-            foreach (var rule in _parameter.CustomParseRules)
-            {
-                int rowIndex = dgvParseRules.Rows.Add();
-                var row = dgvParseRules.Rows[rowIndex];
-
-                row.Cells["Name"].Value = rule.Name;
-                row.Cells["ParseType"].Value = rule.ParseType.GetDescription();
-                row.Cells["Pattern"].Value = GetParseRulePattern(rule);
-                row.Tag = rule;
-            }
-        }
-
-        /// <summary>
-        /// 根据解析类型获取参数字符串
-        /// </summary>
-        private string GetParseRulePattern(ResponseParseRule rule)
-        {
-            return rule.ParseType switch
-            {
-                ParseType.Position => $"起始:{rule.StartPosition}, 长度:{rule.Length}",
-                ParseType.Delimiter => $"分隔符:{rule.Delimiter}, 索引:{rule.SegmentIndex}",
-                ParseType.Regex => rule.RegexPattern,
-                ParseType.Json => rule.JsonPath,
-                _ => ""
-            };
         }
 
         protected override void SaveFormToParameter()

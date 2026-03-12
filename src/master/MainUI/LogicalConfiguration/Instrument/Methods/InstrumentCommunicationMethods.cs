@@ -180,9 +180,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                     else
                     {
                         // 验证成功，执行数据解析
-                        var parseRules = parameter.UseCustomParseRules && parameter.CustomParseRules?.Count > 0
-                            ? parameter.CustomParseRules
-                            : command?.ParseRules;
+                        var parseRules = command?.ParseRules;
 
                         if (parseRules != null && parseRules.Count > 0)
                         {
