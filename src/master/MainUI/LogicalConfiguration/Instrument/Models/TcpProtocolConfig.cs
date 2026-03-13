@@ -35,7 +35,6 @@
                 Port = this.Port,
                 ConnectionTimeout = this.ConnectionTimeout,
                 ReadTimeout = this.ReadTimeout,
-                WriteTimeout = this.WriteTimeout,
                 KeepAlive = this.KeepAlive,
                 ReceiveBufferSize = this.ReceiveBufferSize,
                 SendBufferSize = this.SendBufferSize

@@ -13,17 +13,12 @@
         /// <summary>
         /// 连接超时(毫秒)
         /// </summary>
-        public int ConnectionTimeout { get; set; } = 5000;
+        public int ConnectionTimeout { get; set; } = 30000;
 
         /// <summary>
-        /// 读取超时(毫秒)
+        /// 响应超时(毫秒) — 发出命令后等待仪器回复的最长时间
         /// </summary>
-        public int ReadTimeout { get; set; } = 3000;
-
-        /// <summary>
-        /// 写入超时(毫秒)
-        /// </summary>
-        public int WriteTimeout { get; set; } = 3000;
+        public int ReadTimeout { get; set; } = 30000;
 
         /// <summary>
         /// 是否保持连接

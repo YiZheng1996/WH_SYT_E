@@ -135,8 +135,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             Command.DisplayName = txtDisplayName.Text.Trim();
             Command.CommandType = (CommandType)(cboCommandType.SelectedValue ?? CommandType.Read);
             Command.RequestDataType = (DataType)(cboDataType.SelectedValue ?? DataType.String);
+
+            // 0 表示继承驱动层 ReadTimeout
             int.TryParse(txtTimeout.Text, out var timeout);
-            Command.Timeout = timeout > 0 ? timeout : 3000;
+            Command.Timeout = timeout > 0 ? timeout : 0;
+
             Command.WaitForResponse = chkWaitForResponse.Checked;
             Command.RequestTemplate = txtRequestTemplate.Text;
             Command.SuccessIndicator = txtSuccessIndicator.Text.Trim();

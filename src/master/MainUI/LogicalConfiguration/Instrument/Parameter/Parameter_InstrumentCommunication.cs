@@ -83,16 +83,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Parameter
         #region 超时和重试
 
         /// <summary>
-        /// 是否覆盖超时设置
-        /// </summary>
-        public bool OverrideTimeout { get; set; } = false;
-
-        /// <summary>
-        /// 自定义超时时间(毫秒)
-        /// </summary>
-        public int CustomTimeout { get; set; } = 3000;
-
-        /// <summary>
         /// 重试次数
         /// </summary>
         public int RetryCount { get; set; } = 0;

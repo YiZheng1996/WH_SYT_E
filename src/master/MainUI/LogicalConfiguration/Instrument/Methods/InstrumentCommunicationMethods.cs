@@ -100,36 +100,31 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                 int timeout;
                 bool waitForResponse;
 
+                // 自定义命令分支
                 if (parameter.UseCustomCommand)
                 {
-                    // 使用自定义命令
                     requestData = BuildCustomRequest(parameter);
-                    timeout = parameter.OverrideTimeout
-                        ? parameter.CustomTimeout
-                        : protocolConfig.ReadTimeout;
+                    // 直接使用驱动层 ReadTimeout，不再有步骤层覆盖
+                    timeout = protocolConfig.ReadTimeout;
                     waitForResponse = parameter.WaitForResponse;
 
                     _logger.LogDebug("使用自定义命令: {Command}", parameter.CustomCommand);
                 }
                 else
                 {
-                    // 使用预定义命令
                     command = driver.GetCommand(parameter.CommandName) ??
                               driver.Commands.FirstOrDefault(c => c.CommandId == parameter.CommandId);
 
                     if (command == null)
-                    {
                         return CommunicationResult.Failed($"未找到命令: {parameter.CommandName}");
-                    }
 
                     requestData = BuildCommandRequest(command);
-                    timeout = command.Timeout > 0
-                        ? command.Timeout
-                        : (parameter.OverrideTimeout ? parameter.CustomTimeout : protocolConfig.ReadTimeout);
+                    // 命令层 > 驱动层，两级优先级，清晰无歧义
+                    timeout = command.Timeout > 0 ? command.Timeout : protocolConfig.ReadTimeout;
                     waitForResponse = command.WaitForResponse;
 
-                    _logger.LogDebug("使用预定义命令: {CommandName} (ID: {CommandId})",
-                        command.DisplayName, command.CommandId);
+                    _logger.LogDebug("使用预定义命令: {CommandName}, 超时: {Timeout}ms",
+                        command.DisplayName, timeout);
                 }
 
                 // 执行通讯(带重试)
@@ -667,15 +662,33 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
         /// </summary>
         private void StoreResults(CommunicationResult result, Parameter_InstrumentCommunication parameter)
         {
-            // 存储原始响应
+            // 存储原始响应（如果没有解析结果才存原始值）
             if (!string.IsNullOrEmpty(parameter.ResponseVariable))
             {
-                _variableManager.UpdateVariableValue(
-                    parameter.ResponseVariable,
-                    result.ResponseString ?? "",
-                    "仪器响应");
+                // 有解析结果时，优先将解析值写入 ResponseVariable
+                // 单条规则：直接写入解析值
+                // 多条规则：写入第一条解析值（规则顺序即优先级）
+                if (result.ParsedValues.Count > 0)
+                {
+                    var parsedValue = result.ParsedValues.Values.First();
+                    _variableManager.UpdateVariableValue(
+                        parameter.ResponseVariable,
+                        parsedValue,
+                        "仪器解析结果");
 
-                _logger.LogDebug("响应已保存到变量: {Var}", parameter.ResponseVariable);
+                    _logger.LogDebug("解析值已保存到变量: {Var} = {Value}",
+                        parameter.ResponseVariable, parsedValue);
+                }
+                else
+                {
+                    // 无解析规则，存原始响应
+                    _variableManager.UpdateVariableValue(
+                        parameter.ResponseVariable,
+                        result.ResponseString ?? "",
+                        "仪器响应");
+
+                    _logger.LogDebug("原始响应已保存到变量: {Var}", parameter.ResponseVariable);
+                }
             }
 
             // 存储错误信息

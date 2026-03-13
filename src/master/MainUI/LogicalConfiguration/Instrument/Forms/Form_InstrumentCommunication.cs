@@ -122,7 +122,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             cboInstrument.SelectedIndexChanged += CboInstrument_SelectedIndexChanged;
             cboCommand.SelectedIndexChanged += CboCommand_SelectedIndexChanged;
             chkCustomCommand.CheckedChanged += ChkCustomCommand_CheckedChanged;
-            chkOverrideTimeout.CheckedChanged += ChkOverrideTimeout_CheckedChanged;
             cboFailureStrategy.SelectedIndexChanged += CboFailureStrategy_SelectedIndexChanged;
             btnManageDrivers.Click += BtnManageDrivers_Click;
             btnTestConnection.Click += BtnTestConnection_Click;
@@ -228,11 +227,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             cboCommand.Enabled = !useCustom;
         }
 
-        private void ChkOverrideTimeout_CheckedChanged(object sender, EventArgs e)
-        {
-            txtTimeout.Enabled = chkOverrideTimeout.Checked;
-        }
-
         private void CboFailureStrategy_SelectedIndexChanged(object sender, EventArgs e)
         {
             var fs = (FailureStrategy)(cboFailureStrategy.SelectedValue ?? FailureStrategy.Abort);
@@ -323,8 +317,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             txtErrorVariable.Text = _parameter.ErrorVariable;
 
             // 超时和重试
-            chkOverrideTimeout.Checked = _parameter.OverrideTimeout;
-            txtTimeout.Text = _parameter.CustomTimeout.ToString();
             txtRetryCount.Text = _parameter.RetryCount.ToString();
             txtRetryInterval.Text = _parameter.RetryInterval.ToString();
 
@@ -409,9 +401,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             _parameter.ResponseVariable = txtResponseVariable.Text;
             _parameter.StatusVariable = txtStatusVariable.Text;
             _parameter.ErrorVariable = txtErrorVariable.Text;
-            _parameter.OverrideTimeout = chkOverrideTimeout.Checked;
-            int.TryParse(txtTimeout.Text, out var timeout);
-            _parameter.CustomTimeout = timeout;
             int.TryParse(txtRetryCount.Text, out var retryCount);
             _parameter.RetryCount = retryCount;
             int.TryParse(txtRetryInterval.Text, out var retryInterval);

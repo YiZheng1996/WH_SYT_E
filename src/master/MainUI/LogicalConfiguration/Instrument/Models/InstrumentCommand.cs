@@ -69,7 +69,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Models
         public string FailureIndicator { get; set; } = "";
 
         /// <summary>
-        /// 命令专用超时(毫秒，0表示使用默认)
+        /// 命令专用响应超时(毫秒)
+        /// 0 = 继承驱动层 ReadTimeout，无需每条命令单独设置
+        /// 仅在该命令需要特殊等待时间时才填写（如初始化命令需要较长时间）
         /// </summary>
         public int Timeout { get; set; } = 0;
 

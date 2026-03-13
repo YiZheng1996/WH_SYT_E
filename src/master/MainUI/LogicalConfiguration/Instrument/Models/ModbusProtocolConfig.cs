@@ -89,7 +89,6 @@
                 SwapWords = this.SwapWords,
                 ConnectionTimeout = this.ConnectionTimeout,
                 ReadTimeout = this.ReadTimeout,
-                WriteTimeout = this.WriteTimeout,
                 KeepAlive = this.KeepAlive
             };
             config.SetModbusType(this.ProtocolType == ProtocolType.ModbusTcp);

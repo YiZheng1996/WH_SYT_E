@@ -59,7 +59,6 @@
                 FlowControl = this.FlowControl,
                 ConnectionTimeout = this.ConnectionTimeout,
                 ReadTimeout = this.ReadTimeout,
-                WriteTimeout = this.WriteTimeout,
                 KeepAlive = this.KeepAlive,
                 DtrEnable = this.DtrEnable,
                 RtsEnable = this.RtsEnable

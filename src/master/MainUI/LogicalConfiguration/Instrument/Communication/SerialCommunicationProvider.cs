@@ -74,8 +74,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                         DataBits = config.DataBits,
                         StopBits = ConvertStopBits(config.StopBits),
                         Parity = ConvertParity(config.Parity),
-                        ReadTimeout = config.ReadTimeout > 0 ? config.ReadTimeout : 3000,
-                        WriteTimeout = config.WriteTimeout > 0 ? config.WriteTimeout : 3000,
+                        ReadTimeout = config.ReadTimeout > 0 ? config.ReadTimeout : 30000,
+                        WriteTimeout = 30000,   // 固定值，不再从配置读取
                         ReceivedBytesThreshold = 1
                     };
 

@@ -51,7 +51,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                     Port = modbusConfig.Port,
                     ConnectionTimeout = modbusConfig.ConnectionTimeout,
                     ReadTimeout = modbusConfig.ReadTimeout,
-                    WriteTimeout = modbusConfig.WriteTimeout
                 }, cancellationToken);
             }
             else
@@ -65,7 +64,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                     StopBits = modbusConfig.StopBits,
                     Parity = modbusConfig.Parity,
                     ReadTimeout = modbusConfig.ReadTimeout,
-                    WriteTimeout = modbusConfig.WriteTimeout
                 }, cancellationToken);
             }
         }

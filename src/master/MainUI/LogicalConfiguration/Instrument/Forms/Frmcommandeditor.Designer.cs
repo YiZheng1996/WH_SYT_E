@@ -353,9 +353,9 @@
             // txtTimeout
             // 
             txtTimeout.Dock = DockStyle.Fill;
-            txtTimeout.DoubleValue = 3000D;
+            txtTimeout.DoubleValue = 0D;
             txtTimeout.Font = new Font("微软雅黑", 12F);
-            txtTimeout.IntValue = 3000;
+            txtTimeout.IntValue = 0;
             txtTimeout.Location = new Point(119, 100);
             txtTimeout.Margin = new Padding(4, 5, 4, 5);
             txtTimeout.MinimumSize = new Size(1, 16);
@@ -366,7 +366,7 @@
             txtTimeout.TabIndex = 9;
             txtTimeout.Text = "3000";
             txtTimeout.TextAlignment = ContentAlignment.MiddleLeft;
-            txtTimeout.Watermark = "";
+            txtTimeout.Watermark = "0 = 继承驱动默认(30000ms)";
             // 
             // txtRequestTemplate
             // 
@@ -574,10 +574,7 @@
         }
 
         #endregion
-        #region 控件声明
-
-        #endregion
-
+      
         private Panel panelButtons;
         private TableLayoutPanel mainLayout;
         private Label lblName;

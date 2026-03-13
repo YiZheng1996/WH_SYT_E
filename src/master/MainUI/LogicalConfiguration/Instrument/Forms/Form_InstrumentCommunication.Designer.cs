@@ -46,13 +46,6 @@
             txtErrorVariable = new UITextBox();
             tabAdvanced = new TabPage();
             layoutAdvanced = new TableLayoutPanel();
-            lblTimeout = new Label();
-            panelTimeout = new FlowLayoutPanel();
-            chkOverrideTimeout = new UICheckBox();
-            txtTimeout = new UITextBox();
-            lblTimeoutMs = new Label();
-            lblRetryCount = new Label();
-            txtRetryCount = new UITextBox();
             lblRetryInterval = new Label();
             panelRetryInterval = new FlowLayoutPanel();
             txtRetryInterval = new UITextBox();
@@ -73,6 +66,8 @@
             chkEnableLogging = new UICheckBox();
             lblCondition = new Label();
             txtExecuteCondition = new UITextBox();
+            txtRetryCount = new UITextBox();
+            lblRetryCount = new Label();
             panelButtons = new Panel();
             btnOk = new UISymbolButton();
             btnCancel = new UISymbolButton();
@@ -86,7 +81,6 @@
             layoutResponse.SuspendLayout();
             tabAdvanced.SuspendLayout();
             layoutAdvanced.SuspendLayout();
-            panelTimeout.SuspendLayout();
             panelRetryInterval.SuspendLayout();
             panelDelayBefore.SuspendLayout();
             panelDelayAfter.SuspendLayout();
@@ -371,7 +365,7 @@
             tabResponse.Controls.Add(layoutResponse);
             tabResponse.Location = new Point(0, 40);
             tabResponse.Name = "tabResponse";
-            tabResponse.Size = new Size(977, 691);
+            tabResponse.Size = new Size(200, 60);
             tabResponse.TabIndex = 1;
             tabResponse.Text = "响应处理";
             // 
@@ -394,7 +388,7 @@
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 39F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutResponse.Size = new Size(977, 691);
+            layoutResponse.Size = new Size(200, 60);
             layoutResponse.TabIndex = 0;
             // 
             // lblResponseVar
@@ -418,7 +412,7 @@
             txtResponseVariable.Name = "txtResponseVariable";
             txtResponseVariable.Padding = new Padding(5);
             txtResponseVariable.ShowText = false;
-            txtResponseVariable.Size = new Size(849, 28);
+            txtResponseVariable.Size = new Size(72, 28);
             txtResponseVariable.TabIndex = 1;
             txtResponseVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtResponseVariable.Watermark = "将原始响应存储到此变量";
@@ -444,7 +438,7 @@
             txtStatusVariable.Name = "txtStatusVariable";
             txtStatusVariable.Padding = new Padding(5);
             txtStatusVariable.ShowText = false;
-            txtStatusVariable.Size = new Size(849, 29);
+            txtStatusVariable.Size = new Size(72, 29);
             txtStatusVariable.TabIndex = 3;
             txtStatusVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtStatusVariable.Watermark = "存储执行结果(true/false)";
@@ -470,7 +464,7 @@
             txtErrorVariable.Name = "txtErrorVariable";
             txtErrorVariable.Padding = new Padding(5);
             txtErrorVariable.ShowText = false;
-            txtErrorVariable.Size = new Size(849, 30);
+            txtErrorVariable.Size = new Size(72, 30);
             txtErrorVariable.TabIndex = 5;
             txtErrorVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtErrorVariable.Watermark = "失败时存储错误信息";
@@ -491,131 +485,41 @@
             layoutAdvanced.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             layoutAdvanced.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100F));
             layoutAdvanced.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            layoutAdvanced.Controls.Add(lblTimeout, 0, 0);
-            layoutAdvanced.Controls.Add(panelTimeout, 1, 0);
-            layoutAdvanced.Controls.Add(lblRetryCount, 2, 0);
+            layoutAdvanced.Controls.Add(lblRetryInterval, 0, 0);
+            layoutAdvanced.Controls.Add(panelRetryInterval, 1, 0);
+            layoutAdvanced.Controls.Add(lblDelayBefore, 0, 1);
+            layoutAdvanced.Controls.Add(panelDelayBefore, 1, 1);
+            layoutAdvanced.Controls.Add(lblDelayAfter, 2, 1);
+            layoutAdvanced.Controls.Add(panelDelayAfter, 3, 1);
+            layoutAdvanced.Controls.Add(lblFailureStrategy, 0, 2);
+            layoutAdvanced.Controls.Add(cboFailureStrategy, 1, 2);
+            layoutAdvanced.Controls.Add(lblJumpStep, 2, 2);
+            layoutAdvanced.Controls.Add(txtJumpStep, 3, 2);
+            layoutAdvanced.Controls.Add(lblLogging, 0, 3);
+            layoutAdvanced.Controls.Add(chkEnableLogging, 1, 3);
+            layoutAdvanced.Controls.Add(lblCondition, 0, 4);
+            layoutAdvanced.Controls.Add(txtExecuteCondition, 1, 4);
             layoutAdvanced.Controls.Add(txtRetryCount, 3, 0);
-            layoutAdvanced.Controls.Add(lblRetryInterval, 0, 1);
-            layoutAdvanced.Controls.Add(panelRetryInterval, 1, 1);
-            layoutAdvanced.Controls.Add(lblDelayBefore, 0, 2);
-            layoutAdvanced.Controls.Add(panelDelayBefore, 1, 2);
-            layoutAdvanced.Controls.Add(lblDelayAfter, 2, 2);
-            layoutAdvanced.Controls.Add(panelDelayAfter, 3, 2);
-            layoutAdvanced.Controls.Add(lblFailureStrategy, 0, 3);
-            layoutAdvanced.Controls.Add(cboFailureStrategy, 1, 3);
-            layoutAdvanced.Controls.Add(lblJumpStep, 2, 3);
-            layoutAdvanced.Controls.Add(txtJumpStep, 3, 3);
-            layoutAdvanced.Controls.Add(lblLogging, 0, 4);
-            layoutAdvanced.Controls.Add(chkEnableLogging, 1, 4);
-            layoutAdvanced.Controls.Add(lblCondition, 0, 5);
-            layoutAdvanced.Controls.Add(txtExecuteCondition, 1, 5);
+            layoutAdvanced.Controls.Add(lblRetryCount, 2, 0);
             layoutAdvanced.Dock = DockStyle.Fill;
             layoutAdvanced.Location = new Point(0, 0);
             layoutAdvanced.Name = "layoutAdvanced";
-            layoutAdvanced.RowCount = 7;
-            layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+            layoutAdvanced.RowCount = 6;
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 47F));
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F));
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 31F));
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layoutAdvanced.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             layoutAdvanced.Size = new Size(977, 691);
             layoutAdvanced.TabIndex = 0;
-            // 
-            // lblTimeout
-            // 
-            lblTimeout.Dock = DockStyle.Fill;
-            lblTimeout.Font = new Font("微软雅黑", 11F);
-            lblTimeout.Location = new Point(3, 0);
-            lblTimeout.Name = "lblTimeout";
-            lblTimeout.Size = new Size(94, 40);
-            lblTimeout.TabIndex = 0;
-            lblTimeout.Text = "超时设置:";
-            lblTimeout.TextAlign = ContentAlignment.MiddleRight;
-            // 
-            // panelTimeout
-            // 
-            panelTimeout.Controls.Add(chkOverrideTimeout);
-            panelTimeout.Controls.Add(txtTimeout);
-            panelTimeout.Controls.Add(lblTimeoutMs);
-            panelTimeout.Dock = DockStyle.Fill;
-            panelTimeout.Location = new Point(103, 3);
-            panelTimeout.Name = "panelTimeout";
-            panelTimeout.Size = new Size(382, 34);
-            panelTimeout.TabIndex = 1;
-            // 
-            // chkOverrideTimeout
-            // 
-            chkOverrideTimeout.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            chkOverrideTimeout.ForeColor = Color.FromArgb(48, 48, 48);
-            chkOverrideTimeout.Location = new Point(3, 3);
-            chkOverrideTimeout.MinimumSize = new Size(1, 1);
-            chkOverrideTimeout.Name = "chkOverrideTimeout";
-            chkOverrideTimeout.Size = new Size(134, 29);
-            chkOverrideTimeout.TabIndex = 0;
-            chkOverrideTimeout.Text = "自定义超时";
-            // 
-            // txtTimeout
-            // 
-            txtTimeout.DoubleValue = 3000D;
-            txtTimeout.Enabled = false;
-            txtTimeout.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            txtTimeout.IntValue = 3000;
-            txtTimeout.Location = new Point(144, 5);
-            txtTimeout.Margin = new Padding(4, 5, 4, 5);
-            txtTimeout.MinimumSize = new Size(1, 16);
-            txtTimeout.Name = "txtTimeout";
-            txtTimeout.Padding = new Padding(5);
-            txtTimeout.ShowText = false;
-            txtTimeout.Size = new Size(80, 29);
-            txtTimeout.TabIndex = 1;
-            txtTimeout.Text = "3000";
-            txtTimeout.TextAlignment = ContentAlignment.MiddleLeft;
-            txtTimeout.Watermark = "";
-            // 
-            // lblTimeoutMs
-            // 
-            lblTimeoutMs.AutoSize = true;
-            lblTimeoutMs.Location = new Point(231, 0);
-            lblTimeoutMs.Name = "lblTimeoutMs";
-            lblTimeoutMs.Padding = new Padding(0, 8, 0, 0);
-            lblTimeoutMs.Size = new Size(31, 27);
-            lblTimeoutMs.TabIndex = 2;
-            lblTimeoutMs.Text = "ms";
-            // 
-            // lblRetryCount
-            // 
-            lblRetryCount.Dock = DockStyle.Fill;
-            lblRetryCount.Font = new Font("微软雅黑", 9F);
-            lblRetryCount.Location = new Point(491, 0);
-            lblRetryCount.Name = "lblRetryCount";
-            lblRetryCount.Size = new Size(94, 40);
-            lblRetryCount.TabIndex = 2;
-            lblRetryCount.Text = "重试次数:";
-            lblRetryCount.TextAlign = ContentAlignment.MiddleRight;
-            // 
-            // txtRetryCount
-            // 
-            txtRetryCount.Dock = DockStyle.Fill;
-            txtRetryCount.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            txtRetryCount.Location = new Point(592, 5);
-            txtRetryCount.Margin = new Padding(4, 5, 4, 5);
-            txtRetryCount.MinimumSize = new Size(1, 16);
-            txtRetryCount.Name = "txtRetryCount";
-            txtRetryCount.Padding = new Padding(5);
-            txtRetryCount.ShowText = false;
-            txtRetryCount.Size = new Size(381, 30);
-            txtRetryCount.TabIndex = 3;
-            txtRetryCount.Text = "0";
-            txtRetryCount.TextAlignment = ContentAlignment.MiddleLeft;
-            txtRetryCount.Watermark = "";
             // 
             // lblRetryInterval
             // 
             lblRetryInterval.Dock = DockStyle.Fill;
             lblRetryInterval.Font = new Font("微软雅黑", 11F);
-            lblRetryInterval.Location = new Point(3, 40);
+            lblRetryInterval.Location = new Point(3, 0);
             lblRetryInterval.Name = "lblRetryInterval";
             lblRetryInterval.Size = new Size(94, 40);
             lblRetryInterval.TabIndex = 4;
@@ -627,7 +531,7 @@
             panelRetryInterval.Controls.Add(txtRetryInterval);
             panelRetryInterval.Controls.Add(lblRetryMs);
             panelRetryInterval.Dock = DockStyle.Fill;
-            panelRetryInterval.Location = new Point(103, 43);
+            panelRetryInterval.Location = new Point(103, 3);
             panelRetryInterval.Name = "panelRetryInterval";
             panelRetryInterval.Size = new Size(382, 34);
             panelRetryInterval.TabIndex = 5;
@@ -663,7 +567,7 @@
             // 
             lblDelayBefore.Dock = DockStyle.Fill;
             lblDelayBefore.Font = new Font("微软雅黑", 11F);
-            lblDelayBefore.Location = new Point(3, 80);
+            lblDelayBefore.Location = new Point(3, 40);
             lblDelayBefore.Name = "lblDelayBefore";
             lblDelayBefore.Size = new Size(94, 47);
             lblDelayBefore.TabIndex = 6;
@@ -675,7 +579,7 @@
             panelDelayBefore.Controls.Add(txtDelayBefore);
             panelDelayBefore.Controls.Add(lblDelayBeforeMs);
             panelDelayBefore.Dock = DockStyle.Fill;
-            panelDelayBefore.Location = new Point(103, 83);
+            panelDelayBefore.Location = new Point(103, 43);
             panelDelayBefore.Name = "panelDelayBefore";
             panelDelayBefore.Size = new Size(382, 41);
             panelDelayBefore.TabIndex = 7;
@@ -709,7 +613,7 @@
             // 
             lblDelayAfter.Dock = DockStyle.Fill;
             lblDelayAfter.Font = new Font("微软雅黑", 9F);
-            lblDelayAfter.Location = new Point(491, 80);
+            lblDelayAfter.Location = new Point(491, 40);
             lblDelayAfter.Name = "lblDelayAfter";
             lblDelayAfter.Size = new Size(94, 47);
             lblDelayAfter.TabIndex = 8;
@@ -721,7 +625,7 @@
             panelDelayAfter.Controls.Add(txtDelayAfter);
             panelDelayAfter.Controls.Add(lblDelayAfterMs);
             panelDelayAfter.Dock = DockStyle.Fill;
-            panelDelayAfter.Location = new Point(591, 83);
+            panelDelayAfter.Location = new Point(591, 43);
             panelDelayAfter.Name = "panelDelayAfter";
             panelDelayAfter.Size = new Size(383, 41);
             panelDelayAfter.TabIndex = 9;
@@ -755,7 +659,7 @@
             // 
             lblFailureStrategy.Dock = DockStyle.Fill;
             lblFailureStrategy.Font = new Font("微软雅黑", 11F);
-            lblFailureStrategy.Location = new Point(3, 127);
+            lblFailureStrategy.Location = new Point(3, 87);
             lblFailureStrategy.Name = "lblFailureStrategy";
             lblFailureStrategy.Size = new Size(94, 42);
             lblFailureStrategy.TabIndex = 10;
@@ -771,7 +675,7 @@
             cboFailureStrategy.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             cboFailureStrategy.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cboFailureStrategy.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cboFailureStrategy.Location = new Point(104, 132);
+            cboFailureStrategy.Location = new Point(104, 92);
             cboFailureStrategy.Margin = new Padding(4, 5, 4, 5);
             cboFailureStrategy.MinimumSize = new Size(63, 0);
             cboFailureStrategy.Name = "cboFailureStrategy";
@@ -786,7 +690,7 @@
             // 
             lblJumpStep.Dock = DockStyle.Fill;
             lblJumpStep.Font = new Font("微软雅黑", 9F);
-            lblJumpStep.Location = new Point(491, 127);
+            lblJumpStep.Location = new Point(491, 87);
             lblJumpStep.Name = "lblJumpStep";
             lblJumpStep.Size = new Size(94, 42);
             lblJumpStep.TabIndex = 12;
@@ -798,7 +702,7 @@
             txtJumpStep.Dock = DockStyle.Fill;
             txtJumpStep.Enabled = false;
             txtJumpStep.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            txtJumpStep.Location = new Point(592, 132);
+            txtJumpStep.Location = new Point(592, 92);
             txtJumpStep.Margin = new Padding(4, 5, 4, 5);
             txtJumpStep.MinimumSize = new Size(1, 16);
             txtJumpStep.Name = "txtJumpStep";
@@ -814,7 +718,7 @@
             // 
             lblLogging.Dock = DockStyle.Fill;
             lblLogging.Font = new Font("微软雅黑", 11F);
-            lblLogging.Location = new Point(3, 169);
+            lblLogging.Location = new Point(3, 129);
             lblLogging.Name = "lblLogging";
             lblLogging.Size = new Size(94, 31);
             lblLogging.TabIndex = 14;
@@ -826,7 +730,7 @@
             chkEnableLogging.Checked = true;
             chkEnableLogging.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             chkEnableLogging.ForeColor = Color.FromArgb(48, 48, 48);
-            chkEnableLogging.Location = new Point(103, 172);
+            chkEnableLogging.Location = new Point(103, 132);
             chkEnableLogging.MinimumSize = new Size(1, 1);
             chkEnableLogging.Name = "chkEnableLogging";
             chkEnableLogging.Size = new Size(1, 25);
@@ -837,7 +741,7 @@
             // 
             lblCondition.Dock = DockStyle.Fill;
             lblCondition.Font = new Font("微软雅黑", 11F);
-            lblCondition.Location = new Point(3, 200);
+            lblCondition.Location = new Point(3, 160);
             lblCondition.Name = "lblCondition";
             lblCondition.Size = new Size(94, 40);
             lblCondition.TabIndex = 16;
@@ -849,7 +753,7 @@
             layoutAdvanced.SetColumnSpan(txtExecuteCondition, 3);
             txtExecuteCondition.Dock = DockStyle.Fill;
             txtExecuteCondition.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            txtExecuteCondition.Location = new Point(104, 205);
+            txtExecuteCondition.Location = new Point(104, 165);
             txtExecuteCondition.Margin = new Padding(4, 5, 4, 5);
             txtExecuteCondition.MinimumSize = new Size(1, 16);
             txtExecuteCondition.Name = "txtExecuteCondition";
@@ -859,6 +763,33 @@
             txtExecuteCondition.TabIndex = 17;
             txtExecuteCondition.TextAlignment = ContentAlignment.MiddleLeft;
             txtExecuteCondition.Watermark = "为空时总是执行，如: {Var1} > 0";
+            // 
+            // txtRetryCount
+            // 
+            txtRetryCount.Dock = DockStyle.Fill;
+            txtRetryCount.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            txtRetryCount.Location = new Point(592, 5);
+            txtRetryCount.Margin = new Padding(4, 5, 4, 5);
+            txtRetryCount.MinimumSize = new Size(1, 16);
+            txtRetryCount.Name = "txtRetryCount";
+            txtRetryCount.Padding = new Padding(5);
+            txtRetryCount.ShowText = false;
+            txtRetryCount.Size = new Size(381, 30);
+            txtRetryCount.TabIndex = 3;
+            txtRetryCount.Text = "0";
+            txtRetryCount.TextAlignment = ContentAlignment.MiddleLeft;
+            txtRetryCount.Watermark = "";
+            // 
+            // lblRetryCount
+            // 
+            lblRetryCount.Dock = DockStyle.Fill;
+            lblRetryCount.Font = new Font("微软雅黑", 9F);
+            lblRetryCount.Location = new Point(491, 0);
+            lblRetryCount.Name = "lblRetryCount";
+            lblRetryCount.Size = new Size(94, 40);
+            lblRetryCount.TabIndex = 2;
+            lblRetryCount.Text = "重试次数:";
+            lblRetryCount.TextAlign = ContentAlignment.MiddleRight;
             // 
             // panelButtons
             // 
@@ -923,8 +854,6 @@
             layoutResponse.ResumeLayout(false);
             tabAdvanced.ResumeLayout(false);
             layoutAdvanced.ResumeLayout(false);
-            panelTimeout.ResumeLayout(false);
-            panelTimeout.PerformLayout();
             panelRetryInterval.ResumeLayout(false);
             panelRetryInterval.PerformLayout();
             panelDelayBefore.ResumeLayout(false);
@@ -972,11 +901,6 @@
         private Sunny.UI.UITextBox txtErrorVariable;
 
         private System.Windows.Forms.TableLayoutPanel layoutAdvanced;
-        private System.Windows.Forms.Label lblTimeout;
-        private System.Windows.Forms.FlowLayoutPanel panelTimeout;
-        private Sunny.UI.UICheckBox chkOverrideTimeout;
-        private Sunny.UI.UITextBox txtTimeout;
-        private System.Windows.Forms.Label lblTimeoutMs;
         private System.Windows.Forms.Label lblRetryCount;
         private Sunny.UI.UITextBox txtRetryCount;
         private System.Windows.Forms.Label lblRetryInterval;

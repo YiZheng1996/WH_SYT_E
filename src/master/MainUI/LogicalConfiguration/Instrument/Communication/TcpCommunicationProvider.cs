@@ -52,10 +52,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 _client = new TcpClient
                 {
                     ReceiveTimeout = tcpConfig.ReadTimeout,
-                    SendTimeout = tcpConfig.WriteTimeout,
+                    SendTimeout = 30000,    // 固定值，不再从配置读取
                     ReceiveBufferSize = tcpConfig.ReceiveBufferSize,
                     SendBufferSize = tcpConfig.SendBufferSize,
-                    NoDelay = true    // 仪器通讯通常报文小，禁用 Nagle
+                    NoDelay = true
                 };
 
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
