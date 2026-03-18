@@ -490,132 +490,46 @@ namespace MainUI.LogicalConfiguration.Forms
 
             var trimmed = content.Trim();
 
-            // ========================================
-            // 第1步: 检查是否为PLC引用
-            // 格式: {PLC.模块名.地址}
-            // ========================================
+            // 第1步: PLC引用 {PLC.模块.地址}
             if (Regex.IsMatch(trimmed, @"^\s*\{PLC\.[^\}]+\}\s*$", RegexOptions.IgnoreCase))
-            {
-                _logger?.LogDebug($"识别为PLC引用: {trimmed}");
-                return CellsDataSourceType.Expression; // PLC引用作为表达式处理
-            }
+                return CellsDataSourceType.Expression;
 
-            // 第2步: 检查是否为简单变量引用（使用 VariableNameHelper）
+            // 第2步: 简单变量引用，必须是 {变量名} 格式
             if (VariableNameHelper.IsSimpleVariableReference(content))
             {
-                var normalizedName = VariableNameHelper.NormalizeVariableName(content);
-
-                // 验证这个变量是否存在
-                var variable = _globalVariable?.FindVariableByName(normalizedName);
-                if (variable != null)
+                // IsSimpleVariableReference 同时接受带和不带花括号
+                // 但我们只认带花括号的，裸字符串一律固定值
+                var trimmedContent = content.Trim();
+                if (trimmedContent.StartsWith("{") && trimmedContent.EndsWith("}"))
                 {
-                    _logger?.LogDebug($"识别为简单变量引用: {content} -> Variable类型");
+                    _logger?.LogDebug($"识别为变量: {content}");
                     return CellsDataSourceType.Variable;
                 }
-                else
-                {
-                    _logger?.LogWarning($"变量 '{normalizedName}' 不存在，但仍识别为Variable类型");
-                    return CellsDataSourceType.Variable;
-                }
+                // 不带花括号的裸变量名 → 固定值（"OK"、"合格"等走这里）
             }
 
-            // ========================================
-            // 第3步: 检查是否为复杂表达式
-            // 包含以下特征之一：
-            // - 多个花括号变量: {Var1} + {Var2}
-            // - 运算符: + - * / ( ) > < = ! & |
-            // - 函数调用: MAX(...), FORMAT(...), NOW()
-            // ========================================
-
-            // 检查是否包含多个花括号变量
+            // 第3步: 复杂表达式
             var allVarMatches = Regex.Matches(trimmed, @"\{[\w\u4e00-\u9fa5]+\}");
             if (allVarMatches.Count > 1)
-            {
-                _logger?.LogDebug($"识别为复杂表达式(多个变量): {trimmed}");
                 return CellsDataSourceType.Expression;
-            }
 
-            // 检查是否包含运算符
             if (Regex.IsMatch(trimmed, @"[+\-*/()><=!&|]"))
-            {
-                _logger?.LogDebug($"识别为表达式(包含运算符): {trimmed}");
                 return CellsDataSourceType.Expression;
-            }
 
-            // 检查是否包含函数调用 (大写函数名 + 括号)
             if (Regex.IsMatch(trimmed, @"\b[A-Z]{2,}\s*\("))
-            {
-                _logger?.LogDebug($"识别为表达式(包含函数): {trimmed}");
                 return CellsDataSourceType.Expression;
-            }
 
-            // ========================================
-            // 第4步: 检查是否为系统属性路径
-            // 格式: 根对象.属性.子属性
-            // 例如: DateTime.Now, NewUsers.NewUserInfo.Username
-            // ========================================
+            // 第4步: 系统属性路径
             if (Regex.IsMatch(trimmed, @"^[A-Za-z_][\w\u4e00-\u9fa5]*(\.[A-Za-z_][\w\u4e00-\u9fa5]*)+"))
             {
                 var systemRoots = new[] { "NewUsers", "VarHelper", "DateTime", "BaseTest", "Environment", "Math" };
                 if (systemRoots.Any(root => trimmed.StartsWith(root + ".", StringComparison.OrdinalIgnoreCase)))
-                {
-                    _logger?.LogDebug($"识别为系统属性: {trimmed}");
                     return CellsDataSourceType.SystemProperty;
-                }
             }
 
-            // ========================================
-            // 第5步: 检查是否为简单变量名（不带花括号）
-            // 格式: 变量名
-            // 仅限字母、数字、下划线、中文，且不以数字开头
-            // ========================================
-            if (IsValidVariableName(trimmed))
-            {
-                var variable = _globalVariable?.FindVariableByName(trimmed);
-                if (variable != null)
-                {
-                    _logger?.LogDebug($"识别为简单变量(无花括号): {trimmed} -> Variable类型");
-                    return CellsDataSourceType.Variable;
-                }
-            }
-
-            // ========================================
-            // 第6步: 检查是否为纯数字
-            // ========================================
-            if (double.TryParse(trimmed, out _))
-            {
-                _logger?.LogDebug($"识别为固定值(数字): {trimmed}");
-                return CellsDataSourceType.FixedValue;
-            }
-
-            // ========================================
-            // 默认: 固定值（文本）
-            // ========================================
-            _logger?.LogDebug($"识别为固定值(文本): {trimmed}");
+            // 默认: 固定值
+            _logger?.LogDebug($"识别为固定值: {trimmed}");
             return CellsDataSourceType.FixedValue;
-        }
-
-        /// <summary>
-        /// 验证是否是有效的变量名
-        /// 规则: 字母、数字、下划线、中文，且不以数字开头
-        /// </summary>
-        private bool IsValidVariableName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                return false;
-
-            // 不能以数字开头
-            if (char.IsDigit(name[0]))
-                return false;
-
-            // 只能包含字母、数字、下划线和中文字符
-            foreach (char c in name)
-            {
-                if (!char.IsLetterOrDigit(c) && c != '_')
-                    return false;
-            }
-
-            return true;
         }
 
         #endregion
