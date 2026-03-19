@@ -93,7 +93,7 @@
             panelBottom = new Panel();
             btnSave = new UISymbolButton();
             btnCancel = new UISymbolButton();
-            (splitMain).BeginInit();
+            splitMain.BeginInit();
             splitMain.Panel1.SuspendLayout();
             splitMain.Panel2.SuspendLayout();
             splitMain.SuspendLayout();
@@ -595,7 +595,7 @@
             tabProtocol.Controls.Add(panelProtocolConfig);
             tabProtocol.Location = new Point(0, 40);
             tabProtocol.Name = "tabProtocol";
-            tabProtocol.Size = new Size(200, 60);
+            tabProtocol.Size = new Size(664, 625);
             tabProtocol.TabIndex = 1;
             tabProtocol.Text = "协议配置";
             // 
@@ -608,7 +608,7 @@
             panelProtocolConfig.Margin = new Padding(4, 5, 4, 5);
             panelProtocolConfig.MinimumSize = new Size(1, 1);
             panelProtocolConfig.Name = "panelProtocolConfig";
-            panelProtocolConfig.Size = new Size(200, 60);
+            panelProtocolConfig.Size = new Size(664, 625);
             panelProtocolConfig.TabIndex = 0;
             panelProtocolConfig.Text = null;
             panelProtocolConfig.TextAlignment = ContentAlignment.MiddleCenter;
@@ -800,7 +800,7 @@
             tabCommands.Controls.Add(layoutCommands);
             tabCommands.Location = new Point(0, 40);
             tabCommands.Name = "tabCommands";
-            tabCommands.Size = new Size(664, 625);
+            tabCommands.Size = new Size(200, 60);
             tabCommands.TabIndex = 3;
             tabCommands.Text = "命令模板";
             // 
@@ -816,7 +816,7 @@
             layoutCommands.RowCount = 2;
             layoutCommands.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutCommands.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutCommands.Size = new Size(664, 625);
+            layoutCommands.Size = new Size(200, 60);
             layoutCommands.TabIndex = 0;
             // 
             // toolbarCommands
@@ -827,7 +827,7 @@
             toolbarCommands.Dock = DockStyle.Fill;
             toolbarCommands.Location = new Point(3, 3);
             toolbarCommands.Name = "toolbarCommands";
-            toolbarCommands.Size = new Size(658, 34);
+            toolbarCommands.Size = new Size(194, 34);
             toolbarCommands.TabIndex = 0;
             // 
             // btnAddCommand
@@ -859,7 +859,7 @@
             // btnDeleteCommand
             // 
             btnDeleteCommand.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnDeleteCommand.Location = new Point(190, 2);
+            btnDeleteCommand.Location = new Point(2, 36);
             btnDeleteCommand.Margin = new Padding(2);
             btnDeleteCommand.MinimumSize = new Size(1, 1);
             btnDeleteCommand.Name = "btnDeleteCommand";
@@ -917,7 +917,7 @@
             dgvCommands.RowTemplate.Height = 35;
             dgvCommands.SelectedIndex = -1;
             dgvCommands.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvCommands.Size = new Size(658, 579);
+            dgvCommands.Size = new Size(194, 14);
             dgvCommands.StripeOddColor = Color.FromArgb(235, 243, 255);
             dgvCommands.TabIndex = 1;
             // 
@@ -979,7 +979,7 @@
             ZoomScaleRect = new Rectangle(15, 15, 1100, 750);
             splitMain.Panel1.ResumeLayout(false);
             splitMain.Panel2.ResumeLayout(false);
-            (splitMain).EndInit();
+            splitMain.EndInit();
             splitMain.ResumeLayout(false);
             panelLeft.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvDrivers).EndInit();
@@ -1043,6 +1043,7 @@
         private Sunny.UI.UICheckBox chkEnabled;
         private System.Windows.Forms.Label lblDescription;
         private Sunny.UI.UITextBox txtDescription;
+        private Panel _httpAuthPanel;
 
         // 协议配置Tab
         private Sunny.UI.UIPanel panelProtocolConfig;

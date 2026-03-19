@@ -193,6 +193,23 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                 // 存储结果到变量
                 StoreResults(result, parameter);
 
+                // KeepAlive=false 时，每次通讯完成后主动断开连接并从缓存中移除
+                if (!protocolConfig.KeepAlive)
+                {
+                    _logger.LogDebug("KeepAlive=false，通讯完成后断开连接: {ConnectionId}", connectionId);
+                    try
+                    {
+                        await provider.DisconnectAsync();
+                        // 从工厂缓存中移除，下次重新创建并连接
+                        var cacheKey = $"{driver.ProtocolType}_{connectionId}";
+                        _providerFactory.RemoveProvider(cacheKey);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "KeepAlive=false 断开连接时发生异常，忽略继续");
+                    }
+                }
+
                 // 记录日志
                 if (parameter.EnableLogging)
                 {
@@ -380,15 +397,39 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
         }
 
         /// <summary>
-        /// 获取连接标识
+        /// 获取连接标识 - 用于 Provider 缓存 Key
+        /// 相同连接参数的设备复用同一个 Provider，避免重复连接
         /// </summary>
         private string GetConnectionId(ProtocolConfigBase config)
         {
             return config switch
             {
-                SerialProtocolConfig serial => $"Serial_{serial.PortName}",
-                TcpProtocolConfig tcp => $"TCP_{tcp.IpAddress}_{tcp.Port}",
-                _ => Guid.NewGuid().ToString()
+                // TCP：IP + 端口唯一标识一个连接
+                TcpProtocolConfig tcp
+                    => $"TCP_{tcp.IpAddress}_{tcp.Port}",
+
+                // 串口：串口号唯一标识一个连接
+                SerialProtocolConfig serial
+                    => $"Serial_{serial.PortName}",
+
+                // Modbus TCP：IP + 端口 + 从站地址（同一个 TCP 地址可能挂多个从站）
+                ModbusProtocolConfig modbus when modbus.ProtocolType == ProtocolType.ModbusTcp
+                    => $"ModbusTCP_{modbus.IpAddress}_{modbus.Port}_{modbus.SlaveAddress}",
+
+                // Modbus RTU：串口号 + 从站地址
+                ModbusProtocolConfig modbus when modbus.ProtocolType == ProtocolType.ModbusRtu
+                    => $"ModbusRTU_{modbus.PortName}_{modbus.SlaveAddress}",
+
+                // HTTP：BaseUrl 唯一标识
+                HttpProtocolConfig http
+                    => $"HTTP_{http.BaseUrl.TrimEnd('/')}",
+
+                // UDP：远程 IP + 端口
+                UdpProtocolConfig udp
+                    => $"UDP_{udp.RemoteIpAddress}_{udp.RemotePort}",
+
+                // 兜底（理论上不会走到）
+                _ => $"Unknown_{Guid.NewGuid():N}"
             };
         }
 

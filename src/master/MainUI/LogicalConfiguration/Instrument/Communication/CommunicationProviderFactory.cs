@@ -66,6 +66,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 ProtocolType.Serial => new SerialCommunicationProvider(_logger),
                 ProtocolType.Http => new HttpCommunicationProvider(_logger),
                 ProtocolType.ModbusTcp or ProtocolType.ModbusRtu => new ModbusCommunicationProvider(_logger),
+                ProtocolType.Udp => new UdpCommunicationProvider(_logger),
                 _ => throw new NotSupportedException($"不支持的协议类型: {protocolType}")
             };
         }

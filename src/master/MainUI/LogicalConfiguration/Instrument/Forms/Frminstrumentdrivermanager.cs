@@ -223,28 +223,38 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                         SetControlValue("StopBits", serial.StopBits);
                         SetControlValue("Parity", serial.Parity);
                         SetControlValue("FlowControl", serial.FlowControl);
+                        SetControlValue("ConnectionTimeout", serial.ConnectionTimeout.ToString());
                         SetControlValue("ReadTimeout", serial.ReadTimeout.ToString());
                     }
                     break;
 
                 case ProtocolType.ModbusTcp:
-                case ProtocolType.ModbusRtu:
-                    if (config is ModbusProtocolConfig modbus)
+                    if (config is ModbusProtocolConfig modbusTcp)
                     {
-                        SetControlValue("SlaveAddress", modbus.SlaveAddress.ToString());
+                        SetControlValue("SlaveAddress", modbusTcp.SlaveAddress.ToString());
+                        SetControlValue("IpAddress", modbusTcp.IpAddress);
+                        SetControlValue("Port", modbusTcp.Port.ToString());
+                        SetControlValue("ByteOrder", modbusTcp.ByteOrder);
+                        SetControlValue("ConnectionTimeout", modbusTcp.ConnectionTimeout.ToString());
+                        SetControlValue("ReadTimeout", modbusTcp.ReadTimeout.ToString());
+                        SetControlValue("SwapBytes", modbusTcp.SwapBytes);
+                        SetControlValue("SwapWords", modbusTcp.SwapWords);
+                    }
+                    break;
 
-                        if (driver.ProtocolType == ProtocolType.ModbusTcp)
-                        {
-                            SetControlValue("IpAddress", modbus.IpAddress);
-                            SetControlValue("Port", modbus.Port.ToString());
-                        }
-                        else
-                        {
-                            SetControlValue("PortName", modbus.PortName);
-                            SetControlValue("BaudRate", modbus.BaudRate.ToString());
-                        }
-                        SetControlValue("ByteOrder", modbus.ByteOrder);
-                        SetControlValue("ReadTimeout", modbus.ReadTimeout.ToString());
+                case ProtocolType.ModbusRtu:
+                    if (config is ModbusProtocolConfig modbusRtu)
+                    {
+                        SetControlValue("SlaveAddress", modbusRtu.SlaveAddress.ToString());
+                        SetControlValue("PortName", modbusRtu.PortName);
+                        SetControlValue("BaudRate", modbusRtu.BaudRate.ToString());
+                        SetControlValue("DataBits", modbusRtu.DataBits);
+                        SetControlValue("StopBits", modbusRtu.StopBits);
+                        SetControlValue("Parity", modbusRtu.Parity);
+                        SetControlValue("ByteOrder", modbusRtu.ByteOrder);
+                        SetControlValue("ReadTimeout", modbusRtu.ReadTimeout.ToString());
+                        SetControlValue("SwapBytes", modbusRtu.SwapBytes);
+                        SetControlValue("SwapWords", modbusRtu.SwapWords);
                     }
                     break;
 
@@ -252,10 +262,25 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                     if (config is HttpProtocolConfig http)
                     {
                         SetControlValue("BaseUrl", http.BaseUrl);
+                        SetControlValue("ContentType", http.ContentType);
+                        // AuthType 赋值后手动触发联动（SelectedIndexChanged 可能未触发）
                         SetControlValue("AuthType", http.AuthType);
+                        TriggerHttpAuthTypeChange(http.AuthType);
+                        // 按认证类型填充对应字段
                         SetControlValue("Username", http.Username);
                         SetControlValue("Password", http.Password);
-                        SetControlValue("ContentType", http.ContentType);
+                        SetControlValue("BearerToken", http.BearerToken);
+                    }
+                    break;
+
+                case ProtocolType.Udp:
+                    if (config is UdpProtocolConfig udp)
+                    {
+                        SetControlValue("RemoteIpAddress", udp.RemoteIpAddress);
+                        SetControlValue("RemotePort", udp.RemotePort.ToString());
+                        SetControlValue("LocalPort", udp.LocalPort.ToString());
+                        SetControlValue("ConnectionTimeout", udp.ConnectionTimeout.ToString());
+                        SetControlValue("ReadTimeout", udp.ReadTimeout.ToString());
                     }
                     break;
             }
@@ -413,101 +438,273 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             // 读取超时 - 添加超时验证
             AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2, ValidationType.Timeout);
 
-            AddConfigRow(layout, row, "保持连接:", "KeepAlive", "true", 0);
+            // 改为 CheckBox，和 SetControlValue/GetControlValue 的 bool 分支匹配
+            AddConfigCheckBox(layout, row, "保持连接:", "KeepAlive", true, 0);
         }
 
         private void CreateSerialConfigControls(TableLayoutPanel layout)
         {
+            // ── 重置行配置，避免默认行高撑大 
+            layout.RowCount = 6;
+            layout.RowStyles.Clear();
+            for (int i = 0; i < 6; i++)
+                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+
             int row = 0;
 
-            // 串口名称 - 允许手动输入（用于特殊串口如 \\.\COM15）
-            AddConfigComboBox(layout, row++, "串口:", "PortName",
+            // ── 第0行：串口下拉（col0~1）+ 刷新按钮（col2）
+            AddConfigComboBox(layout, row, "串口:", "PortName",
                 GetAvailablePorts(), "COM1", 0, allowCustomInput: true);
 
-            // 波特率 - 允许手动输入（用于特殊波特率）
+            var btnRefreshPort = new UIButton
+            {
+                Text = "刷新",
+                Dock = DockStyle.Fill,
+                FillColor = Color.FromArgb(65, 100, 204),
+                Font = new Font("微软雅黑", 10F),
+                Cursor = Cursors.Hand
+            };
+            btnRefreshPort.Click += (s, e) =>
+            {
+                if (!_protocolControls.TryGetValue("PortName", out var ctrl) || ctrl is not UIComboBox cbo)
+                    return;
+                var current = cbo.Text;
+                var ports = GetAvailablePorts();
+                cbo.DataSource = new List<string>(ports);
+                if (ports.Contains(current))
+                    cbo.Text = current;
+                else if (ports.Count > 0)
+                    cbo.SelectedIndex = 0;
+            };
+            layout.Controls.Add(btnRefreshPort, 2, row);
+            row++;
+
+            // ── 第1行：波特率 + 数据位
             AddConfigComboBox(layout, row, "波特率:", "BaudRate",
                 BaudRates, 9600, 0, allowCustomInput: true);
-            // 数据位 - 不允许手动输入（固定选项）
             AddConfigComboBox(layout, row++, "数据位:", "DataBits",
                 DataBitsList, 8, 2, allowCustomInput: false);
 
-            // 停止位 - 使用枚举下拉框
+            // ── 第2行：停止位 + 校验位
             AddConfigComboBox(layout, row, "停止位:", "StopBits",
                 Enum.GetValues(typeof(StopBitsType)), StopBitsType.One, 0);
-            // 校验位 - 使用枚举下拉框
             AddConfigComboBox(layout, row++, "校验位:", "Parity",
                 Enum.GetValues(typeof(ParityType)), ParityType.None, 2);
 
-            // 流控制 - 使用枚举下拉框
+            // ── 第3行：流控制 + 连接超时
             AddConfigComboBox(layout, row, "流控制:", "FlowControl",
                 Enum.GetValues(typeof(FlowControlType)), FlowControlType.None, 0);
-            // 读取超时 - 保持文本框
-            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
+            AddConfigRow(layout, row++, "连接超时:", "ConnectionTimeout", "5000", 2, ValidationType.Timeout);
+
+            // ── 第4行：读取超时
+            AddConfigRow(layout, row, "读取超时:", "ReadTimeout", "3000", 0, ValidationType.Timeout);
         }
 
         private void CreateModbusRtuConfigControls(TableLayoutPanel layout)
         {
+            // ── 重置行配置，5行内容每行固定40px
+            layout.RowCount = 6;
+            layout.RowStyles.Clear();
+            for (int i = 0; i < layout.RowCount; i++)
+                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+
             int row = 0;
 
-            // 从站地址 - 添加正整数验证
+            // ── 第0行：从站地址 + 串口
             AddConfigRow(layout, row, "从站地址:", "SlaveAddress", "1", 0, ValidationType.PositiveInteger);
             AddConfigComboBox(layout, row++, "串口:", "PortName",
                 GetAvailablePorts(), "COM1", 2, allowCustomInput: true);
 
+            // ── 第1行：波特率 + 数据位
             AddConfigComboBox(layout, row, "波特率:", "BaudRate",
                 BaudRates, 9600, 0, allowCustomInput: true);
             AddConfigComboBox(layout, row++, "数据位:", "DataBits", DataBitsList, 8, 2);
 
+            // ── 第2行：停止位 + 校验位
             AddConfigComboBox(layout, row, "停止位:", "StopBits",
                 Enum.GetValues(typeof(StopBitsType)), StopBitsType.One, 0);
             AddConfigComboBox(layout, row++, "校验位:", "Parity",
                 Enum.GetValues(typeof(ParityType)), ParityType.None, 2);
 
-            AddConfigComboBox(layout, row, "字节序:", "ByteOrder", ByteOrders, "BigEndian", 0);
-            // 读取超时 - 添加超时验证
+            // ── 第3行：字节序 + 读取超时
+            AddConfigComboBox(layout, row, "字节序:", "ByteOrder",
+                Enum.GetValues(typeof(ByteOrder)), ByteOrder.BigEndian, 0);
             AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2, ValidationType.Timeout);
+
+            // ── 第4行：字节交换 + 字交换
+            AddConfigCheckBox(layout, row, "字节交换:", "SwapBytes", false, 0);
+            AddConfigCheckBox(layout, row++, "字交换:", "SwapWords", false, 2);
         }
 
         private void CreateModbusTcpConfigControls(TableLayoutPanel layout)
         {
             int row = 0;
 
-            AddConfigRow(layout, row, "从站地址:", "SlaveAddress", "1", 0);
-            AddConfigRow(layout, row++, "IP地址:", "IpAddress", "192.168.1.100", 2);
+            AddConfigRow(layout, row, "从站地址:", "SlaveAddress", "1", 0, ValidationType.PositiveInteger);
+            // 加 IP 地址格式验证
+            AddConfigRow(layout, row++, "IP地址:", "IpAddress", "192.168.1.100", 2, ValidationType.IpAddress);
 
-            AddConfigRow(layout, row, "端口:", "Port", "502", 0);
-            AddConfigComboBox(layout, row++, "字节序:", "ByteOrder", ByteOrders, "BigEndian", 2);
+            // 加端口号验证
+            AddConfigRow(layout, row, "端口:", "Port", "502", 0, ValidationType.Port);
+            // ByteOrder 使用枚举
+            AddConfigComboBox(layout, row++, "字节序:", "ByteOrder",
+                Enum.GetValues(typeof(ByteOrder)), ByteOrder.BigEndian, 2);
 
-            AddConfigRow(layout, row, "连接超时:", "ConnectionTimeout", "5000", 0);
-            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
+            AddConfigRow(layout, row, "连接超时:", "ConnectionTimeout", "5000", 0, ValidationType.Timeout);
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2, ValidationType.Timeout);
+
+            AddConfigCheckBox(layout, row, "字节交换:", "SwapBytes", false, 0);
+            AddConfigCheckBox(layout, row++, "字交换:", "SwapWords", false, 2);
         }
+
 
         private void CreateHttpConfigControls(TableLayoutPanel layout)
         {
             int row = 0;
 
-            // 基础URL - 添加URL验证
+            // 基础 URL
             AddConfigRow(layout, row++, "基础URL:", "BaseUrl",
                 "http://192.168.0.100", 0, ValidationType.Url);
 
+            // 认证类型 + 内容类型
             AddConfigComboBox(layout, row, "认证类型:", "AuthType",
                 AuthTypes, "None", 0, allowCustomInput: false);
             AddConfigComboBox(layout, row++, "内容类型:", "ContentType",
                 ContentTypes, "application/json", 2, allowCustomInput: true);
 
-            AddConfigRow(layout, row, "用户名:", "Username", "", 0);
-            AddConfigRow(layout, row++, "密码:", "Password", "", 2);
+            // ── 动态认证区域（Basic：用户名/密码；Bearer：Token）────────────────
+            // 使用一个跨 4 列的 Panel 容器承载动态内容
+            _httpAuthPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Fill,
+                Height = 40,
+                Padding = new Padding(0)
+            };
+
+            // Basic 认证控件（默认隐藏）
+            var basicLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 4,
+                RowCount = 1,
+                Visible = false,
+                Name = "basicLayout"
+            };
+            basicLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+            basicLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            basicLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+            basicLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+
+            // 用户名
+            var lblUser = new Label { Text = "用户名:", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("微软雅黑", 11F) };
+            var txtUser = new UITextBox { Dock = DockStyle.Fill, Name = "Username" };
+            _protocolControls["Username"] = txtUser;
+
+            // 密码
+            var lblPwd = new Label { Text = "密码:", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("微软雅黑", 11F) };
+            var txtPwd = new UITextBox { Dock = DockStyle.Fill, Name = "Password", PasswordChar = '●' };
+            _protocolControls["Password"] = txtPwd;
+
+            basicLayout.Controls.Add(lblUser, 0, 0);
+            basicLayout.Controls.Add(txtUser, 1, 0);
+            basicLayout.Controls.Add(lblPwd, 2, 0);
+            basicLayout.Controls.Add(txtPwd, 3, 0);
+
+            // Bearer 认证控件（默认隐藏）
+            var bearerLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Visible = false,
+                Name = "bearerLayout"
+            };
+            bearerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+            bearerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+            var lblToken = new Label { Text = "Token:", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("微软雅黑", 11F) };
+            var txtToken = new UITextBox { Dock = DockStyle.Fill, Name = "BearerToken" };
+            _protocolControls["BearerToken"] = txtToken;
+
+            bearerLayout.Controls.Add(lblToken, 0, 0);
+            bearerLayout.Controls.Add(txtToken, 1, 0);
+
+            _httpAuthPanel.Controls.Add(basicLayout);
+            _httpAuthPanel.Controls.Add(bearerLayout);
+
+            // 跨 4 列放入动态认证 Panel
+            layout.SetColumnSpan(_httpAuthPanel, 4);
+            layout.Controls.Add(_httpAuthPanel, 0, row++);
+
+            // ── AuthType 变化时联动切换认证区域
+            if (_protocolControls.TryGetValue("AuthType", out var authCtrl) && authCtrl is UIComboBox cboAuth)
+            {
+                cboAuth.SelectedIndexChanged += (s, e) =>
+                {
+                    var selected = cboAuth.SelectedItem?.ToString() ?? "None";
+                    basicLayout.Visible = selected == "Basic";
+                    bearerLayout.Visible = selected == "Bearer";
+                };
+            }
         }
 
         private void CreateUdpConfigControls(TableLayoutPanel layout)
         {
             int row = 0;
 
-            AddConfigRow(layout, row, "远程IP:", "RemoteIpAddress", "192.168.1.100", 0);
-            AddConfigRow(layout, row++, "远程端口:", "RemotePort", "5000", 2);
+            AddConfigRow(layout, row, "远程IP:", "RemoteIpAddress", "192.168.1.100", 0, ValidationType.IpAddress);
+            AddConfigRow(layout, row++, "远程端口:", "RemotePort", "5000", 2, ValidationType.Port);
 
             AddConfigRow(layout, row, "本地端口:", "LocalPort", "0", 0);
-            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2);
+            AddConfigRow(layout, row++, "读取超时:", "ReadTimeout", "3000", 2, ValidationType.Timeout);
+
+            // ConnectionTimeout
+            AddConfigRow(layout, row, "连接超时:", "ConnectionTimeout", "5000", 0, ValidationType.Timeout);
+        }
+
+        /// <summary>
+        /// 加载数据后手动同步认证区域可见性
+        /// </summary>
+        /// <param name="authType"></param>
+        private void TriggerHttpAuthTypeChange(string authType)
+        {
+            if (_httpAuthPanel == null) return;
+
+            var basicLayout = _httpAuthPanel.Controls.Find("basicLayout", false).FirstOrDefault();
+            var bearerLayout = _httpAuthPanel.Controls.Find("bearerLayout", false).FirstOrDefault();
+
+            if (basicLayout != null) basicLayout.Visible = authType == "Basic";
+            if (bearerLayout != null) bearerLayout.Visible = authType == "Bearer";
+        }
+
+        private void AddConfigCheckBox(TableLayoutPanel layout, int row, string label,
+                                string name, bool defaultValue, int col = 0)
+        {
+            var lbl = new Label
+            {
+                Text = label,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleRight,
+                Font = new Font("微软雅黑", 11F)
+            };
+
+            var chk = new UICheckBox
+            {
+                Name = name,
+                CheckBoxSize = 20,
+                Checked = defaultValue,
+                Text = "",
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Bottom,
+                Margin = new Padding(3, 0, 0, 0),   // 左边距与文本框对齐
+                AutoSize = false,
+                Width = 24,
+                Height = 24
+            };
+
+            layout.Controls.Add(lbl, col, row);
+            layout.Controls.Add(chk, col + 1, row);
+
+            _protocolControls[name] = chk;
         }
 
         #endregion
@@ -545,9 +742,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             _protocolControls[name] = txt;
         }
 
-        // 支持下拉框的重载方法
         /// <summary>
-        /// 添加下拉框配置行
+        /// 添加下拉框配置行,支持下拉框的重载方法
         /// </summary>
         /// <param name="allowCustomInput">是否允许用户手动输入（默认false只能选择）</param>
         private void AddConfigComboBox(TableLayoutPanel layout, int row, string label,
@@ -565,22 +761,30 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 Dock = DockStyle.Fill,
                 Name = name,
-                // 根据参数决定是否允许手动输入
                 DropDownStyle = allowCustomInput ? UIDropDownStyle.DropDown : UIDropDownStyle.DropDownList
             };
 
             switch (dataSource)
             {
-                // 根据数据源类型设置下拉框
-                // 枚举类型
                 case Array enumArray:
                     {
-                        cbo.DataSource = enumArray;
+                        // 枚举数组：包装成 DisplayItem 列表，显示 Description，值保留枚举
+                        var items = enumArray.Cast<object>()
+                            .Select(e => new EnumDisplayItem(e))
+                            .ToList();
+                        cbo.DataSource = items;
+                        cbo.DisplayMember = nameof(EnumDisplayItem.DisplayName);
+                        cbo.ValueMember = nameof(EnumDisplayItem.Value);
+
                         if (defaultValue != null)
-                            cbo.SelectedItem = defaultValue;
+                        {
+                            var match = items.FirstOrDefault(i => i.Value.Equals(defaultValue));
+                            if (match != null)
+                                cbo.SelectedItem = match;
+                        }
                         break;
                     }
-                // 字符串列表
+
                 case IEnumerable<string> stringList:
                     {
                         cbo.DataSource = new List<string>(stringList);
@@ -590,12 +794,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                             if (index >= 0)
                                 cbo.SelectedIndex = index;
                             else if (allowCustomInput)
-                                cbo.Text = defaultValue.ToString(); // 允许输入时直接设置文本
+                                cbo.Text = defaultValue.ToString();
                         }
-
                         break;
                     }
-                // 整数列表
+
                 case IEnumerable<int> intList:
                     {
                         cbo.DataSource = new List<int>(intList);
@@ -606,9 +809,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                             if (index >= 0)
                                 cbo.SelectedIndex = index;
                             else if (allowCustomInput)
-                                cbo.Text = value.ToString(); // 允许输入时直接设置文本
+                                cbo.Text = value.ToString();
                         }
-
                         break;
                     }
             }
@@ -633,8 +835,18 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 case UIComboBox cbo:
                     if (value is Enum enumValue)
                     {
-                        // 枚举类型直接设置
-                        cbo.SelectedItem = enumValue;
+                        // 数据源是 EnumDisplayItem 时，按 Value 匹配
+                        if (cbo.DataSource is List<EnumDisplayItem> items)
+                        {
+                            var match = items.FirstOrDefault(i => i.Value.Equals(enumValue));
+                            if (match != null)
+                                cbo.SelectedItem = match;
+                        }
+                        else
+                        {
+                            // 原来的逻辑，数据源是原始枚举数组时
+                            cbo.SelectedItem = enumValue;
+                        }
                     }
                     else if (value is int intValue && cbo.DataSource is List<int>)
                     {
@@ -667,6 +879,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             }
         }
 
+        /// <summary>
+        /// 从协议配置控件字典中读取控件的值并转换为目标类型
+        /// 支持：UITextBox、UIComboBox、UICheckBox
+        /// </summary>
         private T GetControlValue<T>(string name, T defaultValue = default)
         {
             if (!_protocolControls.TryGetValue(name, out var control))
@@ -683,34 +899,50 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                         if (cbo.SelectedItem == null)
                             return defaultValue;
 
-                        // 如果目标类型是枚举且选中项也是枚举
+                        // 数据源是 EnumDisplayItem（枚举中文显示）时，从 Value 取枚举
+                        if (cbo.SelectedItem is EnumDisplayItem displayItem)
+                        {
+                            if (typeof(T).IsEnum)
+                                return (T)displayItem.Value;
+                            // 非枚举目标类型，走文本转换
+                            return ConvertValue<T>(displayItem.DisplayName, defaultValue);
+                        }
+
+                        // 目标类型是枚举且选中项也是枚举
                         if (typeof(T).IsEnum && cbo.SelectedItem is Enum)
                             return (T)cbo.SelectedItem;
 
-                        // 如果目标类型是 int 且选中项是 int
-                        if (typeof(T) == typeof(int) && cbo.SelectedItem is int)
-                            return (T)cbo.SelectedItem;
+                        // 目标类型是枚举但选中项是字符串（兼容旧字符串数据源）
+                        if (typeof(T).IsEnum && cbo.SelectedItem is string enumStr)
+                        {
+                            if (Enum.TryParse(typeof(T), enumStr, true, out var parsed))
+                                return (T)parsed;
+                            return defaultValue;
+                        }
 
-                        // 如果目标类型是 string
-                        if (typeof(T) == typeof(string))
-                            return (T)(object)cbo.SelectedItem.ToString();
+                        // 目标类型是 int 且选中项是 int
+                        if (typeof(T) == typeof(int) && cbo.SelectedItem is int intItem)
+                            return (T)(object)intItem;
 
-                        // 尝试转换选中项的字符串表示
-                        return ConvertValue<T>(cbo.SelectedItem.ToString(), defaultValue);
+                        // 其他情况走文本转换
+                        return ConvertValue<T>(cbo.SelectedItem?.ToString(), defaultValue);
 
+                    // UICheckBox 支持
                     case UICheckBox chk:
                         if (typeof(T) == typeof(bool))
                             return (T)(object)chk.Checked;
-                        break;
+                        return defaultValue;
+
+                    default:
+                        return defaultValue;
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                _logger?.LogWarning(ex, $"获取控件 {name} 的值失败，使用默认值");
+                return defaultValue;
             }
-
-            return defaultValue;
         }
+
 
         // 辅助转换方法
         private T ConvertValue<T>(string text, T defaultValue)
@@ -811,40 +1043,61 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                         StopBits = GetControlValue<StopBitsType>("StopBits", StopBitsType.One),
                         Parity = GetControlValue<ParityType>("Parity", ParityType.None),
                         FlowControl = GetControlValue<FlowControlType>("FlowControl", FlowControlType.None),
+                        ConnectionTimeout = GetControlValue<int>("ConnectionTimeout", 5000),
                         ReadTimeout = GetControlValue<int>("ReadTimeout", 3000)
                     };
 
                 case ProtocolType.ModbusTcp:
-                    var modbusTcp = new ModbusProtocolConfig();
-                    modbusTcp.SetModbusType(true); // TCP模式
-                    modbusTcp.SlaveAddress = GetControlValue<byte>("SlaveAddress", 1);
-                    modbusTcp.IpAddress = GetControlValue<string>("IpAddress");
-                    modbusTcp.Port = GetControlValue<int>("Port", 502);
-                    modbusTcp.ByteOrder = GetControlValue<ByteOrder>("ByteOrder", ByteOrder.BigEndian);
-                    modbusTcp.ReadTimeout = GetControlValue<int>("ReadTimeout", 3000);
-                    return modbusTcp;
+                    {
+                        var cfg = new ModbusProtocolConfig();
+                        cfg.SetModbusType(true);
+                        cfg.SlaveAddress = GetControlValue<byte>("SlaveAddress", 1);
+                        cfg.IpAddress = GetControlValue<string>("IpAddress");
+                        cfg.Port = GetControlValue<int>("Port", 502);
+                        cfg.ByteOrder = GetControlValue<ByteOrder>("ByteOrder", ByteOrder.BigEndian);
+                        cfg.ConnectionTimeout = GetControlValue<int>("ConnectionTimeout", 5000);
+                        cfg.ReadTimeout = GetControlValue<int>("ReadTimeout", 3000);
+                        cfg.SwapBytes = GetControlValue<bool>("SwapBytes", false);
+                        cfg.SwapWords = GetControlValue<bool>("SwapWords", false);
+                        return cfg;
+                    }
 
                 case ProtocolType.ModbusRtu:
-                    var modbusRtu = new ModbusProtocolConfig();
-                    modbusRtu.SetModbusType(false); // RTU模式
-                    modbusRtu.SlaveAddress = GetControlValue<byte>("SlaveAddress", 1);
-                    modbusRtu.PortName = GetControlValue<string>("PortName");
-                    modbusRtu.BaudRate = GetControlValue<int>("BaudRate", 9600);
-                    modbusRtu.DataBits = GetControlValue<int>("DataBits", 8);
-                    modbusRtu.StopBits = GetControlValue<StopBitsType>("StopBits", StopBitsType.One);
-                    modbusRtu.Parity = GetControlValue<ParityType>("Parity", ParityType.None);
-                    modbusRtu.ByteOrder = GetControlValue<ByteOrder>("ByteOrder", ByteOrder.BigEndian);
-                    modbusRtu.ReadTimeout = GetControlValue<int>("ReadTimeout", 3000);
-                    return modbusRtu;
+                    {
+                        var cfg = new ModbusProtocolConfig();
+                        cfg.SetModbusType(false);
+                        cfg.SlaveAddress = GetControlValue<byte>("SlaveAddress", 1);
+                        cfg.PortName = GetControlValue<string>("PortName");
+                        cfg.BaudRate = GetControlValue<int>("BaudRate", 9600);
+                        cfg.DataBits = GetControlValue<int>("DataBits", 8);
+                        cfg.StopBits = GetControlValue<StopBitsType>("StopBits", StopBitsType.One);
+                        cfg.Parity = GetControlValue<ParityType>("Parity", ParityType.None);
+                        cfg.ByteOrder = GetControlValue<ByteOrder>("ByteOrder", ByteOrder.BigEndian);
+                        cfg.ReadTimeout = GetControlValue<int>("ReadTimeout", 3000);
+                        cfg.SwapBytes = GetControlValue<bool>("SwapBytes", false);
+                        cfg.SwapWords = GetControlValue<bool>("SwapWords", false);
+                        return cfg;
+                    }
 
                 case ProtocolType.Http:
                     return new HttpProtocolConfig
                     {
                         BaseUrl = GetControlValue<string>("BaseUrl"),
-                        //AuthType = GetControlValue<HttpAuthType>("AuthType", HttpAuthType.None),
+                        AuthType = GetControlValue<string>("AuthType", "None"),
                         Username = GetControlValue<string>("Username"),
                         Password = GetControlValue<string>("Password"),
+                        BearerToken = GetControlValue<string>("BearerToken"),
                         ContentType = GetControlValue<string>("ContentType", "application/json")
+                    };
+
+                case ProtocolType.Udp:
+                    return new UdpProtocolConfig
+                    {
+                        RemoteIpAddress = GetControlValue<string>("RemoteIpAddress"),
+                        RemotePort = GetControlValue<int>("RemotePort", 5000),
+                        LocalPort = GetControlValue<int>("LocalPort", 0),
+                        ConnectionTimeout = GetControlValue<int>("ConnectionTimeout", 5000),
+                        ReadTimeout = GetControlValue<int>("ReadTimeout", 3000)
                     };
 
                 default:
@@ -1310,6 +1563,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             // 协议配置检查
             var protocolType = (ProtocolType)(cboProtocolType.SelectedValue ?? ProtocolType.TcpIp);
+
             switch (protocolType)
             {
                 case ProtocolType.TcpIp:
@@ -1319,6 +1573,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                         return false;
                     }
                     break;
+
                 case ProtocolType.Serial:
                     if (string.IsNullOrWhiteSpace(GetControlValue<string>("PortName")))
                     {
@@ -1326,11 +1581,46 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                         return false;
                     }
                     break;
+
                 case ProtocolType.ModbusTcp:
-                case ProtocolType.ModbusRtu:
-                case ProtocolType.Http:
-                case ProtocolType.Udp:
+                    if (string.IsNullOrWhiteSpace(GetControlValue<string>("IpAddress")))
+                    {
+                        MessageHelper.MessageOK(this, "请输入 Modbus TCP 的 IP 地址");
+                        return false;
+                    }
                     break;
+
+                case ProtocolType.ModbusRtu:
+                    if (string.IsNullOrWhiteSpace(GetControlValue<string>("PortName")))
+                    {
+                        MessageHelper.MessageOK(this, "请选择 Modbus RTU 的串口");
+                        return false;
+                    }
+                    break;
+
+                case ProtocolType.Http:
+                    if (string.IsNullOrWhiteSpace(GetControlValue<string>("BaseUrl")))
+                    {
+                        MessageHelper.MessageOK(this, "请输入基础 URL");
+                        return false;
+                    }
+                    // Bearer 认证时 Token 不能为空
+                    if (GetControlValue<string>("AuthType") == "Bearer" &&
+                        string.IsNullOrWhiteSpace(GetControlValue<string>("BearerToken")))
+                    {
+                        MessageHelper.MessageOK(this, "Bearer 认证需要填写 Token");
+                        return false;
+                    }
+                    break;
+
+                case ProtocolType.Udp:
+                    if (string.IsNullOrWhiteSpace(GetControlValue<string>("RemoteIpAddress")))
+                    {
+                        MessageHelper.MessageOK(this, "请输入远程 IP 地址");
+                        return false;
+                    }
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -1358,12 +1648,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         // 数据位列表
         private static readonly List<int> DataBitsList = new() { 5, 6, 7, 8 };
-
-        // 字节序选项
-        private static readonly List<string> ByteOrders = new()
-        {
-            "BigEndian", "LittleEndian"
-        };
 
         // HTTP认证类型
         private static readonly List<string> AuthTypes = new()
@@ -1436,6 +1720,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             NotEmpty        // 非空
         }
 
+       
         /// <summary>
         /// 验证文本框内容
         /// </summary>
@@ -1540,5 +1825,24 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         #endregion
 
         #endregion
+    }
+
+    /// <summary>
+    /// 枚举下拉框显示项，将枚举的 Description 作为显示文本
+    /// </summary>
+    internal class EnumDisplayItem
+    {
+        public object Value { get; }
+        public string DisplayName { get; }
+
+        public EnumDisplayItem(object enumValue)
+        {
+            Value = enumValue;
+            // 读取 [Description] 特性，没有则 fallback 到枚举名
+            var fi = enumValue.GetType().GetField(enumValue.ToString());
+            var attr = fi?.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+                           .FirstOrDefault() as System.ComponentModel.DescriptionAttribute;
+            DisplayName = attr?.Description ?? enumValue.ToString();
+        }
     }
 }
