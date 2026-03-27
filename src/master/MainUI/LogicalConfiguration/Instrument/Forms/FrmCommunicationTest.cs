@@ -17,7 +17,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             InitializeUI();
         }
 
-
         private void InitializeUI()
         {
             // 协议类型下拉
@@ -44,8 +43,16 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             _cts = new CancellationTokenSource();
         }
 
-        private void cboProtocolType_SelectedIndexChanged(object sender, EventArgs e)
+        // 切换协议时先断开当前连接
+        private async void cboProtocolType_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // 如果当前已连接，先断开再切换UI
+            if (_isConnected)
+            {
+                AppendLog("系统", "切换协议类型，正在断开当前连接...", Color.Gray);
+                await DisconnectAsync();
+            }
+
             UpdateConfigPanel();
         }
 
@@ -54,8 +61,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             if (cboProtocolType.SelectedValue is ProtocolType pt)
                 return pt;
-
-            // 默认返回TcpIp
             return ProtocolType.TcpIp;
         }
 
@@ -63,7 +68,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         {
             pnlConfig.Controls.Clear();
 
-            // 根据选择的文本判断协议类型
             var protocolType = cboProtocolType.SelectedIndex == 0
                 ? ProtocolType.TcpIp
                 : ProtocolType.Serial;
@@ -78,7 +82,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             }
         }
 
-
         private void CreateTcpConfigPanel()
         {
             var layout = new TableLayoutPanel
@@ -89,7 +92,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 Padding = new Padding(10)
             };
 
-            // 设置列宽
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
@@ -135,47 +137,44 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             int row = 0;
 
-            // 串口号
-            var lblPort = new UILabel { Text = "串口:", TextAlign = ContentAlignment.MiddleRight };
-            var cboPortName = new UIComboBox { Name = "cboPortName", DropDownStyle = (UIDropDownStyle)ComboBoxStyle.DropDownList };
-            cboPortName.Items.AddRange(System.IO.Ports.SerialPort.GetPortNames());
-            if (cboPortName.Items.Count > 0) cboPortName.SelectedIndex = 0;
+            // 串口名
+            var lblPort = new UILabel { Text = "串口:", TextAlign = ContentAlignment.MiddleRight, AutoSize = true };
+            var cboPort = new UIComboBox { Name = "cboPortName", DropDownStyle = (UIDropDownStyle)ComboBoxStyle.DropDownList };
+            cboPort.Items.AddRange(System.IO.Ports.SerialPort.GetPortNames());
+            if (cboPort.Items.Count > 0) cboPort.SelectedIndex = 0;
             layout.Controls.Add(lblPort, 0, row);
-            layout.Controls.Add(cboPortName, 1, row);
+            layout.Controls.Add(cboPort, 1, row);
 
             // 波特率
-            var lblBaudRate = new UILabel { Text = "波特率:", TextAlign = ContentAlignment.MiddleRight };
-            var cboBaudRate = new UIComboBox { Name = "cboBaudRate", DropDownStyle = (UIDropDownStyle)ComboBoxStyle.DropDownList };
-            cboBaudRate.Items.AddRange(new object[] { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 });
-            cboBaudRate.SelectedItem = 9600;
-            layout.Controls.Add(lblBaudRate, 2, row);
-            layout.Controls.Add(cboBaudRate, 3, row);
+            var lblBaud = new UILabel { Text = "波特率:", TextAlign = ContentAlignment.MiddleRight, AutoSize = true };
+            var cboBaud = new UIComboBox { Name = "cboBaudRate", DropDownStyle = (UIDropDownStyle)ComboBoxStyle.DropDownList };
+            cboBaud.Items.AddRange(new object[] { 9600, 19200, 38400, 57600, 115200 });
+            cboBaud.SelectedItem = 9600;
+            layout.Controls.Add(lblBaud, 2, row);
+            layout.Controls.Add(cboBaud, 3, row);
+
             row++;
 
             // 数据位
-            var lblDataBits = new UILabel { Text = "数据位:", TextAlign = ContentAlignment.MiddleRight };
+            var lblDataBits = new UILabel { Text = "数据位:", TextAlign = ContentAlignment.MiddleRight, AutoSize = true };
             var cboDataBits = new UIComboBox { Name = "cboDataBits", DropDownStyle = (UIDropDownStyle)ComboBoxStyle.DropDownList };
-            cboDataBits.Items.AddRange(new object[] { 5, 6, 7, 8 });
+            cboDataBits.Items.AddRange(new object[] { 7, 8 });
             cboDataBits.SelectedItem = 8;
             layout.Controls.Add(lblDataBits, 0, row);
             layout.Controls.Add(cboDataBits, 1, row);
 
             // 停止位
-            var lblStopBits = new UILabel { Text = "停止位:", TextAlign = ContentAlignment.MiddleRight };
+            var lblStopBits = new UILabel { Text = "停止位:", TextAlign = ContentAlignment.MiddleRight, AutoSize = true };
             var cboStopBits = new UIComboBox { Name = "cboStopBits", DropDownStyle = (UIDropDownStyle)ComboBoxStyle.DropDownList };
             cboStopBits.DataSource = Enum.GetValues(typeof(StopBitsType));
             cboStopBits.SelectedItem = StopBitsType.One;
             layout.Controls.Add(lblStopBits, 2, row);
             layout.Controls.Add(cboStopBits, 3, row);
+
             row++;
 
             // 校验位
-            var lblParity = new UILabel
-            {
-                Text = "校验位:",
-                TextAlign = ContentAlignment.MiddleRight,
-                //AutoSize = true
-            };
+            var lblParity = new UILabel { Text = "校验位:", TextAlign = ContentAlignment.MiddleRight, AutoSize = true };
             var cboParity = new UIComboBox { Name = "cboParity", DropDownStyle = (UIDropDownStyle)ComboBoxStyle.DropDownList };
             cboParity.DataSource = Enum.GetValues(typeof(ParityType));
             cboParity.SelectedItem = ParityType.None;
@@ -202,12 +201,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             {
                 if (_isConnected)
                 {
-                    // 断开连接
                     await DisconnectAsync();
                 }
                 else
                 {
-                    // 连接
                     await ConnectAsync();
                 }
             }
@@ -219,7 +216,6 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private async Task ConnectAsync()
         {
-            // 根据选择的文本判断协议类型
             var protocolType = cboProtocolType.SelectedIndex == 0
                 ? ProtocolType.TcpIp
                 : ProtocolType.Serial;
@@ -238,7 +234,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 };
                 _provider = new TcpCommunicationProvider();
             }
-            else // Serial
+            else
             {
                 config = new SerialProtocolConfig
                 {
@@ -271,6 +267,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             }
             else
             {
+                // 连接失败时也要清理 provider
+                _provider?.Dispose();
+                _provider = null;
                 AppendLog("错误", "连接失败", Color.Red);
             }
 
@@ -325,7 +324,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 {
                     var result = await _provider.SendAndReceiveAsync(
                         data,
-                        null,  // 简单测试不使用FrameConfig
+                        null,
                         timeout,
                         true,
                         _cts.Token);
@@ -339,22 +338,16 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                     }
                     else
                     {
-                        AppendLog("错误", result.ErrorMessage ?? "接收失败", Color.Red);
+                        AppendLog("错误", result.ErrorMessage ?? "未知错误", Color.Red);
                     }
                 }
                 else
                 {
                     var success = await _provider.SendAsync(data, _cts.Token);
                     sw.Stop();
-
-                    if (success)
-                    {
-                        AppendLog("统计", $"发送成功, 耗时: {sw.ElapsedMilliseconds}ms", Color.Gray);
-                    }
-                    else
-                    {
-                        AppendLog("错误", "发送失败", Color.Red);
-                    }
+                    AppendLog(success ? "系统" : "错误",
+                        success ? $"发送成功, 耗时: {sw.ElapsedMilliseconds}ms" : "发送失败",
+                        success ? Color.Gray : Color.Red);
                 }
             }
             catch (Exception ex)
@@ -373,19 +366,16 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
             try
             {
-                AppendLog("系统", "等待接收数据...", Color.Gray);
-
                 int timeout = (int)nudTimeout.Value;
                 var data = await _provider.ReceiveAsync(null, timeout, _cts.Token);
 
                 if (data != null && data.Length > 0)
                 {
                     AppendLog("接收", FormatData(data), Color.Green);
-                    AppendLog("统计", $"接收字节: {data.Length}", Color.Gray);
                 }
                 else
                 {
-                    AppendLog("提示", "未接收到数据", Color.Orange);
+                    AppendLog("系统", "未接收到数据", Color.Gray);
                 }
             }
             catch (Exception ex)
@@ -396,24 +386,20 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
 
         private byte[] ParseSendData()
         {
-            string text = txtSendData.Text.Trim();
-            bool isHex = cboDataFormat.SelectedItem.ToString() == "HEX";
+            string text = txtSendData.Text;
 
-            if (isHex)
+            if (cboDataFormat.SelectedIndex == 1) // HEX
             {
-                // HEX格式: "01 03 00 00 00 0A" 或 "010300000A"
                 text = text.Replace(" ", "").Replace("-", "");
-
-                if (text.Length % 2 != 0)
-                    throw new ArgumentException("HEX数据长度必须为偶数");
-
-                return Enumerable.Range(0, text.Length / 2)
-                    .Select(x => Convert.ToByte(text.Substring(x * 2, 2), 16))
-                    .ToArray();
+                var bytes = new byte[text.Length / 2];
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = Convert.ToByte(text.Substring(i * 2, 2), 16);
+                }
+                return bytes;
             }
-            else
+            else // ASCII
             {
-                // ASCII格式
                 return Encoding.ASCII.GetBytes(text);
             }
         }
@@ -421,26 +407,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
         private string FormatData(byte[] data)
         {
             if (data == null || data.Length == 0)
-                return "[空]";
+                return "(空)";
 
-            bool isHex = cboDataFormat.SelectedItem.ToString() == "HEX";
-
-            if (isHex)
+            if (cboDataFormat.SelectedIndex == 1) // HEX
             {
                 return BitConverter.ToString(data).Replace("-", " ");
             }
-            else
+            else // ASCII
             {
-                // ASCII 显示,不可见字符用HEX表示
-                var sb = new StringBuilder();
-                foreach (byte b in data)
-                {
-                    if (b >= 32 && b <= 126)
-                        sb.Append((char)b);
-                    else
-                        sb.Append($"<{b:X2}>");
-                }
-                return sb.ToString();
+                return Encoding.ASCII.GetString(data);
             }
         }
 
@@ -453,19 +428,12 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             }
 
             rtbLog.SelectionStart = rtbLog.TextLength;
-            rtbLog.SelectionLength = 0;
-
-            // 时间戳
             rtbLog.SelectionColor = Color.Gray;
             rtbLog.AppendText($"[{DateTime.Now:HH:mm:ss.fff}] ");
 
-            // 类型标签
             rtbLog.SelectionColor = GetTypeColor(type);
-            rtbLog.SelectionFont = new Font(rtbLog.Font, FontStyle.Bold);
             rtbLog.AppendText($"[{type}] ");
-            rtbLog.SelectionFont = rtbLog.Font;
 
-            // 消息内容
             rtbLog.SelectionColor = color;
             rtbLog.AppendText(message + "\n");
 
@@ -520,13 +488,34 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
             return default(T);
         }
 
-        private void FrmCommunicationTest_FormClosing(object sender, FormClosingEventArgs e)
+        // FormClosing 正确 await 断开连接
+        // 原代码直接 _provider?.Dispose()，没有先断开，可能导致:
+        // 1. TCP 没有优雅断开（发送 FIN），远端感知为异常
+        // 2. 如果有正在进行的 async 操作，Dispose 和 async 操作竞态
+        private async void FrmCommunicationTest_FormClosing(object sender, FormClosingEventArgs e)
         {
+            // 先取消所有正在进行的操作
             _cts?.Cancel();
-            _provider?.Dispose();
+
+            // 等待断开连接
+            if (_provider != null)
+            {
+                try
+                {
+                    await _provider.DisconnectAsync();
+                }
+                catch
+                {
+                    // 关闭时忽略断开异常
+                }
+                finally
+                {
+                    _provider.Dispose();
+                    _provider = null;
+                }
+            }
         }
     }
-
 
     /// <summary>
     /// 协议类型选项

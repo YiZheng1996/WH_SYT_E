@@ -27,7 +27,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
         private readonly IInstrumentDriverService _driverService = driverService ?? throw new ArgumentNullException(nameof(driverService));
         private readonly GlobalVariableManager _variableManager = variableManager ?? throw new ArgumentNullException(nameof(variableManager));
         private readonly ExpressionEngine _expressionEngine = expressionEngine ?? throw new ArgumentNullException(nameof(expressionEngine));
-        private readonly CommunicationProviderFactory _providerFactory = new();
+
+        // 使用单例工厂，确保全局共享同一个 provider 缓存
+        private readonly CommunicationProviderFactory _providerFactory = CommunicationProviderFactory.Instance;
 
         #endregion
 
@@ -811,12 +813,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
 
         /// <summary>
         /// 测试仪器连接
+        /// 使用 CreateProvider 创建临时 provider，避免断开运行时的共享连接
         /// </summary>
         public async Task<CommunicationResult> TestConnectionAsync(
             string driverId,
             ProtocolConfigBase overrideConfig = null,
             CancellationToken cancellationToken = default)
         {
+            ICommunicationProvider testProvider = null;
+
             try
             {
                 var driver = await _driverService.GetDriverByIdAsync(driverId);
@@ -826,14 +831,19 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
                 }
 
                 var config = overrideConfig ?? driver.GetProtocolConfig();
-                var connectionId = GetConnectionId(config);
-                var provider = _providerFactory.GetOrCreateProvider(driver.ProtocolType, connectionId);
 
-                var connected = await provider.ConnectAsync(config, cancellationToken);
+                // 使用 CreateProvider 创建独立的测试 provider
+                // 原代码: var provider = _providerFactory.GetOrCreateProvider(driver.ProtocolType, connectionId);
+                // 这样做的问题是: GetOrCreateProvider 返回的是缓存中的共享 provider，
+                // 测试完毕后 DisconnectAsync 会断开正在运行的工作流连接
+                testProvider = _providerFactory.CreateProvider(driver.ProtocolType);
+
+                var connected = await testProvider.ConnectAsync(config, cancellationToken);
 
                 if (connected)
                 {
-                    await provider.DisconnectAsync();
+                    // 测试 provider 是独立的，断开不影响运行时连接
+                    await testProvider.DisconnectAsync();
                     return CommunicationResult.Successful("连接测试成功");
                 }
                 else
@@ -845,6 +855,23 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
             {
                 _logger.LogError(ex, "测试连接异常");
                 return CommunicationResult.Failed($"测试连接异常: {ex.Message}");
+            }
+            finally
+            {
+                // 确保测试 provider 被正确释放
+                if (testProvider != null)
+                {
+                    try
+                    {
+                        await testProvider.DisconnectAsync();
+                    }
+                    catch
+                    {
+                        /* 忽略断开异常 */
+                        _logger.LogError("测试连接异常");
+                    }
+                    testProvider.Dispose();
+                }
             }
         }
 

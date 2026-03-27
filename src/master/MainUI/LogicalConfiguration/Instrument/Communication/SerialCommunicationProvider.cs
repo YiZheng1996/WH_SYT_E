@@ -10,7 +10,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
     /// <summary>
     /// 串口通讯提供者
     /// ReceiveAsync 返回 null → Array.Empty；IsFrameComplete 支持终止符字符串；
-    ///       SendAndReceiveAsync 对空响应安全处理
+    /// SendAndReceiveAsync 对空响应安全处理
     /// </summary>
     public class SerialCommunicationProvider(ILogger logger = null) : ICommunicationProvider
     {
@@ -18,6 +18,11 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
         private SerialProtocolConfig _config;
         private readonly object _lockObject = new();
         private bool _disposed = false;
+
+        // 新增 SemaphoreSlim，确保发送-接收整个流程是原子操作
+        // 原来用 lock(_lockObject) 只锁了发送部分，接收在锁外面，
+        // 并发时两个线程可能交叉发送接收，导致数据错乱
+        private readonly SemaphoreSlim _sendReceiveLock = new(1, 1);
 
         public ProtocolType ProtocolType => ProtocolType.Serial;
         public bool IsConnected => _serialPort?.IsOpen ?? false;
@@ -75,7 +80,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                         StopBits = ConvertStopBits(config.StopBits),
                         Parity = ConvertParity(config.Parity),
                         ReadTimeout = config.ReadTimeout > 0 ? config.ReadTimeout : 30000,
-                        WriteTimeout = 30000,   // 固定值，不再从配置读取
+                        WriteTimeout = 30000,
                         ReceivedBytesThreshold = 1
                     };
 
@@ -111,6 +116,9 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
 
         // ── 发送并接收 ───────────────────────────────────────────────────────
 
+        /// <summary>
+        /// 整个发送-接收流程用 SemaphoreSlim 包裹，保证原子性
+        /// </summary>
         public async Task<CommunicationResult> SendAndReceiveAsync(
             byte[] data,
             FrameConfig frameConfig,
@@ -125,11 +133,15 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             };
             var sw = Stopwatch.StartNew();
 
+            // 用 SemaphoreSlim 锁住整个发送+接收流程
+            // 确保同一个串口上不会有两个线程交叉操作
+            await _sendReceiveLock.WaitAsync(cancellationToken);
             try
             {
                 if (!IsConnected)
                     return CommunicationResult.Failed("串口未打开");
 
+                // 清空缓冲区 + 发送（在 lock 内保证串口操作的线程安全）
                 lock (_lockObject)
                 {
                     _serialPort.DiscardInBuffer();
@@ -145,17 +157,26 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                     return result;
                 }
 
+                // 接收现在也在 SemaphoreSlim 保护内
                 var responseData = await ReceiveAsync(frameConfig, timeout, cancellationToken);
 
-                // ← 修复：将 null 视为空数组，避免 NullReferenceException
+                // 将 null 视为空数组，避免 NullReferenceException
                 responseData ??= Array.Empty<byte>();
 
                 result.RawResponse = responseData;
-                result.ResponseString = responseData.Length > 0 ? EncodingHelper.SmartDecode(responseData) : "";
+                result.ResponseString = responseData.Length > 0 ?
+                    EncodingHelper.SmartDecode(responseData) : "";
                 result.Success = responseData.Length > 0;
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
 
                 logger?.LogDebug("串口接收({Bytes}B): {Text}", responseData.Length, result.ResponseString);
+
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                result.ErrorMessage = "操作被取消";
+                result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
                 return result;
             }
             catch (Exception ex)
@@ -164,6 +185,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
                 logger?.LogError(ex, "串口通讯异常");
                 return result;
+            }
+            finally
+            {
+                _sendReceiveLock.Release();
             }
         }
 
@@ -174,7 +199,13 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             try
             {
                 if (!IsConnected) return Task.FromResult(false);
-                lock (_lockObject) { _serialPort.Write(data, 0, data.Length); }
+
+                lock (_lockObject)
+                {
+                    _serialPort.Write(data, 0, data.Length);
+                }
+
+                logger?.LogDebug("串口发送({Bytes}B)", data.Length);
                 return Task.FromResult(true);
             }
             catch (Exception ex)
@@ -193,56 +224,65 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(timeout);
 
-                var receivedData = new List<byte>(1024);
-                var buffer = new byte[1024];
+                using var ms = new MemoryStream();
+                var buffer = new byte[4096];
 
                 while (!cts.Token.IsCancellationRequested)
                 {
-                    int available;
-                    lock (_lockObject) { available = _serialPort.BytesToRead; }
+                    int bytesAvailable;
+                    lock (_lockObject)
+                    {
+                        bytesAvailable = _serialPort?.BytesToRead ?? 0;
+                    }
 
-                    if (available > 0)
+                    if (bytesAvailable > 0)
                     {
                         int bytesRead;
                         lock (_lockObject)
                         {
-                            bytesRead = _serialPort.Read(buffer, 0, Math.Min(buffer.Length, available));
+                            bytesRead = _serialPort.Read(buffer, 0, Math.Min(bytesAvailable, buffer.Length));
                         }
-                        if (bytesRead > 0) receivedData.AddRange(buffer.Take(bytesRead));
 
-                        if (IsFrameComplete(receivedData.ToArray(), frameConfig))
-                            break;
+                        ms.Write(buffer, 0, bytesRead);
+                        var data = ms.ToArray();
 
-                        // 帧未完整，继续等待
-                        await Task.Delay(10, cts.Token);
+                        // 帧完整性判断
+                        if (frameConfig == null || !frameConfig.Enabled || IsFrameComplete(data, frameConfig))
+                        {
+                            return data;
+                        }
                     }
                     else
                     {
-                        if (receivedData.Count > 0 && frameConfig?.Enabled != true)
+                        // 等待数据到达
+                        await Task.Delay(10, cts.Token);
+                    }
+
+                    // 如果已有数据但一段时间没有新数据，返回现有数据
+                    if (ms.Length > 0 && bytesAvailable == 0)
+                    {
+                        await Task.Delay(50, cts.Token);
+                        lock (_lockObject)
                         {
-                            // 无帧配置 → 等待50ms静默后认为完成
-                            await Task.Delay(50, cts.Token);
-                            lock (_lockObject) { available = _serialPort.BytesToRead; }
-                            if (available == 0) break;
-                        }
-                        else
-                        {
-                            await Task.Delay(10, cts.Token);
+                            if ((_serialPort?.BytesToRead ?? 0) == 0)
+                            {
+                                return ms.ToArray();
+                            }
                         }
                     }
                 }
 
-                return receivedData.ToArray();  // ← 始终返回 Array，不返回 null
+                return ms.Length > 0 ? ms.ToArray() : null;
             }
             catch (OperationCanceledException)
             {
-                logger?.LogDebug("串口接收超时/取消");
-                return Array.Empty<byte>();     // ← 修复：不返回 null
+                logger?.LogDebug("串口接收超时");
+                return null;
             }
             catch (Exception ex)
             {
                 logger?.LogError(ex, "串口接收异常");
-                return Array.Empty<byte>();
+                return null;
             }
         }
 
@@ -251,13 +291,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
         private static bool IsFrameComplete(byte[] data, FrameConfig config)
         {
             if (data == null || data.Length == 0) return false;
-            if (config == null || !config.Enabled) return false;
 
             // 1. 固定长度
             if (config.FixedResponseLength > 0)
+            {
                 return data.Length >= config.FixedResponseLength;
+            }
 
-            // 2. 终止符字符串（如 "\r\n"）← 修复：原来只支持帧尾Hex
+            // 2. 终止符字符串（如 "\r\n"）
             if (!string.IsNullOrEmpty(config.ResponseTerminator))
             {
                 var termBytes = Encoding.ASCII.GetBytes(
@@ -346,6 +387,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             if (_disposed) return;
             _disposed = true;
             lock (_lockObject) { SafeCloseSerialPort(); }
+            _sendReceiveLock.Dispose();
         }
     }
 }

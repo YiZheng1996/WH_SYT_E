@@ -17,10 +17,52 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
         private TcpClient _client;
         private NetworkStream _stream;
         private TcpProtocolConfig _config;
-        private readonly SemaphoreSlim _connectLock = new(1, 1);   // ← 用 SemaphoreSlim 替代 lock，支持 async
+        private readonly SemaphoreSlim _connectLock = new(1, 1);
 
         public ProtocolType ProtocolType => ProtocolType.TcpIp;
-        public bool IsConnected => _client?.Connected ?? false;
+
+        // ★ BUG #3 修复: 增强 IsConnected 判断
+        // TcpClient.Connected 只反映最后一次 I/O 操作的结果，
+        // 远端断开后该属性仍可能返回 true（半开连接）。
+        // 补充检查 _stream 是否为空、socket 是否存活。
+        public bool IsConnected
+        {
+            get
+            {
+                try
+                {
+                    if (_client == null || _stream == null)
+                        return false;
+
+                    if (!_client.Connected)
+                        return false;
+
+                    // 尝试通过 Poll 检测连接是否真的存活
+                    // Poll(0, SelectRead) = true + Available == 0 → 远端已关闭
+                    var socket = _client.Client;
+                    if (socket == null) return false;
+
+                    // 如果 socket 可读但没有数据，说明远端已关闭（FIN 已到达）
+                    if (socket.Poll(0, SelectMode.SelectRead))
+                    {
+                        // 有数据可读或连接已关闭
+                        if (socket.Available == 0)
+                        {
+                            // 远端已关闭连接
+                            logger?.LogDebug("TCP连接检测到远端已关闭: {ConnectionId}", ConnectionId);
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
         public string ConnectionId => _config != null ? $"{_config.IpAddress}:{_config.Port}" : "";
 
         // ── 连接 ─────────────────────────────────────────────────────────────
@@ -36,8 +78,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             await _connectLock.WaitAsync(cancellationToken);
             try
             {
-                // 复用已有连接
-                if (_client?.Connected == true
+                // 复用已有连接（使用增强后的 IsConnected 判断）
+                if (IsConnected
                     && _config?.IpAddress == tcpConfig.IpAddress
                     && _config?.Port == tcpConfig.Port)
                 {
@@ -52,7 +94,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 _client = new TcpClient
                 {
                     ReceiveTimeout = tcpConfig.ReadTimeout,
-                    SendTimeout = 30000,    // 固定值，不再从配置读取
+                    SendTimeout = 30000,
                     ReceiveBufferSize = tcpConfig.ReceiveBufferSize,
                     SendBufferSize = tcpConfig.SendBufferSize,
                     NoDelay = true
@@ -129,7 +171,8 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                 var responseData = await ReceiveAsync(frameConfig, timeout, cancellationToken);
 
                 result.RawResponse = responseData;
-                result.ResponseString = responseData?.Length > 0 ? EncodingHelper.SmartDecode(responseData) : "";
+                result.ResponseString = responseData?.Length > 0 ?
+                    EncodingHelper.SmartDecode(responseData) : "";
                 result.Success = responseData?.Length > 0;
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
 
@@ -148,6 +191,14 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             }
             catch (Exception ex)
             {
+                // 检测到 IO/Socket 异常时，主动清理连接
+                // 这样下次调用 IsConnected 会返回 false，触发自动重连
+                if (ex is IOException or SocketException)
+                {
+                    logger?.LogWarning("TCP通讯异常，连接可能已断开，清理连接以便下次重连: {Message}", ex.Message);
+                    DisposeConnection();
+                }
+
                 result.ErrorMessage = $"TCP通讯异常: {ex.Message}";
                 result.ElapsedMilliseconds = sw.ElapsedMilliseconds;
                 logger?.LogError(ex, "TCP通讯异常");
@@ -169,6 +220,13 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             catch (Exception ex)
             {
                 logger?.LogError(ex, "TCP发送失败");
+
+                // ★ BUG #3 修复: 发送失败也清理连接
+                if (ex is IOException or SocketException)
+                {
+                    DisposeConnection();
+                }
+
                 return false;
             }
         }
@@ -184,57 +242,68 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
 
                 var bufferSize = _config?.ReceiveBufferSize ?? 4096;
                 var buffer = new byte[bufferSize];
-                var receivedData = new List<byte>(bufferSize);
+                using var ms = new MemoryStream();
 
-                // 流式读取：每次 ReadAsync 阻塞等待数据，不再轮询 DataAvailable
                 while (!cts.Token.IsCancellationRequested)
                 {
-                    // 设置单次读取超时（避免一直阻塞）
-                    _client.ReceiveTimeout = Math.Min(timeout, 200);
-                    int bytesRead;
-                    try
+                    var bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, bufferSize), cts.Token);
+                    if (bytesRead == 0)
                     {
-                        bytesRead = await _stream.ReadAsync(buffer.AsMemory(0, bufferSize), cts.Token);
-                    }
-                    catch (IOException) // ReadTimeout 触发 IOException
-                    {
-                        // 已有数据但无更多 → 认为接收完毕
-                        if (receivedData.Count > 0) break;
-                        continue;
-                    }
-
-                    if (bytesRead == 0) break; // 连接关闭
-
-                    receivedData.AddRange(buffer.Take(bytesRead));
-
-                    if (IsResponseComplete(receivedData.ToArray(), frameConfig))
+                        // 远端关闭连接时 ReadAsync 返回 0
+                        logger?.LogDebug("TCP远端关闭连接");
+                        DisposeConnection();
                         break;
+                    }
+
+                    ms.Write(buffer, 0, bytesRead);
+                    var data = ms.ToArray();
+
+                    // 帧完整性判断
+                    if (frameConfig == null || !frameConfig.Enabled || IsFrameComplete(data, frameConfig))
+                    {
+                        return data;
+                    }
+
+                    // 安全上限
+                    if (data.Length > bufferSize * 10)
+                    {
+                        logger?.LogWarning("TCP接收数据超过安全上限，停止接收");
+                        return data;
+                    }
                 }
 
-                return receivedData.ToArray();
+                return ms.ToArray();
             }
             catch (OperationCanceledException)
             {
-                logger?.LogDebug("TCP接收超时/取消，已收 {Bytes}B", 0);
-                return Array.Empty<byte>();
+                logger?.LogDebug("TCP接收超时");
+                return null;
             }
             catch (Exception ex)
             {
                 logger?.LogError(ex, "TCP接收异常");
-                return Array.Empty<byte>();
+
+                // 接收异常也清理连接
+                if (ex is IOException or SocketException)
+                {
+                    DisposeConnection();
+                }
+
+                return null;
             }
         }
 
         // ── 帧完整性判断 ─────────────────────────────────────────────────────
 
-        private static bool IsResponseComplete(byte[] data, FrameConfig frameConfig)
+        private static bool IsFrameComplete(byte[] data, FrameConfig frameConfig)
         {
             if (data == null || data.Length == 0) return false;
-            if (frameConfig == null || !frameConfig.Enabled) return true;
 
             // 1. 固定长度
             if (frameConfig.FixedResponseLength > 0)
+            {
                 return data.Length >= frameConfig.FixedResponseLength;
+            }
 
             // 2. 终止符（支持 \r\n 转义）
             if (!string.IsNullOrEmpty(frameConfig.ResponseTerminator))

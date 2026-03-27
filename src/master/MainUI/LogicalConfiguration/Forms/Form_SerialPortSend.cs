@@ -1,5 +1,6 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Controls;
+using MainUI.LogicalConfiguration.Instrument.Communication;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services;
@@ -648,6 +649,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
         /// <summary>
         /// 测试串口按钮
+        /// 测试前先检查 Factory 是否已占用该串口
         /// </summary>
         private async void BtnTestPort_Click(object sender, EventArgs e)
         {
@@ -666,11 +668,33 @@ namespace MainUI.LogicalConfiguration.Forms
                 _testCts?.Cancel();
                 _testCts = new CancellationTokenSource();
 
+                var portName = cmbPortName.Text;
+
+                // 先检查 Factory 中是否有该串口的活跃连接
+                var factory = CommunicationProviderFactory.Instance;
+                var connectionStatus = factory.GetConnectionStatus();
+                var serialKey = $"Serial_{portName}";
+
+                // 检查所有可能包含该串口名的 key
+                bool isOccupiedByFactory = connectionStatus.Any(kvp =>
+                    kvp.Key.Contains(portName, StringComparison.OrdinalIgnoreCase) && kvp.Value);
+
+                if (isOccupiedByFactory)
+                {
+                    lblPortStatus.Text = "串口被占用";
+                    lblPortStatus.ForeColor = Color.Red;
+                    MessageHelper.MessageOK(this,
+                        $"串口 {portName} 已被仪器通讯模块占用，\n请先在运行中的工作流停止后再测试。\n\n" +
+                        "如需强制释放，请关闭相关通讯连接后重试。",
+                        TType.Warn);
+                    return;
+                }
+
                 await Task.Run(() =>
                 {
                     using var port = new SerialPort
                     {
-                        PortName = cmbPortName.Text,
+                        PortName = portName,
                         BaudRate = int.TryParse(cmbBaudRate.Text, out int baud) ? baud : 9600,
                         Parity = (Parity)cmbParity.SelectedIndex,
                         DataBits = int.TryParse(cmbDataBits.Text, out int bits) ? bits : 8,
@@ -678,7 +702,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     };
 
                     port.Open();
-                    Thread.Sleep(500); // 短暂延时确保端口打开
+                    Thread.Sleep(500);
                     port.Close();
                 }, _testCts.Token);
 
@@ -690,6 +714,16 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 lblPortStatus.Text = "测试取消";
                 lblPortStatus.ForeColor = Color.Gray;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // 专门捕获串口占用异常，给出更明确的提示
+                lblPortStatus.Text = "串口被占用";
+                lblPortStatus.ForeColor = Color.Red;
+                MessageHelper.MessageOK(this,
+                    $"串口 {cmbPortName.Text} 被其他程序或进程占用，无法打开。\n" +
+                    "请检查是否有其他程序正在使用该串口。",
+                    TType.Error);
             }
             catch (Exception ex)
             {
@@ -706,6 +740,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
         /// <summary>
         /// 测试发送按钮
+        /// 测试发送前也检查 Factory 占用
         /// </summary>
         private async void BtnTestSend_Click(object sender, EventArgs e)
         {
@@ -720,6 +755,21 @@ namespace MainUI.LogicalConfiguration.Forms
                 _testCts = new CancellationTokenSource();
 
                 SaveFormToParameter();
+
+                // 先检查 Factory 中是否有该串口的活跃连接
+                var factory = CommunicationProviderFactory.Instance;
+                var connectionStatus = factory.GetConnectionStatus();
+                bool isOccupiedByFactory = connectionStatus.Any(kvp =>
+                    kvp.Key.Contains(_parameter.PortName, StringComparison.OrdinalIgnoreCase) && kvp.Value);
+
+                if (isOccupiedByFactory)
+                {
+                    MessageHelper.MessageOK(this,
+                        $"串口 {_parameter.PortName} 已被仪器通讯模块占用，无法进行测试发送。\n" +
+                        "请先停止使用该串口的工作流后再尝试。",
+                        TType.Warn);
+                    return;
+                }
 
                 string content = ResolveVariables(txtSendContent.Text);
                 byte[] data = PrepareData(content);
@@ -736,7 +786,7 @@ namespace MainUI.LogicalConfiguration.Forms
                     WriteTimeout = _parameter.WriteTimeout
                 };
 
-                await Task.Run(async () =>
+                await Task.Run(() =>
                 {
                     port.Open();
 
@@ -744,40 +794,36 @@ namespace MainUI.LogicalConfiguration.Forms
 
                     if (_parameter.WaitResponse)
                     {
-                        // 等待响应
                         var buffer = new byte[4096];
                         var bytesRead = port.Read(buffer, 0, buffer.Length);
                         var response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
                         this.Invoke(new Action(() =>
                         {
-                            MessageHelper.MessageOK(this,
-                                $"发送成功,收到响应:\n{response}",
-                                TType.Success);
+                            MessageHelper.MessageOK(this, $"发送成功！\n响应: {response}", TType.Success);
                         }));
                     }
                     else
                     {
                         this.Invoke(new Action(() =>
                         {
-                            MessageHelper.MessageOK(this,
-                                $"发送成功,共 {data.Length} 字节",
-                                TType.Success);
+                            MessageHelper.MessageOK(this, "发送成功！", TType.Success);
                         }));
                     }
 
-                    await Task.Delay(100); // 短暂延时确保数据发送完成
                     port.Close();
                 }, _testCts.Token);
             }
-            catch (OperationCanceledException)
+            catch (UnauthorizedAccessException)
             {
-                MessageHelper.MessageOK(this, "测试已取消", TType.Info);
+                MessageHelper.MessageOK(this,
+                    $"串口 {_parameter.PortName} 被占用，无法打开。",
+                    TType.Error);
             }
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "测试发送失败");
-                MessageHelper.MessageOK(this, $"测试失败: {ex.Message}", TType.Error);
+                MessageHelper.MessageOK(this, $"测试发送失败: {ex.Message}", TType.Error);
             }
             finally
             {
