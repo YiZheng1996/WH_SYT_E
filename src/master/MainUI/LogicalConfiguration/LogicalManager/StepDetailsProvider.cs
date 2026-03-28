@@ -37,6 +37,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "条件判断" => GetConditionPreview(step),
                     "循环工具" => GetLoopStartPreview(step),
                     "消息通知" => GetMessageNotificationPreview(step),
+                    "用户输入" => GetUserInputPreview(step),
                     "检测工具" => GetDetectionToolPreview(step),
                     "读取PLC" => GetReadPLCPreview(step),
                     "写入PLC" => GetWritePLCPreview(step),
@@ -277,6 +278,31 @@ namespace MainUI.LogicalConfiguration.LogicalManager
 
             return preview;
         }
+
+        /// <summary>
+        /// 用户输入步骤的预览
+        /// </summary>
+        /// <param name="step"></param>
+        /// <returns></returns>
+        private string GetUserInputPreview(ChildModel step)
+        {
+            if (!TryGetParameter<Parameter_UserInput>(step.StepParameter, out var param))
+                return "未配置";
+
+            string typeText = param.InputType switch
+            {
+                UserInputType.Number => "数值",
+                UserInputType.Select => "下拉",
+                _ => "文本"
+            };
+            string varPart = string.IsNullOrEmpty(param.TargetVariableName)
+                ? "（未设置变量）"
+                : $"→ @{param.TargetVariableName}";
+            string timeout = param.TimeoutSeconds > 0 ? $" [{param.TimeoutSeconds}s]" : "";
+
+            return $"输入{typeText} {varPart}{timeout}";
+        }
+
 
         /// <summary>
         /// 检测工具步骤的预览

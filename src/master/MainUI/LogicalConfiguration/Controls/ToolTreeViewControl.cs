@@ -174,6 +174,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 };
                 dataNode.Nodes.Add(new TreeNode("变量赋值") { Tag = "VariableAssign", ImageKey = "变量赋值.png" });
                 dataNode.Nodes.Add(new TreeNode("消息通知") { Tag = "MessageNotify", ImageKey = "消息通知.png" });
+                dataNode.Nodes.Add(new TreeNode("用户输入") { Tag = "MessageNotify", ImageKey = "消息通知.png" });
                 _treeView.Nodes.Add(dataNode);
 
                 // PLC通信组

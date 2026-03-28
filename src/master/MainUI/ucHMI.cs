@@ -119,8 +119,8 @@ namespace MainUI
                     ucTestDetails.StartTest(itemName, steps);
 
                     // 自动切换到试验详情页面
-                    tabs1.SelectedIndex = 2;
-                    NavigationButtonStyles.UpdateNavigationButtons(2, controls);
+                    //tabs1.SelectedIndex = 2;
+                    //NavigationButtonStyles.UpdateNavigationButtons(2, controls);
                 }
             }
             catch (Exception ex)

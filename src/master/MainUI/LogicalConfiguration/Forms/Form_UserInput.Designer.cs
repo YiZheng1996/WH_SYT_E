@@ -21,7 +21,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblTitle = new UILabel();
             txtTitle = new UITextBox();
             lblPrompt = new UILabel();
-            txtPrompt = new UITextBox();
+            txtPrompt = new UIRichTextBox();
             uiLine1 = new UILine();
             lblInputType = new UILabel();
             cmbInputType = new UIComboBox();
@@ -74,7 +74,7 @@ namespace MainUI.LogicalConfiguration.Forms
             pnlMain.MinimumSize = new Size(1, 1);
             pnlMain.Name = "pnlMain";
             pnlMain.Padding = new Padding(15);
-            pnlMain.Size = new Size(540, 670);
+            pnlMain.Size = new Size(540, 668);
             pnlMain.TabIndex = 0;
             pnlMain.Text = null;
             pnlMain.TextAlignment = ContentAlignment.MiddleCenter;
@@ -119,7 +119,7 @@ namespace MainUI.LogicalConfiguration.Forms
             pnlContent.Margin = new Padding(4, 5, 4, 5);
             pnlContent.MinimumSize = new Size(1, 1);
             pnlContent.Name = "pnlContent";
-            pnlContent.Size = new Size(510, 536);
+            pnlContent.Size = new Size(510, 534);
             pnlContent.TabIndex = 1;
             pnlContent.Text = null;
             pnlContent.TextAlignment = ContentAlignment.MiddleCenter;
@@ -162,10 +162,10 @@ namespace MainUI.LogicalConfiguration.Forms
             lblPrompt.Size = new Size(80, 25);
             lblPrompt.TabIndex = 2;
             lblPrompt.Text = "提示说明:";
-            lblPrompt.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // txtPrompt
             // 
+            txtPrompt.FillColor = Color.White;
             txtPrompt.Font = new Font("微软雅黑", 10F);
             txtPrompt.Location = new Point(96, 52);
             txtPrompt.Margin = new Padding(4, 5, 4, 5);
@@ -173,11 +173,11 @@ namespace MainUI.LogicalConfiguration.Forms
             txtPrompt.Name = "txtPrompt";
             txtPrompt.Padding = new Padding(5);
             txtPrompt.ShowText = false;
-            txtPrompt.Size = new Size(400, 30);
+            txtPrompt.Size = new Size(400, 68);
             txtPrompt.TabIndex = 3;
-            txtPrompt.TextAlignment = ContentAlignment.MiddleLeft;
-            toolTip.SetToolTip(txtPrompt, "显示在弹窗中的说明文字");
-            txtPrompt.Watermark = "向操作员说明需要填写什么值";
+            txtPrompt.Text = "显示在弹窗中的说明文字，支持换行";
+            txtPrompt.TextAlignment = ContentAlignment.TopLeft;
+            toolTip.SetToolTip(txtPrompt, "显示在弹窗中的说明文字，支持换行");
             // 
             // uiLine1
             // 
@@ -185,7 +185,7 @@ namespace MainUI.LogicalConfiguration.Forms
             uiLine1.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             uiLine1.ForeColor = Color.FromArgb(65, 100, 204);
             uiLine1.LineColor = Color.FromArgb(65, 100, 204);
-            uiLine1.Location = new Point(10, 92);
+            uiLine1.Location = new Point(10, 130);
             uiLine1.MinimumSize = new Size(1, 1);
             uiLine1.Name = "uiLine1";
             uiLine1.Size = new Size(490, 14);
@@ -197,7 +197,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblInputType.BackColor = Color.Transparent;
             lblInputType.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblInputType.ForeColor = Color.FromArgb(48, 48, 48);
-            lblInputType.Location = new Point(10, 116);
+            lblInputType.Location = new Point(10, 154);
             lblInputType.Name = "lblInputType";
             lblInputType.Size = new Size(80, 25);
             lblInputType.TabIndex = 5;
@@ -213,7 +213,7 @@ namespace MainUI.LogicalConfiguration.Forms
             cmbInputType.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbInputType.Items.AddRange(new object[] { "文本输入", "数值输入", "下拉选择" });
             cmbInputType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbInputType.Location = new Point(96, 114);
+            cmbInputType.Location = new Point(96, 152);
             cmbInputType.Margin = new Padding(4, 5, 4, 5);
             cmbInputType.MinimumSize = new Size(63, 0);
             cmbInputType.Name = "cmbInputType";
@@ -231,7 +231,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblTargetVar.BackColor = Color.Transparent;
             lblTargetVar.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblTargetVar.ForeColor = Color.FromArgb(48, 48, 48);
-            lblTargetVar.Location = new Point(10, 156);
+            lblTargetVar.Location = new Point(10, 194);
             lblTargetVar.Name = "lblTargetVar";
             lblTargetVar.Size = new Size(80, 25);
             lblTargetVar.TabIndex = 7;
@@ -241,7 +241,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtTargetVar
             // 
             txtTargetVar.Font = new Font("微软雅黑", 10F);
-            txtTargetVar.Location = new Point(96, 154);
+            txtTargetVar.Location = new Point(96, 192);
             txtTargetVar.Margin = new Padding(4, 5, 4, 5);
             txtTargetVar.MinimumSize = new Size(1, 16);
             txtTargetVar.Name = "txtTargetVar";
@@ -258,7 +258,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblDefault.BackColor = Color.Transparent;
             lblDefault.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblDefault.ForeColor = Color.FromArgb(48, 48, 48);
-            lblDefault.Location = new Point(10, 196);
+            lblDefault.Location = new Point(10, 234);
             lblDefault.Name = "lblDefault";
             lblDefault.Size = new Size(80, 25);
             lblDefault.TabIndex = 9;
@@ -268,7 +268,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtDefaultValue
             // 
             txtDefaultValue.Font = new Font("微软雅黑", 10F);
-            txtDefaultValue.Location = new Point(96, 194);
+            txtDefaultValue.Location = new Point(96, 232);
             txtDefaultValue.Margin = new Padding(4, 5, 4, 5);
             txtDefaultValue.MinimumSize = new Size(1, 16);
             txtDefaultValue.Name = "txtDefaultValue";
@@ -285,7 +285,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblOptions.BackColor = Color.Transparent;
             lblOptions.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblOptions.ForeColor = Color.FromArgb(48, 48, 48);
-            lblOptions.Location = new Point(10, 236);
+            lblOptions.Location = new Point(10, 274);
             lblOptions.Name = "lblOptions";
             lblOptions.Size = new Size(80, 25);
             lblOptions.TabIndex = 11;
@@ -296,7 +296,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtSelectOptions
             // 
             txtSelectOptions.Font = new Font("微软雅黑", 10F);
-            txtSelectOptions.Location = new Point(96, 234);
+            txtSelectOptions.Location = new Point(96, 272);
             txtSelectOptions.Margin = new Padding(4, 5, 4, 5);
             txtSelectOptions.MinimumSize = new Size(1, 16);
             txtSelectOptions.Name = "txtSelectOptions";
@@ -314,7 +314,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblNumRange.BackColor = Color.Transparent;
             lblNumRange.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblNumRange.ForeColor = Color.FromArgb(48, 48, 48);
-            lblNumRange.Location = new Point(10, 236);
+            lblNumRange.Location = new Point(10, 274);
             lblNumRange.Name = "lblNumRange";
             lblNumRange.Size = new Size(80, 25);
             lblNumRange.TabIndex = 13;
@@ -325,7 +325,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtMinValue
             // 
             txtMinValue.Font = new Font("微软雅黑", 10F);
-            txtMinValue.Location = new Point(96, 234);
+            txtMinValue.Location = new Point(96, 272);
             txtMinValue.Margin = new Padding(4, 5, 4, 5);
             txtMinValue.MinimumSize = new Size(1, 16);
             txtMinValue.Name = "txtMinValue";
@@ -343,7 +343,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblRangeSep.BackColor = Color.Transparent;
             lblRangeSep.Font = new Font("微软雅黑", 12F);
             lblRangeSep.ForeColor = Color.FromArgb(80, 80, 80);
-            lblRangeSep.Location = new Point(222, 234);
+            lblRangeSep.Location = new Point(222, 272);
             lblRangeSep.Name = "lblRangeSep";
             lblRangeSep.Size = new Size(20, 30);
             lblRangeSep.TabIndex = 15;
@@ -354,7 +354,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtMaxValue
             // 
             txtMaxValue.Font = new Font("微软雅黑", 10F);
-            txtMaxValue.Location = new Point(248, 234);
+            txtMaxValue.Location = new Point(248, 272);
             txtMaxValue.Margin = new Padding(4, 5, 4, 5);
             txtMaxValue.MinimumSize = new Size(1, 16);
             txtMaxValue.Name = "txtMaxValue";
@@ -372,7 +372,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblDecimal.BackColor = Color.Transparent;
             lblDecimal.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblDecimal.ForeColor = Color.FromArgb(48, 48, 48);
-            lblDecimal.Location = new Point(10, 276);
+            lblDecimal.Location = new Point(10, 314);
             lblDecimal.Name = "lblDecimal";
             lblDecimal.Size = new Size(80, 25);
             lblDecimal.TabIndex = 17;
@@ -383,7 +383,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // nudDecimalPlaces
             // 
             nudDecimalPlaces.Font = new Font("微软雅黑", 10F);
-            nudDecimalPlaces.Location = new Point(96, 274);
+            nudDecimalPlaces.Location = new Point(96, 312);
             nudDecimalPlaces.Margin = new Padding(4, 5, 4, 5);
             nudDecimalPlaces.Maximum = 6D;
             nudDecimalPlaces.Minimum = 0D;
@@ -404,7 +404,7 @@ namespace MainUI.LogicalConfiguration.Forms
             chkAllowEmpty.BackColor = Color.Transparent;
             chkAllowEmpty.Font = new Font("微软雅黑", 10F);
             chkAllowEmpty.ForeColor = Color.FromArgb(80, 80, 80);
-            chkAllowEmpty.Location = new Point(96, 316);
+            chkAllowEmpty.Location = new Point(96, 354);
             chkAllowEmpty.MinimumSize = new Size(1, 1);
             chkAllowEmpty.Name = "chkAllowEmpty";
             chkAllowEmpty.Size = new Size(240, 28);
@@ -418,7 +418,7 @@ namespace MainUI.LogicalConfiguration.Forms
             uiLine2.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             uiLine2.ForeColor = Color.FromArgb(65, 100, 204);
             uiLine2.LineColor = Color.FromArgb(65, 100, 204);
-            uiLine2.Location = new Point(10, 354);
+            uiLine2.Location = new Point(10, 392);
             uiLine2.MinimumSize = new Size(1, 1);
             uiLine2.Name = "uiLine2";
             uiLine2.Size = new Size(490, 14);
@@ -430,7 +430,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblTimeout.BackColor = Color.Transparent;
             lblTimeout.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblTimeout.ForeColor = Color.FromArgb(48, 48, 48);
-            lblTimeout.Location = new Point(10, 378);
+            lblTimeout.Location = new Point(10, 416);
             lblTimeout.Name = "lblTimeout";
             lblTimeout.Size = new Size(80, 25);
             lblTimeout.TabIndex = 21;
@@ -440,7 +440,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // nudTimeout
             // 
             nudTimeout.Font = new Font("微软雅黑", 10F);
-            nudTimeout.Location = new Point(96, 376);
+            nudTimeout.Location = new Point(96, 414);
             nudTimeout.Margin = new Padding(4, 5, 4, 5);
             nudTimeout.Maximum = 3600D;
             nudTimeout.Minimum = 0D;
@@ -459,7 +459,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblTimeoutUnit.BackColor = Color.Transparent;
             lblTimeoutUnit.Font = new Font("微软雅黑", 10F);
             lblTimeoutUnit.ForeColor = Color.FromArgb(120, 120, 120);
-            lblTimeoutUnit.Location = new Point(202, 380);
+            lblTimeoutUnit.Location = new Point(202, 418);
             lblTimeoutUnit.Name = "lblTimeoutUnit";
             lblTimeoutUnit.Size = new Size(140, 22);
             lblTimeoutUnit.TabIndex = 23;
@@ -471,7 +471,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblOnTimeout.BackColor = Color.Transparent;
             lblOnTimeout.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblOnTimeout.ForeColor = Color.FromArgb(48, 48, 48);
-            lblOnTimeout.Location = new Point(10, 418);
+            lblOnTimeout.Location = new Point(10, 456);
             lblOnTimeout.Name = "lblOnTimeout";
             lblOnTimeout.Size = new Size(80, 25);
             lblOnTimeout.TabIndex = 24;
@@ -487,7 +487,7 @@ namespace MainUI.LogicalConfiguration.Forms
             cmbOnTimeout.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cmbOnTimeout.Items.AddRange(new object[] { "停止流程", "使用默认值继续", "跳过此步骤" });
             cmbOnTimeout.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cmbOnTimeout.Location = new Point(96, 416);
+            cmbOnTimeout.Location = new Point(96, 454);
             cmbOnTimeout.Margin = new Padding(4, 5, 4, 5);
             cmbOnTimeout.MinimumSize = new Size(63, 0);
             cmbOnTimeout.Name = "cmbOnTimeout";
@@ -505,7 +505,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblTimeoutDef.BackColor = Color.Transparent;
             lblTimeoutDef.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblTimeoutDef.ForeColor = Color.FromArgb(48, 48, 48);
-            lblTimeoutDef.Location = new Point(10, 458);
+            lblTimeoutDef.Location = new Point(10, 496);
             lblTimeoutDef.Name = "lblTimeoutDef";
             lblTimeoutDef.Size = new Size(80, 25);
             lblTimeoutDef.TabIndex = 26;
@@ -516,7 +516,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtTimeoutDefault
             // 
             txtTimeoutDefault.Font = new Font("微软雅黑", 10F);
-            txtTimeoutDefault.Location = new Point(96, 456);
+            txtTimeoutDefault.Location = new Point(96, 494);
             txtTimeoutDefault.Margin = new Padding(4, 5, 4, 5);
             txtTimeoutDefault.MinimumSize = new Size(1, 16);
             txtTimeoutDefault.Name = "txtTimeoutDefault";
@@ -534,7 +534,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblDescription.BackColor = Color.Transparent;
             lblDescription.Font = new Font("微软雅黑", 10F, FontStyle.Bold);
             lblDescription.ForeColor = Color.FromArgb(48, 48, 48);
-            lblDescription.Location = new Point(10, 418);
+            lblDescription.Location = new Point(10, 456);
             lblDescription.Name = "lblDescription";
             lblDescription.Size = new Size(80, 25);
             lblDescription.TabIndex = 28;
@@ -544,7 +544,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // txtDescription
             // 
             txtDescription.Font = new Font("微软雅黑", 10F);
-            txtDescription.Location = new Point(96, 416);
+            txtDescription.Location = new Point(96, 454);
             txtDescription.Margin = new Padding(4, 5, 4, 5);
             txtDescription.MinimumSize = new Size(1, 16);
             txtDescription.Name = "txtDescription";
@@ -564,7 +564,7 @@ namespace MainUI.LogicalConfiguration.Forms
             pnlBottom.FillColor = Color.FromArgb(245, 247, 250);
             pnlBottom.FillColor2 = Color.FromArgb(245, 247, 250);
             pnlBottom.Font = new Font("微软雅黑", 10F);
-            pnlBottom.Location = new Point(15, 595);
+            pnlBottom.Location = new Point(15, 593);
             pnlBottom.Margin = new Padding(4, 5, 4, 5);
             pnlBottom.MinimumSize = new Size(1, 1);
             pnlBottom.Name = "pnlBottom";
@@ -655,7 +655,7 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 236);
-            ClientSize = new Size(540, 705);
+            ClientSize = new Size(540, 703);
             ControlBox = false;
             ControlBoxFillHoverColor = Color.FromArgb(163, 163, 163);
             Controls.Add(pnlMain);
@@ -671,7 +671,7 @@ namespace MainUI.LogicalConfiguration.Forms
             Text = "用户输入 - 参数配置";
             TitleColor = Color.FromArgb(65, 100, 204);
             TitleFont = new Font("微软雅黑", 12F, FontStyle.Bold);
-            ZoomScaleRect = new Rectangle(15, 15, 540, 610);
+            ZoomScaleRect = new Rectangle(15, 15, 540, 648);
             pnlMain.ResumeLayout(false);
             pnlContent.ResumeLayout(false);
             pnlBottom.ResumeLayout(false);
@@ -690,7 +690,7 @@ namespace MainUI.LogicalConfiguration.Forms
         private Sunny.UI.UILabel lblTitle;
         private Sunny.UI.UITextBox txtTitle;
         private Sunny.UI.UILabel lblPrompt;
-        private Sunny.UI.UITextBox txtPrompt;
+        private Sunny.UI.UIRichTextBox txtPrompt;
         private Sunny.UI.UILine uiLine1;
         private Sunny.UI.UILabel lblInputType;
         private Sunny.UI.UIComboBox cmbInputType;

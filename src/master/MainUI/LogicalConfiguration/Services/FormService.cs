@@ -86,6 +86,9 @@ namespace MainUI.LogicalConfiguration.Services
                     case "消息通知":
                         form = CreateForm<Form_SystemPrompt>();
                         break;
+                    case "用户输入":
+                        form = CreateForm<Form_UserInput>();
+                        break;
                     case "条件判断":
                         form = CreateForm<Form_Condition>();
                         break;
@@ -205,6 +208,11 @@ namespace MainUI.LogicalConfiguration.Services
                 nameof(Form_SystemPrompt) => (T)(object)new Form_SystemPrompt(
                     _workflowState,  // 预加载的服务
                     GetSpecificLogger<Form_SystemPrompt>()),
+
+                // 系统提示窗体
+                nameof(Form_UserInput) => (T)(object)new Form_UserInput(
+                    _workflowState,  // 预加载的服务
+                    GetSpecificLogger<Form_UserInput>()),
 
                 // 检测工具窗体
                 nameof(Form_Detection) => (T)(object)new Form_Detection(),

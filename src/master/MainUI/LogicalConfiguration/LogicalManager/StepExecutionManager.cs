@@ -32,7 +32,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
     ExpressionEngine expressionEngine,
     GlobalVariableManager globalVariableManager,
     InstrumentCommunicationMethods instrumentCommunicationMethods,
-    CommunicationMethods communicationMethods)
+    CommunicationMethods communicationMethods,
+    UserInputMethods userInputMethods)
     {
         #region 字段和属性
 
@@ -55,6 +56,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
         private readonly ExpressionEngine _expressionEngine = expressionEngine;
         private readonly InstrumentCommunicationMethods _instrumentCommunicationMethods =
             instrumentCommunicationMethods ?? throw new ArgumentNullException(nameof(instrumentCommunicationMethods));
+        private readonly UserInputMethods _userInputMethods =
+           userInputMethods ?? throw new ArgumentNullException(nameof(userInputMethods));
 
         public event Action<ChildModel, int> StepStatusChanged;
 
@@ -223,6 +226,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     // 系统工具
                     "延时等待" => await ExecuteDelayTime(step, cancellationToken),
                     "消息通知" => await ExecuteSystemPrompt(step, cancellationToken),
+                    "用户输入" => await ExecuteUserInput(step, cancellationToken),
 
                     // 变量管理
                     "变量定义" => await ExecuteDefineVar(step, cancellationToken),
@@ -295,6 +299,20 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             var result = await _systemMethods.SystemPrompt(param, globalVariableManager);
             return result ? DetailedResult.Successful() : DetailedResult.Failed("提示执行失败");
         }
+
+        /// <summary>
+        /// 用户输入 — 运行时弹窗让操作员填值
+        /// </summary>
+        private async Task<DetailedResult> ExecuteUserInput(
+            ChildModel step, CancellationToken cancellationToken)
+        {
+            var param = ConvertParameter<Parameter_UserInput>(step.StepParameter);
+            if (param == null) return DetailedResult.Failed("参数转换失败");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return await _userInputMethods.ExecuteAsync(param, cancellationToken);
+        }
+
 
         /// <summary>
         /// 变量定义

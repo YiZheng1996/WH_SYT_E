@@ -270,11 +270,12 @@ namespace MainUI
             services.AddScoped<RealtimeMonitorPromptMethods>();
             services.AddTransient<ConditionMethods>();
             services.AddTransient<LoopMethods>();
+            services.AddScoped<UserInputMethods>();
+
             // 以太网和串口通信服务注册
             services.AddTransient<CommunicationMethods>();
             services.AddTransient<Form_EthernetSend>();
             services.AddTransient<Form_SerialPortSend>();
-
             services.AddSingleton<ExpressionEngine>();
             services.AddSingleton<VariableAssignmentEngine>();
 

@@ -47,6 +47,33 @@ namespace MainUI.LogicalConfiguration.Forms
                 ? "请填写以下信息后点击【确认】继续执行流程。"
                 : _param.Prompt;
 
+            // ── 根据提示文字动态计算 pnlPrompt 高度 ──────
+            // 最小高度 44（单行），文字宽度按 pnlPrompt 内容区宽度（460 - padding 20）
+            int promptInnerWidth = pnlPrompt.Width - pnlPrompt.Padding.Horizontal - 4;
+            using var g = lblPrompt.CreateGraphics();
+            var textSize = g.MeasureString(
+                lblPrompt.Text,
+                lblPrompt.Font,
+                promptInnerWidth,
+                StringFormat.GenericDefault);
+            int promptHeight = Math.Max(44, (int)Math.Ceiling(textSize.Height) + 20);
+            pnlPrompt.Size = new Size(pnlPrompt.Width, promptHeight);
+
+            // ── 输入控件 Y 坐标 = pnlPrompt 底部 + 10 ────
+            int inputY = pnlPrompt.Bottom + 10;
+            txtTextInput.Location = new Point(txtTextInput.Location.X, inputY);
+            nudNumInput.Location = new Point(nudNumInput.Location.X, inputY);
+            lblUnit.Location = new Point(lblUnit.Location.X, inputY);
+            cmbSelectInput.Location = new Point(cmbSelectInput.Location.X, inputY);
+
+            // ── 倒计时标签 Y = 输入控件底部 + 6 ──────────
+            lblCountdown.Location = new Point(lblCountdown.Location.X, inputY + 36 + 6);
+
+            // ── 窗体总高度 = 标题栏(35) + pnlPrompt(Y10+高) + 输入控件(36) + 间距 + 底部(60)
+            int contentHeight = 10 + promptHeight + 10 + 36 + 14 + 10;
+            int formHeight = 35 + contentHeight + 60;
+            ClientSize = new Size(ClientSize.Width, formHeight);
+
             // ── 根据类型初始化输入控件 ────────────────────
             switch (_param.InputType)
             {
@@ -76,9 +103,9 @@ namespace MainUI.LogicalConfiguration.Forms
         private void SetupTextInput()
         {
             txtTextInput.Visible = true;
-            nudNumInput.Visible  = false;
+            nudNumInput.Visible = false;
             cmbSelectInput.Visible = false;
-            lblUnit.Visible      = false;
+            lblUnit.Visible = false;
 
             // 设置默认值
             txtTextInput.Text = ResolveDefaultValue();
@@ -88,10 +115,10 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void SetupNumberInput()
         {
-            txtTextInput.Visible   = false;
-            nudNumInput.Visible    = true;
+            txtTextInput.Visible = false;
+            nudNumInput.Visible = true;
             cmbSelectInput.Visible = false;
-            lblUnit.Visible        = true;
+            lblUnit.Visible = true;
 
             // 设置范围
             if (_param.MinValue.HasValue) nudNumInput.Minimum = _param.MinValue.Value;
@@ -118,10 +145,10 @@ namespace MainUI.LogicalConfiguration.Forms
 
         private void SetupSelectInput()
         {
-            txtTextInput.Visible   = false;
-            nudNumInput.Visible    = false;
+            txtTextInput.Visible = false;
+            nudNumInput.Visible = false;
             cmbSelectInput.Visible = true;
-            lblUnit.Visible        = false;
+            lblUnit.Visible = false;
 
             cmbSelectInput.Items.Clear();
             if (!string.IsNullOrWhiteSpace(_param.SelectOptions))
@@ -179,8 +206,8 @@ namespace MainUI.LogicalConfiguration.Forms
             _param.OnTimeout switch
             {
                 InputTimeoutAction.UseDefaultValue => "使用默认值继续",
-                InputTimeoutAction.SkipStep        => "跳过此步骤",
-                _                                  => "停止流程"
+                InputTimeoutAction.SkipStep => "跳过此步骤",
+                _ => "停止流程"
             };
 
         private void HandleTimeout()
@@ -225,7 +252,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 return;
             }
 
-            InputValue   = value;
+            InputValue = value;
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -258,16 +285,16 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 UserInputType.Number => nudNumInput.Value.ToString(),
                 UserInputType.Select => cmbSelectInput.Text,
-                _                   => txtTextInput.Text.Trim()
+                _ => txtTextInput.Text.Trim()
             };
 
         private void FocusInputControl()
         {
             switch (_param.InputType)
             {
-                case UserInputType.Number: nudNumInput.Focus();    break;
+                case UserInputType.Number: nudNumInput.Focus(); break;
                 case UserInputType.Select: cmbSelectInput.Focus(); break;
-                default:                  txtTextInput.Focus();   break;
+                default: txtTextInput.Focus(); break;
             }
         }
 
