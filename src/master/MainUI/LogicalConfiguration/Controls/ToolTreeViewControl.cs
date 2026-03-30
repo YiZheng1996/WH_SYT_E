@@ -77,13 +77,13 @@ namespace MainUI.LogicalConfiguration.Controls
                 // 交互颜色
                 HoverColor = Color.FromArgb(227, 242, 253),      // 鼠标悬停颜色 - 淡蓝色
                 SelectedColor = Color.FromArgb(25, 118, 210),    // 选中颜色 - 深蓝色
-                LineColor = Color.White,                          // 连接线颜色
+                LineColor = Color.White,                         // 连接线颜色
 
                 // 图片列表
                 ImageKey = "文件夹.png",
                 SelectedImageIndex = 0,
 
-                // ★ 布局设置
+                // 布局设置
                 Indent = 23,
                 ItemHeight = 35,
 

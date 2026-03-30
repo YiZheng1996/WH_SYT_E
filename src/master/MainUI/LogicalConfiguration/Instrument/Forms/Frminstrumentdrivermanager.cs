@@ -1169,7 +1169,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                 return;
             }
 
-            // ★ await 前保存，后续不再依赖 _selectedDriver
+            // await 前保存，后续不再依赖 _selectedDriver
             var driverToDelete = _selectedDriver;
 
             if (MessageHelper.MessageYes(this, $"确定要删除驱动 [{driverToDelete.DisplayName}] 吗？") != DialogResult.OK)
@@ -1186,7 +1186,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Forms
                     ClearForm();
                     MessageHelper.MessageOK(this, "删除成功");
                     _logger?.LogInformation("删除驱动成功: {DisplayName} (ID: {DriverId})",
-                        driverToDelete.DisplayName, driverToDelete.DriverId);  // ★ 用本地变量
+                        driverToDelete.DisplayName, driverToDelete.DriverId);  // 用本地变量
                 }
                 else
                 {

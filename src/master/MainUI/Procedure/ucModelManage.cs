@@ -32,16 +32,16 @@ namespace MainUI.Procedure
         private void LoadData()
         {
             Tables.Columns = [
-                new Column("ID","ID"){ Align = ColumnAlign.Center , Visible = false },
-                new Column("TypeID","类型ID"){ Align = ColumnAlign.Center , Visible = false },
+                new Column("ID","ID"){ Align = ColumnAlign.Center, Visible = false },
+                new Column("TypeID","类型ID"){ Align = ColumnAlign.Center, Visible = false },
                 new Column("ModelName","型号名称"){ Align = ColumnAlign.Center },
                 new Column("DrawingNo","产品图号"){ Align = ColumnAlign.Center },
+                new Column("CompanyProjectNo","公司项目编号"){ Align = ColumnAlign.Center },
+                new Column("CustomerProjectNo","客户项目编号"){ Align = ColumnAlign.Center },
                 new Column("ReleaseTime","发布时间"){ Align = ColumnAlign.Center },
-                //new Column("Mark","型号描述"){ Align = ColumnAlign.Center },
                 new Column("Buttns","操作",ColumnAlign.Center){ Width = "100"}
-           ];
-            Tables.DataSource = ModelBLL
-                .GetNewModels(cboModelType.SelectedValue.ToInt32(), true);
+            ];
+            Tables.DataSource = ModelBLL.GetNewModels(cboModelType.SelectedValue.ToInt32(), true);
         }
 
         private void LoadData(Models model)

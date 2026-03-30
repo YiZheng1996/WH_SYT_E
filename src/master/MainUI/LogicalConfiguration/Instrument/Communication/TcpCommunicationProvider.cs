@@ -21,7 +21,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
 
         public ProtocolType ProtocolType => ProtocolType.TcpIp;
 
-        // ★ BUG #3 修复: 增强 IsConnected 判断
+        // 增强 IsConnected 判断
         // TcpClient.Connected 只反映最后一次 I/O 操作的结果，
         // 远端断开后该属性仍可能返回 true（半开连接）。
         // 补充检查 _stream 是否为空、socket 是否存活。
@@ -221,7 +221,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
             {
                 logger?.LogError(ex, "TCP发送失败");
 
-                // ★ BUG #3 修复: 发送失败也清理连接
+                // 发送失败也清理连接
                 if (ex is IOException or SocketException)
                 {
                     DisposeConnection();

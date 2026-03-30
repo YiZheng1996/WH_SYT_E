@@ -831,9 +831,13 @@ namespace MainUI
                 // 批量执行工作流
                 if (_workflowService != null && checkedItems.Count > 0)
                 {
-                    // 试验前排空所有气压
+                    // 试验前排空所有气压，排空被取消或失败，直接退出，不执行工作流
                     bool exhaustSuccess = await ExhaustkPaAsync(_cancellationTokenSource.Token);
-
+                    if (!exhaustSuccess || _cancellationTokenSource.IsCancellationRequested)
+                    {
+                        AppendText("排空未完成，试验中止。");
+                        return;
+                    }
                     var results = await _workflowService.ExecuteMultipleWorkflowsAsync(
                         checkedItems,
                         VarHelper.TestViewModel.ModelTypeName,
@@ -897,31 +901,23 @@ namespace MainUI
         {
             try
             {
-                // 打开所有阀门
                 ValveType(true);
-
                 AppendText("正在排空气压,请稍候...");
 
-                // 使用异步等待,不阻塞UI线程
                 bool isTimeout = await DelayAsync(
                     seconds: 30,
                     interval: 100,
-                    wait: () =>
-                    {
-                        // 等待所有气压排空完成
-                        return (
-                            OPCHelper.AIgrp[1] < 5 &&
-                            OPCHelper.AIgrp[2] < 5 &&
-                            OPCHelper.AIgrp[3] < 5 &&
-                            OPCHelper.AIgrp[4] < 5 &&
-                            OPCHelper.AIgrp[5] < 5 &&
-                            OPCHelper.AIgrp[6] < 5
-                        );
-                    },
+                    wait: () => (
+                        OPCHelper.AIgrp[1] < 5 &&
+                        OPCHelper.AIgrp[2] < 5 &&
+                        OPCHelper.AIgrp[3] < 5 &&
+                        OPCHelper.AIgrp[4] < 5 &&
+                        OPCHelper.AIgrp[5] < 5 &&
+                        OPCHelper.AIgrp[6] < 5
+                    ),
                     cancellationToken
                 );
 
-                // 关闭所有阀门
                 ValveType(false);
 
                 if (isTimeout)
@@ -929,22 +925,19 @@ namespace MainUI
                     AppendText("气压排空超时(30秒),但已关闭阀门");
                     return false;
                 }
-                else
-                {
-                    AppendText("气压排空完成");
-                    return true;
-                }
+
+                AppendText("气压排空完成");
+                return true;
             }
             catch (OperationCanceledException)
             {
-                // 取消操作时也要关闭阀门
                 ValveType(false);
                 AppendText("气压排空被取消");
-                return false;
+                // 重新抛出，让调用方知道是被取消的，而不是返回 false 被忽略
+                throw;
             }
             catch (Exception ex)
             {
-                // 异常时确保关闭阀门
                 ValveType(false);
                 AppendText($"排空气压异常:{ex.Message}");
                 return false;

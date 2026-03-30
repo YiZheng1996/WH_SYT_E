@@ -28,14 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-            AntdUI.Tabs.StyleCard2 styleCard21 = new AntdUI.Tabs.StyleCard2();
+            AntdUI.Tabs.StyleCard2 styleCard23 = new AntdUI.Tabs.StyleCard2();
             openFileDialog1 = new OpenFileDialog();
             uiGroupBox1 = new UIGroupBox();
-            uiLabel2 = new UILabel();
-            txtType = new UITextBox();
-            uiLabel9 = new UILabel();
-            btnGet = new UIButton();
-            txtModel = new UITextBox();
             btnBrowse = new UIButton();
             btnDelete = new UIButton();
             txtTemplateRpt = new UITextBox();
@@ -63,6 +58,8 @@
             folderBrowserDialog1 = new FolderBrowserDialog();
             uiLine1 = new UILine();
             uiLine2 = new UILine();
+            productSelectButton = new MainUI.Procedure.Controls.ProductSelectButton();
+            uiLabel2 = new UILabel();
             tabs1.SuspendLayout();
             tabPage1.SuspendLayout();
             tabPage2.SuspendLayout();
@@ -93,103 +90,6 @@
             uiGroupBox1.TabIndex = 400;
             uiGroupBox1.Text = "参数设置";
             uiGroupBox1.TextAlignment = ContentAlignment.MiddleCenter;
-            // 
-            // uiLabel2
-            // 
-            uiLabel2.AutoSize = true;
-            uiLabel2.BackColor = Color.Transparent;
-            uiLabel2.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            uiLabel2.ForeColor = Color.FromArgb(46, 46, 46);
-            uiLabel2.Location = new Point(361, 58);
-            uiLabel2.Name = "uiLabel2";
-            uiLabel2.Size = new Size(79, 22);
-            uiLabel2.TabIndex = 82;
-            uiLabel2.Text = "产品型号:";
-            uiLabel2.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // txtType
-            // 
-            txtType.BackColor = Color.Transparent;
-            txtType.Enabled = false;
-            txtType.FillColor2 = Color.White;
-            txtType.FillDisableColor = Color.White;
-            txtType.FillReadOnlyColor = Color.White;
-            txtType.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
-            txtType.ForeColor = Color.Black;
-            txtType.ForeDisableColor = Color.Black;
-            txtType.ForeReadOnlyColor = Color.Black;
-            txtType.Location = new Point(125, 55);
-            txtType.Margin = new Padding(4, 5, 4, 5);
-            txtType.MinimumSize = new Size(1, 16);
-            txtType.Name = "txtType";
-            txtType.Padding = new Padding(5);
-            txtType.Radius = 10;
-            txtType.ReadOnly = true;
-            txtType.RectColor = Color.White;
-            txtType.RectDisableColor = Color.White;
-            txtType.RectReadOnlyColor = Color.White;
-            txtType.ShowText = false;
-            txtType.Size = new Size(198, 29);
-            txtType.TabIndex = 397;
-            txtType.TextAlignment = ContentAlignment.MiddleLeft;
-            txtType.Watermark = "请选择";
-            // 
-            // uiLabel9
-            // 
-            uiLabel9.AutoSize = true;
-            uiLabel9.BackColor = Color.Transparent;
-            uiLabel9.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            uiLabel9.ForeColor = Color.FromArgb(46, 46, 46);
-            uiLabel9.Location = new Point(19, 58);
-            uiLabel9.Name = "uiLabel9";
-            uiLabel9.Size = new Size(90, 22);
-            uiLabel9.TabIndex = 396;
-            uiLabel9.Text = "产品类型：";
-            uiLabel9.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // btnGet
-            // 
-            btnGet.Cursor = Cursors.Hand;
-            btnGet.FillDisableColor = Color.FromArgb(70, 75, 85);
-            btnGet.Font = new Font("思源黑体 CN Bold", 11F, FontStyle.Bold);
-            btnGet.ForeDisableColor = Color.White;
-            btnGet.Location = new Point(675, 50);
-            btnGet.MinimumSize = new Size(1, 1);
-            btnGet.Name = "btnGet";
-            btnGet.RectDisableColor = Color.FromArgb(80, 160, 255);
-            btnGet.Size = new Size(105, 40);
-            btnGet.TabIndex = 389;
-            btnGet.Text = "产品选择";
-            btnGet.TipsFont = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnGet.TipsText = "1";
-            btnGet.Click += btnProductSelection_Click;
-            // 
-            // txtModel
-            // 
-            txtModel.BackColor = Color.Transparent;
-            txtModel.Enabled = false;
-            txtModel.FillColor2 = Color.White;
-            txtModel.FillDisableColor = Color.White;
-            txtModel.FillReadOnlyColor = Color.White;
-            txtModel.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
-            txtModel.ForeColor = Color.FromArgb(46, 46, 46);
-            txtModel.ForeDisableColor = Color.White;
-            txtModel.ForeReadOnlyColor = Color.White;
-            txtModel.Location = new Point(446, 55);
-            txtModel.Margin = new Padding(4, 5, 4, 5);
-            txtModel.MinimumSize = new Size(1, 16);
-            txtModel.Name = "txtModel";
-            txtModel.Padding = new Padding(5);
-            txtModel.Radius = 10;
-            txtModel.ReadOnly = true;
-            txtModel.RectColor = Color.White;
-            txtModel.RectDisableColor = Color.White;
-            txtModel.RectReadOnlyColor = Color.White;
-            txtModel.ShowText = false;
-            txtModel.Size = new Size(198, 29);
-            txtModel.TabIndex = 390;
-            txtModel.TextAlignment = ContentAlignment.MiddleLeft;
-            txtModel.Watermark = "请选择";
             // 
             // btnBrowse
             // 
@@ -262,8 +162,8 @@
             tabs1.Pages.Add(tabPage1);
             tabs1.Pages.Add(tabPage2);
             tabs1.Size = new Size(792, 587);
-            styleCard21.Closable = AntdUI.Tabs.StyleCard2.CloseType.none;
-            tabs1.Style = styleCard21;
+            styleCard23.Closable = AntdUI.Tabs.StyleCard2.CloseType.none;
+            tabs1.Style = styleCard23;
             tabs1.TabIndex = 401;
             tabs1.TabMenuVisible = false;
             tabs1.Text = "tabs1";
@@ -627,20 +527,48 @@
             uiLine2.StartCap = UILineCap.Circle;
             uiLine2.TabIndex = 498;
             // 
+            // productSelectButton
+            // 
+            productSelectButton.FillColor = Color.FromArgb(218, 220, 230);
+            productSelectButton.FillColor2 = Color.FromArgb(218, 220, 230);
+            productSelectButton.Font = new Font("微软雅黑", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
+            productSelectButton.ForeColor = Color.Black;
+            productSelectButton.Location = new Point(117, 53);
+            productSelectButton.MinimumSize = new Size(1, 1);
+            productSelectButton.Name = "productSelectButton";
+            productSelectButton.PlaceholderText = "点击选择产品型号...";
+            productSelectButton.Radius = 10;
+            productSelectButton.RectColor = Color.Gray;
+            productSelectButton.Size = new Size(652, 35);
+            productSelectButton.TabIndex = 499;
+            productSelectButton.Text = "点击选择产品型号...";
+            productSelectButton.TextAlign = ContentAlignment.MiddleLeft;
+            productSelectButton.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            // 
+            // uiLabel2
+            // 
+            uiLabel2.AutoSize = true;
+            uiLabel2.BackColor = Color.Transparent;
+            uiLabel2.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            uiLabel2.ForeColor = Color.FromArgb(46, 46, 46);
+            uiLabel2.Location = new Point(26, 56);
+            uiLabel2.Name = "uiLabel2";
+            uiLabel2.Size = new Size(90, 22);
+            uiLabel2.TabIndex = 500;
+            uiLabel2.Text = "产品详情：";
+            uiLabel2.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // UcTestParams
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(224, 224, 224);
-            Controls.Add(uiGroupBox1);
             Controls.Add(uiLabel2);
+            Controls.Add(productSelectButton);
+            Controls.Add(uiGroupBox1);
             Controls.Add(uiLine2);
-            Controls.Add(txtType);
             Controls.Add(tabs1);
-            Controls.Add(txtModel);
             Controls.Add(btnReport);
-            Controls.Add(uiLabel9);
-            Controls.Add(btnGet);
             Controls.Add(btnParameter);
             Controls.Add(btnDelete);
             Controls.Add(uiLine1);
@@ -658,9 +586,6 @@
         #endregion
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private Sunny.UI.UIGroupBox uiGroupBox1;
-        private Sunny.UI.UILabel uiLabel2;
-        private Sunny.UI.UIButton btnGet;
-        private Sunny.UI.UITextBox txtModel;
         private Sunny.UI.UIButton btnDelete;
         private Sunny.UI.UIButton btnBrowse;
         private Sunny.UI.UITextBox txtTemplateRpt;
@@ -668,8 +593,6 @@
         private AntdUI.TabPage tabPage1;
         private AntdUI.TabPage tabPage2;
         private UILabel uiLabel3;
-        private UILabel uiLabel9;
-        private UITextBox txtType;
         private AntdUI.Button btnReport;
         private AntdUI.Button btnParameter;
         private UILabel uiLabel1;
@@ -690,5 +613,7 @@
         private UILabel uiLabel4;
         private UITextBox txtForemanName;
         private UITextBox txtForemanCellName;
+        private Controls.ProductSelectButton productSelectButton;
+        private UILabel uiLabel2;
     }
 }

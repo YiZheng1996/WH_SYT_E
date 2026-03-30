@@ -15,10 +15,10 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
     public class CommunicationProviderFactory
     {
         private static readonly Lazy<CommunicationProviderFactory> _instance =
-            new Lazy<CommunicationProviderFactory>(() => new CommunicationProviderFactory());
+            new(() => new CommunicationProviderFactory());
 
         private readonly ConcurrentDictionary<string, ICommunicationProvider> _providerCache = new();
-        private readonly SemaphoreSlim _cleanupLock = new(1, 1);  // ★ BUG #8 修复: 改用 SemaphoreSlim 支持 async
+        private readonly SemaphoreSlim _cleanupLock = new(1, 1);
         private ILogger _logger;
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Communication
                     try
                     {
                         _logger?.LogDebug("释放通讯提供者: {Key}", kvp.Key);
-                        // 使用 await 替代 .Wait()，避免死锁
+                        // 使用 await 替代 .Wait()，避免死锁 
                         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
                         try
                         {

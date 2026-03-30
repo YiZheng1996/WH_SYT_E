@@ -31,6 +31,7 @@ namespace MainUI.Procedure
         private void InitializeComponent()
         {
             uiPanel1 = new UIPanel();
+            _btnSelectProduct = new MainUI.Procedure.Controls.ProductSelectButton();
             btnDown = new UIButton();
             btnUp = new UIButton();
             btnCopyItem = new UIButton();
@@ -38,10 +39,7 @@ namespace MainUI.Procedure
             lstTestPoint = new UIListBox();
             uiLabel20 = new UILabel();
             uiLabel1 = new UILabel();
-            cboType = new UIComboBox();
             uiLabel9 = new UILabel();
-            uiLabel2 = new UILabel();
-            cboModel = new UIComboBox();
             btnRight = new UIButton();
             btnLeft = new UIButton();
             btnSave = new UIButton();
@@ -52,6 +50,7 @@ namespace MainUI.Procedure
             // uiPanel1
             // 
             uiPanel1.BackColor = Color.FromArgb(236, 236, 236);
+            uiPanel1.Controls.Add(_btnSelectProduct);
             uiPanel1.Controls.Add(btnDown);
             uiPanel1.Controls.Add(btnUp);
             uiPanel1.Controls.Add(btnCopyItem);
@@ -59,10 +58,7 @@ namespace MainUI.Procedure
             uiPanel1.Controls.Add(lstTestPoint);
             uiPanel1.Controls.Add(uiLabel20);
             uiPanel1.Controls.Add(uiLabel1);
-            uiPanel1.Controls.Add(cboType);
             uiPanel1.Controls.Add(uiLabel9);
-            uiPanel1.Controls.Add(uiLabel2);
-            uiPanel1.Controls.Add(cboModel);
             uiPanel1.Controls.Add(btnRight);
             uiPanel1.Controls.Add(btnLeft);
             uiPanel1.Controls.Add(btnSave);
@@ -81,6 +77,25 @@ namespace MainUI.Procedure
             uiPanel1.TabIndex = 1;
             uiPanel1.Text = null;
             uiPanel1.TextAlignment = ContentAlignment.MiddleCenter;
+            // 
+            // _btnSelectProduct
+            // 
+            _btnSelectProduct.FillColor = Color.FromArgb(218, 220, 230);
+            _btnSelectProduct.FillColor2 = Color.FromArgb(218, 220, 230);
+            _btnSelectProduct.Font = new Font("微软雅黑", 12F);
+            _btnSelectProduct.ForeColor = Color.Black;
+            _btnSelectProduct.Location = new Point(134, 13);
+            _btnSelectProduct.MinimumSize = new Size(1, 1);
+            _btnSelectProduct.Name = "_btnSelectProduct";
+            _btnSelectProduct.PlaceholderText = "点击选择产品型号...";
+            _btnSelectProduct.Radius = 10;
+            _btnSelectProduct.RectColor = Color.Gray;
+            _btnSelectProduct.Size = new Size(635, 35);
+            _btnSelectProduct.TabIndex = 444;
+            _btnSelectProduct.Text = "点击选择产品型号...";
+            _btnSelectProduct.TextAlign = ContentAlignment.MiddleLeft;
+            _btnSelectProduct.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            _btnSelectProduct.ProductSelected += productSelectButton1_ProductSelected;
             // 
             // btnDown
             // 
@@ -199,36 +214,6 @@ namespace MainUI.Procedure
             uiLabel1.Text = "可选试验项点";
             uiLabel1.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // cboType
-            // 
-            cboType.BackColor = Color.Transparent;
-            cboType.DataSource = null;
-            cboType.DropDownStyle = UIDropDownStyle.DropDownList;
-            cboType.FillColor = Color.FromArgb(218, 220, 230);
-            cboType.FillColor2 = Color.FromArgb(218, 220, 230);
-            cboType.FillDisableColor = Color.FromArgb(218, 220, 230);
-            cboType.FilterMaxCount = 50;
-            cboType.Font = new Font("微软雅黑", 12.75F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            cboType.ForeColor = Color.FromArgb(46, 46, 46);
-            cboType.ForeDisableColor = Color.FromArgb(46, 46, 46);
-            cboType.ItemHoverColor = Color.FromArgb(155, 200, 255);
-            cboType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cboType.Location = new Point(126, 15);
-            cboType.Margin = new Padding(4, 5, 4, 5);
-            cboType.MinimumSize = new Size(63, 0);
-            cboType.Name = "cboType";
-            cboType.Padding = new Padding(0, 0, 30, 2);
-            cboType.Radius = 10;
-            cboType.RectColor = Color.Gray;
-            cboType.RectDisableColor = Color.Gray;
-            cboType.RectSides = ToolStripStatusLabelBorderSides.Bottom;
-            cboType.Size = new Size(200, 29);
-            cboType.SymbolSize = 24;
-            cboType.TabIndex = 440;
-            cboType.TextAlignment = ContentAlignment.MiddleLeft;
-            cboType.Watermark = "请选择";
-            cboType.SelectedIndexChanged += cboType_SelectedIndexChanged;
-            // 
             // uiLabel9
             // 
             uiLabel9.AutoSize = true;
@@ -241,46 +226,6 @@ namespace MainUI.Procedure
             uiLabel9.TabIndex = 439;
             uiLabel9.Text = "产品类型：";
             uiLabel9.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // uiLabel2
-            // 
-            uiLabel2.AutoSize = true;
-            uiLabel2.Font = new Font("微软雅黑", 12.75F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            uiLabel2.ForeColor = Color.Black;
-            uiLabel2.Location = new Point(447, 19);
-            uiLabel2.Name = "uiLabel2";
-            uiLabel2.Size = new Size(83, 24);
-            uiLabel2.TabIndex = 438;
-            uiLabel2.Text = "产品型号:";
-            uiLabel2.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // cboModel
-            // 
-            cboModel.BackColor = Color.Transparent;
-            cboModel.DataSource = null;
-            cboModel.DropDownStyle = UIDropDownStyle.DropDownList;
-            cboModel.FillColor = Color.FromArgb(218, 220, 230);
-            cboModel.FillColor2 = Color.FromArgb(218, 220, 230);
-            cboModel.FillDisableColor = Color.FromArgb(218, 220, 230);
-            cboModel.FilterMaxCount = 50;
-            cboModel.Font = new Font("微软雅黑", 12.75F, FontStyle.Bold, GraphicsUnit.Point, 134);
-            cboModel.ForeColor = Color.Black;
-            cboModel.ForeDisableColor = Color.Black;
-            cboModel.ItemHoverColor = Color.FromArgb(155, 200, 255);
-            cboModel.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cboModel.Location = new Point(539, 15);
-            cboModel.Margin = new Padding(4, 5, 4, 5);
-            cboModel.MinimumSize = new Size(63, 0);
-            cboModel.Name = "cboModel";
-            cboModel.Padding = new Padding(0, 0, 30, 2);
-            cboModel.Radius = 10;
-            cboModel.RectColor = Color.Gray;
-            cboModel.RectDisableColor = Color.Gray;
-            cboModel.Size = new Size(200, 29);
-            cboModel.SymbolSize = 24;
-            cboModel.TabIndex = 437;
-            cboModel.TextAlignment = ContentAlignment.MiddleLeft;
-            cboModel.Watermark = "请选择";
             // 
             // btnRight
             // 
@@ -359,8 +304,6 @@ namespace MainUI.Procedure
         #endregion
 
         private UIPanel uiPanel1;
-        private UILabel uiLabel2;
-        private UIComboBox cboModel;
         private UIButton btnRight;
         private UIButton btnLeft;
         private UIButton btnSave;
@@ -369,10 +312,10 @@ namespace MainUI.Procedure
         private UIListBox lstAllPoint;
         private UIListBox lstTestPoint;
         private UILabel uiLabel9;
-        private UIComboBox cboType;
         private UILine uiLine1;
         private UIButton btnCopyItem;
         private UIButton btnDown;
         private UIButton btnUp;
+        private Controls.ProductSelectButton _btnSelectProduct;
     }
 }

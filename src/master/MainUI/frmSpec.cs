@@ -14,6 +14,7 @@ namespace MainUI
         }
 
         ModelTypeBLL pbll = new();
+
         /// <summary>
         /// 获取被试品类别列表
         /// </summary>
@@ -36,19 +37,21 @@ namespace MainUI
         private void LoadData()
         {
             Tables.Columns = [
-                new Column("ID","型号"){ Align = ColumnAlign.Center , Visible = false },
-                new Column("ModelTypeID","类型ID"){ Align = ColumnAlign.Center ,  Visible = false},
-                new Column("ModelTypeName","产品类型名称"){ Align = ColumnAlign.Center , Visible = false},
-                new Column("ModelName","产品型号名称"){ Align = ColumnAlign.Center },
+                new Column("ID","型号"){ Align = ColumnAlign.Center, Visible = false },
+                new Column("ModelTypeID","类型ID"){ Align = ColumnAlign.Center, Visible = false},
+                new Column("ModelTypeName","产品类型"){ Align = ColumnAlign.Center, Visible = false},
+                new Column("ModelName","产品型号"){ Align = ColumnAlign.Center },
                 new Column("DrawingNo","产品图号"){ Align = ColumnAlign.Center },
-                new Column("Mark","名称型号备注"){ Align = ColumnAlign.Center },
+                new Column("CompanyProjectNo","公司项目编号"){ Align = ColumnAlign.Center },
+                new Column("CustomerProjectNo","客户项目编号"){ Align = ColumnAlign.Center },
+                new Column("Mark","备注"){ Align = ColumnAlign.Center },
             ];
 
             // 管理员可以看到所有型号(包括未发布的),其他用户只能看已发布的
             bool isAdmin = NewUsers.NewUserInfo.ID == 1;
             Tables.DataSource = ModelBLL.GetNewModels(
                 cboType.SelectedValue.ToInt32(),
-                IsRelease: isAdmin  // true=显示所有, false=只显示已发布
+                IsRelease: isAdmin
             );
         }
 
@@ -61,7 +64,7 @@ namespace MainUI
             cboModel.DisplayMember = "ModelName";
             cboModel.DataSource = ModelBLL.GetNewModels(
                 cboType.SelectedValue.ToInt32(),
-                IsRelease: isAdmin  // true=显示所有, false=只显示已发布
+                IsRelease: isAdmin
             );
             LoadData();
         }
@@ -78,7 +81,10 @@ namespace MainUI
         {
             try
             {
-                DialogResult = DialogResult.OK;
+                if (VarHelper.TestViewModel != null && VarHelper.TestViewModel.ID > 0)
+                {
+                    DialogResult = DialogResult.OK;
+                }
             }
             catch (Exception ex)
             {
@@ -88,6 +94,11 @@ namespace MainUI
 
         private void btnSelectRow_Click(object sender, EventArgs e)
         {
+            if (VarHelper.TestViewModel == null || VarHelper.TestViewModel.ID <= 0)
+            {
+                MessageHelper.MessageOK("请先选择一条产品记录！", TType.Warn);
+                return;
+            }
             DialogResult = DialogResult.OK;
         }
     }

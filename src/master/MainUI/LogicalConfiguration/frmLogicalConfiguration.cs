@@ -56,14 +56,22 @@ namespace MainUI.LogicalConfiguration
                 // 隐藏底部整个区域（步骤详情和执行日志）
                 splitContainerRight.Panel2Collapsed = true;
 
-                _logger.LogDebug("开始初始化配置: {ModelType}/{ModelName}/{ProcessName}",
-                    modelType, modelName, processName);
-
                 // 设置JSON文件路径
                 JsonManager.FilePath = path;
 
                 // 更新窗体标题
-                Text = $@"产品类型：{modelType}，产品型号：{modelName}，项点名称：{processName}";
+                string titleInfo = $"类型：{modelType}，型号：{modelName}";
+                var vm = VarHelper.TestViewModel;
+                if (vm != null)
+                {
+                    if (!string.IsNullOrEmpty(vm.DrawingNo))
+                        titleInfo += $"，图号：{vm.DrawingNo}";
+                    if (!string.IsNullOrEmpty(vm.CompanyProjectNo))
+                        titleInfo += $"，公司项目编号：{vm.CompanyProjectNo}";
+                }
+                titleInfo += $"，项点：{processName}";
+                Text = titleInfo;
+                _logger.LogDebug($"开始初始化配置: {titleInfo}");
 
                 // 更新全局变量
                 TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelType, modelName);
@@ -375,7 +383,7 @@ namespace MainUI.LogicalConfiguration
         #endregion
 
         #region 事件处理方法
-         
+
         /// <summary>
         /// 步骤序号变更事件处理
         /// </summary>

@@ -39,6 +39,10 @@
             txtModelType = new UITextBox();
             txtMark = new UITextBox();
             uiLabel3 = new UILabel();
+            txtCompanyProjectNo = new UITextBox();
+            uiLabel5 = new UILabel();
+            txtCustomerProjectNo = new UITextBox();
+            uiLabel6 = new UILabel();
             uiPanel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -48,7 +52,7 @@
             uiLabel1.BackColor = Color.Transparent;
             uiLabel1.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
             uiLabel1.ForeColor = Color.FromArgb(43, 46, 57);
-            uiLabel1.Location = new Point(111, 91);
+            uiLabel1.Location = new Point(111, 90);
             uiLabel1.Name = "uiLabel1";
             uiLabel1.Size = new Size(84, 25);
             uiLabel1.TabIndex = 68;
@@ -61,7 +65,7 @@
             btnCancel.Cursor = Cursors.Hand;
             btnCancel.FillDisableColor = Color.FromArgb(80, 160, 255);
             btnCancel.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
-            btnCancel.Location = new Point(281, 305);
+            btnCancel.Location = new Point(281, 413);
             btnCancel.MinimumSize = new Size(1, 1);
             btnCancel.Name = "btnCancel";
             btnCancel.Radius = 10;
@@ -79,7 +83,7 @@
             btnSubmit.Cursor = Cursors.Hand;
             btnSubmit.FillDisableColor = Color.FromArgb(80, 160, 255);
             btnSubmit.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
-            btnSubmit.Location = new Point(117, 305);
+            btnSubmit.Location = new Point(117, 413);
             btnSubmit.MinimumSize = new Size(1, 1);
             btnSubmit.Name = "btnSubmit";
             btnSubmit.Radius = 10;
@@ -93,6 +97,10 @@
             // 
             // uiPanel1
             // 
+            uiPanel1.Controls.Add(txtCustomerProjectNo);
+            uiPanel1.Controls.Add(uiLabel6);
+            uiPanel1.Controls.Add(txtCompanyProjectNo);
+            uiPanel1.Controls.Add(uiLabel5);
             uiPanel1.Controls.Add(txtDrawingNo);
             uiPanel1.Controls.Add(uiLabel4);
             uiPanel1.Controls.Add(uiLabel2);
@@ -116,7 +124,7 @@
             uiPanel1.Radius = 15;
             uiPanel1.RectColor = Color.White;
             uiPanel1.RectDisableColor = Color.White;
-            uiPanel1.Size = new Size(519, 375);
+            uiPanel1.Size = new Size(519, 482);
             uiPanel1.TabIndex = 408;
             uiPanel1.Text = null;
             uiPanel1.TextAlignment = ContentAlignment.MiddleCenter;
@@ -133,7 +141,7 @@
             txtDrawingNo.ForeColor = Color.Black;
             txtDrawingNo.ForeDisableColor = Color.Black;
             txtDrawingNo.ForeReadOnlyColor = Color.Black;
-            txtDrawingNo.Location = new Point(202, 144);
+            txtDrawingNo.Location = new Point(202, 142);
             txtDrawingNo.Margin = new Padding(4, 5, 4, 5);
             txtDrawingNo.MinimumSize = new Size(1, 16);
             txtDrawingNo.Name = "txtDrawingNo";
@@ -154,7 +162,7 @@
             uiLabel4.BackColor = Color.Transparent;
             uiLabel4.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
             uiLabel4.ForeColor = Color.FromArgb(43, 46, 57);
-            uiLabel4.Location = new Point(111, 145);
+            uiLabel4.Location = new Point(111, 144);
             uiLabel4.Name = "uiLabel4";
             uiLabel4.Size = new Size(84, 25);
             uiLabel4.TabIndex = 412;
@@ -216,7 +224,7 @@
             txtModelType.ForeColor = Color.Black;
             txtModelType.ForeDisableColor = Color.Black;
             txtModelType.ForeReadOnlyColor = Color.Black;
-            txtModelType.Location = new Point(202, 89);
+            txtModelType.Location = new Point(202, 88);
             txtModelType.Margin = new Padding(4, 5, 4, 5);
             txtModelType.MinimumSize = new Size(1, 16);
             txtModelType.Name = "txtModelType";
@@ -243,7 +251,7 @@
             txtMark.ForeColor = Color.Black;
             txtMark.ForeDisableColor = Color.Black;
             txtMark.ForeReadOnlyColor = Color.Black;
-            txtMark.Location = new Point(202, 199);
+            txtMark.Location = new Point(202, 304);
             txtMark.Margin = new Padding(4, 5, 4, 5);
             txtMark.MinimumSize = new Size(1, 16);
             txtMark.Name = "txtMark";
@@ -265,18 +273,98 @@
             uiLabel3.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
             uiLabel3.ForeColor = Color.FromArgb(43, 46, 57);
             uiLabel3.ImeMode = ImeMode.NoControl;
-            uiLabel3.Location = new Point(111, 199);
+            uiLabel3.Location = new Point(111, 306);
             uiLabel3.Name = "uiLabel3";
             uiLabel3.Size = new Size(84, 25);
             uiLabel3.TabIndex = 74;
             uiLabel3.Text = "型号备注";
             uiLabel3.TextAlign = ContentAlignment.MiddleRight;
             // 
+            // txtCompanyProjectNo
+            // 
+            txtCompanyProjectNo.BackColor = Color.Transparent;
+            txtCompanyProjectNo.Cursor = Cursors.IBeam;
+            txtCompanyProjectNo.FillColor = Color.FromArgb(218, 220, 230);
+            txtCompanyProjectNo.FillColor2 = Color.FromArgb(218, 220, 230);
+            txtCompanyProjectNo.FillDisableColor = Color.FromArgb(218, 220, 230);
+            txtCompanyProjectNo.FillReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtCompanyProjectNo.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
+            txtCompanyProjectNo.ForeColor = Color.Black;
+            txtCompanyProjectNo.ForeDisableColor = Color.Black;
+            txtCompanyProjectNo.ForeReadOnlyColor = Color.Black;
+            txtCompanyProjectNo.Location = new Point(202, 196);
+            txtCompanyProjectNo.Margin = new Padding(4, 5, 4, 5);
+            txtCompanyProjectNo.MinimumSize = new Size(1, 16);
+            txtCompanyProjectNo.Name = "txtCompanyProjectNo";
+            txtCompanyProjectNo.Padding = new Padding(5);
+            txtCompanyProjectNo.Radius = 10;
+            txtCompanyProjectNo.RectColor = Color.FromArgb(218, 220, 230);
+            txtCompanyProjectNo.RectDisableColor = Color.FromArgb(218, 220, 230);
+            txtCompanyProjectNo.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtCompanyProjectNo.ShowText = false;
+            txtCompanyProjectNo.Size = new Size(210, 30);
+            txtCompanyProjectNo.TabIndex = 415;
+            txtCompanyProjectNo.TextAlignment = ContentAlignment.MiddleLeft;
+            txtCompanyProjectNo.Watermark = "请输入";
+            // 
+            // uiLabel5
+            // 
+            uiLabel5.AutoSize = true;
+            uiLabel5.BackColor = Color.Transparent;
+            uiLabel5.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
+            uiLabel5.ForeColor = Color.FromArgb(43, 46, 57);
+            uiLabel5.Location = new Point(75, 198);
+            uiLabel5.Name = "uiLabel5";
+            uiLabel5.Size = new Size(120, 25);
+            uiLabel5.TabIndex = 414;
+            uiLabel5.Text = "公司项目编号";
+            uiLabel5.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // txtCustomerProjectNo
+            // 
+            txtCustomerProjectNo.BackColor = Color.Transparent;
+            txtCustomerProjectNo.Cursor = Cursors.IBeam;
+            txtCustomerProjectNo.FillColor = Color.FromArgb(218, 220, 230);
+            txtCustomerProjectNo.FillColor2 = Color.FromArgb(218, 220, 230);
+            txtCustomerProjectNo.FillDisableColor = Color.FromArgb(218, 220, 230);
+            txtCustomerProjectNo.FillReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtCustomerProjectNo.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
+            txtCustomerProjectNo.ForeColor = Color.Black;
+            txtCustomerProjectNo.ForeDisableColor = Color.Black;
+            txtCustomerProjectNo.ForeReadOnlyColor = Color.Black;
+            txtCustomerProjectNo.Location = new Point(202, 250);
+            txtCustomerProjectNo.Margin = new Padding(4, 5, 4, 5);
+            txtCustomerProjectNo.MinimumSize = new Size(1, 16);
+            txtCustomerProjectNo.Name = "txtCustomerProjectNo";
+            txtCustomerProjectNo.Padding = new Padding(5);
+            txtCustomerProjectNo.Radius = 10;
+            txtCustomerProjectNo.RectColor = Color.FromArgb(218, 220, 230);
+            txtCustomerProjectNo.RectDisableColor = Color.FromArgb(218, 220, 230);
+            txtCustomerProjectNo.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtCustomerProjectNo.ShowText = false;
+            txtCustomerProjectNo.Size = new Size(210, 30);
+            txtCustomerProjectNo.TabIndex = 417;
+            txtCustomerProjectNo.TextAlignment = ContentAlignment.MiddleLeft;
+            txtCustomerProjectNo.Watermark = "请输入";
+            // 
+            // uiLabel6
+            // 
+            uiLabel6.AutoSize = true;
+            uiLabel6.BackColor = Color.Transparent;
+            uiLabel6.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
+            uiLabel6.ForeColor = Color.FromArgb(43, 46, 57);
+            uiLabel6.Location = new Point(75, 252);
+            uiLabel6.Name = "uiLabel6";
+            uiLabel6.Size = new Size(120, 25);
+            uiLabel6.TabIndex = 416;
+            uiLabel6.Text = "客户项目编号";
+            uiLabel6.TextAlign = ContentAlignment.MiddleRight;
+            // 
             // frmModelEdit
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 236);
-            ClientSize = new Size(585, 467);
+            ClientSize = new Size(585, 568);
             ControlBox = false;
             Controls.Add(uiPanel1);
             Font = new Font("微软雅黑", 11F);
@@ -313,5 +401,9 @@
         private UIComboBox cboModelType;
         private UITextBox txtDrawingNo;
         private UILabel uiLabel4;
+        private UITextBox txtCustomerProjectNo;
+        private UILabel uiLabel6;
+        private UITextBox txtCompanyProjectNo;
+        private UILabel uiLabel5;
     }
 }

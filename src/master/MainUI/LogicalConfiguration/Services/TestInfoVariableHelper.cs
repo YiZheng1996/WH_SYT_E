@@ -16,6 +16,8 @@ namespace MainUI.LogicalConfiguration.Services
         public const string VAR_TEST_ID = "产品图号";
         public const string VAR_TEST_TIME = "测试时间";
         public const string VAR_TEST_BENCH = "试验台";
+        public const string VAR_COMPANY_PROJECT_NO = "公司项目号";
+        public const string VAR_CUSTOMER_PROJECT_NO = "客户项目号";
 
         /// <summary>
         /// 初始化测试信息相关的全局变量
@@ -86,6 +88,24 @@ namespace MainUI.LogicalConfiguration.Services
                 VarText = "当前试验台名称"
             });
 
+            AddOrUpdateVariable(variableManager, new VarItem_Enhanced
+            {
+                VarName = VAR_COMPANY_PROJECT_NO,
+                VarType = "string",
+                VarValue = GetCurrentCompanyProjectNo(),
+                IsSystemVariable = true,
+                VarText = "当前公司项目编号"
+            });
+
+            AddOrUpdateVariable(variableManager, new VarItem_Enhanced
+            {
+                VarName = VAR_CUSTOMER_PROJECT_NO,
+                VarType = "string",
+                VarValue = GetCurrentCustomerProjectNo(),
+                IsSystemVariable = true,
+                VarText = "当前客户项目编号"
+            });
+
             var aa = variableManager.GetAllVariables();
             NlogHelper.Default.Info("测试信息变量初始化完成");
         }
@@ -105,6 +125,8 @@ namespace MainUI.LogicalConfiguration.Services
             UpdateVariableValue(variableManager, VAR_TEST_ID, GetCurrentTestID());
             UpdateVariableValue(variableManager, VAR_TEST_TIME, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             UpdateVariableValue(variableManager, VAR_TEST_BENCH, GetCurrentTestBench());
+            UpdateVariableValue(variableManager, VAR_COMPANY_PROJECT_NO, GetCurrentCompanyProjectNo());
+            UpdateVariableValue(variableManager, VAR_CUSTOMER_PROJECT_NO, GetCurrentCustomerProjectNo());
 
             NlogHelper.Default.Info("测试信息变量已更新");
         }
@@ -286,6 +308,19 @@ namespace MainUI.LogicalConfiguration.Services
             {
                 return "未知";
             }
+        }
+
+
+        private static string GetCurrentCompanyProjectNo()
+        {
+            try { return VarHelper.TestViewModel?.CompanyProjectNo ?? ""; }
+            catch { return ""; }
+        }
+
+        private static string GetCurrentCustomerProjectNo()
+        {
+            try { return VarHelper.TestViewModel?.CustomerProjectNo ?? ""; }
+            catch { return ""; }
         }
 
         #endregion

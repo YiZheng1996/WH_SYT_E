@@ -31,7 +31,10 @@ namespace MainUI
                 string ModelName = txtModelType.Text.Trim();
                 string Mark = txtMark.Text.Trim();
                 string DrawingNo = txtDrawingNo.Text.Trim();
+                string CompanyProjectNo = txtCompanyProjectNo.Text.Trim();
+                string CustomerProjectNo = txtCustomerProjectNo.Text.Trim();
                 int TypeID = cboModelType.SelectedValue.ToInt32();
+
                 if (string.IsNullOrEmpty(ModelName))
                 {
                     MessageHelper.MessageOK(this, "未输入型号名称！");
@@ -48,6 +51,8 @@ namespace MainUI
                         ModelName = ModelName,
                         Mark = Mark,
                         DrawingNo = DrawingNo,
+                        CompanyProjectNo = CompanyProjectNo,
+                        CustomerProjectNo = CustomerProjectNo,
                     };
                     result = ModelBLL.Add(newModel);
                 }
@@ -57,6 +62,8 @@ namespace MainUI
                     model.ModelName = ModelName;
                     model.Mark = Mark;
                     model.DrawingNo = DrawingNo;
+                    model.CompanyProjectNo = CompanyProjectNo;
+                    model.CustomerProjectNo = CustomerProjectNo;
                     result = modelBLL.Update(model);
                 }
 
@@ -92,6 +99,8 @@ namespace MainUI
                 txtModelType.Text = model.ModelName;
                 txtMark.Text = model.Mark;
                 txtDrawingNo.Text = model.DrawingNo;
+                txtCompanyProjectNo.Text = model.CompanyProjectNo;
+                txtCustomerProjectNo.Text = model.CustomerProjectNo;
             }
         }
     }

@@ -1,4 +1,6 @@
-﻿using Sunny.UI;
+﻿using MainUI.Procedure.Controls;
+using MainUI.Service;
+using Sunny.UI;
 using System.Windows.Forms;
 
 namespace MainUI.Procedure
@@ -6,14 +8,36 @@ namespace MainUI.Procedure
     public partial class UcTestParams : ucBaseManagerUI
     {
         // 模型名称
-        private string ModelName => $"{txtType.Text}_{txtModel.Text}";
+        private string ConfigSectionName =>
+        productSelectButton?.SelectedModel != null
+            ? ProductPathHelper.BuildParaConfigSectionName(
+                productSelectButton.SelectedModel.ModelTypeName,
+                productSelectButton.SelectedModel.ID)
+            : "";
+
         ParaConfig paraconfig = new(); //参数配置类
         SaveReportConfig SaveRptconfig = new(); //报表保存配置类
 
         public UcTestParams()
         {
             InitializeComponent();
+            InitializeProductSelector();
             LoadConfig();
+        }
+
+        private void InitializeProductSelector()
+        {
+            productSelectButton = new ProductSelectButton
+            {
+                PlaceholderText = "点击选择产品型号...",
+                Location = new Point(126, 15),  // 根据实际布局调整
+                Size = new Size(400, 35),
+            };
+            productSelectButton.ProductSelected += (s, model) =>
+            {
+                // 选择新产品后重新加载配置
+                LoadConfig();
+            };
         }
 
         /// <summary>
@@ -23,9 +47,12 @@ namespace MainUI.Procedure
         {
             try
             {
+                string sectionName = ConfigSectionName;
+                if (string.IsNullOrEmpty(sectionName)) return;
+
                 // 试验参数配置
                 paraconfig = new ParaConfig();
-                paraconfig.SetSectionName(ModelName);
+                paraconfig.SetSectionName(sectionName);
                 paraconfig.Load();
                 txtTemplateRpt.Text = paraconfig.RptFile;
 
@@ -56,16 +83,13 @@ namespace MainUI.Procedure
         {
             try
             {
-                //if (string.IsNullOrEmpty(txtModel.Text))
-                //{
-                //    MessageHelper.MessageOK($"型号未选择！");
-                //    return;
-                //}
+                string sectionName = ConfigSectionName;
+                if (string.IsNullOrEmpty(sectionName)) return;
 
                 // 保存前的报表模板路径
                 string oldRptFile = paraconfig.RptFile;
 
-                paraconfig.SetSectionName(ModelName);
+                paraconfig.SetSectionName(sectionName);
                 paraconfig.RptFile = txtTemplateRpt.Text;
                 paraconfig.Save();
 
@@ -99,7 +123,7 @@ namespace MainUI.Procedure
 
         private void btnBrowse_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(txtType.Text))
+            if (string.IsNullOrEmpty(productSelectButton.Text))
             {
                 MessageHelper.MessageOK("型号未选择!", AntdUI.TType.Error);
                 return;
@@ -115,19 +139,6 @@ namespace MainUI.Procedure
                 string path = openFile.FileName;
                 string[] str = path.Split('\\');
                 txtTemplateRpt.Text = str[^1];
-            }
-        }
-
-        //产品选择
-        private void btnProductSelection_Click(object sender, EventArgs e)
-        {
-            FrmSpec fs = new();
-            fs.ShowDialog();
-            if (fs.DialogResult == DialogResult.OK)
-            {
-                txtType.Text = VarHelper.TestViewModel.ModelTypeName;
-                txtModel.Text = VarHelper.TestViewModel.ModelName;
-                LoadConfig();
             }
         }
 
