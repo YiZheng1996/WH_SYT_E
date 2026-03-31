@@ -52,9 +52,7 @@ namespace MainUI.Procedure
                     return;
 
                 // 获取已配置的测试步骤，按Step字段排序
-                List<TestStepModel> lstTestStep = StepBLL.GetTestSteps(new TestStepModel { ID = (int)_currentModel.ID })
-                    .OrderBy(x => x.Step) // 按Step字段排序
-                    .ToList();
+                List<TestStepModel> lstTestStep = [.. StepBLL.GetTestSteps(new TestStepModel { ModelID = (int)_currentModel.ID }).OrderBy(x => x.Step)];
 
                 // 按正确顺序添加到右侧列表
                 foreach (TestStepModel step in lstTestStep)
@@ -126,7 +124,7 @@ namespace MainUI.Procedure
 
         /// <summary>
         /// 复制按钮点击事件 - 打开跨型号复制对话框
-        /// ★ 路径构建改用 ProductPathHelper
+        /// 路径构建改用 ProductPathHelper
         /// </summary>
         private async void btnCopyItem_Click(object sender, EventArgs e)
         {
@@ -250,16 +248,15 @@ namespace MainUI.Procedure
         {
             try
             {
-                if (_currentModel != null)
-                {
-                    // 刷新当前产品的数据
-                    _currentModel = ModelBLL.GetModelById(_currentModel.ID);
-                    _btnSelectProduct.SetSelectedModel(_currentModel);
-                    LoadProcess();
-                    LoadConfiguaredProcess();
-                }
+                if (_currentModel == null) return;
+
+                // 只清理已失效的项点，不重建整个列表
+                // 先刷新 lstTestProcess（项点定义可能被外部改过）
+                lstTestProcess = TestProcessBLL.GetTestProcess(
+                    (int)_currentModel.ModelTypeID, true);
 
                 CleanInvalidTestPoints();
+
                 Debug.WriteLine("ucItemConfiguration 项点配置 数据已刷新");
             }
             catch (Exception ex)
@@ -303,10 +300,13 @@ namespace MainUI.Procedure
 
         protected override void OnDataChangedWithType(DataChangeType changeType)
         {
-            if (changeType == DataChangeType.TestStep || changeType == DataChangeType.All)
+            // TestProcess：项点定义变了，需要清理已失效项
+            // TestStep：步骤配置变了（本控件自己发出，不需要响应自己）
+            if (changeType == DataChangeType.TestProcess || changeType == DataChangeType.All)
             {
                 base.OnDataChangedWithType(changeType);
             }
+            // TestStep 不触发 Reload，避免自己保存后刷新覆盖列表
         }
 
         #endregion
@@ -435,7 +435,7 @@ namespace MainUI.Procedure
                     TestStepModel testStep = new();
                     {
                         testStep.Step = i;
-                        testStep.ID = (int)_currentModel.ID;
+                        testStep.ModelID = (int)_currentModel.ID;
                         testStep.ProcessName = $"{lstTestPoint.Items[i]}";
                         testStep.TestProcessID = lstTestProcess.Find(x => x.ProcessName == testStep.ProcessName).ID;
                     }
@@ -449,7 +449,7 @@ namespace MainUI.Procedure
                 StepBLL.InsertTestStep(lstTestStep, _currentModel.ID);
                 LoadConfiguaredProcess();
                 MessageHelper.MessageOK("保存成功！");
-                DataChangedEventManager.NotifyDataChanged(DataChangeType.TestProcess);
+                DataChangedEventManager.NotifyDataChanged(DataChangeType.TestStep);
             }
             catch (Exception ex)
             {

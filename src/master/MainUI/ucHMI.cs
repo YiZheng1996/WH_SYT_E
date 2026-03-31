@@ -615,55 +615,6 @@ namespace MainUI
         }
         #endregion
 
-        #region 参数
-        //private void InitParaConfig()
-        //{
-        //    try
-        //    {
-        //        if (VarHelper.TestViewModel == null) return;
-
-        //        // 初始化和加载参数配置
-        //        paraconfig = new ParaConfig();
-        //        paraconfig.SetSectionName(VarHelper.ModelTypeName);
-        //        paraconfig.Load();
-        //        BaseTest.ParaConfig = paraconfig;
-
-        //        // 初始化测试项
-        //        _tableService.LoadTestItems();
-
-        //        // 初始化报表
-        //        InitializeReport(paraconfig.RptFile);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageHelper.MessageOK($"加载参数错误：{ex.Message}");
-        //        NlogHelper.Default.Error($"加载参数错误", ex);
-        //    }
-        //}
-
-        ////刷新型号
-        //public async void ParaRefresh()
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrEmpty(txtModel.Text)) return;
-        //        // 加载参数
-        //        InitParaConfig();
-        //        // 加载工作流配置
-        //        if (_workflowService != null)
-        //        {
-        //            await _workflowService.LoadConfigurationsAsync(
-        //                VarHelper.TestViewModel.ModelTypeName,
-        //                VarHelper.TestViewModel.ModelName);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageHelper.MessageYes("刷新型号错误：" + ex.Message);
-        //    }
-        //}
-        #endregion
-
         #region 刷新方法拆分
 
         /// <summary>
@@ -676,7 +627,8 @@ namespace MainUI
                 if (VarHelper.TestViewModel == null) return;
 
                 paraconfig = new ParaConfig();
-                paraconfig.SetSectionName(VarHelper.ModelTypeName);
+                paraconfig.SetSectionName(
+                    ProductPathHelper.BuildParaConfigSectionNameFromCurrent());
                 paraconfig.Load();
                 BaseTest.ParaConfig = paraconfig;
 
@@ -717,9 +669,11 @@ namespace MainUI
 
                 if (_workflowService != null)
                 {
+                    var vm = VarHelper.TestViewModel;
                     await _workflowService.LoadConfigurationsAsync(
-                        VarHelper.TestViewModel.ModelTypeName,
-                        VarHelper.TestViewModel.ModelName);
+                     vm.ModelTypeName,
+                     vm.ID,
+                     vm.ModelName);
 
                     NlogHelper.Default.Debug("工作流配置已刷新");
                 }
@@ -742,7 +696,8 @@ namespace MainUI
 
                 // 重新加载参数以获取最新的报表文件名
                 paraconfig = new ParaConfig();
-                paraconfig.SetSectionName(VarHelper.ModelTypeName);
+                paraconfig.SetSectionName(
+                        ProductPathHelper.BuildParaConfigSectionNameFromCurrent());
                 paraconfig.Load();
 
                 InitializeReport(paraconfig.RptFile);
@@ -1354,6 +1309,11 @@ namespace MainUI
             // 显示通讯测试工具选择窗体
             using var testToolSelector = new FrmCommunicationTestSelector();
             VarHelper.ShowDialogWithOverlay(frm, testToolSelector);
+        }
+
+        private void btnConfigureMigration_Click(object sender, EventArgs e)
+        {
+            ProcedureMigrationHelper.MigrateOldFolders();
         }
     }
 }

@@ -79,10 +79,11 @@ namespace MainUI
             panelReport = new UIPanel();
             tabPage3 = new AntdUI.TabPage();
             grpRainy = new UIPanel();
+            btnCommunicationTest = new UIButton();
+            btnConfigureMigration = new UIButton();
             tabs1 = new Tabs();
             tabPageTestDetails = new AntdUI.TabPage();
             btnTestDetails = new AntdUI.Button();
-            btnCommunicationTest = new UIButton();
             uiTitlePanel3.SuspendLayout();
             uiTitlePanel8.SuspendLayout();
             uiTitlePanel4.SuspendLayout();
@@ -973,6 +974,7 @@ namespace MainUI
             // grpRainy
             // 
             grpRainy.BackColor = Color.FromArgb(236, 236, 237);
+            grpRainy.Controls.Add(btnConfigureMigration);
             grpRainy.Controls.Add(btnCommunicationTest);
             grpRainy.Dock = DockStyle.Fill;
             grpRainy.FillColor = Color.FromArgb(236, 236, 237);
@@ -989,6 +991,30 @@ namespace MainUI
             grpRainy.TabIndex = 521;
             grpRainy.Text = null;
             grpRainy.TextAlignment = ContentAlignment.MiddleCenter;
+            // 
+            // btnCommunicationTest
+            // 
+            btnCommunicationTest.Font = new Font("微软雅黑", 12F);
+            btnCommunicationTest.Location = new Point(24, 867);
+            btnCommunicationTest.MinimumSize = new Size(1, 1);
+            btnCommunicationTest.Name = "btnCommunicationTest";
+            btnCommunicationTest.Size = new Size(120, 35);
+            btnCommunicationTest.TabIndex = 99;
+            btnCommunicationTest.Text = "通讯测试";
+            btnCommunicationTest.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnCommunicationTest.Click += btnCommunicationTest_Click;
+            // 
+            // btnConfigureMigration
+            // 
+            btnConfigureMigration.Font = new Font("微软雅黑", 12F);
+            btnConfigureMigration.Location = new Point(162, 867);
+            btnConfigureMigration.MinimumSize = new Size(1, 1);
+            btnConfigureMigration.Name = "btnConfigureMigration";
+            btnConfigureMigration.Size = new Size(120, 35);
+            btnConfigureMigration.TabIndex = 100;
+            btnConfigureMigration.Text = "逻辑迁移";
+            btnConfigureMigration.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnConfigureMigration.Click += btnConfigureMigration_Click;
             // 
             // tabs1
             // 
@@ -1032,18 +1058,6 @@ namespace MainUI
             btnTestDetails.Type = TTypeMini.Primary;
             btnTestDetails.WaveSize = 1;
             btnTestDetails.Click += btnTestDetails_Click;
-            // 
-            // btnCommunicationTest
-            // 
-            btnCommunicationTest.Font = new Font("微软雅黑", 12F);
-            btnCommunicationTest.Location = new Point(24, 867);
-            btnCommunicationTest.MinimumSize = new Size(1, 1);
-            btnCommunicationTest.Name = "btnCommunicationTest";
-            btnCommunicationTest.Size = new Size(120, 35);
-            btnCommunicationTest.TabIndex = 99;
-            btnCommunicationTest.Text = "通讯测试";
-            btnCommunicationTest.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnCommunicationTest.Click += btnCommunicationTest_Click;
             // 
             // UcHMI
             // 
@@ -1126,5 +1140,6 @@ namespace MainUI
         private AntdUI.TabPage tabPageTestDetails;
         private AntdUI.Button btnTestDetails;
         private Sunny.UI.UIButton btnCommunicationTest;
+        private UIButton btnConfigureMigration;
     }
 }

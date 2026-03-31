@@ -101,7 +101,7 @@ namespace MainUI.Service
         /// <summary>
         /// 加载指定产品的所有工作流配置
         /// </summary>
-        public async Task<int> LoadConfigurationsAsync(string modelType, string modelName)
+        public async Task<int> LoadConfigurationsAsync(string modelType, int modelId, string modelName)
         {
             try
             {
@@ -117,13 +117,9 @@ namespace MainUI.Service
                 // 清空之前的配置
                 _workflowConfigurations.Clear();
 
-                // 获取配置文件目录
-                string configDir = Path.Combine(
-                    Application.StartupPath,
-                    "Procedure",
-                    modelType,
-                    modelName
-                );
+                // 用 ProductPathHelper 构建目录，保证唯一性
+                string configDir = ProductPathHelper.
+                    BuildModelPath(modelType, modelId, modelName);
 
                 if (!Directory.Exists(configDir))
                 {
@@ -210,10 +206,12 @@ namespace MainUI.Service
                 JsonManager.FilePath = jsonPath;
                 var config = await JsonManager.GetOrCreateConfigAsync();
 
-                var parent = config.Form.FirstOrDefault(p =>
-                    p.ModelTypeName == modelType &&
-                    p.ModelName == modelName &&
-                    p.ItemName == itemName);
+                //var parent = config.Form.FirstOrDefault(p =>
+                //    p.ModelTypeName == modelType &&
+                //    p.ModelName == modelName &&
+                //    p.ItemName == itemName);
+
+                var parent = config.Form.FirstOrDefault();
 
                 if (parent?.ChildSteps == null || parent.ChildSteps.Count <= 0) return null;
 
@@ -299,6 +297,7 @@ namespace MainUI.Service
         /// <returns>是否执行成功</returns>
         public async Task<bool> ExecuteWorkflowAsync(
             string itemName,
+            int modelId,
             string modelType,
             string modelName,
             CancellationToken cancellationToken = default)
@@ -325,7 +324,7 @@ namespace MainUI.Service
                 ProgressMessage?.Invoke($"开始执行工作流: {itemName} ({steps.Count} 个步骤)");
 
                 // 配置路径
-                string TestPath = $"{Application.StartupPath}Procedure\\{modelType}\\{modelName}\\{itemName}.json";
+                string TestPath = ProductPathHelper.BuildJsonPath(modelType, modelId, modelName, itemName);
 
                 // 在工作流执行前调用
                 await EnsureVariablesLoadedAsync(TestPath);
@@ -456,6 +455,7 @@ namespace MainUI.Service
                         // 将批量执行的取消令牌传递给单个工作流
                         var success = await ExecuteWorkflowAsync(
                             itemName,
+                            VarHelper.TestViewModel.ID,
                             modelType,
                             modelName,
                             _batchExecutionCancellationTokenSource.Token);

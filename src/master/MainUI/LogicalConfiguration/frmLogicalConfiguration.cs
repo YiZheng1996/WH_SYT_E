@@ -201,10 +201,12 @@ namespace MainUI.LogicalConfiguration
                 var config = await JsonManager.GetOrCreateConfigAsync();
 
                 // 找到当前项点的 Parent
-                var parent = config.Form.FirstOrDefault(p =>
-                    p.ModelTypeName == _workflowState.ModelTypeName &&
-                    p.ModelName == _workflowState.ModelName &&
-                    p.ItemName == _workflowState.ItemName);
+                //var parent = config.Form.FirstOrDefault(p =>
+                //    p.ModelTypeName == _workflowState.ModelTypeName &&
+                //    p.ModelName == _workflowState.ModelName &&
+                //    p.ItemName == _workflowState.ItemName);
+
+                var parent = config.Form.FirstOrDefault();
 
                 // 先清空数据源
                 _workflowState.ClearSteps();

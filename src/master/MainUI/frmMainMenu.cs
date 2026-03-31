@@ -226,8 +226,9 @@ public partial class frmMainMenu : Form
         {
             switch (changeType)
             {
-                case DataChangeType.TestStep:       // 工作流配置修改
+                case DataChangeType.TestStep:       // 工作流配置修改/项点排序/配置修改
                     needRefreshWorkflow = true;
+                    needRefreshParams = true;       // 确保 RefreshTestItems 被调用
                     NlogHelper.Default.Debug("检测到工作流配置变更");
                     break;
 

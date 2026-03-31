@@ -182,5 +182,19 @@ namespace MainUI.BLL
             .Where(a => a.ID == modelID)
             .ExecuteAffrows() > 0;
         }
+
+
+        public static List<NewModels> GetAllNewModels()
+        {
+            return VarHelper.fsql.Select<Models, ModelsType>()
+                .LeftJoin((m, t) => m.TypeID == t.ID)
+                .ToList((m, t) => new NewModels
+                {
+                    ID = m.ID,
+                    ModelName = m.ModelName,
+                    ModelTypeID = t.ID,
+                    ModelTypeName = t.ModelTypeName,
+                });
+        }
     }
 }
