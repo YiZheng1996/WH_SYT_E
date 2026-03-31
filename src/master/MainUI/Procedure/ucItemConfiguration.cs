@@ -110,7 +110,7 @@ namespace MainUI.Procedure
 
                 var formFactory = Program.ServiceProvider.GetRequiredService<IFormService>();
                 var form = formFactory.CreateLogicalConfigurationForm(
-                    testPath, modelType, modelName, lstName);
+                    testPath, modelType, _currentModel.ID, modelName, lstName);
                 form.ShowDialog();
             }
             catch (Exception ex)

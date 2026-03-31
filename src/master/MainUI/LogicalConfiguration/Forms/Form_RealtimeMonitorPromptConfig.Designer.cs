@@ -42,8 +42,6 @@
             chkShowValueLabel = new UICheckBox();
             txtDisplayFormat = new UITextBox();
             lblDisplayFormat = new UILabel();
-            txtUnit = new UITextBox();
-            lblUnit = new UILabel();
             grpPromptConfig = new UIGroupBox();
             txtPromptMessage = new UIRichTextBox();
             lblPromptMessage = new UILabel();
@@ -97,7 +95,7 @@
             panelMain.Name = "panelMain";
             panelMain.Padding = new Padding(15, 10, 15, 10);
             panelMain.RectColor = Color.FromArgb(220, 220, 220);
-            panelMain.Size = new Size(700, 776);
+            panelMain.Size = new Size(700, 741);
             panelMain.TabIndex = 0;
             panelMain.Text = null;
             panelMain.TextAlignment = ContentAlignment.MiddleCenter;
@@ -111,7 +109,7 @@
             grpButtonConfig.FillColor = Color.White;
             grpButtonConfig.FillColor2 = Color.White;
             grpButtonConfig.Font = new Font("微软雅黑", 11F, FontStyle.Bold);
-            grpButtonConfig.Location = new Point(20, 655);
+            grpButtonConfig.Location = new Point(20, 622);
             grpButtonConfig.Margin = new Padding(4, 5, 4, 5);
             grpButtonConfig.MinimumSize = new Size(1, 1);
             grpButtonConfig.Name = "grpButtonConfig";
@@ -189,8 +187,6 @@
             grpDisplayConfig.Controls.Add(chkShowValueLabel);
             grpDisplayConfig.Controls.Add(txtDisplayFormat);
             grpDisplayConfig.Controls.Add(lblDisplayFormat);
-            grpDisplayConfig.Controls.Add(txtUnit);
-            grpDisplayConfig.Controls.Add(lblUnit);
             grpDisplayConfig.FillColor = Color.White;
             grpDisplayConfig.FillColor2 = Color.White;
             grpDisplayConfig.Font = new Font("微软雅黑", 11F, FontStyle.Bold);
@@ -199,7 +195,7 @@
             grpDisplayConfig.MinimumSize = new Size(1, 1);
             grpDisplayConfig.Name = "grpDisplayConfig";
             grpDisplayConfig.Padding = new Padding(0, 32, 0, 0);
-            grpDisplayConfig.Size = new Size(655, 190);
+            grpDisplayConfig.Size = new Size(655, 161);
             grpDisplayConfig.TabIndex = 3;
             grpDisplayConfig.Text = "显示配置";
             grpDisplayConfig.TextAlignment = ContentAlignment.MiddleLeft;
@@ -207,7 +203,7 @@
             // numRefreshInterval
             // 
             numRefreshInterval.Font = new Font("微软雅黑", 10F);
-            numRefreshInterval.Location = new Point(140, 146);
+            numRefreshInterval.Location = new Point(140, 111);
             numRefreshInterval.Margin = new Padding(4, 5, 4, 5);
             numRefreshInterval.Maximum = 5000D;
             numRefreshInterval.Minimum = 100D;
@@ -226,7 +222,7 @@
             lblRefreshInterval.BackColor = Color.Transparent;
             lblRefreshInterval.Font = new Font("微软雅黑", 10F);
             lblRefreshInterval.ForeColor = Color.FromArgb(48, 48, 48);
-            lblRefreshInterval.Location = new Point(15, 148);
+            lblRefreshInterval.Location = new Point(15, 113);
             lblRefreshInterval.Name = "lblRefreshInterval";
             lblRefreshInterval.Size = new Size(120, 23);
             lblRefreshInterval.TabIndex = 7;
@@ -237,7 +233,7 @@
             // 
             txtValueLabelText.Cursor = Cursors.IBeam;
             txtValueLabelText.Font = new Font("微软雅黑", 10F);
-            txtValueLabelText.Location = new Point(305, 111);
+            txtValueLabelText.Location = new Point(305, 76);
             txtValueLabelText.Margin = new Padding(4, 5, 4, 5);
             txtValueLabelText.MinimumSize = new Size(1, 16);
             txtValueLabelText.Name = "txtValueLabelText";
@@ -253,7 +249,7 @@
             lblValueLabelText.BackColor = Color.Transparent;
             lblValueLabelText.Font = new Font("微软雅黑", 10F);
             lblValueLabelText.ForeColor = Color.FromArgb(48, 48, 48);
-            lblValueLabelText.Location = new Point(200, 113);
+            lblValueLabelText.Location = new Point(200, 78);
             lblValueLabelText.Name = "lblValueLabelText";
             lblValueLabelText.Size = new Size(100, 23);
             lblValueLabelText.TabIndex = 5;
@@ -266,7 +262,7 @@
             chkShowValueLabel.Checked = true;
             chkShowValueLabel.Font = new Font("微软雅黑", 10F);
             chkShowValueLabel.ForeColor = Color.FromArgb(48, 48, 48);
-            chkShowValueLabel.Location = new Point(15, 110);
+            chkShowValueLabel.Location = new Point(15, 75);
             chkShowValueLabel.MinimumSize = new Size(1, 1);
             chkShowValueLabel.Name = "chkShowValueLabel";
             chkShowValueLabel.Padding = new Padding(22, 0, 0, 0);
@@ -278,7 +274,7 @@
             // 
             txtDisplayFormat.Cursor = Cursors.IBeam;
             txtDisplayFormat.Font = new Font("微软雅黑", 10F);
-            txtDisplayFormat.Location = new Point(140, 73);
+            txtDisplayFormat.Location = new Point(140, 38);
             txtDisplayFormat.Margin = new Padding(4, 5, 4, 5);
             txtDisplayFormat.MinimumSize = new Size(1, 16);
             txtDisplayFormat.Name = "txtDisplayFormat";
@@ -295,39 +291,12 @@
             lblDisplayFormat.BackColor = Color.Transparent;
             lblDisplayFormat.Font = new Font("微软雅黑", 10F);
             lblDisplayFormat.ForeColor = Color.FromArgb(48, 48, 48);
-            lblDisplayFormat.Location = new Point(15, 75);
+            lblDisplayFormat.Location = new Point(15, 40);
             lblDisplayFormat.Name = "lblDisplayFormat";
             lblDisplayFormat.Size = new Size(120, 23);
             lblDisplayFormat.TabIndex = 2;
             lblDisplayFormat.Text = "显示格式:";
             lblDisplayFormat.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // txtUnit
-            // 
-            txtUnit.Cursor = Cursors.IBeam;
-            txtUnit.Font = new Font("微软雅黑", 10F);
-            txtUnit.Location = new Point(140, 38);
-            txtUnit.Margin = new Padding(4, 5, 4, 5);
-            txtUnit.MinimumSize = new Size(1, 16);
-            txtUnit.Name = "txtUnit";
-            txtUnit.Padding = new Padding(5);
-            txtUnit.ShowText = false;
-            txtUnit.Size = new Size(200, 29);
-            txtUnit.TabIndex = 1;
-            txtUnit.TextAlignment = ContentAlignment.MiddleLeft;
-            txtUnit.Watermark = "如: kPa, ℃, MPa";
-            // 
-            // lblUnit
-            // 
-            lblUnit.BackColor = Color.Transparent;
-            lblUnit.Font = new Font("微软雅黑", 10F);
-            lblUnit.ForeColor = Color.FromArgb(48, 48, 48);
-            lblUnit.Location = new Point(15, 40);
-            lblUnit.Name = "lblUnit";
-            lblUnit.Size = new Size(120, 23);
-            lblUnit.TabIndex = 0;
-            lblUnit.Text = "数值单位:";
-            lblUnit.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // grpPromptConfig
             // 
@@ -616,7 +585,7 @@
             panelBottom.Controls.Add(btnSave);
             panelBottom.Controls.Add(btnTest);
             panelBottom.Dock = DockStyle.Bottom;
-            panelBottom.Location = new Point(0, 811);
+            panelBottom.Location = new Point(0, 776);
             panelBottom.Name = "panelBottom";
             panelBottom.Padding = new Padding(15, 10, 15, 15);
             panelBottom.Size = new Size(700, 75);
@@ -665,7 +634,7 @@
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(248, 249, 250);
-            ClientSize = new Size(700, 886);
+            ClientSize = new Size(700, 851);
             ControlBox = false;
             Controls.Add(panelMain);
             Controls.Add(panelBottom);

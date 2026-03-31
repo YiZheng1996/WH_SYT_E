@@ -21,23 +21,7 @@ namespace MainUI.Procedure
         public UcTestParams()
         {
             InitializeComponent();
-            InitializeProductSelector();
             LoadConfig();
-        }
-
-        private void InitializeProductSelector()
-        {
-            productSelectButton = new ProductSelectButton
-            {
-                PlaceholderText = "点击选择产品型号...",
-                Location = new Point(126, 15),  // 根据实际布局调整
-                Size = new Size(400, 35),
-            };
-            productSelectButton.ProductSelected += (s, model) =>
-            {
-                // 选择新产品后重新加载配置
-                LoadConfig();
-            };
         }
 
         /// <summary>
@@ -184,6 +168,12 @@ namespace MainUI.Procedure
                 default:
                     break;
             }
+        }
+
+        private void productSelectButton_ProductSelected(object sender, NewModels e)
+        {
+            // 选择新产品后重新加载配置
+            LoadConfig();
         }
     }
 }

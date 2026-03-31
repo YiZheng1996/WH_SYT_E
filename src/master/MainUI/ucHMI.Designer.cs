@@ -33,7 +33,7 @@ namespace MainUI
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UcHMI));
-            Tabs.StyleLine styleLine1 = new Tabs.StyleLine();
+            Tabs.StyleLine styleLine2 = new Tabs.StyleLine();
             uiTitlePanel3 = new UITitlePanel();
             TableItemPoint = new Table();
             btnProductSelection = new UIButton();
@@ -79,11 +79,13 @@ namespace MainUI
             panelReport = new UIPanel();
             tabPage3 = new AntdUI.TabPage();
             grpRainy = new UIPanel();
-            btnCommunicationTest = new UIButton();
             btnConfigureMigration = new UIButton();
+            btnCommunicationTest = new UIButton();
             tabs1 = new Tabs();
             tabPageTestDetails = new AntdUI.TabPage();
             btnTestDetails = new AntdUI.Button();
+            uiTitlePanel1 = new UITitlePanel();
+            labStepRemark = new UIRichTextBox();
             uiTitlePanel3.SuspendLayout();
             uiTitlePanel8.SuspendLayout();
             uiTitlePanel4.SuspendLayout();
@@ -93,6 +95,7 @@ namespace MainUI
             tabPage3.SuspendLayout();
             grpRainy.SuspendLayout();
             tabs1.SuspendLayout();
+            uiTitlePanel1.SuspendLayout();
             SuspendLayout();
             // 
             // uiTitlePanel3
@@ -103,7 +106,7 @@ namespace MainUI
             uiTitlePanel3.FillColor2 = Color.FromArgb(236, 236, 236);
             uiTitlePanel3.FillDisableColor = Color.FromArgb(49, 54, 64);
             uiTitlePanel3.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
-            uiTitlePanel3.Location = new Point(0, 311);
+            uiTitlePanel3.Location = new Point(0, 309);
             uiTitlePanel3.Margin = new Padding(4, 5, 4, 5);
             uiTitlePanel3.MinimumSize = new Size(1, 1);
             uiTitlePanel3.Name = "uiTitlePanel3";
@@ -112,7 +115,7 @@ namespace MainUI
             uiTitlePanel3.RectColor = Color.FromArgb(236, 236, 236);
             uiTitlePanel3.RectDisableColor = Color.FromArgb(236, 236, 236);
             uiTitlePanel3.ShowText = false;
-            uiTitlePanel3.Size = new Size(253, 427);
+            uiTitlePanel3.Size = new Size(253, 327);
             uiTitlePanel3.TabIndex = 398;
             uiTitlePanel3.Text = "试验项点";
             uiTitlePanel3.TextAlignment = ContentAlignment.MiddleCenter;
@@ -123,6 +126,7 @@ namespace MainUI
             // 
             TableItemPoint.BackColor = Color.White;
             TableItemPoint.CheckSize = 18;
+            TableItemPoint.ColorScheme = TAMode.Light;
             TableItemPoint.Dock = DockStyle.Bottom;
             TableItemPoint.Font = new Font("微软雅黑", 11F);
             TableItemPoint.ForeColor = Color.Black;
@@ -130,7 +134,7 @@ namespace MainUI
             TableItemPoint.Location = new Point(1, 31);
             TableItemPoint.Name = "TableItemPoint";
             TableItemPoint.RowSelectedBg = Color.Transparent;
-            TableItemPoint.Size = new Size(251, 395);
+            TableItemPoint.Size = new Size(251, 295);
             TableItemPoint.TabIndex = 53;
             TableItemPoint.CheckedChanged += TableItemPoint_CheckedChanged;
             // 
@@ -494,7 +498,7 @@ namespace MainUI
             uiTitlePanel8.FillColor2 = Color.FromArgb(236, 236, 236);
             uiTitlePanel8.FillDisableColor = Color.FromArgb(236, 236, 236);
             uiTitlePanel8.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
-            uiTitlePanel8.Location = new Point(0, 785);
+            uiTitlePanel8.Location = new Point(0, 680);
             uiTitlePanel8.Margin = new Padding(4, 5, 4, 5);
             uiTitlePanel8.MinimumSize = new Size(1, 1);
             uiTitlePanel8.Name = "uiTitlePanel8";
@@ -814,7 +818,7 @@ namespace MainUI
             panelHand.FillColor2 = Color.White;
             panelHand.FillDisableColor = Color.White;
             panelHand.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            panelHand.Location = new Point(1, 741);
+            panelHand.Location = new Point(0, 638);
             panelHand.Margin = new Padding(4, 5, 4, 5);
             panelHand.MinimumSize = new Size(1, 1);
             panelHand.Name = "panelHand";
@@ -992,18 +996,6 @@ namespace MainUI
             grpRainy.Text = null;
             grpRainy.TextAlignment = ContentAlignment.MiddleCenter;
             // 
-            // btnCommunicationTest
-            // 
-            btnCommunicationTest.Font = new Font("微软雅黑", 12F);
-            btnCommunicationTest.Location = new Point(24, 867);
-            btnCommunicationTest.MinimumSize = new Size(1, 1);
-            btnCommunicationTest.Name = "btnCommunicationTest";
-            btnCommunicationTest.Size = new Size(120, 35);
-            btnCommunicationTest.TabIndex = 99;
-            btnCommunicationTest.Text = "通讯测试";
-            btnCommunicationTest.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-            btnCommunicationTest.Click += btnCommunicationTest_Click;
-            // 
             // btnConfigureMigration
             // 
             btnConfigureMigration.Font = new Font("微软雅黑", 12F);
@@ -1015,6 +1007,18 @@ namespace MainUI
             btnConfigureMigration.Text = "逻辑迁移";
             btnConfigureMigration.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             btnConfigureMigration.Click += btnConfigureMigration_Click;
+            // 
+            // btnCommunicationTest
+            // 
+            btnCommunicationTest.Font = new Font("微软雅黑", 12F);
+            btnCommunicationTest.Location = new Point(24, 867);
+            btnCommunicationTest.MinimumSize = new Size(1, 1);
+            btnCommunicationTest.Name = "btnCommunicationTest";
+            btnCommunicationTest.Size = new Size(120, 35);
+            btnCommunicationTest.TabIndex = 99;
+            btnCommunicationTest.Text = "通讯测试";
+            btnCommunicationTest.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            btnCommunicationTest.Click += btnCommunicationTest_Click;
             // 
             // tabs1
             // 
@@ -1029,7 +1033,7 @@ namespace MainUI
             tabs1.Pages.Add(tabPageTestDetails);
             tabs1.ScrollForeHover = SystemColors.ActiveBorder;
             tabs1.Size = new Size(1535, 910);
-            tabs1.Style = styleLine1;
+            tabs1.Style = styleLine2;
             tabs1.TabIndex = 405;
             tabs1.TabMenuVisible = false;
             // 
@@ -1059,10 +1063,55 @@ namespace MainUI
             btnTestDetails.WaveSize = 1;
             btnTestDetails.Click += btnTestDetails_Click;
             // 
+            // uiTitlePanel1
+            // 
+            uiTitlePanel1.BackColor = Color.FromArgb(236, 236, 236);
+            uiTitlePanel1.Controls.Add(labStepRemark);
+            uiTitlePanel1.FillColor = Color.FromArgb(236, 236, 236);
+            uiTitlePanel1.FillColor2 = Color.FromArgb(236, 236, 236);
+            uiTitlePanel1.FillDisableColor = Color.FromArgb(236, 236, 236);
+            uiTitlePanel1.Font = new Font("微软雅黑", 13F, FontStyle.Bold);
+            uiTitlePanel1.Location = new Point(0, 777);
+            uiTitlePanel1.Margin = new Padding(4, 5, 4, 5);
+            uiTitlePanel1.MinimumSize = new Size(1, 1);
+            uiTitlePanel1.Name = "uiTitlePanel1";
+            uiTitlePanel1.Padding = new Padding(1, 29, 1, 1);
+            uiTitlePanel1.Radius = 0;
+            uiTitlePanel1.RectColor = Color.FromArgb(236, 236, 236);
+            uiTitlePanel1.RectDisableColor = Color.FromArgb(236, 236, 236);
+            uiTitlePanel1.ShowText = false;
+            uiTitlePanel1.Size = new Size(254, 104);
+            uiTitlePanel1.TabIndex = 498;
+            uiTitlePanel1.Text = "试验详情";
+            uiTitlePanel1.TextAlignment = ContentAlignment.MiddleCenter;
+            uiTitlePanel1.TitleColor = Color.FromArgb(65, 100, 204);
+            uiTitlePanel1.TitleHeight = 29;
+            // 
+            // labStepRemark
+            // 
+            labStepRemark.FillColor = Color.White;
+            labStepRemark.FillColor2 = Color.White;
+            labStepRemark.FillDisableColor = Color.White;
+            labStepRemark.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            labStepRemark.Location = new Point(3, 34);
+            labStepRemark.Margin = new Padding(4, 5, 4, 5);
+            labStepRemark.MinimumSize = new Size(1, 1);
+            labStepRemark.Name = "labStepRemark";
+            labStepRemark.Padding = new Padding(2);
+            labStepRemark.Radius = 10;
+            labStepRemark.RectColor = Color.White;
+            labStepRemark.RectDisableColor = Color.White;
+            labStepRemark.ShowText = false;
+            labStepRemark.Size = new Size(251, 70);
+            labStepRemark.TabIndex = 499;
+            labStepRemark.Text = "在供风装置所有的油路连接处用干净的纸擦拭，目测检查是否有漏油现象";
+            labStepRemark.TextAlignment = ContentAlignment.MiddleCenter;
+            // 
             // UcHMI
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 236);
+            Controls.Add(uiTitlePanel1);
             Controls.Add(btnTestDetails);
             Controls.Add(panelHand);
             Controls.Add(uiTitlePanel4);
@@ -1087,6 +1136,7 @@ namespace MainUI
             tabPage3.ResumeLayout(false);
             grpRainy.ResumeLayout(false);
             tabs1.ResumeLayout(false);
+            uiTitlePanel1.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -1141,5 +1191,7 @@ namespace MainUI
         private AntdUI.Button btnTestDetails;
         private Sunny.UI.UIButton btnCommunicationTest;
         private UIButton btnConfigureMigration;
+        private UITitlePanel uiTitlePanel1;
+        private UIRichTextBox labStepRemark;
     }
 }

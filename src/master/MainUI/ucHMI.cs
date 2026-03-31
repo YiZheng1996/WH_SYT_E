@@ -145,7 +145,7 @@ namespace MainUI
                 // 根据成功/失败状态更新颜色
                 if (success)
                 {
-                    // 注释说 2=绿色
+                    // 注释 2=绿色
                     UpdateItemPointColor(itemName, 2);
                     _logger?.LogInformation("工作流完成成功: {ItemName}, 颜色设置为绿色", itemName);
                 }
@@ -178,6 +178,12 @@ namespace MainUI
             {
                 // 更新试验详情显示
                 ucTestDetails.UpdateStepStatus(stepIndex, step);
+
+                // 步骤开始执行时同步显示备注
+                if (step.Status == 1)
+                    labStepRemark.Text = step.Remark ?? "";
+                else if (step.Status is 2 or 3)
+                    labStepRemark.Text = "";
             }
             catch (Exception ex)
             {
@@ -582,7 +588,7 @@ namespace MainUI
             {
                 if (index == 0)
                 {
-                    if (!value) await IsTestEndAsync();
+                    if (!value) await IsTestEndAsync(false);
                     EmergencyStatusChanged?.Invoke(value);
                 }
             }
@@ -960,7 +966,10 @@ namespace MainUI
             }
         }
 
-        private async void btnStopTest_Click(object sender, EventArgs e) => await IsTestEndAsync();
+        private async void btnStopTest_Click(object sender, EventArgs e)
+        {
+            await IsTestEndAsync();
+        }
 
         private (bool Result, string txt) FrmText()
         {
@@ -988,31 +997,29 @@ namespace MainUI
         }
 
         // 结束试验操作
-        private async Task IsTestEndAsync()
+        private async Task IsTestEndAsync(bool needExhaust = true)
         {
+            // 防重入：只有试验真正在进行时才执行，进入后立即清标志
+            if (!_isTestActuallyStarted) return;
+            _isTestActuallyStarted = false;
+
             try
             {
                 AppendText("试验结束");
 
-                // 停止工作流执行
                 _cancellationTokenSource.Cancel();
                 _workflowService?.StopExecution();
                 _countdownService.StopCountdown();
 
-                await ExhaustkPaAsync(CancellationToken.None);
+                if (needExhaust)
+                    await ExhaustkPaAsync(CancellationToken.None);
 
-                // 恢复UI状态 - 确保在UI线程
                 if (InvokeRequired)
-                {
                     Invoke(new Action(() => Disable(false)));
-                }
                 else
-                {
                     Disable(false);
-                }
 
                 TestStateChanged?.Invoke(false, false);
-                _isTestActuallyStarted = false;
             }
             catch (OperationCanceledException ex)
             {
@@ -1024,7 +1031,6 @@ namespace MainUI
                 MessageHelper.MessageOK(frm, $"结束试验错误：{ex.Message}");
             }
         }
-
         #endregion
 
         #region 模拟量设置

@@ -2,8 +2,10 @@
 using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Services;
+using MainUI.Service;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System.Text;
 
 namespace MainUI.LogicalConfiguration
@@ -40,6 +42,7 @@ namespace MainUI.LogicalConfiguration
             IFormService formService,
             string path,
             string modelType,
+            int modelId,     
             string modelName,
             string processName)
         {
@@ -77,7 +80,7 @@ namespace MainUI.LogicalConfiguration
                 TestInfoVariableHelper.UpdateProductInfo(_variableManager, modelType, modelName);
 
                 // 创建配置文件
-                CreateJsonFileAsync(modelType, modelName, processName).Wait();
+                CreateJsonFile(modelType, modelId, modelName, processName);
 
                 // 更新配置
                 _workflowState.UpdateConfiguration(modelType, modelName, processName);
@@ -291,29 +294,19 @@ namespace MainUI.LogicalConfiguration
 
         #region JSON文件处理
         // 创建JSON文件，如果不存在则创建并写入默认结构
-        private static async Task CreateJsonFileAsync(string modelType, string modelName, string processName)
+        private static void CreateJsonFile(string modelType, int modelId, string modelName, string processName)
         {
-            // 根据产品类型、产品型号中的试验项点生成存放JSON数据的路径
-            string modelPath = Path.Combine(Application.StartupPath, "Procedure", modelType, modelName);
+            string modelPath = ProductPathHelper.BuildModelPath(modelType, modelId, modelName);
             string jsonPath = Path.Combine(modelPath, $"{processName}.json");
 
             if (!Directory.Exists(modelPath))
                 Directory.CreateDirectory(modelPath);
 
-            if (!File.Exists(jsonPath))
-            {
-                // 如果文件不存在，创建默认配置及格式
-                var config = BuildDefaultConfig(modelType, modelName, processName);
+            if (File.Exists(jsonPath)) return;
 
-                // 保存默认配置到JSON文件
-                await JsonManager.UpdateConfigAsync(async c =>
-                {
-                    c.System = config.System;
-                    c.Form = config.Form;
-                    c.Variable = config.Variable;
-                    await Task.CompletedTask;
-                });
-            }
+            var config = BuildDefaultConfig(modelType, modelName, processName);
+            string json = JsonConvert.SerializeObject(config, Formatting.Indented);
+            File.WriteAllText(jsonPath, json);
         }
 
         /// <summary>

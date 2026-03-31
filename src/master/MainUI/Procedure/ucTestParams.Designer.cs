@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            AntdUI.Tabs.StyleCard2 styleCard23 = new AntdUI.Tabs.StyleCard2();
+            AntdUI.Tabs.StyleCard2 styleCard21 = new AntdUI.Tabs.StyleCard2();
             openFileDialog1 = new OpenFileDialog();
             uiGroupBox1 = new UIGroupBox();
             btnBrowse = new UIButton();
@@ -162,8 +162,8 @@
             tabs1.Pages.Add(tabPage1);
             tabs1.Pages.Add(tabPage2);
             tabs1.Size = new Size(792, 587);
-            styleCard23.Closable = AntdUI.Tabs.StyleCard2.CloseType.none;
-            tabs1.Style = styleCard23;
+            styleCard21.Closable = AntdUI.Tabs.StyleCard2.CloseType.none;
+            tabs1.Style = styleCard21;
             tabs1.TabIndex = 401;
             tabs1.TabMenuVisible = false;
             tabs1.Text = "tabs1";
@@ -544,6 +544,7 @@
             productSelectButton.Text = "点击选择产品型号...";
             productSelectButton.TextAlign = ContentAlignment.MiddleLeft;
             productSelectButton.TipsFont = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            productSelectButton.ProductSelected += productSelectButton_ProductSelected;
             // 
             // uiLabel2
             // 

@@ -23,6 +23,6 @@
         /// 创建逻辑配置窗体
         /// </summary>
         FrmLogicalConfiguration CreateLogicalConfigurationForm(
-            string path, string modelType, string modelName, string processName);
+                string path, string modelType, int modelId, string modelName, string processName);
     }
 }

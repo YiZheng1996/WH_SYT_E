@@ -267,7 +267,7 @@ namespace MainUI.LogicalConfiguration.Services
         /// 创建逻辑配置窗体
         /// </summary>
         public FrmLogicalConfiguration CreateLogicalConfigurationForm(
-            string path, string modelType, string modelName, string processName)
+            string path, string modelType, int modelId, string modelName, string processName)
         {
             try
             {
@@ -280,7 +280,7 @@ namespace MainUI.LogicalConfiguration.Services
                     _variableManager,
                     GetSpecificLogger<FrmLogicalConfiguration>(),
                     _selfReference,
-                    path, modelType, modelName, processName);
+                    path, modelType, modelId, modelName, processName);
 
                 _logger.LogInformation("逻辑配置窗体创建成功");
                 return form;
