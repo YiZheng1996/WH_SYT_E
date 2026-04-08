@@ -96,6 +96,11 @@
         /// 例如: NewUsers.NewUserInfo.Username
         ///       VarHelper.TestViewModel.ModelName
         /// </summary>
-        SystemProperty = 3
+        SystemProperty = 3,
+
+        /// <summary>
+        /// 清空单元格 - 写入空值
+        /// </summary>
+        EmptyValue = 4
     }
 }

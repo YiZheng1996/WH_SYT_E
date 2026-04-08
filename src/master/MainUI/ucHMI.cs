@@ -181,9 +181,9 @@ namespace MainUI
 
                 // 步骤开始执行时同步显示备注
                 if (step.Status == 1)
-                    labStepRemark.Text = step.Remark ?? "";
+                    labStepRemark.Text = step.Remark ?? "未填写试验详情";
                 else if (step.Status is 2 or 3)
-                    labStepRemark.Text = "";
+                    labStepRemark.Text = "未填写试验详情";
             }
             catch (Exception ex)
             {

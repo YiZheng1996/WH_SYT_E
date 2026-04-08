@@ -85,7 +85,7 @@ namespace MainUI
             tabPageTestDetails = new AntdUI.TabPage();
             btnTestDetails = new AntdUI.Button();
             uiTitlePanel1 = new UITitlePanel();
-            labStepRemark = new UIRichTextBox();
+            labStepRemark = new UIPanel();
             uiTitlePanel3.SuspendLayout();
             uiTitlePanel8.SuspendLayout();
             uiTitlePanel4.SuspendLayout();
@@ -1092,19 +1092,17 @@ namespace MainUI
             labStepRemark.FillColor = Color.White;
             labStepRemark.FillColor2 = Color.White;
             labStepRemark.FillDisableColor = Color.White;
-            labStepRemark.Font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            labStepRemark.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             labStepRemark.Location = new Point(3, 34);
             labStepRemark.Margin = new Padding(4, 5, 4, 5);
             labStepRemark.MinimumSize = new Size(1, 1);
             labStepRemark.Name = "labStepRemark";
-            labStepRemark.Padding = new Padding(2);
             labStepRemark.Radius = 10;
             labStepRemark.RectColor = Color.White;
             labStepRemark.RectDisableColor = Color.White;
-            labStepRemark.ShowText = false;
             labStepRemark.Size = new Size(251, 70);
-            labStepRemark.TabIndex = 499;
-            labStepRemark.Text = "在供风装置所有的油路连接处用干净的纸擦拭，目测检查是否有漏油现象";
+            labStepRemark.TabIndex = 101;
+            labStepRemark.Text = "暂无数据";
             labStepRemark.TextAlignment = ContentAlignment.MiddleCenter;
             // 
             // UcHMI
@@ -1192,6 +1190,6 @@ namespace MainUI
         private Sunny.UI.UIButton btnCommunicationTest;
         private UIButton btnConfigureMigration;
         private UITitlePanel uiTitlePanel1;
-        private UIRichTextBox labStepRemark;
+        private UIPanel labStepRemark;
     }
 }

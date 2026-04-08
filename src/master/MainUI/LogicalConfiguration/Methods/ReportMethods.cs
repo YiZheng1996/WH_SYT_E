@@ -194,6 +194,7 @@ namespace MainUI.LogicalConfiguration.Methods
                     CellsDataSourceType.Variable => GetVariableValue(item),
                     CellsDataSourceType.Expression => await EvaluateExpression(item),
                     CellsDataSourceType.SystemProperty => GetSystemPropertyValue(item),
+                    CellsDataSourceType.EmptyValue => null,
                     _ => item.FixedValue ?? string.Empty
                 };
             }

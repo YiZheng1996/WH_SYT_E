@@ -388,7 +388,6 @@ namespace MainUI.LogicalConfiguration.Forms
             txtTitle.Text = Parameter.Title;
             txtDescription.Text = Parameter.Description;
             txtPromptMessage.Text = Parameter.PromptMessage;
-            txtUnit.Text = Parameter.Unit;
             txtDisplayFormat.Text = Parameter.DisplayFormat;
             numRefreshInterval.Value = Parameter.RefreshInterval;
             txtButtonText.Text = Parameter.ButtonText;
@@ -444,7 +443,6 @@ namespace MainUI.LogicalConfiguration.Forms
             Parameter.MonitorVariable = cmbMonitorVariable.Text;
             Parameter.PlcModuleName = cmbPlcModule.Text;
             Parameter.PlcAddress = cmbPlcAddress.Text;
-            Parameter.Unit = txtUnit.Text;
             Parameter.DisplayFormat = txtDisplayFormat.Text;
             Parameter.RefreshInterval = numRefreshInterval.Value;
             Parameter.ButtonText = txtButtonText.Text;

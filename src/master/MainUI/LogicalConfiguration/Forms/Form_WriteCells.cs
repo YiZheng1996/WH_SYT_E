@@ -383,10 +383,11 @@ namespace MainUI.LogicalConfiguration.Forms
                     if (string.IsNullOrWhiteSpace(cellAddress)) continue;
 
                     var content = row.Cells["ColVarText"].Value?.ToString();
-                    if (string.IsNullOrWhiteSpace(content)) continue;
-
-                    // 自动识别数据源类型
                     var sourceType = DetectSourceType(content);
+
+                    // 非清空类型才要求内容不为空
+                    if (sourceType != CellsDataSourceType.EmptyValue
+                        && string.IsNullOrWhiteSpace(content)) continue;
 
                     var item = new WriteCellItem
                     {
@@ -394,21 +395,13 @@ namespace MainUI.LogicalConfiguration.Forms
                         SourceType = sourceType
                     };
 
-                    // 根据数据源类型设置对应的属性
                     switch (item.SourceType)
                     {
-                        case CellsDataSourceType.FixedValue:
-                            item.FixedValue = content;
-                            break;
-                        case CellsDataSourceType.Variable:
-                            item.VariableName = content;
-                            break;
-                        case CellsDataSourceType.Expression:
-                            item.Expression = content;
-                            break;
-                        case CellsDataSourceType.SystemProperty:
-                            item.PropertyPath = content;
-                            break;
+                        case CellsDataSourceType.FixedValue: item.FixedValue = content; break;
+                        case CellsDataSourceType.Variable: item.VariableName = content; break;
+                        case CellsDataSourceType.Expression: item.Expression = content; break;
+                        case CellsDataSourceType.SystemProperty: item.PropertyPath = content; break;
+                        case CellsDataSourceType.EmptyValue:     /* 无需内容 */               break;
                     }
 
                     param.Items.Add(item);
@@ -452,6 +445,7 @@ namespace MainUI.LogicalConfiguration.Forms
                             CellsDataSourceType.Variable => item.VariableName,
                             CellsDataSourceType.Expression => item.Expression,
                             CellsDataSourceType.SystemProperty => item.PropertyPath,
+                            CellsDataSourceType.EmptyValue => "<清空>",
                             _ => string.Empty
                         };
 
@@ -487,6 +481,10 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             if (string.IsNullOrWhiteSpace(content))
                 return CellsDataSourceType.FixedValue;
+
+            // 清空单元格的特殊标记
+            if (content.Trim() == "<清空>" || content.Trim() == "空" || content.Trim() == "null")
+                return CellsDataSourceType.EmptyValue;
 
             var trimmed = content.Trim();
 

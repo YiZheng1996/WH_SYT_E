@@ -693,8 +693,6 @@
         private Sunny.UI.UICheckBox chkShowValueLabel;
         private Sunny.UI.UITextBox txtDisplayFormat;
         private Sunny.UI.UILabel lblDisplayFormat;
-        private Sunny.UI.UITextBox txtUnit;
-        private Sunny.UI.UILabel lblUnit;
         private Sunny.UI.UIGroupBox grpButtonConfig;
         private Sunny.UI.UIComboBox cmbIconType;
         private Sunny.UI.UILabel lblIconType;
