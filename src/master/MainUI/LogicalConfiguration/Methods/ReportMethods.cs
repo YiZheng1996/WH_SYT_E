@@ -161,9 +161,10 @@ namespace MainUI.LogicalConfiguration.Methods
                         var formattedValue = ApplyFormatting(value, item.FormatString);
 
                         // 使用 ReportService 在UI线程写入单元格
+                        var resolvedAddress = ResolveCellAddress(item.CellAddress);
                         ReportService.InvokeOnReportControl(report =>
                         {
-                            report.Write(item.CellAddress, formattedValue);
+                            report.Write(resolvedAddress, formattedValue);
                         });
 
                         NlogHelper.Default.Info($"成功写入单元格 {item.CellAddress}: {formattedValue} (类型:{item.SourceType})");
@@ -180,6 +181,34 @@ namespace MainUI.LogicalConfiguration.Methods
         #endregion
 
         #region 数据源处理方法
+
+        /// <summary>
+        /// 解析单元格地址中的变量引用。
+        /// 地址中包含 {变量名} 时替换为当前变量值，否则原样返回（向后兼容）。
+        /// 示例："B{LoopIndex}" + LoopIndex=3 → "B3"
+        ///       "A{RowVar}{ColSuffix}" 同样支持
+        /// </summary>
+        private string ResolveCellAddress(string address)
+        {
+            if (string.IsNullOrEmpty(address) || !address.Contains('{'))
+                return address;
+
+            return Regex.Replace(address, @"\{(\w+)\}", match =>
+            {
+                var varName = match.Groups[1].Value;
+                var variable = _globalVariableManager
+                    .GetAllVariables()
+                    .FirstOrDefault(v => v.VarName == varName);
+
+                if (variable == null)
+                {
+                    NlogHelper.Default.Warn($"ResolveCellAddress：变量 [{varName}] 未找到，保留原占位符");
+                    return match.Value; // 找不到变量时保留原样，避免静默写错地址
+                }
+
+                return variable.VarValue?.ToString() ?? string.Empty;
+            });
+        }
 
         /// <summary>
         /// 根据数据源类型获取值

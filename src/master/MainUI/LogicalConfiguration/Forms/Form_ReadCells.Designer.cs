@@ -263,7 +263,7 @@
             // 
             // ColCellAddress
             // 
-            ColCellAddress.HeaderText = "单元格地址";
+            ColCellAddress.HeaderText = "单元格地址（支持 {变量名}）";
             ColCellAddress.MinimumWidth = 100;
             ColCellAddress.Name = "ColCellAddress";
             ColCellAddress.SortMode = DataGridViewColumnSortMode.NotSortable;
