@@ -37,7 +37,7 @@ namespace MainUI
         private void LoadData()
         {
             Tables.Columns = [
-                new Column("ID","型号"){ Align = ColumnAlign.Center, Visible = false },
+                new Column("ID","型号ID"){ Align = ColumnAlign.Center, Visible = true },
                 new Column("ModelTypeID","类型ID"){ Align = ColumnAlign.Center, Visible = false},
                 new Column("ModelTypeName","产品类型"){ Align = ColumnAlign.Center, Visible = false},
                 new Column("ModelName","产品型号"){ Align = ColumnAlign.Center },

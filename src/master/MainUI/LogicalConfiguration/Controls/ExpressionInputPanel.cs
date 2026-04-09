@@ -1185,10 +1185,10 @@ namespace MainUI.LogicalConfiguration.Controls
             {
                 { "当前日期时间(无毫秒)", "DateTime.Now.ToString(\"yyyy-MM-dd HH:mm:ss\")" },
                 { "当前日期时间(带毫秒)", "DateTime.Now.ToString(\"yyyy-MM-dd HH:mm:ss.fff\")" },
-                { "当前日期", "DateTime.Now.ToString(\"yyyy-MM-dd\")" },
-                { "当前时间", "DateTime.Now.ToString(\"HH:mm:ss\")" },
-                { "年月日时分", "DateTime.Now.ToString(\"yyyyMMdd_HHmm\")" },
-                { "文件名时间戳", "DateTime.Now.ToString(\"yyyyMMddHHmmss\")" }
+                //{ "当前日期", "DateTime.Now.ToString(\"yyyy-MM-dd\")" },
+                //{ "当前时间", "DateTime.Now.ToString(\"HH:mm:ss\")" },
+                //{ "年月日时分", "DateTime.Now.ToString(\"yyyyMMdd_HHmm\")" },
+                //{ "文件名时间戳", "DateTime.Now.ToString(\"yyyyMMddHHmmss\")" }
             }
         },
         {
@@ -1210,10 +1210,10 @@ namespace MainUI.LogicalConfiguration.Controls
                     { "秒数差值(2位)", "ROUND(DATEDIFF.SECONDS({结束时间}, {开始时间}), 2)" },
                     { "毫秒差值", "DATEDIFF.MILLISECONDS({结束时间}, {开始时间})" },
                     { "分钟差值", "DATEDIFF.MINUTES({结束时间}, {开始时间})" },
-                    { "小时差值", "DATEDIFF.HOURS({结束时间}, {开始时间})" },
-                    { "天数差值", "DATEDIFF.DAYS({结束时间}, {开始时间})" },
-                    { "距今秒数", "ELAPSED.SECONDS({开始时间})" },
-                    { "距今毫秒", "ELAPSED.MILLISECONDS({开始时间})" }
+                    //{ "小时差值", "DATEDIFF.HOURS({结束时间}, {开始时间})" },
+                    //{ "天数差值", "DATEDIFF.DAYS({结束时间}, {开始时间})" },
+                    //{ "距今秒数", "ELAPSED.SECONDS({开始时间})" },
+                    //{ "距今毫秒", "ELAPSED.MILLISECONDS({开始时间})" }
                 }
             },
             {

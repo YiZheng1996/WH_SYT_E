@@ -769,6 +769,8 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                 "等待稳定",
                 "实时监控",
                 "循环工具",
+                "检测工具",
+                "用户输入",
                 "变量赋值",
                 "消息通知",
                 "读取PLC",

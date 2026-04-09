@@ -239,7 +239,7 @@ namespace MainUI.LogicalConfiguration.Forms
                 {
                     Mode = InputMode.Condition,
                     EnabledModules = InputModules.Variable | InputModules.PLC |
-                                     InputModules.Expression | InputModules.Constant,
+                                     InputModules.Expression | InputModules.Constant | InputModules.Function,
                     Title = "配置条件表达式",
                     ShowValidation = true,
                     ShowPreview = true,

@@ -44,7 +44,7 @@
             btnSelectRow.FillColor = Color.DodgerBlue;
             btnSelectRow.FillColor2 = Color.DodgerBlue;
             btnSelectRow.Font = new Font("思源黑体 CN Bold", 11F, FontStyle.Bold);
-            btnSelectRow.Location = new Point(651, 673);
+            btnSelectRow.Location = new Point(942, 676);
             btnSelectRow.MinimumSize = new Size(1, 1);
             btnSelectRow.Name = "btnSelectRow";
             btnSelectRow.RectColor = Color.DodgerBlue;
@@ -71,7 +71,7 @@
             cboType.ForeDisableColor = Color.FromArgb(46, 46, 46);
             cboType.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cboType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cboType.Location = new Point(319, 48);
+            cboType.Location = new Point(467, 46);
             cboType.Margin = new Padding(4, 5, 4, 5);
             cboType.MinimumSize = new Size(63, 0);
             cboType.Name = "cboType";
@@ -139,7 +139,7 @@
             uiLabel1.BackColor = Color.Transparent;
             uiLabel1.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
             uiLabel1.ForeColor = Color.FromArgb(46, 46, 46);
-            uiLabel1.Location = new Point(223, 50);
+            uiLabel1.Location = new Point(371, 48);
             uiLabel1.Name = "uiLabel1";
             uiLabel1.Size = new Size(102, 26);
             uiLabel1.TabIndex = 394;
@@ -167,7 +167,7 @@
             Tables.RightToLeft = RightToLeft.No;
             Tables.RowHeight = 50;
             Tables.RowHeightHeader = 40;
-            Tables.Size = new Size(756, 558);
+            Tables.Size = new Size(1047, 558);
             Tables.SwitchSize = 25;
             Tables.TabIndex = 411;
             Tables.CellClick += Tables_CellClick;
@@ -183,15 +183,15 @@
             uiLine1.Location = new Point(15, 74);
             uiLine1.MinimumSize = new Size(1, 1);
             uiLine1.Name = "uiLine1";
-            uiLine1.Size = new Size(756, 29);
+            uiLine1.Size = new Size(1047, 29);
             uiLine1.StartCap = UILineCap.Circle;
             uiLine1.TabIndex = 412;
             // 
-            // frmSpec
+            // FrmSpec
             // 
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(236, 236, 236);
-            ClientSize = new Size(786, 722);
+            ClientSize = new Size(1078, 722);
             Controls.Add(cboType);
             Controls.Add(uiLine1);
             Controls.Add(Tables);
@@ -204,7 +204,7 @@
             Margin = new Padding(2, 3, 2, 3);
             MaximizeBox = false;
             MinimizeBox = false;
-            Name = "frmSpec";
+            Name = "FrmSpec";
             RectColor = Color.FromArgb(65, 100, 204);
             ShowIcon = false;
             ShowInTaskbar = false;

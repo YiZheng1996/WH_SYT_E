@@ -15,10 +15,13 @@ namespace MainUI.Service
         {
             table.Columns =
             [
-               new ColumnCheck("Check"){ Checked = true }/*.SetAutoCheck(false)*/,
+               new ColumnCheck("Check"){ Checked = true }
+                    .SetStyle(Color.FromArgb(65, 100, 204), Color.Black),  //.SetAutoCheck(false)
+
                new Column("ItemName", "项点名称"){ Align = ColumnAlign.Left, Width = "210" },
                new Column("ItemKey", "Key"){ Visible = false ,Align = ColumnAlign.Left },
             ];
+
             table.SetRowStyle += table_SetRowStyle;
         }
 
@@ -88,6 +91,11 @@ namespace MainUI.Service
                 if (index != -1)
                 {
                     itemPoints[index].Check = item.Check;
+                    var aa = new AntdUI.CellCheckbox();
+                    //{
+                    //     = Color.FromArgb(65, 100, 204),   // 自定义边框颜色
+
+                    //};
                 }
             }
         }
@@ -116,7 +124,7 @@ namespace MainUI.Service
                 if (checkColumn != null)
                 {
                     checkColumn.SetAutoCheck(enabled);
-                    
+
                     // 强制刷新表格显示
                     table.Invalidate();
                 }
