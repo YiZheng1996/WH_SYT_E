@@ -193,19 +193,23 @@ namespace MainUI.LogicalConfiguration.Methods
             if (string.IsNullOrEmpty(address) || !address.Contains('{'))
                 return address;
 
-            return Regex.Replace(address, @"\{(\w+)\}", match =>
+            return Regex.Replace(address, @"\{([\w\u4e00-\u9fa5]+)\}", match =>
             {
                 var varName = match.Groups[1].Value;
-                var variable = _globalVariableManager
-                    .GetAllVariables()
-                    .FirstOrDefault(v => v.VarName == varName);
+
+                // 优先使用 FindVariableByName（支持规范化查找）
+                var variable = _globalVariableManager.FindVariableByName(varName);
+
+                var allVars = _globalVariableManager.GetAllVariables();
+                NlogHelper.Default.Debug($"ResolveCellAddress：当前变量数={allVars.Count}，列表=[{string.Join(", ", allVars.Select(v => v.VarName))}]");
 
                 if (variable == null)
                 {
                     NlogHelper.Default.Warn($"ResolveCellAddress：变量 [{varName}] 未找到，保留原占位符");
-                    return match.Value; // 找不到变量时保留原样，避免静默写错地址
+                    return match.Value;
                 }
 
+                NlogHelper.Default.Debug($"ResolveCellAddress：变量 [{varName}] = {variable.VarValue}");
                 return variable.VarValue?.ToString() ?? string.Empty;
             });
         }

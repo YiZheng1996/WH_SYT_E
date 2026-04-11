@@ -10,23 +10,12 @@ namespace MainUI.LogicalConfiguration.Engine
     /// 现在作为 ExpressionEngine 的简化包装器
     /// 负责处理参数模型并委托给统一的表达式引擎
     /// </summary>
-    public class VariableAssignmentEngine
+    public class VariableAssignmentEngine(
+         ExpressionEngine expressionEngine,
+         ILogger<VariableAssignmentEngine> logger = null)
     {
-        private readonly ExpressionEngine _expressionEngine;
-        private readonly ILogger<VariableAssignmentEngine> _logger;
-
-        public VariableAssignmentEngine(
-            GlobalVariableManager variableManager,
-            IPLCManager plcManager,
-            ILogger<VariableAssignmentEngine> logger = null)
-        {
-            ArgumentNullException.ThrowIfNull(variableManager);
-
-            _logger = logger;
-
-            // 创建统一的表达式引擎
-            _expressionEngine = new ExpressionEngine(variableManager, plcManager, null);
-        }
+        private readonly ExpressionEngine _expressionEngine = expressionEngine ??
+            throw new ArgumentNullException(nameof(expressionEngine));
 
         /// <summary>
         /// 执行变量赋值
@@ -40,7 +29,7 @@ namespace MainUI.LogicalConfiguration.Engine
 
             try
             {
-                _logger?.LogInformation("开始执行变量赋值: {TargetVar} = {AssignmentType}",
+                logger?.LogInformation("开始执行变量赋值: {TargetVar} = {AssignmentType}",
                     parameter.TargetVarName, parameter.AssignmentType);
 
                 // 1. 验证参数基本有效性
@@ -63,10 +52,10 @@ namespace MainUI.LogicalConfiguration.Engine
                     // 表达式计算赋值
                     VariableAssignmentType.ExpressionCalculation =>
                         await _expressionEngine.AssignExpressionAsync(parameter.TargetVarName, parameter.Expression),
-                        
-                // 从其他变量复制
-                VariableAssignmentType.VariableCopy =>
-                        _expressionEngine.AssignFromVariable(parameter.TargetVarName, parameter.DataSource.VariableName),
+
+                    // 从其他变量复制
+                    VariableAssignmentType.VariableCopy =>
+                            _expressionEngine.AssignFromVariable(parameter.TargetVarName, parameter.DataSource.VariableName),
 
                     // 从PLC读取
                     VariableAssignmentType.PLCRead =>
@@ -88,12 +77,12 @@ namespace MainUI.LogicalConfiguration.Engine
 
                 if (result.Success)
                 {
-                    _logger?.LogInformation("赋值执行成功: {TargetVar} = {NewValue} (耗时: {Duration}ms)",
+                    logger?.LogInformation("赋值执行成功: {TargetVar} = {NewValue} (耗时: {Duration}ms)",
                         parameter.TargetVarName, result.NewValue, result.ExecutionTime.TotalMilliseconds);
                 }
                 else
                 {
-                    _logger?.LogError("赋值执行失败: {TargetVar}, 错误: {Error}",
+                    logger?.LogError("赋值执行失败: {TargetVar}, 错误: {Error}",
                         parameter.TargetVarName, result.ErrorMessage);
                 }
 
@@ -101,7 +90,7 @@ namespace MainUI.LogicalConfiguration.Engine
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "执行变量赋值时发生异常: {TargetVar}", parameter.TargetVarName);
+                logger?.LogError(ex, "执行变量赋值时发生异常: {TargetVar}", parameter.TargetVarName);
 
                 result.Success = false;
                 result.ErrorMessage = $"执行失败: {ex.Message}";

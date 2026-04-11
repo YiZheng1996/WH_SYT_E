@@ -97,33 +97,103 @@ namespace MainUI.LogicalConfiguration.Engine
         #region 私有方法 - 函数处理
 
         /// <summary>
-        /// 处理表达式中的函数调用 - 从内向外处理嵌套
+        /// 处理表达式中的函数调用 - 从内向外处理嵌套，支持嵌套括号
         /// </summary>
         private string ProcessFunctions(string expression)
         {
             var result = expression;
-            var matches = ExpressionConstants.FunctionPattern.Matches(expression);
 
-            // 从内向外处理函数(处理嵌套)
-            while (matches.Count > 0)
+            // 循环处理，直到没有函数调用为止
+            while (true)
             {
-                foreach (Match match in matches)
-                {
-                    var funcName = match.Groups[1].Value;
-                    var argsStr = match.Groups[2].Value;
+                // 找到最内层的函数调用（参数中不再包含其他函数调用）
+                var match = FindInnermostFunctionCall(result);
+                if (match == null) break;
 
-                    // 执行函数
-                    var funcResult = ExecuteFunction(funcName, argsStr);
+                var funcName = match.Value.FuncName;
+                var argsStr = match.Value.ArgsStr;
+                var fullMatch = match.Value.FullMatch;
 
-                    // 替换函数调用为结果 - 使用共享工具格式化
-                    result = result.Replace(match.Value, ExpressionUtils.FormatValueForExpression(funcResult));
-                }
+                logger?.LogDebug($"[ProcessFunctions] 匹配函数: [{funcName}] 参数: [{argsStr}]");
 
-                // 重新匹配(处理嵌套函数)
-                matches = ExpressionConstants.FunctionPattern.Matches(result);
+                // 执行函数
+                var funcResult = ExecuteFunction(funcName, argsStr);
+                logger?.LogDebug($"[ProcessFunctions] 函数结果: {funcResult}");
+
+                // 替换函数调用为结果
+                var formattedResult = ExpressionUtils.FormatValueForExpression(funcResult);
+                var index = result.IndexOf(fullMatch, StringComparison.Ordinal);
+                if (index < 0) break; // 安全防护，避免死循环
+                result = result.Substring(0, index) + formattedResult + result.Substring(index + fullMatch.Length);
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 查找表达式中最内层的函数调用（参数不含嵌套函数）
+        /// 通过手工括号配对，正确处理嵌套场景
+        /// </summary>
+        private (string FuncName, string ArgsStr, string FullMatch)? FindInnermostFunctionCall(string expression)
+        {
+            // 函数名正则：标识符（含 . 命名空间），后跟 (
+            var funcNameRegex = new Regex(@"([A-Za-z_][\w\.]*)\s*\(", RegexOptions.Compiled);
+
+            (string FuncName, string ArgsStr, string FullMatch)? lastInnermost = null;
+
+            foreach (Match nameMatch in funcNameRegex.Matches(expression))
+            {
+                var funcName = nameMatch.Groups[1].Value;
+                var openParenIndex = nameMatch.Index + nameMatch.Length - 1; // ( 的位置
+
+                // 从 ( 开始做括号配对，找到对应的 )
+                int depth = 0;
+                int closeParenIndex = -1;
+                bool inString = false;
+
+                for (int i = openParenIndex; i < expression.Length; i++)
+                {
+                    char c = expression[i];
+
+                    // 字符串字面量内的括号不参与配对
+                    if (c == '"')
+                    {
+                        inString = !inString;
+                        continue;
+                    }
+                    if (inString) continue;
+
+                    if (c == '(') depth++;
+                    else if (c == ')')
+                    {
+                        depth--;
+                        if (depth == 0)
+                        {
+                            closeParenIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (closeParenIndex < 0) continue; // 括号不匹配，跳过
+
+                var argsStr = expression.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1);
+                var fullMatch = expression.Substring(nameMatch.Index, closeParenIndex - nameMatch.Index + 1);
+
+                // 关键：检查参数中是否还有未求值的函数调用
+                // 如果参数里还有 "标识符(" 模式，说明这不是最内层
+                if (funcNameRegex.IsMatch(argsStr))
+                {
+                    // 不是最内层，记录但继续找更内层的
+                    continue;
+                }
+
+                // 这是一个最内层函数调用
+                lastInnermost = (funcName, argsStr, fullMatch);
+                return lastInnermost; // 找到第一个就返回
+            }
+
+            return lastInnermost;
         }
 
         /// <summary>

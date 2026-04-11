@@ -46,6 +46,7 @@
             btnDelete = new UISymbolButton();
             btnAdd = new UISymbolButton();
             panelBottom = new Panel();
+            uiLabel1 = new UILabel();
             btnCancel = new UIButton();
             btnSave = new UIButton();
             panelFileConfig.SuspendLayout();
@@ -269,6 +270,7 @@
             // panelBottom
             // 
             panelBottom.BackColor = Color.FromArgb(248, 249, 250);
+            panelBottom.Controls.Add(uiLabel1);
             panelBottom.Controls.Add(btnCancel);
             panelBottom.Controls.Add(btnSave);
             panelBottom.Dock = DockStyle.Bottom;
@@ -277,6 +279,17 @@
             panelBottom.Padding = new Padding(15, 10, 15, 10);
             panelBottom.Size = new Size(888, 70);
             panelBottom.TabIndex = 3;
+            // 
+            // uiLabel1
+            // 
+            uiLabel1.Font = new Font("微软雅黑", 10F);
+            uiLabel1.ForeColor = Color.FromArgb(65, 100, 204);
+            uiLabel1.Location = new Point(18, 9);
+            uiLabel1.Name = "uiLabel1";
+            uiLabel1.Size = new Size(525, 50);
+            uiLabel1.TabIndex = 2;
+            uiLabel1.Text = "    单元格地址支持变量拼接：使用 {变量名} 格式\r\n    例如 B{LoopIndex} → 在循环中会被替换为 B1、B2、B3 ...";
+            uiLabel1.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // btnCancel
             // 
@@ -365,5 +378,6 @@
         private DataGridViewTextBoxColumn ColIndex;
         private DataGridViewTextBoxColumn ColCellAddress;
         private DataGridViewTextBoxColumn ColVarText;
+        private UILabel uiLabel1;
     }
 }

@@ -391,7 +391,7 @@ namespace MainUI.LogicalConfiguration.Forms
 
                     var item = new WriteCellItem
                     {
-                        CellAddress = cellAddress.Trim().ToUpper(),
+                        CellAddress = NormalizeCellAddress(cellAddress.Trim()),
                         SourceType = sourceType
                     };
 
@@ -415,6 +415,25 @@ namespace MainUI.LogicalConfiguration.Forms
                 _logger?.LogError(ex, "获取当前参数时发生错误");
                 return new Parameter_WriteCells();
             }
+        }
+
+        /// <summary>
+        /// 规范化单元格地址：对地址部分大写，但保留 {变量名} 中的原始大小写
+        /// 示例："b{LoopIndex}" → "B{LoopIndex}"
+        /// </summary>
+        private static string NormalizeCellAddress(string address)
+        {
+            if (string.IsNullOrEmpty(address)) return address;
+
+            // 只对花括号外的字符做大写处理
+            return Regex.Replace(address, @"\{[\w\u4e00-\u9fa5]+\}|[^{}]+", match =>
+            {
+                // 如果是 {变量名} 占位符，原样保留
+                if (match.Value.StartsWith("{"))
+                    return match.Value;
+                // 否则（纯地址部分）转大写
+                return match.Value.ToUpper();
+            });
         }
 
         private void LoadParameters(Parameter_WriteCells param)
