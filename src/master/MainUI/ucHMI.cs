@@ -1131,6 +1131,10 @@ namespace MainUI
         {
             try
             {
+                var config = new SaveReportConfig();
+                config.Load();
+                return config.OverallJudgment;
+
                 // 这里需要根据实际业务逻辑获取综合判定结果
                 // 例如从报表单元格读取，或从全局变量获取
 
@@ -1139,9 +1143,6 @@ namespace MainUI
 
                 // 方式2：从报表特定单元格读取
                 // var result = rWReport.ReadCell("综合判定单元格地址");
-
-                // 临时返回空，由实际业务补充
-                return "";
             }
             catch
             {

@@ -31,6 +31,12 @@
         public string ForemanCellName { get; set; }
 
         /// <summary>
+        /// 综合判断单元格名称
+        /// </summary>
+        [IniKeyName("综合判断单元格名称")]
+        public string OverallJudgment { get; set; } = "A1";
+        
+        /// <summary>
         /// 报表保存路径
         /// </summary>
         [IniKeyName("报表保存路径")]

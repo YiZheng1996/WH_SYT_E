@@ -47,6 +47,7 @@ namespace MainUI.Procedure
 
                 txtForemanName.Text = SaveRptconfig.ForemanName;
                 txtForemanCellName.Text = SaveRptconfig.ForemanCellName;
+                txtOverallJudgment.Text = SaveRptconfig.OverallJudgment;
                 chkSavePDF.Checked = SaveRptconfig.SavePDF;
                 chkIncludeModelName.Checked = SaveRptconfig.IncludeModelName;
                 chkIncludeProductNo.Checked = SaveRptconfig.IncludeProductNo;
@@ -79,6 +80,7 @@ namespace MainUI.Procedure
 
                 SaveRptconfig.ForemanName = txtForemanName.Text;
                 SaveRptconfig.ForemanCellName = txtForemanCellName.Text;
+                SaveRptconfig.OverallJudgment = txtOverallJudgment.Text;
                 SaveRptconfig.RptSaveFile = txtSaveReport.Text;
                 SaveRptconfig.SavePDF = chkSavePDF.Checked;
                 SaveRptconfig.IncludeModelName = chkIncludeModelName.Checked;

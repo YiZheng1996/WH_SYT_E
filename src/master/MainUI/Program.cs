@@ -1,6 +1,8 @@
-﻿using MainUI.LogicalConfiguration;
+﻿using CRRC.LoginUI;
+using MainUI.LogicalConfiguration;
 using MainUI.LogicalConfiguration.Engine;
 using MainUI.LogicalConfiguration.Forms;
+using MainUI.LogicalConfiguration.Instrument.Forms;
 using MainUI.LogicalConfiguration.Instrument.Methods;
 using MainUI.LogicalConfiguration.Instrument.Services;
 using MainUI.LogicalConfiguration.LogicalManager;
@@ -11,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using System.Configuration;
-using MainUI.LogicalConfiguration.Instrument.Forms;
 
 namespace MainUI
 {
@@ -138,7 +139,7 @@ namespace MainUI
         private static void RunApplication()
         {
             // 创建并配置登录窗体
-            var login = CreateLoginForm();
+            var login = CreateLoginForm2();
             DialogResult loginResult = login.ShowDialog();
             if (loginResult == DialogResult.OK)
             {
@@ -161,6 +162,24 @@ namespace MainUI
             SetLoginImage(login);
             return login;
         }
+
+        /// <summary>
+        /// 创建登录窗体
+        /// </summary>
+        private static LoginForm CreateLoginForm2()
+        {
+            var login = new LoginForm
+            {
+                //lblSoftName = { Text = "软件通用平台" },
+                Icon = new Icon("ico.ico")
+            };
+
+            // 设置登录界面图片
+            //SetLoginImage(login);
+            return login;
+        }
+
+        
 
         /// <summary>
         /// 设置登录界面图片

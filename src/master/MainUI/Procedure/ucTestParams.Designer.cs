@@ -60,6 +60,8 @@
             uiLine2 = new UILine();
             productSelectButton = new MainUI.Procedure.Controls.ProductSelectButton();
             uiLabel2 = new UILabel();
+            uiLabel6 = new UILabel();
+            txtOverallJudgment = new UITextBox();
             tabs1.SuspendLayout();
             tabPage1.SuspendLayout();
             tabPage2.SuspendLayout();
@@ -172,6 +174,8 @@
             // tabPage1
             // 
             tabPage1.BackColor = Color.White;
+            tabPage1.Controls.Add(txtOverallJudgment);
+            tabPage1.Controls.Add(uiLabel6);
             tabPage1.Controls.Add(txtForemanCellName);
             tabPage1.Controls.Add(txtForemanName);
             tabPage1.Controls.Add(uiLabel5);
@@ -559,6 +563,43 @@
             uiLabel2.Text = "产品详情：";
             uiLabel2.TextAlign = ContentAlignment.MiddleLeft;
             // 
+            // uiLabel6
+            // 
+            uiLabel6.AutoSize = true;
+            uiLabel6.BackColor = Color.Transparent;
+            uiLabel6.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            uiLabel6.ForeColor = Color.FromArgb(46, 46, 46);
+            uiLabel6.Location = new Point(45, 150);
+            uiLabel6.Name = "uiLabel6";
+            uiLabel6.Size = new Size(90, 22);
+            uiLabel6.TabIndex = 424;
+            uiLabel6.Text = "综合判断：";
+            uiLabel6.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // txtOverallJudgment
+            // 
+            txtOverallJudgment.FillColor = Color.FromArgb(218, 220, 230);
+            txtOverallJudgment.FillColor2 = Color.FromArgb(218, 220, 230);
+            txtOverallJudgment.FillDisableColor = Color.FromArgb(218, 220, 230);
+            txtOverallJudgment.FillReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtOverallJudgment.Font = new Font("思源黑体 CN Bold", 13F, FontStyle.Bold);
+            txtOverallJudgment.ForeColor = Color.FromArgb(46, 46, 46);
+            txtOverallJudgment.ForeDisableColor = Color.FromArgb(235, 227, 221);
+            txtOverallJudgment.ForeReadOnlyColor = Color.FromArgb(235, 227, 221);
+            txtOverallJudgment.Location = new Point(134, 145);
+            txtOverallJudgment.Margin = new Padding(4, 5, 4, 5);
+            txtOverallJudgment.MinimumSize = new Size(1, 16);
+            txtOverallJudgment.Name = "txtOverallJudgment";
+            txtOverallJudgment.Padding = new Padding(5);
+            txtOverallJudgment.RectColor = Color.FromArgb(218, 220, 230);
+            txtOverallJudgment.RectDisableColor = Color.FromArgb(218, 220, 230);
+            txtOverallJudgment.RectReadOnlyColor = Color.FromArgb(218, 220, 230);
+            txtOverallJudgment.ShowText = false;
+            txtOverallJudgment.Size = new Size(179, 29);
+            txtOverallJudgment.TabIndex = 423;
+            txtOverallJudgment.TextAlignment = ContentAlignment.MiddleLeft;
+            txtOverallJudgment.Watermark = "请输入";
+            // 
             // UcTestParams
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
@@ -616,5 +657,7 @@
         private UITextBox txtForemanCellName;
         private Controls.ProductSelectButton productSelectButton;
         private UILabel uiLabel2;
+        private UITextBox txtOverallJudgment;
+        private UILabel uiLabel6;
     }
 }
