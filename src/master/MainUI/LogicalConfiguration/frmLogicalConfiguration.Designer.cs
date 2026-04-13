@@ -29,7 +29,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmLogicalConfiguration));
             splitContainerMain = new SplitContainer();
             panelToolBox = new UIPanel();
@@ -54,7 +53,6 @@
             palExecutionLog = new UIPanel();
             txtLog = new TextBox();
             palExecutionLogTop = new UIPanel();
-            imageList1 = new ImageList(components);
             pnlButtons = new UIPanel();
             BtnSystemParams = new UISymbolButton();
             BtnVariableMonitor = new UISymbolButton();
@@ -474,27 +472,6 @@
             palExecutionLogTop.Text = " 执行日志";
             palExecutionLogTop.TextAlignment = ContentAlignment.MiddleLeft;
             // 
-            // imageList1
-            // 
-            imageList1.ColorDepth = ColorDepth.Depth32Bit;
-            imageList1.ImageStream = (ImageListStreamer)resources.GetObject("imageList1.ImageStream");
-            imageList1.TransparentColor = Color.Transparent;
-            imageList1.Images.SetKeyName(0, "文件夹.png");
-            imageList1.Images.SetKeyName(1, "条件判断.png");
-            imageList1.Images.SetKeyName(2, "延时等待.png");
-            imageList1.Images.SetKeyName(3, "数据读取.png");
-            imageList1.Images.SetKeyName(4, "变量赋值.png");
-            imageList1.Images.SetKeyName(5, "数据计算.png");
-            imageList1.Images.SetKeyName(6, "消息通知.png");
-            imageList1.Images.SetKeyName(7, "循环开始.png");
-            imageList1.Images.SetKeyName(8, "循环结束.png");
-            imageList1.Images.SetKeyName(9, "报表读取.png");
-            imageList1.Images.SetKeyName(10, "报表写入.png");
-            imageList1.Images.SetKeyName(11, "读取PLC.png");
-            imageList1.Images.SetKeyName(12, "写入PLC.png");
-            imageList1.Images.SetKeyName(13, "等待稳定.png");
-            imageList1.Images.SetKeyName(14, "检测工具.png");
-            // 
             // pnlButtons
             // 
             pnlButtons.BackColor = Color.White;
@@ -778,7 +755,6 @@
         private System.Windows.Forms.TextBox txtLog;
         private Sunny.UI.UIPanel pnlButtons;
         private Sunny.UI.UISymbolButton btnExecute;
-        private ImageList imageList1;
         private UISymbolButton btnVariableDefine;
         private UISymbolButton btnClose;
         private UISymbolButton btnSave;

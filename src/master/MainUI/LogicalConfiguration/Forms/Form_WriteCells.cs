@@ -1,9 +1,7 @@
 ﻿using AntdUI;
 using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.Helpers;
-using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
@@ -401,7 +399,7 @@ namespace MainUI.LogicalConfiguration.Forms
                         case CellsDataSourceType.Variable: item.VariableName = content; break;
                         case CellsDataSourceType.Expression: item.Expression = content; break;
                         case CellsDataSourceType.SystemProperty: item.PropertyPath = content; break;
-                        case CellsDataSourceType.EmptyValue:     /* 无需内容 */               break;
+                        case CellsDataSourceType.EmptyValue: break;
                     }
 
                     param.Items.Add(item);

@@ -56,6 +56,7 @@
             imageList1.Images.SetKeyName(14, "以太网.png");
             imageList1.Images.SetKeyName(15, "串口助手.png");
             imageList1.Images.SetKeyName(16, "实时监控.png");
+            imageList1.Images.SetKeyName(17, "用户输入.png");
             // 
             // ToolTreeViewControl
             // 

@@ -139,7 +139,7 @@ namespace MainUI
         private static void RunApplication()
         {
             // 创建并配置登录窗体
-            var login = CreateLoginForm2();
+            var login = CreateLoginForm();
             DialogResult loginResult = login.ShowDialog();
             if (loginResult == DialogResult.OK)
             {

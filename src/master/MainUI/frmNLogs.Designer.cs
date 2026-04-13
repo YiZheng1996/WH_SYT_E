@@ -359,6 +359,7 @@
             // btnCopy
             // 
             btnCopy.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnCopy.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             btnCopy.Location = new Point(983, 2);
             btnCopy.Name = "btnCopy";
             btnCopy.Size = new Size(116, 35);
@@ -388,6 +389,7 @@
             // lblStatus
             // 
             lblStatus.Dock = DockStyle.Fill;
+            lblStatus.Font = new Font("微软雅黑", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             lblStatus.Location = new Point(0, 0);
             lblStatus.Name = "lblStatus";
             lblStatus.Padding = new Padding(10, 0, 0, 0);

@@ -174,7 +174,7 @@ namespace MainUI.LogicalConfiguration.Controls
                 };
                 dataNode.Nodes.Add(new TreeNode("变量赋值") { Tag = "VariableAssign", ImageKey = "变量赋值.png" });
                 dataNode.Nodes.Add(new TreeNode("消息通知") { Tag = "MessageNotify", ImageKey = "消息通知.png" });
-                dataNode.Nodes.Add(new TreeNode("用户输入") { Tag = "MessageNotify", ImageKey = "消息通知.png" });
+                dataNode.Nodes.Add(new TreeNode("用户输入") { Tag = "UserInput", ImageKey = "用户输入.png" });
                 _treeView.Nodes.Add(dataNode);
 
                 // PLC通信组
@@ -186,8 +186,8 @@ namespace MainUI.LogicalConfiguration.Controls
                 };
                 plcNode.Nodes.Add(new TreeNode("读取PLC") { Tag = "PLCRead", ImageKey = "读取PLC.png" });
                 plcNode.Nodes.Add(new TreeNode("写入PLC") { Tag = "PLCWrite", ImageKey = "写入PLC.png" });
-                plcNode.Nodes.Add(new TreeNode("以太网发送") { Tag = "EthernetSend", ImageKey = "以太网.png" });
-                plcNode.Nodes.Add(new TreeNode("串口发送") { Tag = "SerialPortSend", ImageKey = "串口助手.png" });
+                //plcNode.Nodes.Add(new TreeNode("以太网发送") { Tag = "EthernetSend", ImageKey = "以太网.png" });
+                //plcNode.Nodes.Add(new TreeNode("串口发送") { Tag = "SerialPortSend", ImageKey = "串口助手.png" });
                 plcNode.Nodes.Add(new TreeNode("仪器通讯") { Tag = "SerialPortSend", ImageKey = "串口助手.png" });
                 _treeView.Nodes.Add(plcNode);
 
