@@ -37,6 +37,7 @@ namespace MainUI.LogicalConfiguration.LogicalManager
                     "条件判断" => GetConditionPreview(step),
                     "循环工具" => GetLoopStartPreview(step),
                     "消息通知" => GetMessageNotificationPreview(step),
+                    "实时监控" => GetRealtimeMonitorPreview(step),
                     "用户输入" => GetUserInputPreview(step),
                     "检测工具" => GetDetectionToolPreview(step),
                     "读取PLC" => GetReadPLCPreview(step),
@@ -277,6 +278,30 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             }
 
             return preview;
+        }
+
+        /// <summary>
+        /// 实时监控步骤的预览
+        /// </summary>
+        private string GetRealtimeMonitorPreview(ChildModel step)
+        {
+            if (!TryGetParameter<Parameter_RealtimeMonitorPrompt>(step.StepParameter, out var param))
+                return "未配置";
+
+            // 监测源
+            string source = param.MonitorSourceType == MonitorSourceType.Variable
+                ? $"变量:{param.MonitorVariable}"
+                : $"PLC:{param.PlcModuleName}.{param.PlcAddress}";
+
+            // 提示内容截断
+            string prompt = string.IsNullOrEmpty(param.PromptMessage)
+                ? "无提示"
+                : TruncateText(param.PromptMessage, 20);
+
+            // 单位
+            string unit = string.IsNullOrEmpty(param.Unit) ? "" : $" ({param.Unit})";
+
+            return $"{prompt} | 监测:{source}{unit}";
         }
 
         /// <summary>

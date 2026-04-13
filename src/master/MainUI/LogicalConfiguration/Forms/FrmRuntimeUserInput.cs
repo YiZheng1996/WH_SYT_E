@@ -1,3 +1,5 @@
+using MainUI.LogicalConfiguration.Helpers;
+using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 
 namespace MainUI.LogicalConfiguration.Forms
@@ -11,6 +13,7 @@ namespace MainUI.LogicalConfiguration.Forms
         #region 字段
 
         private readonly Parameter_UserInput _param;
+        private readonly GlobalVariableManager _variableManager;
         private int _remainingSeconds;
 
         #endregion
@@ -26,9 +29,10 @@ namespace MainUI.LogicalConfiguration.Forms
 
         #region 构造函数
 
-        public FrmRuntimeUserInput(Parameter_UserInput param)
+        public FrmRuntimeUserInput(Parameter_UserInput param, GlobalVariableManager variableManager = null)
         {
             _param = param ?? throw new ArgumentNullException(nameof(param));
+            _variableManager = variableManager;
             InitializeComponent();
             SetupUI();
         }
@@ -43,9 +47,10 @@ namespace MainUI.LogicalConfiguration.Forms
             Text = string.IsNullOrWhiteSpace(_param.Title) ? "请输入" : _param.Title;
 
             // ── 提示文字 ──────────────────────────────────
-            lblPrompt.Text = string.IsNullOrWhiteSpace(_param.Prompt)
+            var renderedPrompt = PromptTextRenderer.Render(_param.Prompt, _variableManager);
+            lblPrompt.Text = string.IsNullOrWhiteSpace(renderedPrompt)
                 ? "请填写以下信息后点击【确认】继续执行流程。"
-                : _param.Prompt;
+                : renderedPrompt;
 
             // ── 根据提示文字动态计算 pnlPrompt 高度 ──────
             // 最小高度 44（单行），文字宽度按 pnlPrompt 内容区宽度（460 - padding 20）

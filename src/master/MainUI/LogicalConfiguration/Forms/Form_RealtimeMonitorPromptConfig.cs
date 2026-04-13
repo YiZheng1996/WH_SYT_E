@@ -1,4 +1,5 @@
 ﻿using AntdUI;
+using MainUI.LogicalConfiguration.Controls;
 using MainUI.LogicalConfiguration.Helpers;
 using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
@@ -69,7 +70,24 @@ namespace MainUI.LogicalConfiguration.Forms
             // 加载参数
             LoadParameterFromWorkflowState();
 
+            // 添加面板变量调用
+            AttachExpressionPanels();
+
             _isInitializing = false;
+        }
+
+        private void AttachExpressionPanels()
+        {
+            ExpressionInputPanel.AttachTo(txtPromptMessage, new InputPanelOptions
+            {
+                Mode = InputMode.VariableOnly,
+                EnabledModules = InputModules.Variable,
+                Title = "编辑提示说明",
+                ShowValidation = false,
+                ShowPreview = true,
+                CloseOnSubmit = false,
+            });
+            txtPromptMessage.Watermark = "输入提示说明，可用 {变量名} 引用变量，如：请将压力调整到{范围上限}kPa";
         }
 
         private void InitializeComboBoxes()

@@ -76,6 +76,18 @@ namespace MainUI.LogicalConfiguration.Forms
         {
             try
             {
+                // 消息内容框 — 支持混合文本 + 变量引用
+                ExpressionInputPanel.AttachTo(txtPromptContent, new InputPanelOptions
+                {
+                    Mode = InputMode.VariableOnly,   // 文本混合变量模式
+                    EnabledModules = InputModules.Variable,
+                    Title = "编辑提示内容",
+                    ShowValidation = false,
+                    ShowPreview = true,
+                    CloseOnSubmit = false,                // 不自动关闭，方便继续编辑
+                });
+                txtPromptContent.Watermark = "输入提示内容，用 {变量名} 引用变量，如：请将压力调整到{范围上限}kPa";
+
                 // 为条件表达式文本框附加ExpressionInputPanel
                 ExpressionInputPanel.AttachTo(txtResultVariable, new InputPanelOptions
                 {

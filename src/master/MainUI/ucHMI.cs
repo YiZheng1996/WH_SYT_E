@@ -3,6 +3,7 @@ using MainUI.LogicalConfiguration;
 using MainUI.Procedure.Controls;
 using MainUI.Service;
 using Microsoft.Extensions.Logging;
+using Sunny.UI;
 using Label = System.Windows.Forms.Label;
 
 namespace MainUI
@@ -832,7 +833,7 @@ namespace MainUI
             // 获取保存配置
             var saveConfig = ReportService.GetSaveConfig();
 
-            rWReport.Write(saveConfig.ForemanCellName, saveConfig.ForemanName); // 班长
+            //rWReport.Write(saveConfig.ForemanCellName, saveConfig.ForemanName); // 班长
         }
 
         #region 试验排空气压
@@ -977,7 +978,7 @@ namespace MainUI
             {
                 return (false, "请注意，急停情况下无法启动自动试验!");
             }
-            if (string.IsNullOrEmpty(VarHelper.TestViewModel.ModelName))
+            if (string.IsNullOrEmpty(VarHelper.TestViewModel.ModelName) || string.IsNullOrEmpty(txtModel.Text.Trim()))
             {
                 return (false, "未选择型号，无法启动自动试验!");
             }

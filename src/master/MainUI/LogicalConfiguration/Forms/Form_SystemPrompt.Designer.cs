@@ -20,7 +20,7 @@ namespace MainUI.LogicalConfiguration.Forms
         private void InitializeComponent()
         {
             BtnSave = new UISymbolButton();
-            txtPromptContent = new UIRichTextBox();
+            txtPromptContent = new UITextBox();
             lblPromptContent = new UILine();
             lblDialogType = new UILine();
             cmbDialogType = new UIComboBox();
@@ -50,11 +50,11 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // txtPromptContent
             // 
-            txtPromptContent.FillColor = Color.White;
             txtPromptContent.Font = new Font("微软雅黑", 12F);
             txtPromptContent.Location = new Point(37, 80);
             txtPromptContent.Margin = new Padding(4, 5, 4, 5);
             txtPromptContent.MinimumSize = new Size(1, 1);
+            txtPromptContent.Multiline = true;
             txtPromptContent.Name = "txtPromptContent";
             txtPromptContent.Padding = new Padding(2);
             txtPromptContent.Radius = 10;
@@ -63,6 +63,7 @@ namespace MainUI.LogicalConfiguration.Forms
             txtPromptContent.Size = new Size(352, 160);
             txtPromptContent.TabIndex = 1;
             txtPromptContent.TextAlignment = ContentAlignment.MiddleCenter;
+            txtPromptContent.Watermark = "";
             // 
             // lblPromptContent
             // 
@@ -245,7 +246,7 @@ namespace MainUI.LogicalConfiguration.Forms
         }
 
         private Sunny.UI.UISymbolButton BtnSave;
-        private Sunny.UI.UIRichTextBox txtPromptContent;
+        private Sunny.UI.UITextBox txtPromptContent;
         private Sunny.UI.UILine lblPromptContent;
         private Sunny.UI.UILine lblDialogType;
         private Sunny.UI.UIComboBox cmbDialogType;

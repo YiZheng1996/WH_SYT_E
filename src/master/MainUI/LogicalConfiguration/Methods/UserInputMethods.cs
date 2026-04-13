@@ -23,7 +23,7 @@ namespace MainUI.LogicalConfiguration.Methods
         private readonly ILogger<UserInputMethods> _logger =
             logger ?? throw new ArgumentNullException(nameof(logger));
 
-        public override string Category    => "系统工具";
+        public override string Category => "系统工具";
         public override string Description => "运行时弹窗让操作员填值，结果写入目标变量";
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace MainUI.LogicalConfiguration.Methods
                 DialogResult dlgResult = DialogResult.Cancel;
                 string inputValue = null;
 
-                await ShowInputDialogOnUIThread(param, out dlgResult, out inputValue);
+                await ShowInputDialogOnUIThread(param, variableManager, out dlgResult, out inputValue);
 
                 // ── 3. 处理结果 ───────────────────────────────
                 switch (dlgResult)
@@ -95,6 +95,7 @@ namespace MainUI.LogicalConfiguration.Methods
         /// </summary>
         private static Task ShowInputDialogOnUIThread(
             Parameter_UserInput param,
+            GlobalVariableManager variableManager,
             out DialogResult dlgResult,
             out string inputValue)
         {
@@ -103,7 +104,7 @@ namespace MainUI.LogicalConfiguration.Methods
             var tcs = new TaskCompletionSource<(DialogResult, string)>();
 
             DialogResult capturedResult = DialogResult.Cancel;
-            string       capturedValue  = null;
+            string capturedValue = null;
 
             // 找到当前打开的主窗口（通常是第一个）
             var mainForm = Application.OpenForms.Count > 0
@@ -114,7 +115,7 @@ namespace MainUI.LogicalConfiguration.Methods
             {
                 try
                 {
-                    using var dlg = new FrmRuntimeUserInput(param);
+                    using var dlg = new FrmRuntimeUserInput(param, variableManager);
 
                     DialogResult result;
                     if (mainForm != null)
@@ -128,7 +129,7 @@ namespace MainUI.LogicalConfiguration.Methods
                     }
 
                     capturedResult = result;
-                    capturedValue  = result == DialogResult.OK ? dlg.InputValue : null;
+                    capturedValue = result == DialogResult.OK ? dlg.InputValue : null;
                     tcs.SetResult((result, capturedValue));
                 }
                 catch (Exception ex)
@@ -144,7 +145,7 @@ namespace MainUI.LogicalConfiguration.Methods
 
             // 同步获取结果赋值给 out 参数
             var (r, v) = tcs.Task.GetAwaiter().GetResult();
-            dlgResult  = r;
+            dlgResult = r;
             inputValue = v;
 
             return Task.CompletedTask;

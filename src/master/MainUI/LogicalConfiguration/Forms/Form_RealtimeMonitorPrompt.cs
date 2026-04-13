@@ -1,4 +1,5 @@
-﻿using MainUI.LogicalConfiguration.LogicalManager;
+﻿using MainUI.LogicalConfiguration.Helpers;
+using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
 using MainUI.LogicalConfiguration.Services.ServicesPLC;
 
@@ -61,8 +62,9 @@ namespace MainUI.LogicalConfiguration.Forms
                 lblValueLabel.Visible = false;
             }
 
-            // 设置提示信息
-            lblMessage.Text = _parameter.PromptMessage.Replace("\\n", Environment.NewLine);
+            // 渲染 PromptMessage 中的变量引用
+            var renderedMessage = PromptTextRenderer.Render(_parameter.PromptMessage, _variableManager);
+            lblMessage.Text = string.IsNullOrWhiteSpace(renderedMessage) ? "" : renderedMessage;
 
             // 设置按钮文本
             btnConfirm.Text = _parameter.ButtonText;

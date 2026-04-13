@@ -21,7 +21,7 @@ namespace MainUI.LogicalConfiguration.Forms
             lblTitle = new UILabel();
             txtTitle = new UITextBox();
             lblPrompt = new UILabel();
-            txtPrompt = new UIRichTextBox();
+            txtPrompt = new UITextBox();
             uiLine1 = new UILine();
             lblInputType = new UILabel();
             cmbInputType = new UIComboBox();
@@ -165,11 +165,11 @@ namespace MainUI.LogicalConfiguration.Forms
             // 
             // txtPrompt
             // 
-            txtPrompt.FillColor = Color.White;
             txtPrompt.Font = new Font("微软雅黑", 10F);
             txtPrompt.Location = new Point(96, 52);
             txtPrompt.Margin = new Padding(4, 5, 4, 5);
             txtPrompt.MinimumSize = new Size(1, 16);
+            txtPrompt.Multiline = true;
             txtPrompt.Name = "txtPrompt";
             txtPrompt.Padding = new Padding(5);
             txtPrompt.ShowText = false;
@@ -178,6 +178,7 @@ namespace MainUI.LogicalConfiguration.Forms
             txtPrompt.Text = "显示在弹窗中的说明文字，支持换行";
             txtPrompt.TextAlignment = ContentAlignment.TopLeft;
             toolTip.SetToolTip(txtPrompt, "显示在弹窗中的说明文字，支持换行");
+            txtPrompt.Watermark = "";
             // 
             // uiLine1
             // 
@@ -690,7 +691,7 @@ namespace MainUI.LogicalConfiguration.Forms
         private Sunny.UI.UILabel lblTitle;
         private Sunny.UI.UITextBox txtTitle;
         private Sunny.UI.UILabel lblPrompt;
-        private Sunny.UI.UIRichTextBox txtPrompt;
+        private Sunny.UI.UITextBox txtPrompt;
         private Sunny.UI.UILine uiLine1;
         private Sunny.UI.UILabel lblInputType;
         private Sunny.UI.UIComboBox cmbInputType;

@@ -235,13 +235,14 @@ namespace MainUI.LogicalConfiguration.Methods
         }
 
         /// <summary>
-        /// 解析文本中的变量引用
+        /// 解析文本中的变量引用，将 {变量名} 替换为实际值
         /// </summary>
         private async Task<string> ResolveVariablesInText(string text)
         {
-            // 实现变量解析逻辑
             await Task.CompletedTask;
-            return text; // 简化实现
+            if (string.IsNullOrEmpty(text)) return text ?? string.Empty;
+
+            return PromptTextRenderer.Render(text, _variableManager);
         }
     }
 }

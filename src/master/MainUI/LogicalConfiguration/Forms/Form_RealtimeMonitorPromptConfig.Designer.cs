@@ -43,7 +43,7 @@
             txtDisplayFormat = new UITextBox();
             lblDisplayFormat = new UILabel();
             grpPromptConfig = new UIGroupBox();
-            txtPromptMessage = new UIRichTextBox();
+            txtPromptMessage = new UITextBox();
             lblPromptMessage = new UILabel();
             grpMonitorSource = new UIGroupBox();
             pnlPlcSource = new Panel();
@@ -317,17 +317,18 @@
             // 
             // txtPromptMessage
             // 
-            txtPromptMessage.FillColor = Color.White;
             txtPromptMessage.Font = new Font("微软雅黑", 10F);
             txtPromptMessage.Location = new Point(15, 68);
             txtPromptMessage.Margin = new Padding(4, 5, 4, 5);
             txtPromptMessage.MinimumSize = new Size(1, 1);
+            txtPromptMessage.Multiline = true;
             txtPromptMessage.Name = "txtPromptMessage";
             txtPromptMessage.Padding = new Padding(2);
             txtPromptMessage.ShowText = false;
             txtPromptMessage.Size = new Size(620, 60);
             txtPromptMessage.TabIndex = 1;
-            txtPromptMessage.TextAlignment = ContentAlignment.MiddleCenter;
+            txtPromptMessage.TextAlignment = ContentAlignment.MiddleLeft;
+            txtPromptMessage.Watermark = "";
             // 
             // lblPromptMessage
             // 
@@ -628,6 +629,7 @@
             btnTest.TabIndex = 0;
             btnTest.Text = "测试";
             btnTest.TipsFont = new Font("微软雅黑", 9F);
+            btnTest.Visible = false;
             btnTest.Click += BtnTest_Click;
             // 
             // Form_RealtimeMonitorPromptConfig
@@ -683,7 +685,7 @@
         private Sunny.UI.UIComboBox cmbMonitorSourceType;
         private Sunny.UI.UILabel lblMonitorSourceType;
         private Sunny.UI.UIGroupBox grpPromptConfig;
-        private Sunny.UI.UIRichTextBox txtPromptMessage;
+        private Sunny.UI.UITextBox txtPromptMessage;
         private Sunny.UI.UILabel lblPromptMessage;
         private Sunny.UI.UIGroupBox grpDisplayConfig;
         private Sunny.UI.UIIntegerUpDown numRefreshInterval;
