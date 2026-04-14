@@ -25,78 +25,75 @@ namespace MainUI.LogicalConfiguration.Methods
         {
             try
             {
-                int delayMilliseconds;
-
-                // 1. 检查是否有有效的 DelayValue
-                if (!string.IsNullOrWhiteSpace(param.DelayValue))
+                if (param == null)
                 {
-                    double delayValue;
-
-                    // 1.1 解析延时值(支持变量表达式)
-                    if (param.ContainsVariables())
-                    {
-                        // 包含变量引用,使用表达式引擎求值
-                        NlogHelper.Default.Info($"解析延时表达式: {param.DelayValue}");
-
-                        var evalResult = await _expressionEngine.EvaluateExpressionAsync(param.DelayValue);
-
-                        if (!evalResult.Success)
-                        {
-                            NlogHelper.Default.Error($"延时表达式求值失败: {evalResult.ErrorMessage}");
-                            return false;
-                        }
-
-                        // 转换为数值
-                        if (evalResult.Result is double doubleVal)
-                        {
-                            delayValue = doubleVal;
-                        }
-                        else if (evalResult.Result is int intVal)
-                        {
-                            delayValue = intVal;
-                        }
-                        else if (double.TryParse(evalResult.Result?.ToString(), out double parsedVal))
-                        {
-                            delayValue = parsedVal;
-                        }
-                        else
-                        {
-                            NlogHelper.Default.Error($"延时表达式结果类型错误: {evalResult.Result?.GetType().Name}");
-                            return false;
-                        }
-
-                        NlogHelper.Default.Info($"表达式 {param.DelayValue} 解析结果: {delayValue}");
-                    }
-                    else
-                    {
-                        // 直接解析数值
-                        if (!double.TryParse(param.DelayValue, out delayValue))
-                        {
-                            NlogHelper.Default.Error($"延时值格式错误: {param.DelayValue}");
-                            return false;
-                        }
-                    }
-
-                    // 1.2 根据单位转换为毫秒
-                    delayMilliseconds = (int)/*param.ConvertToMilliseconds*/(delayValue);
-                    //string unitDisplay = Parameter_DelayTime.GetUnitDisplayName(param.Unit);
-                    //NlogHelper.Default.Info($"延时时间: {delayValue} {unitDisplay} (转换为 {delayMilliseconds} 毫秒)");
-                }
-                else
-                {
-                    // 2. 向后兼容：如果 DelayValue 为空，使用 T 属性（已经是毫秒）
-                    delayMilliseconds = (int)param.T;
-                    NlogHelper.Default.Info($"使用兼容模式延时: {delayMilliseconds} 毫秒");
-                }
-
-                // 3. 验证延时值
-                if (delayMilliseconds < 0)
-                {
-                    NlogHelper.Default.Error($"延时值不能为负数: {delayMilliseconds}");
+                    NlogHelper.Default.Error("延时参数为空");
                     return false;
                 }
 
-                // 4. 执行延时
+                double delayValue;
+
+                // 1. 解析延时值
+                if (string.IsNullOrWhiteSpace(param.DelayValue))
+                {
+                    // 兼容旧数据：DelayValue 为空时直接用 _legacyT（已是毫秒）
+                    NlogHelper.Default.Info($"使用兼容模式延时: {param.T} 毫秒");
+                    await Task.Delay((int)Math.Min(param.T, int.MaxValue), cancellationToken);
+                    return true;
+                }
+
+                if (param.ContainsVariables())
+                {
+                    // 变量表达式：交给表达式引擎求值
+                    NlogHelper.Default.Info($"解析延时表达式: {param.DelayValue}");
+                    var evalResult = await _expressionEngine.EvaluateExpressionAsync(param.DelayValue);
+
+                    if (!evalResult.Success)
+                    {
+                        NlogHelper.Default.Error($"延时表达式求值失败: {evalResult.ErrorMessage}");
+                        return false;
+                    }
+
+                    if (evalResult.Result is double d)
+                        delayValue = d;
+                    else if (evalResult.Result is int i)
+                        delayValue = i;
+                    else if (double.TryParse(evalResult.Result?.ToString(), out double p))
+                        delayValue = p;
+                    else
+                    {
+                        NlogHelper.Default.Error($"延时表达式结果类型无法转换为数值: {evalResult.Result?.GetType().Name}");
+                        return false;
+                    }
+
+                    NlogHelper.Default.Info($"表达式 {param.DelayValue} 解析结果: {delayValue}");
+                }
+                else
+                {
+                    // 固定数值：直接解析用户原始输入（如 "1"，单位由 param.Unit 决定）
+                    if (!double.TryParse(param.DelayValue, out delayValue))
+                    {
+                        NlogHelper.Default.Error($"延时值格式错误: {param.DelayValue}");
+                        return false;
+                    }
+                }
+
+                // 2. 按单位换算为毫秒（只做一次）
+                double msDouble = param.ConvertToMilliseconds(delayValue);
+                string unitDisplay = Parameter_DelayTime.GetUnitDisplayName(param.Unit);
+                NlogHelper.Default.Info($"延时时间: {delayValue} {unitDisplay} = {msDouble} 毫秒");
+
+                // 3. 验证
+                if (msDouble <= 0)
+                {
+                    NlogHelper.Default.Error($"延时值必须大于零: {msDouble}");
+                    return false;
+                }
+
+                // 4. 执行延时（Task.Delay 接受 int，限制最大 24 小时）
+                const double MaxDelayMs = 24.0 * 60 * 60 * 1000; // 86,400,000 ms
+                int delayMilliseconds = (int)Math.Min(msDouble, MaxDelayMs);
+
                 NlogHelper.Default.Info($"开始延时 {delayMilliseconds} 毫秒");
                 await Task.Delay(delayMilliseconds, cancellationToken);
                 NlogHelper.Default.Info("延时完成");
@@ -106,7 +103,7 @@ namespace MainUI.LogicalConfiguration.Methods
             catch (OperationCanceledException)
             {
                 NlogHelper.Default.Info("延时被取消");
-                throw; // 向上传播取消异常
+                throw;
             }
             catch (Exception ex)
             {

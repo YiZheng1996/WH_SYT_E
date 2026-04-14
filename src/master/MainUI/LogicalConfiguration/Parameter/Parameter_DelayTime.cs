@@ -53,25 +53,17 @@ namespace MainUI.LogicalConfiguration.Parameter
         {
             get
             {
-                // 优先使用 DelayValue
                 if (!string.IsNullOrEmpty(DelayValue))
                 {
-                    // 尝试直接解析为数值
                     if (double.TryParse(DelayValue, out double value))
-                    {
                         return value;
-                    }
                 }
                 return _legacyT;
             }
             set
             {
                 _legacyT = value;
-                // 同步到 DelayValue（仅在 DelayValue 为空或为数值时）
-                if (string.IsNullOrEmpty(DelayValue) || double.TryParse(DelayValue, out _))
-                {
-                    DelayValue = value.ToString();
-                }
+                // 删除反向覆盖 DelayValue 的逻辑，职责分离
             }
         }
         private double _legacyT = 1000;

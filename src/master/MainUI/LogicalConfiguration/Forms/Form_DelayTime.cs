@@ -202,13 +202,6 @@ namespace MainUI.LogicalConfiguration.Forms
                         cmbTimeUnit.SelectedItem.ToString());
                 }
 
-                // 如果是纯数值，同步更新 T 属性（向后兼容）
-                if (double.TryParse(_parameter.DelayValue, out double value))
-                {
-                    // T 存储的是毫秒数
-                    _parameter.T = _parameter.ConvertToMilliseconds(value);
-                }
-
                 Logger?.LogDebug($"保存延时参数: {_parameter.DelayValue} {_parameter.Unit}");
             }
             catch (Exception ex)
@@ -236,22 +229,6 @@ namespace MainUI.LogicalConfiguration.Forms
                     if (!string.IsNullOrEmpty(Parameter.DelayValue))
                     {
                         string displayValue = Parameter.DelayValue;
-
-                        // 检测是否需要反向换算（DelayValue 被 T 覆盖的情况）
-                        // 如果 DelayValue 是纯数值，且等于 T，且单位不是毫秒，则需要反算
-                        if (double.TryParse(displayValue, out double numValue)
-                            && Math.Abs(numValue - Parameter.T) < 0.001
-                            && Parameter.Unit != TimeUnit.Milliseconds)
-                        {
-                            // 反向换算：从毫秒转回原始单位
-                            double originalValue = Parameter.Unit switch
-                            {
-                                TimeUnit.Seconds => numValue / 1000,
-                                TimeUnit.Minutes => numValue / 60000,
-                                _ => numValue
-                            };
-                            displayValue = originalValue.ToString("G");
-                        }
 
                         txtDelayValue.Text = displayValue;
                     }

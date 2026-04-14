@@ -1,6 +1,8 @@
 ﻿using MainUI.LogicalConfiguration;
 using MainUI.LogicalConfiguration.Infrastructure;
+using MainUI.LogicalConfiguration.LogicalManager;
 using MainUI.LogicalConfiguration.Parameter;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Label = AntdUI.Label;
@@ -12,9 +14,10 @@ namespace MainUI.Procedure.Controls
     /// 步骤参数渲染器
     /// 负责将各类步骤参数渲染为控件，添加到 detailsPanel 中
     /// </summary>
-    internal class StepParameterRenderer
+    public class StepParameterRenderer(Panel detailsPanel)
     {
-        private readonly Panel _detailsPanel;
+        private readonly Panel _detailsPanel = detailsPanel ?? throw new ArgumentNullException(nameof(detailsPanel));
+        private GlobalVariableManager _variableManager = Program.ServiceProvider?.GetService<GlobalVariableManager>();
 
         // 共享颜色定义（由 StepStatusControl 传入）
         private static class StatusColors
@@ -24,11 +27,6 @@ namespace MainUI.Procedure.Controls
             public static readonly Color Success = ColorTranslator.FromHtml("#52C41A");
             public static readonly Color Failed = ColorTranslator.FromHtml("#E73624");
             public static readonly Color Skipped = ColorTranslator.FromHtml("#FAAD14");
-        }
-
-        public StepParameterRenderer(Panel detailsPanel)
-        {
-            _detailsPanel = detailsPanel ?? throw new ArgumentNullException(nameof(detailsPanel));
         }
 
         #region 入口分发
@@ -508,22 +506,71 @@ namespace MainUI.Procedure.Controls
                 var (c1, c2, y) = BeginTable(yPosition, "延时配置");
                 yPosition = y;
 
-                if (!string.IsNullOrEmpty(param.DelayValue) && param.DelayValue.Contains("{"))
+                bool isExpression = !string.IsNullOrEmpty(param.DelayValue) && param.DelayValue.Contains("{");
+                string unitName = Parameter_DelayTime.GetUnitDisplayName(param.Unit);
+
+                if (isExpression)
                 {
                     AddCell("延时表达式", yPosition, 0, c1, false);
                     AddCell(param.DelayValue, yPosition, c1, c2, false, Color.FromArgb(0, 102, 204));
                     yPosition += 22;
+
+                    // 从变量管理器读取当前实际值
+                    string currentValueDisplay = GetVariableCurrentValue(param.DelayValue, param.Unit);
                     AddCell("当前值", yPosition, 0, c1, false);
-                    AddCell($"{param.T / 1000.0:F1} 秒 ({param.T} ms)", yPosition, c1, c2, false, Color.FromArgb(100, 100, 100));
+                    AddCell(currentValueDisplay + unitName, yPosition, c1, c2, false, Color.FromArgb(100, 100, 100));
+                    yPosition += 22;
                 }
                 else
                 {
+                    double.TryParse(param.DelayValue, out double rawValue);
+                    double ms = param.ConvertToMilliseconds(rawValue);
+
                     AddCell("延时时长", yPosition, 0, c1, false);
-                    AddCell($"{param.T / 1000.0:F1} 秒 ({param.T} ms)", yPosition, c1, c2, false);
+                    AddCell($"{rawValue:G} {unitName}  ({ms:F0} ms)", yPosition, c1, c2, false);
+                    yPosition += 22;
                 }
-                return yPosition + 22;
+
+                return yPosition;
             }
             catch { return DisplayGeneric(stepParameter, yPosition); }
+        }
+
+        /// <summary>
+        /// 从变量管理器读取变量当前值，拼接单位显示
+        /// </summary>
+        private string GetVariableCurrentValue(string delayValue, TimeUnit unit)
+        {
+            try
+            {
+                // 提取变量名，去掉花括号
+                var match = System.Text.RegularExpressions.Regex.Match(delayValue, @"\{(.+?)\}");
+                if (!match.Success) return "未知";
+
+                string varName = match.Groups[1].Value;
+                var varValue = _variableManager?.FindVariableByName(varName);
+
+                if (varValue == null) return "(变量未赋值)";
+
+                if (double.TryParse(varValue.ToString(), out double numVal))
+                {
+                    string unitName = Parameter_DelayTime.GetUnitDisplayName(unit);
+                    double ms = unit switch
+                    {
+                        TimeUnit.Milliseconds => numVal,
+                        TimeUnit.Seconds => numVal * 1000,
+                        TimeUnit.Minutes => numVal * 60000,
+                        _ => numVal
+                    };
+                    return $"{numVal:G} {unitName}  ({ms:F0} ms)";
+                }
+
+                return varValue.VarValue.ToString();
+            }
+            catch
+            {
+                return "(读取失败)";
+            }
         }
 
         #endregion

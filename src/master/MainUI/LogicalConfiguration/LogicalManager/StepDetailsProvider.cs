@@ -98,19 +98,24 @@ namespace MainUI.LogicalConfiguration.LogicalManager
             if (!TryGetParameter<Parameter_DelayTime>(step.StepParameter, out var param))
                 return "未配置";
 
-            // 检查是否使用了变量表达式
+            // 变量表达式
             if (!string.IsNullOrEmpty(param.DelayValue) && param.DelayValue.Contains("{"))
-            {
-                // 使用变量的情况，显示变量表达式
                 return $"延时: {param.DelayValue}";
-            }
 
-            return param.T switch
+            // 固定数值：直接用 DelayValue + Unit 显示，不依赖 param.T
+            if (!double.TryParse(param.DelayValue, out double rawValue))
+                return "未配置";
+
+            string unitDisplay = Parameter_DelayTime.GetUnitDisplayName(param.Unit);
+
+            return param.Unit switch
             {
-                // 直接使用数值的情况
-                < 1000 => $"等待 {param.T:F0} 毫秒",
-                < 60000 => $"等待 {param.T / 1000:F1} 秒",
-                _ => $"等待 {param.T / 60000:F1} 分钟"
+                TimeUnit.Milliseconds => rawValue < 1000
+                    ? $"等待 {rawValue:F0} 毫秒"
+                    : $"等待 {rawValue / 1000:F1} 秒",
+                TimeUnit.Seconds => $"等待 {rawValue:G} 秒",
+                TimeUnit.Minutes => $"等待 {rawValue:G} 分钟",
+                _ => $"等待 {rawValue:G} {unitDisplay}"
             };
         }
 
