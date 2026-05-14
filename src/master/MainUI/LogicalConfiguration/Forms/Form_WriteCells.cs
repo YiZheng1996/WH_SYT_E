@@ -152,6 +152,7 @@ namespace MainUI.LogicalConfiguration.Forms
             btnCancel.Click += BtnCancel_Click;
             btnAdd.Click += BtnAdd_Click;
             btnDelete.Click += BtnDelete_Click;
+            txtSheetName.KeyPress += TxtSheetName_KeyPress;  // 限制 SheetName 只允许输入数字
             DataGridViewDefineVar.CellClick += DataGridViewDefineVar_CellClick;
             DataGridViewDefineVar.RowsAdded += DataGridViewPLCList_RowsAdded;
 
@@ -348,6 +349,20 @@ namespace MainUI.LogicalConfiguration.Forms
             }
         }
 
+        /// <summary>
+        /// 限制工作表序号只能输入数字
+        /// </summary>
+        private void TxtSheetName_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            // 允许退格键
+            if (e.KeyChar == (char)Keys.Back)
+                return;
+
+            // 非数字一律拦截
+            if (!char.IsDigit(e.KeyChar))
+                e.Handled = true;
+        }
+
         private void BtnSave_Click(object sender, EventArgs e)
         {
             SaveParameters();
@@ -440,7 +455,12 @@ namespace MainUI.LogicalConfiguration.Forms
             {
                 _isLoading = true;
                 _currentParameter = param ?? new Parameter_WriteCells();
-                txtSheetName.Text = _currentParameter.SheetName ?? "Sheet1";
+
+                // 只保留数字部分，非数字历史数据回退到 1
+                var sheetRaw = _currentParameter.SheetName ?? "1";
+                txtSheetName.Text = Regex.IsMatch(sheetRaw, @"^\d+$")
+                    ? sheetRaw
+                    : "1";
 
                 DataGridViewDefineVar.Rows.Clear();
 

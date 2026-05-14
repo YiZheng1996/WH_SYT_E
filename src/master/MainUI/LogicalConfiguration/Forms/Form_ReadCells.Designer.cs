@@ -74,7 +74,9 @@
             // txtSheetName
             // 
             txtSheetName.Cursor = Cursors.IBeam;
+            txtSheetName.DoubleValue = 1D;
             txtSheetName.Font = new Font("微软雅黑", 10F);
+            txtSheetName.IntValue = 1;
             txtSheetName.Location = new Point(120, 27);
             txtSheetName.Margin = new Padding(4, 5, 4, 5);
             txtSheetName.MinimumSize = new Size(1, 16);
@@ -84,9 +86,9 @@
             txtSheetName.ShowText = false;
             txtSheetName.Size = new Size(621, 29);
             txtSheetName.TabIndex = 4;
-            txtSheetName.Text = "Sheet1";
+            txtSheetName.Text = "1";
             txtSheetName.TextAlignment = ContentAlignment.MiddleLeft;
-            txtSheetName.Watermark = "输入工作表名称,留空使用第一个工作表";
+            txtSheetName.Watermark = "输入工作表序号（从1开始）";
             // 
             // uiLabel2
             // 

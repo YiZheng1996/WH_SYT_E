@@ -71,7 +71,9 @@
             // txtSheetName
             // 
             txtSheetName.Cursor = Cursors.IBeam;
+            txtSheetName.DoubleValue = 1D;
             txtSheetName.Font = new Font("微软雅黑", 10F);
+            txtSheetName.IntValue = 1;
             txtSheetName.Location = new Point(124, 15);
             txtSheetName.Margin = new Padding(4, 5, 4, 5);
             txtSheetName.MinimumSize = new Size(1, 16);
@@ -81,9 +83,9 @@
             txtSheetName.ShowText = false;
             txtSheetName.Size = new Size(650, 30);
             txtSheetName.TabIndex = 1;
-            txtSheetName.Text = "Sheet1";
+            txtSheetName.Text = "1";
             txtSheetName.TextAlignment = ContentAlignment.MiddleLeft;
-            txtSheetName.Watermark = "请输入工作表名称";
+            txtSheetName.Watermark = "输入工作表序号（从1开始）";
             // 
             // lblSheetName
             // 

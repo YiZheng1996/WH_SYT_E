@@ -92,7 +92,7 @@ namespace MainUI.LogicalConfiguration.Methods
 
                     var value = ReportService.InvokeOnReportControl(report =>
                     {
-                        return report.Read(item.CellAddress);
+                        return report.Read(param.SheetName.ToInt(), item.CellAddress);
                     });
 
                     NlogHelper.Default.Info($"成功读取单元格 {item.CellAddress}: {value}");
@@ -164,7 +164,7 @@ namespace MainUI.LogicalConfiguration.Methods
                         var resolvedAddress = ResolveCellAddress(item.CellAddress);
                         ReportService.InvokeOnReportControl(report =>
                         {
-                            report.Write(resolvedAddress, formattedValue);
+                            report.Write(param.SheetName.ToInt(), resolvedAddress, formattedValue);
                         });
 
                         NlogHelper.Default.Info($"成功写入单元格 {item.CellAddress}: {formattedValue} (类型:{item.SourceType})");
@@ -513,7 +513,7 @@ namespace MainUI.LogicalConfiguration.Methods
                     // 如果没有指定格式，默认保留一位小数
                     if (string.IsNullOrWhiteSpace(formatString))
                     {
-                        formatString = "F1";
+                        formatString = "F2";
                     }
 
                     var formatted = numValue.ToString(formatString, System.Globalization.CultureInfo.InvariantCulture);
