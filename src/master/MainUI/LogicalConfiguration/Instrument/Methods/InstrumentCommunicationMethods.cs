@@ -3,6 +3,7 @@ using MainUI.LogicalConfiguration.Instrument.Communication;
 using MainUI.LogicalConfiguration.Instrument.Models;
 using MainUI.LogicalConfiguration.Instrument.Parameter;
 using MainUI.LogicalConfiguration.Instrument.Services;
+using MainUI.LogicalConfiguration.Instrument.Utilities;
 using MainUI.LogicalConfiguration.LogicalManager;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
@@ -127,6 +128,19 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
 
                     _logger.LogDebug("使用预定义命令: {CommandName}, 超时: {Timeout}ms",
                         command.DisplayName, timeout);
+                }
+
+                // 帧格式包装
+                bool needFrameWrapper = driver.FrameConfig?.Enabled == true
+                     && driver.ProtocolType != ProtocolType.ModbusTcp
+                     && driver.ProtocolType != ProtocolType.ModbusRtu
+                     && driver.ProtocolType != ProtocolType.Http;
+
+                if (needFrameWrapper)
+                {
+                    requestData = new FrameBuilder(driver.FrameConfig)
+                        .AddData(requestData)
+                        .Build();
                 }
 
                 // 执行通讯(带重试)
@@ -446,7 +460,7 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
             {
                 DataType.Hex => HexStringToBytes(content),
                 DataType.ByteArray => Encoding.UTF8.GetBytes(content), // 字节数组使用UTF8编码
-                _ => Encoding.UTF8.GetBytes(content) // 默认使用UTF8编码
+                _ => Encoding.UTF8.GetBytes(UnescapeControlChars(content)) // 默认使用UTF8编码，进行转义符处理
             };
         }
 
@@ -465,9 +479,23 @@ namespace MainUI.LogicalConfiguration.Instrument.Methods
             {
                 DataType.Hex => HexStringToBytes(template),
                 DataType.ByteArray => Encoding.UTF8.GetBytes(template),
-                _ => Encoding.UTF8.GetBytes(template)
+                // String 类型先展开转义字符再编码
+                _ => Encoding.UTF8.GetBytes(UnescapeControlChars(template))
             };
         }
+
+        /// <summary>
+/// 将字面量转义序列转换为真实控制字符
+/// \r → CR(0x0D)，\n → LF(0x0A)，\t → TAB(0x09)
+/// </summary>
+private static string UnescapeControlChars(string s)
+{
+    return s.Replace("\\r\\n", "\r\n")   // 先处理组合，避免顺序问题
+            .Replace("\\r", "\r")
+            .Replace("\\n", "\n")
+            .Replace("\\t", "\t")
+            .Replace("\\0", "\0");
+}
 
         /// <summary>
         /// 从模板字符串构建 Modbus PDU

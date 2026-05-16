@@ -93,7 +93,7 @@
             panelBottom = new Panel();
             btnSave = new UISymbolButton();
             btnCancel = new UISymbolButton();
-            splitMain.BeginInit();
+            (splitMain).BeginInit();
             splitMain.Panel1.SuspendLayout();
             splitMain.Panel2.SuspendLayout();
             splitMain.SuspendLayout();
@@ -595,7 +595,7 @@
             tabProtocol.Controls.Add(panelProtocolConfig);
             tabProtocol.Location = new Point(0, 40);
             tabProtocol.Name = "tabProtocol";
-            tabProtocol.Size = new Size(664, 625);
+            tabProtocol.Size = new Size(200, 60);
             tabProtocol.TabIndex = 1;
             tabProtocol.Text = "协议配置";
             // 
@@ -608,7 +608,7 @@
             panelProtocolConfig.Margin = new Padding(4, 5, 4, 5);
             panelProtocolConfig.MinimumSize = new Size(1, 1);
             panelProtocolConfig.Name = "panelProtocolConfig";
-            panelProtocolConfig.Size = new Size(664, 625);
+            panelProtocolConfig.Size = new Size(200, 60);
             panelProtocolConfig.TabIndex = 0;
             panelProtocolConfig.Text = null;
             panelProtocolConfig.TextAlignment = ContentAlignment.MiddleCenter;
@@ -618,7 +618,7 @@
             tabFrame.Controls.Add(layoutFrame);
             tabFrame.Location = new Point(0, 40);
             tabFrame.Name = "tabFrame";
-            tabFrame.Size = new Size(200, 60);
+            tabFrame.Size = new Size(664, 625);
             tabFrame.TabIndex = 2;
             tabFrame.Text = "帧配置";
             // 
@@ -649,7 +649,7 @@
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutFrame.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
-            layoutFrame.Size = new Size(200, 250);
+            layoutFrame.Size = new Size(664, 250);
             layoutFrame.TabIndex = 0;
             // 
             // lblFrameEnabled
@@ -671,7 +671,7 @@
             chkFrameEnabled.Location = new Point(103, 3);
             chkFrameEnabled.MinimumSize = new Size(1, 1);
             chkFrameEnabled.Name = "chkFrameEnabled";
-            chkFrameEnabled.Size = new Size(1, 34);
+            chkFrameEnabled.Size = new Size(226, 34);
             chkFrameEnabled.TabIndex = 1;
             chkFrameEnabled.Text = "启用帧格式配置";
             // 
@@ -696,7 +696,7 @@
             txtFrameHeader.Name = "txtFrameHeader";
             txtFrameHeader.Padding = new Padding(5);
             txtFrameHeader.ShowText = false;
-            txtFrameHeader.Size = new Size(1, 30);
+            txtFrameHeader.Size = new Size(224, 30);
             txtFrameHeader.TabIndex = 3;
             txtFrameHeader.TextAlignment = ContentAlignment.MiddleLeft;
             txtFrameHeader.Watermark = "如: AA55";
@@ -705,7 +705,7 @@
             // 
             lblFrameFooter.Dock = DockStyle.Fill;
             lblFrameFooter.Font = new Font("微软雅黑", 11F);
-            lblFrameFooter.Location = new Point(103, 40);
+            lblFrameFooter.Location = new Point(335, 40);
             lblFrameFooter.Name = "lblFrameFooter";
             lblFrameFooter.Size = new Size(94, 40);
             lblFrameFooter.TabIndex = 4;
@@ -716,13 +716,13 @@
             // 
             txtFrameFooter.Dock = DockStyle.Fill;
             txtFrameFooter.Font = new Font("微软雅黑", 12F);
-            txtFrameFooter.Location = new Point(204, 45);
+            txtFrameFooter.Location = new Point(436, 45);
             txtFrameFooter.Margin = new Padding(4, 5, 4, 5);
             txtFrameFooter.MinimumSize = new Size(1, 16);
             txtFrameFooter.Name = "txtFrameFooter";
             txtFrameFooter.Padding = new Padding(5);
             txtFrameFooter.ShowText = false;
-            txtFrameFooter.Size = new Size(1, 30);
+            txtFrameFooter.Size = new Size(224, 30);
             txtFrameFooter.TabIndex = 5;
             txtFrameFooter.TextAlignment = ContentAlignment.MiddleLeft;
             txtFrameFooter.Watermark = "如: 0D0A";
@@ -748,7 +748,7 @@
             txtResponseTerminator.Name = "txtResponseTerminator";
             txtResponseTerminator.Padding = new Padding(5);
             txtResponseTerminator.ShowText = false;
-            txtResponseTerminator.Size = new Size(1, 30);
+            txtResponseTerminator.Size = new Size(224, 30);
             txtResponseTerminator.TabIndex = 7;
             txtResponseTerminator.TextAlignment = ContentAlignment.MiddleLeft;
             txtResponseTerminator.Watermark = "如: \\n 或 \\r\\n";
@@ -757,7 +757,7 @@
             // 
             lblChecksumType.Dock = DockStyle.Fill;
             lblChecksumType.Font = new Font("微软雅黑", 11F);
-            lblChecksumType.Location = new Point(103, 80);
+            lblChecksumType.Location = new Point(335, 80);
             lblChecksumType.Name = "lblChecksumType";
             lblChecksumType.Size = new Size(94, 40);
             lblChecksumType.TabIndex = 8;
@@ -773,12 +773,12 @@
             cboChecksumType.Font = new Font("微软雅黑", 12F);
             cboChecksumType.ItemHoverColor = Color.FromArgb(155, 200, 255);
             cboChecksumType.ItemSelectForeColor = Color.FromArgb(235, 243, 255);
-            cboChecksumType.Location = new Point(204, 85);
+            cboChecksumType.Location = new Point(436, 85);
             cboChecksumType.Margin = new Padding(4, 5, 4, 5);
             cboChecksumType.MinimumSize = new Size(63, 0);
             cboChecksumType.Name = "cboChecksumType";
             cboChecksumType.Padding = new Padding(0, 0, 30, 2);
-            cboChecksumType.Size = new Size(63, 30);
+            cboChecksumType.Size = new Size(224, 30);
             cboChecksumType.SymbolSize = 24;
             cboChecksumType.TabIndex = 9;
             cboChecksumType.TextAlignment = ContentAlignment.MiddleLeft;
@@ -791,7 +791,7 @@
             lblFrameTip.ForeColor = Color.Gray;
             lblFrameTip.Location = new Point(3, 120);
             lblFrameTip.Name = "lblFrameTip";
-            lblFrameTip.Size = new Size(194, 40);
+            lblFrameTip.Size = new Size(658, 40);
             lblFrameTip.TabIndex = 10;
             lblFrameTip.Text = "提示：帧头帧尾使用十六进制表示，如 AA55 表示 0xAA 0x55。结束符使用转义字符，如 \\n 表示换行符。";
             // 
@@ -979,7 +979,7 @@
             ZoomScaleRect = new Rectangle(15, 15, 1100, 750);
             splitMain.Panel1.ResumeLayout(false);
             splitMain.Panel2.ResumeLayout(false);
-            splitMain.EndInit();
+            (splitMain).EndInit();
             splitMain.ResumeLayout(false);
             panelLeft.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvDrivers).EndInit();

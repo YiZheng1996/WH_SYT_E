@@ -832,6 +832,7 @@ namespace MainUI
 
             // 获取保存配置
             var saveConfig = ReportService.GetSaveConfig();
+            rWReport.Write("A1", "123"); // 班长
 
             //rWReport.Write(saveConfig.ForemanCellName, saveConfig.ForemanName); // 班长
         }

@@ -365,7 +365,7 @@
             tabResponse.Controls.Add(layoutResponse);
             tabResponse.Location = new Point(0, 40);
             tabResponse.Name = "tabResponse";
-            tabResponse.Size = new Size(200, 60);
+            tabResponse.Size = new Size(977, 691);
             tabResponse.TabIndex = 1;
             tabResponse.Text = "响应处理";
             // 
@@ -388,7 +388,7 @@
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 39F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             layoutResponse.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            layoutResponse.Size = new Size(200, 60);
+            layoutResponse.Size = new Size(977, 691);
             layoutResponse.TabIndex = 0;
             // 
             // lblResponseVar
@@ -412,7 +412,7 @@
             txtResponseVariable.Name = "txtResponseVariable";
             txtResponseVariable.Padding = new Padding(5);
             txtResponseVariable.ShowText = false;
-            txtResponseVariable.Size = new Size(72, 28);
+            txtResponseVariable.Size = new Size(849, 28);
             txtResponseVariable.TabIndex = 1;
             txtResponseVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtResponseVariable.Watermark = "将原始响应存储到此变量";
@@ -438,7 +438,7 @@
             txtStatusVariable.Name = "txtStatusVariable";
             txtStatusVariable.Padding = new Padding(5);
             txtStatusVariable.ShowText = false;
-            txtStatusVariable.Size = new Size(72, 29);
+            txtStatusVariable.Size = new Size(849, 29);
             txtStatusVariable.TabIndex = 3;
             txtStatusVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtStatusVariable.Watermark = "存储执行结果(true/false)";
@@ -464,7 +464,7 @@
             txtErrorVariable.Name = "txtErrorVariable";
             txtErrorVariable.Padding = new Padding(5);
             txtErrorVariable.ShowText = false;
-            txtErrorVariable.Size = new Size(72, 30);
+            txtErrorVariable.Size = new Size(849, 30);
             txtErrorVariable.TabIndex = 5;
             txtErrorVariable.TextAlignment = ContentAlignment.MiddleLeft;
             txtErrorVariable.Watermark = "失败时存储错误信息";
